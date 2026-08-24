@@ -1,0 +1,13 @@
+// Logo de Centro Panel incrustado como data URI.
+//
+// Va aqui y no en public/ a proposito: el despliegue a Vercel se hace enviando
+// el arbol de fuentes, y un binario suelto es facil de olvidar (paso en el
+// primer intento, que quedo sin logo). Incrustado viaja siempre con el codigo.
+//
+// Generado desde el logo original (209x166) reducido a 96px de ancho y paleta
+// de 16 grises: el isotipo es monocromo, asi que no se pierde nada visible y
+// el modulo pesa menos de 1 KB.
+const LOGO_DATA_URI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABMBAMAAABg2K9GAAAAMFBMVEX////+/v79/f38/Pz6+vrw8PDh4eHKysq6urqgoKCLi4ttbW1MTEwuLi4ODg4BAQE7csGfAAADK0lEQVR42u1WzUsUYRx+3vna1Tb3Xe2DoraR9OysiBVkbLVmGMVCUFBEFthFog/sEAXtPxDVoaiDGIh9HFIv1aUsQ9JKGyMI3dx1LQIz15nZEl13d6ZDppKTvh6CDv5OL/PO8/t6f8/DD1iy/8GIzbfA9Cnz7J9EEK/T38f0YYvBhWRp1pRN8HOuhbkI61sNwDUcBvh6piTFSQBSEoBjfG4Ezg6zskrwoQDVHjBGkEaqHJM4NOS0iWALEJpSJ5KV2ktmAC81pdNaB9gjKFKr1QGBGSC98jsm4eh0snbJkm5ZlqPTC9Yu8c6BcEod9rPXgKwBLRxkr0EowEkzJOxYRIQaczQT4tnfoca8N1mXPssMELVHUlKoG2d/hzuoSBYLd5kBJQhsSpZs5zezAubjgw3jyPcnFLrwhEK3YbwdRWP5gIfkA54BRl2KcuteJQp/eA0vsy45VK3Pb3tj1waP039v2eov+z9/dU4wzuuDcHmvs/uxhzUhIQieyCifzykFgCmJpMBGj8zng043hf75v0Jm0y+P8sgDCFFAqS0pqRgkMiBTCgLIABUhg/vlQ6aUyFM5TFfZOuKM9JeGpd69kcjuSHhHVrSXKJcjDcrTkPhReJ0V6Xe1KLNEoKKsh3ijg4Wn8s3EKOcd23cj47hEcwcOfCj2k4KLPuKNcpTOAIp2NgZgdulaFR62ND4f88vbCi/5gQAnpkqhVccQ73LPlhkqv98OsRauVYZA8+BS23LEJgp0Z/LeCHA5gFW1Ok9mAHqsrJ0mdyPT7k4jDnivJvYcjwHum8e2cDAbZAztQnzWXJGtme41ma4DE+uTuBLKHmsOXRkZPeOvDxL1vnou6Uplp7uOjPTyM0V3tizXVEAdVj1xI6fnQcn5wb5rJL5iZ+rg5Q3q2rdmD8wY05AElKAtgYjPiBaj2/euqJACeKcgN2MRA7pyu+LFhh6fWgzVZ6o2BKKVRxOaty3XbRGLADT9ybpgzkdRo7ksoZmWGSE5uW4j6tGRw0QIAkA8DXCEW4jThAIWdOI2LOImlk519q2CLq1u/6HR+TaBvyrdIgDUWOz2uTQoS7aA/QTv8i0cTn4cOwAAAABJRU5ErkJggg==";
+
+export default LOGO_DATA_URI;

@@ -1,0 +1,66 @@
+import Cabecera from "@/components/Cabecera";
+import EditorCotizacion from "@/components/EditorCotizacion";
+import { requerirVendedor } from "@/lib/sesion";
+import { createClient } from "@/lib/supabase/server";
+import { leerParametros, pNum, pTxt } from "@/lib/parametros";
+import { hoyISO } from "@/lib/formato";
+
+// Alta de cotizacion. Nada se escribe en la base hasta pulsar GRABAR: el
+// borrador vive en el estado del formulario, que es la regla que Stephan fijo
+// para Access (tablas locales) trasladada a la web.
+export default async function Pagina() {
+  const v = await requerirVendedor();
+  const supabase = await createClient();
+
+  const [{ data: clientes }, { data: formasPago }, { data: productos }, params] =
+    await Promise.all([
+      supabase
+        .from("clientes")
+        .select("*")
+        .eq("activo", true)
+        .order("razon_social"),
+      supabase
+        .from("formas_pago")
+        .select("*")
+        .eq("activo", true)
+        .order("orden"),
+      // v_catalogo_venta y no productos: un Vendedor no puede leer costos.
+      supabase
+        .from("v_catalogo_venta")
+        .select("id, descripcion, tipo, precio_venta")
+        .eq("activo", true)
+        .order("descripcion"),
+      leerParametros(),
+    ]);
+
+  return (
+    <div className="min-h-screen">
+      <Cabecera
+        titulo="Detalle de cotizacion"
+        subtitulo="Datos del cliente, items y valorizacion"
+      />
+      <EditorCotizacion
+        modo="crear"
+        clientes={clientes ?? []}
+        formasPago={formasPago ?? []}
+        productos={productos ?? []}
+        iva={pNum(params, "IVA", 0.19)}
+        puedeEditar={v.puede_crear || v.rol === "Administrador"}
+        inicial={{
+          id_cliente: null,
+          id_vendedor: v.id,
+          id_forma_pago: null,
+          fecha: hoyISO(),
+          validez_dias: pNum(params, "ValidezDias", 7),
+          tiempo_entrega: pTxt(params, "TiempoEntregaDefecto"),
+          direccion_despacho: "",
+          notas: "",
+          descuento_tipo: "Monto",
+          descuento_pct: 0,
+          descuento_monto: 0,
+          items: [],
+        }}
+      />
+    </div>
+  );
+}

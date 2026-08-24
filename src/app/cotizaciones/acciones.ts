@@ -1,0 +1,169 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { requerirVendedor } from "@/lib/sesion";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import type { TipoDescuento } from "@/types/database";
+
+export interface ItemBorrador {
+  id_producto: number | null;
+  descripcion: string;
+  unidades: number;
+  valor_unitario: number;
+  costo_unitario: number;
+}
+
+export interface DatosCotizacion {
+  id_cliente: number | null;
+  id_vendedor: number | null;
+  id_forma_pago: number | null;
+  fecha: string;
+  validez_dias: number;
+  tiempo_entrega: string;
+  direccion_despacho: string;
+  notas: string;
+  descuento_tipo: TipoDescuento;
+  descuento_pct: number;
+  descuento_monto: number;
+  items: ItemBorrador[];
+}
+
+// Mismas exigencias que Validar() en modBorrador.bas: sin cliente, sin vendedor,
+// sin items o sin direccion de despacho no se graba.
+function validar(d: DatosCotizacion): string | null {
+  if (!d.id_cliente) return "Elija el cliente.";
+  if (!d.id_vendedor) return "Elija el ejecutivo.";
+  if (!d.items.length) return "Agregue al menos un item.";
+  if (!d.direccion_despacho.trim()) return "Indique la direccion de despacho.";
+  if (!d.fecha) return "Indique la fecha.";
+  return null;
+}
+
+export async function crearCotizacion(d: DatosCotizacion) {
+  const v = await requerirVendedor();
+  if (!v.puede_crear && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite crear cotizaciones." };
+  }
+  const falta = validar(d);
+  if (falta) return { error: falta };
+
+  const supabase = await createClient();
+
+  // El folio lo asigna el trigger trg_asignar_folio con una secuencia: nunca se
+  // calcula en el cliente, asi dos personas grabando a la vez no lo repiten.
+  // Nace 'Emitida' porque en web no hay borrador en la base -- el borrador vive
+  // en el navegador hasta que se pulsa Grabar, igual que la regla de Access.
+  const { data: cot, error: e1 } = await supabase
+    .from("cotizaciones")
+    .insert({
+      id_cliente: d.id_cliente,
+      id_vendedor: d.id_vendedor,
+      id_forma_pago: d.id_forma_pago,
+      fecha: d.fecha,
+      validez_dias: d.validez_dias,
+      tiempo_entrega: d.tiempo_entrega,
+      direccion_despacho: d.direccion_despacho,
+      notas: d.notas,
+      estado: "Emitida",
+      descuento_tipo: d.descuento_tipo,
+      descuento_pct: d.descuento_pct,
+      descuento_monto: d.descuento_monto,
+    })
+    .select("id, num_cotizacion")
+    .single();
+
+  if (e1 || !cot) return { error: e1?.message ?? "No se pudo grabar." };
+
+  const detalle = d.items.map((it, i) => ({
+    id_cotizacion: cot.id,
+    orden: i + 1,
+    id_producto: it.id_producto,
+    descripcion: it.descripcion,
+    unidades: it.unidades,
+    valor_unitario: it.valor_unitario,
+    costo_unitario: it.costo_unitario,
+  }));
+
+  const { error: e2 } = await supabase.from("cotizacion_detalle").insert(detalle);
+  if (e2) {
+    // Sin items la cotizacion no sirve y ya consumio un folio: se revierte a
+    // mano porque PostgREST no da transacciones entre dos llamadas.
+    await supabase.from("cotizaciones").delete().eq("id", cot.id);
+    return { error: e2.message };
+  }
+
+  revalidatePath("/cotizaciones");
+  redirect(`/cotizaciones/${cot.id}`);
+}
+
+export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
+  const v = await requerirVendedor();
+  if (!v.puede_editar && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite modificar cotizaciones." };
+  }
+  const falta = validar(d);
+  if (falta) return { error: falta };
+
+  const supabase = await createClient();
+
+  const { error: e1 } = await supabase
+    .from("cotizaciones")
+    .update({
+      id_cliente: d.id_cliente,
+      id_vendedor: d.id_vendedor,
+      id_forma_pago: d.id_forma_pago,
+      fecha: d.fecha,
+      validez_dias: d.validez_dias,
+      tiempo_entrega: d.tiempo_entrega,
+      direccion_despacho: d.direccion_despacho,
+      notas: d.notas,
+      descuento_tipo: d.descuento_tipo,
+      descuento_pct: d.descuento_pct,
+      descuento_monto: d.descuento_monto,
+    })
+    .eq("id", id);
+
+  if (e1) return { error: e1.message };
+
+  // El detalle se reemplaza completo, como hacia BorradorGrabar en Access.
+  const { error: eDel } = await supabase
+    .from("cotizacion_detalle")
+    .delete()
+    .eq("id_cotizacion", id);
+  if (eDel) return { error: eDel.message };
+
+  const detalle = d.items.map((it, i) => ({
+    id_cotizacion: id,
+    orden: i + 1,
+    id_producto: it.id_producto,
+    descripcion: it.descripcion,
+    unidades: it.unidades,
+    valor_unitario: it.valor_unitario,
+    costo_unitario: it.costo_unitario,
+  }));
+  const { error: e2 } = await supabase.from("cotizacion_detalle").insert(detalle);
+  if (e2) return { error: e2.message };
+
+  revalidatePath(`/cotizaciones/${id}`);
+  revalidatePath("/cotizaciones");
+  return { ok: true };
+}
+
+// Estados: Emitida -> Enviada al mandar por correo/WhatsApp. Aceptada y
+// Rechazada son manuales y no se pisan solas (misma regla que en Access).
+export async function cambiarEstado(id: number, estado: string) {
+  const v = await requerirVendedor();
+  if (!v.puede_editar && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite modificar cotizaciones." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("cotizaciones")
+    .update({ estado })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath(`/cotizaciones/${id}`);
+  revalidatePath("/cotizaciones");
+  return { ok: true };
+}

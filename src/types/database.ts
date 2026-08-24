@@ -1,0 +1,127 @@
+// Tipos minimos del esquema (a mano por ahora). Se pueden regenerar con
+// `supabase gen types typescript` cuando el CLI este conectado al proyecto.
+export type Rol = "Administrador" | "Vendedor" | "Consulta";
+export type EstadoCotizacion =
+  | "Borrador"
+  | "Emitida"
+  | "Enviada"
+  | "Aceptada"
+  | "Rechazada";
+export type TipoDescuento = "Monto" | "Porcentaje";
+
+export interface Vendedor {
+  id: number;
+  user_id: string | null;
+  nombre: string;
+  cargo: string | null;
+  email: string | null;
+  telefono: string | null;
+  rol: Rol;
+  puede_ver: boolean;
+  puede_crear: boolean;
+  puede_editar: boolean;
+  puede_admin: boolean;
+  debe_cambiar_password: boolean;
+  activo: boolean;
+}
+
+export interface Cliente {
+  id: number;
+  razon_social: string;
+  rut: string | null;
+  contacto: string | null;
+  email: string | null;
+  telefono: string | null;
+  direccion: string | null;
+  activo: boolean;
+}
+
+export interface MateriaPrima {
+  id: number;
+  nombre: string;
+  tipo: "EPS" | "Placa" | "Adhesivo";
+  familia: string | null;
+  etiqueta: string | null;
+  ancho_mm: number | null;
+  largo_mm: number | null;
+  espesor_mm: number | null;
+  espesor_nominal: number | null;
+  costo: number;
+  unidad: string | null;
+  activo: boolean;
+}
+
+export interface Producto {
+  id: number;
+  descripcion: string;
+  tipo: "Panel SIP" | "Servicio";
+  id_eps: number | null;
+  id_placa_a: number | null;
+  id_placa_b: number | null;
+  espesor_total: number | null;
+  costo_unitario: number;
+  precio_venta: number;
+  margen_aplicado: number | null;
+  precio_manual: boolean;
+  activo: boolean;
+  fecha_creacion: string;
+}
+
+export interface FormaPago {
+  id: number;
+  descripcion: string;
+  orden: number | null;
+  activo: boolean;
+}
+
+export interface Parametro {
+  clave: string;
+  valor_num: number | null;
+  valor_texto: string | null;
+  descripcion: string | null;
+}
+
+export interface Cotizacion {
+  id: number;
+  num_cotizacion: string | null;
+  fecha: string;
+  id_cliente: number | null;
+  id_vendedor: number | null;
+  id_forma_pago: number | null;
+  descuento_tipo: TipoDescuento;
+  descuento_pct: number;
+  descuento_monto: number;
+  direccion_despacho: string;
+  estado: EstadoCotizacion;
+  validez_dias: number;
+  tiempo_entrega: string | null;
+  notas: string | null;
+  fecha_creacion: string;
+}
+
+export interface CotizacionDetalle {
+  id: number;
+  id_cotizacion: number;
+  orden: number;
+  id_producto: number | null;
+  descripcion: string;
+  unidades: number;
+  valor_unitario: number;
+  costo_unitario: number;
+}
+
+export interface CotizacionTotales {
+  id: number;
+  num_cotizacion: string | null;
+  subtotal: number;
+  descuento_monto: number;
+  total_neto: number;
+  iva: number;
+  total: number;
+  margen: number;
+}
+
+// Placeholder de tipado generico para que @supabase/ssr no exija el esquema
+// completo generado por el CLI mientras no lo conectemos.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Database = any;
