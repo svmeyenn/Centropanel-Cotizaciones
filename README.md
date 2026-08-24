@@ -42,7 +42,7 @@ despliega solo.
 git init
 git add .
 git commit -m "Cotizador web: fases 1-3"
-git remote add origin https://github.com/<usuario>/<repo>.git
+git remote add origin https://github.com/svmeyenn/Centropanel-Cotizaciones.git
 git push -u origin main
 ```
 
