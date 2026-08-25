@@ -228,12 +228,11 @@ export default function Configurador({
             )}
 
             <div className="grid md:grid-cols-3 gap-3">
-              {/* El costo y el margen solo se muestran al administrador. */}
-              {esAdmin && (
-                <Dato titulo="Costo unitario" valor={pesos(res.costo)} />
-              )}
+              {/* Costo y margen van a todos los perfiles: el desglose de abajo,
+                  que Stephan pidio abrir, ya los muestra. */}
+              <Dato titulo="Costo unitario" valor={pesos(res.costo)} />
               <Dato titulo="Precio de venta" valor={pesos(res.precio)} destacado />
-              {esAdmin && res.margen != null && (
+              {res.margen != null && (
                 <Dato
                   titulo="Margen resultante"
                   valor={`${porcentaje(res.margen * 100)} %`}

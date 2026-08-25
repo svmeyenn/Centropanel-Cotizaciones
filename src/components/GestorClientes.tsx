@@ -2,12 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import {
-  crearCliente,
   actualizarCliente,
   cambiarActivoCliente,
   type DatosCliente,
 } from "@/app/clientes/acciones";
+import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { Cliente } from "@/types/database";
+import { useRouter } from "next/navigation";
 
 const VACIO: DatosCliente = {
   razon_social: "",
@@ -30,6 +31,11 @@ export default function GestorClientes({
   const [form, setForm] = useState<DatosCliente>(VACIO);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
+  // El alta va por la ventana emergente, la misma que usa el cotizador: un solo
+  // camino de creacion y una sola comprobacion de duplicados. El formulario de
+  // abajo queda para modificar.
+  const [modalNuevo, setModalNuevo] = useState(false);
+  const router = useRouter();
 
   // Filtrado en tiempo real sobre razon social, RUT y contacto: los mismos tres
   // campos que buscaba el cuadro de busqueda de frmClientes.
@@ -56,19 +62,11 @@ export default function GestorClientes({
     });
   }
 
-  function nuevo() {
-    setEditando(0);
-    setError(null);
-    setForm(VACIO);
-  }
-
   function guardar() {
+    if (editando == null) return;
     setError(null);
     empezar(async () => {
-      const r =
-        editando === 0
-          ? await crearCliente(form)
-          : await actualizarCliente(editando as number, form);
+      const r = await actualizarCliente(editando, form);
       if (r?.error) setError(r.error);
       else {
         setEditando(null);
@@ -90,7 +88,7 @@ export default function GestorClientes({
         />
         {puedeEditar && (
           <button
-            onClick={nuevo}
+            onClick={() => setModalNuevo(true)}
             className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded"
           >
             Nuevo cliente
@@ -106,9 +104,7 @@ export default function GestorClientes({
 
       {editando !== null && (
         <div className="bg-white border border-dorado rounded p-4 space-y-3">
-          <div className="text-sm font-semibold text-verde">
-            {editando === 0 ? "Nuevo cliente" : "Modificar cliente"}
-          </div>
+          <div className="text-sm font-semibold text-verde">Modificar cliente</div>
           <div className="grid md:grid-cols-2 gap-3">
             <Campo
               label="Razon social"
@@ -227,6 +223,18 @@ export default function GestorClientes({
           </table>
         </div>
       </div>
+
+      {modalNuevo && (
+        <ModalNuevoCliente
+          onCerrar={() => setModalNuevo(false)}
+          onCreado={() => {
+            setModalNuevo(false);
+            // Aqui si conviene recargar: la tabla la trae el servidor y no hay
+            // nada a medio escribir que se pueda perder.
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

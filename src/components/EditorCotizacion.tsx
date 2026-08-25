@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
+import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { MateriaVenta } from "@/components/Configurador";
 import { pesos, unidades as fmtUnid, sumarDias, fecha as fmtFecha } from "@/lib/formato";
 import {
@@ -61,6 +62,16 @@ export default function EditorCotizacion(p: Props) {
   // curso, que es justo lo que hay que evitar.
   const [productosExtra, setProductosExtra] = useState<ProductoVenta[]>([]);
   const [modalPanel, setModalPanel] = useState(false);
+
+  // Igual que con los paneles: los clientes creados durante esta sesion se
+  // agregan a la lista sin recargar, que descartaria la cotizacion en curso.
+  const [clientesExtra, setClientesExtra] = useState<Cliente[]>([]);
+  const [modalCliente, setModalCliente] = useState(false);
+
+  const listaClientes = useMemo(() => {
+    const vistos = new Set(p.clientes.map((c) => c.id));
+    return [...p.clientes, ...clientesExtra.filter((c) => !vistos.has(c.id))];
+  }, [p.clientes, clientesExtra]);
 
   const catalogo = useMemo(() => {
     const vistos = new Set(p.productos.map((x) => x.id));
@@ -220,7 +231,19 @@ export default function EditorCotizacion(p: Props) {
       {/* cabecera */}
       <div className="bg-white border border-gray-200 rounded p-4 grid md:grid-cols-2 gap-3">
         <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">Cliente</span>
+          <span className="flex items-center justify-between mb-1">
+            <span className="text-dorado-osc font-semibold">Cliente</span>
+            {!soloLectura && p.puedeCrearPanel && (
+              <button
+                type="button"
+                onClick={() => setModalCliente(true)}
+                className="border border-verde text-verde text-xs font-semibold px-2 py-0.5 rounded hover:bg-crema"
+                title="Crear un cliente sin salir de esta cotizacion"
+              >
+                + Nuevo cliente
+              </button>
+            )}
+          </span>
           <select
             className={inputCls}
             disabled={soloLectura}
@@ -228,7 +251,7 @@ export default function EditorCotizacion(p: Props) {
             onChange={(e) => set("id_cliente", Number(e.target.value) || null)}
           >
             <option value="">-- elija --</option>
-            {p.clientes.map((c) => (
+            {listaClientes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.razon_social}
                 {c.rut ? ` (${c.rut})` : ""}
@@ -498,6 +521,18 @@ export default function EditorCotizacion(p: Props) {
             setBuscaProd("");
             setModalPanel(false);
             setAviso(`Panel "${prod.descripcion}" listo para agregar.`);
+          }}
+        />
+      )}
+
+      {modalCliente && (
+        <ModalNuevoCliente
+          onCerrar={() => setModalCliente(false)}
+          onCreado={(cli) => {
+            setClientesExtra((x) => [...x, cli]);
+            set("id_cliente", cli.id);
+            setModalCliente(false);
+            setAviso(`Cliente "${cli.razon_social}" creado y seleccionado.`);
           }}
         />
       )}

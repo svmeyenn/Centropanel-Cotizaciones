@@ -63,13 +63,12 @@ export async function calcularPanel(
   c: Combinacion,
   margenPersonalizado?: number | null
 ): Promise<ResultadoPanel | { error: string }> {
-  const v = await requerirVendedor();
+  await requerirVendedor();
   if (!c.id_eps || !c.id_placa_a) {
     return { error: "Elija al menos la plancha EPS y la placa de la cara A." };
   }
 
   const supabase = await createClient();
-  const esAdmin = v.rol === "Administrador";
   const b = c.id_placa_b ?? null;
 
   const [rDesc, rEspesor, rCosto, rExiste] = await Promise.all([
@@ -134,61 +133,32 @@ export async function calcularPanel(
 
   // Desglose: EPS + cara A + cara B + adhesivo prorrateado. El balde rinde 30
   // paneles de dos caras o 60 de una, segun los parametros del sistema.
-  let costeo: LineaCosteo[] | null = null;
-  if (esAdmin) {
-    const ids = [c.id_eps, c.id_placa_a, b].filter(Boolean) as number[];
-    const [{ data: insumos }, { data: adhesivoRaw }, { data: paramsAdh }] =
-      await Promise.all([
-        supabase
-          .from("materias_primas")
-          .select("id, nombre, costo, espesor_nominal")
-          .in("id", ids),
-        supabase.rpc("costo_adhesivo", { p_dos_caras: b != null }),
-        supabase
-          .from("parametros")
-          .select("clave, valor_num")
-          .in("clave", ["AdhesivoRend1Cara", "AdhesivoRend2Caras"]),
-      ]);
+  //
+  // Se pide a desglose_costo_panel (SECURITY DEFINER) y no leyendo
+  // materias_primas y parametros: esas tablas las reserva el RLS al
+  // administrador, y Stephan pidio que el desglose lo vea cualquier perfil.
+  const { data: desgloseRaw } = await supabase.rpc("desglose_costo_panel", {
+    p_eps: c.id_eps,
+    p_placa_a: c.id_placa_a,
+    p_placa_b: b,
+  });
 
-    const porId = new Map(
-      (insumos ?? []).map((m) => [Number(m.id), m as { nombre: string; costo: number }])
-    );
-    const rend =
-      paramsAdh?.find((x) =>
-        b != null ? x.clave === "AdhesivoRend2Caras" : x.clave === "AdhesivoRend1Cara"
-      )?.valor_num ?? 0;
-
-    const linea = (rotulo: string, id: number | null): LineaCosteo | null => {
-      if (!id) return null;
-      const m = porId.get(id);
-      if (!m) return null;
-      return { concepto: rotulo, detalle: m.nombre, monto: Number(m.costo) };
-    };
-
-    costeo = [
-      linea("Plancha EPS", c.id_eps),
-      linea("Placa cara A", c.id_placa_a),
-      b
-        ? linea("Placa cara B", b)
-        : { concepto: "Placa cara B", detalle: "sin placa (panel de una cara)", monto: 0 },
-      {
-        concepto: "Adhesivo",
-        detalle: `prorrateado: el balde rinde ${rend} paneles de ${
-          b != null ? "dos caras" : "una cara"
-        }`,
-        monto: Number(adhesivoRaw ?? 0),
-      },
-    ].filter(Boolean) as LineaCosteo[];
-  }
+  const costeo: LineaCosteo[] | null = Array.isArray(desgloseRaw)
+    ? (desgloseRaw as Record<string, unknown>[]).map((l) => ({
+        concepto: String(l.concepto ?? ""),
+        detalle: String(l.detalle ?? ""),
+        monto: Number(l.monto ?? 0),
+      }))
+    : null;
 
   return {
     descripcion: rDesc.data ?? null,
     espesor_total: rEspesor.data ? Number(rEspesor.data) : null,
-    // El costo y el margen solo se devuelven al administrador: un Vendedor
-    // cotiza con el precio y no necesita conocer la estructura de costos.
-    costo: esAdmin ? costo : null,
+    // El costo y el margen van a todos los perfiles: el desglose ya los muestra,
+    // ocultarlos aqui seria solo aparentar que no se ven.
+    costo,
     precio,
-    margen: esAdmin && precio > 0 ? (precio - costo) / precio : null,
+    margen: precio > 0 ? (precio - costo) / precio : null,
     existe_id: existeId,
     misma_config: mismaConfig,
     descripcion_existente: descExistente,
