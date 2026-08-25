@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Parametros } from "@/lib/parametros";
@@ -15,23 +17,42 @@ import BarraDescarga from "./BarraDescarga";
 // sin costos, sin margen y sin notas internas.
 export const dynamic = "force-dynamic";
 
+// Un token mal formado ni siquiera llega a la base: gen_random_uuid() produce
+// uuid v4 y cualquier otra cosa es un intento a mano.
+const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// cache() para que la pagina y generateMetadata, que corren en la misma
+// peticion, no pidan el documento dos veces.
+const leerDocumento = cache(async (token: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("cotizacion_publica", { p_token: token });
+  return (data ?? null) as Record<string, unknown> | null;
+});
+
+// El titulo es el nombre que el navegador propone al guardar como PDF: el
+// cliente recibe el archivo como "COT00001.pdf" y no como el titulo del sistema.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  if (!ES_UUID.test(token)) return { title: "Cotizacion" };
+  const doc = await leerDocumento(token);
+  return {
+    title: { absolute: (doc?.num_cotizacion as string) ?? "Cotizacion" },
+  };
+}
+
 export default async function Pagina({
   params,
 }: {
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+  if (!ES_UUID.test(token)) notFound();
 
-  // Un token mal formado ni siquiera llega a la base: gen_random_uuid() produce
-  // uuid v4 y cualquier otra cosa es un intento a mano.
-  if (
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)
-  ) {
-    notFound();
-  }
-
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("cotizacion_publica", { p_token: token });
+  const data = await leerDocumento(token);
   if (!data) notFound();
 
   const j = data as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any

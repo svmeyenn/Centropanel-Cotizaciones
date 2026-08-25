@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
@@ -6,6 +7,29 @@ import BotonImprimir from "./BotonImprimir";
 import DocumentoCotizacion, {
   type CotizacionDoc,
 } from "@/components/DocumentoCotizacion";
+
+// El titulo de la pagina es el nombre que el navegador propone al guardar como
+// PDF, asi que aqui vale el folio y no el titulo del sistema: el archivo sale
+// como "COT00001.pdf". Es una propuesta, no una imposicion -- quien guarda
+// puede cambiarlo en el dialogo.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id: idTexto } = await params;
+  const id = Number(idTexto);
+  if (!Number.isFinite(id)) return { title: "Cotizacion" };
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("cotizaciones")
+    .select("num_cotizacion")
+    .eq("id", id)
+    .single();
+
+  return { title: { absolute: data?.num_cotizacion ?? "Cotizacion" } };
+}
 
 // Replica de rptCotizacion. Se imprime desde el navegador (Ctrl+P -> Guardar
 // como PDF) en vez de generar el binario en el servidor: Vercel hobby no
