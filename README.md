@@ -28,25 +28,20 @@ la clave.
 |---|---|---|
 | 1 | Esquema, funciones de costeo, triggers, RLS, datos migrados | listo |
 | 2 | Esqueleto Next.js, login, menú por rol | listo |
-| 3 | Cotizaciones (listado, alta, edición, descuentos), clientes, PDF | código listo, pendiente de desplegar |
-| 4 | Configurador SIP, productos, materias primas, parámetros, vendedores | pendiente |
+| 3 | Cotizaciones (listado, alta, edición, descuentos), clientes, PDF | listo |
+| 4 | Configurador SIP, productos, materias primas, parámetros, vendedores | listo |
 
 ## Cómo desplegar
 
-Hoy el despliegue se hace enviando el árbol de fuentes por la API de Vercel, lo
-que **no escala**: son ~37 archivos y el envío se corta. La vía sostenible es
-conectar un repositorio de GitHub al proyecto de Vercel, y así cada push
-despliega solo.
+El repositorio está conectado al proyecto de Vercel: **cada push a `main`
+despliega solo**. No hay que hacer nada más.
 
 ```bash
-git init
-git add .
-git commit -m "Cotizador web: fases 1-3"
-git remote add origin https://github.com/svmeyenn/Centropanel-Cotizaciones.git
-git push -u origin main
+git add -A && git commit -m "..." && git push
 ```
 
-Después, en Vercel: **Project → Settings → Git → Connect Git Repository**.
+Las variables de entorno ya están cargadas en Vercel para los tres entornos.
+Para trabajar en local, `npx vercel env pull .env.local` las trae de vuelta.
 
 ## Decisiones de diseño que conviene no romper
 
@@ -63,3 +58,14 @@ Después, en Vercel: **Project → Settings → Git → Connect Git Repository**
   deja fuera `MargenObjetivo`.
 - **El logo va incrustado** como data URI en `src/lib/logo.ts` y no en `public/`:
   un binario suelto se pierde al enviar solo el árbol de fuentes.
+
+## Reparto de permisos
+
+| Pantalla | Administrador | Vendedor | Consulta |
+|---|---|---|---|
+| Cotizaciones, clientes | total | crear y editar | solo lectura |
+| Configurador, catálogo | con costo y margen | solo precio | solo precio |
+| Materias primas, parámetros, vendedores | total | sin acceso | sin acceso |
+
+El corte no es solo de interfaz: el RLS de Postgres lo impone también a nivel de
+datos, así que un Vendedor no obtiene costos ni aunque llame la API directo.
