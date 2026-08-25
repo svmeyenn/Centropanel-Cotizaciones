@@ -58,7 +58,7 @@ export default function DocumentoCotizacion({
           <img
             src={LOGO_PDF}
             alt="Centro Panel"
-            className="h-[46px] w-auto shrink-0"
+            className="h-[92px] w-auto shrink-0"
           />
           <div>
             <div className="text-xl font-bold text-verde leading-tight">

@@ -19,6 +19,19 @@ export default async function Pagina({
 
   const supabase = await createClient();
 
+  // La busqueda tambien mira la razon social del cliente. Se resuelve buscando
+  // primero los clientes que coinciden y filtrando por sus id: un or() sobre una
+  // tabla embebida obligaria a join interno y dejaria fuera las cotizaciones sin
+  // cliente asignado.
+  let idsCliente: number[] = [];
+  if (busca) {
+    const { data: clis } = await supabase
+      .from("clientes")
+      .select("id")
+      .ilike("razon_social", `%${busca}%`);
+    idsCliente = (clis ?? []).map((c) => c.id as number);
+  }
+
   let consulta = supabase
     .from("cotizaciones")
     .select(
@@ -28,7 +41,14 @@ export default async function Pagina({
     .limit(200);
 
   if (busca) {
-    consulta = consulta.ilike("num_cotizacion", `%${busca}%`);
+    // En el filtro or() la coma, los parentesis y las comillas son sintaxis de
+    // PostgREST: una razon social como "Ltda., S.A." romperia la consulta. Se
+    // quitan solo para este filtro; la busqueda de clientes de arriba va por
+    // parametro y no los necesita.
+    const termino = busca.replace(/[,()"\\]/g, " ");
+    const filtros = [`num_cotizacion.ilike.%${termino}%`];
+    if (idsCliente.length) filtros.push(`id_cliente.in.(${idsCliente.join(",")})`);
+    consulta = consulta.or(filtros.join(","));
   }
 
   const { data: cots, error } = await consulta;
@@ -51,7 +71,7 @@ export default async function Pagina({
             <input
               name="q"
               defaultValue={busca}
-              placeholder="Buscar por folio (ej: COT00001)"
+              placeholder="Buscar por folio o razon social"
               className="border border-gray-300 rounded px-3 py-1.5 text-sm w-64"
             />
             <button className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded">
@@ -88,7 +108,7 @@ export default async function Pagina({
               <thead className="bg-verde text-white">
                 <tr>
                   <th className="text-left px-3 py-2">N cotizacion</th>
-                  <th className="text-left px-3 py-2">Cliente</th>
+                  <th className="text-left px-3 py-2">Razon social</th>
                   <th className="text-left px-3 py-2 w-28">Fecha</th>
                   <th className="text-left px-3 py-2">Ejecutivo</th>
                   <th className="text-left px-3 py-2 w-28">Estado</th>
