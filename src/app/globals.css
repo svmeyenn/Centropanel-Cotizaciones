@@ -6,3 +6,29 @@ body {
   background-color: #F8F6F0;
   color: #1A1A1A;
 }
+
+/* Al imprimir, el navegador descarta los fondos salvo que se le exija lo
+   contrario: sin esto los recuadros verdes se pierden y el texto blanco que va
+   encima queda invisible sobre el papel. */
+@media print {
+  html,
+  body {
+    background: #FFFFFF;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Evita que una fila de la tabla o un bloque del pie se parta entre paginas. */
+  tr,
+  thead {
+    break-inside: avoid;
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
