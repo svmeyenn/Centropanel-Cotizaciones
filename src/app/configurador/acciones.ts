@@ -136,15 +136,27 @@ export async function guardarPanel(
   });
 
   if (existeId) {
-    const { data: misma } = await supabase.rpc("panel_misma_config", {
-      p_id: existeId,
-      p_eps: c.id_eps,
-      p_placa_a: c.id_placa_a,
-      p_placa_b: b,
-    });
+    const [{ data: misma }, { data: prod }] = await Promise.all([
+      supabase.rpc("panel_misma_config", {
+        p_id: existeId,
+        p_eps: c.id_eps,
+        p_placa_a: c.id_placa_a,
+        p_placa_b: b,
+      }),
+      supabase
+        .from("v_catalogo_venta")
+        .select("descripcion")
+        .eq("id", existeId)
+        .single(),
+    ]);
+    const descExistente = prod?.descripcion ?? null;
+    // "misma" contempla las caras invertidas: un panel APA/EPS/Smart es el
+    // mismo producto que Smart/EPS/APA, solo cambia cual se llamo cara A.
     return {
       aviso: misma
-        ? "Este panel ya esta en el catalogo con esta misma configuracion, asi que no hay nada que agregar."
+        ? `Este panel ya esta en el catalogo${
+            descExistente ? ` como "${descExistente}"` : ""
+          }. Si lo armo con las caras al reves, es el mismo producto: no hay nada que agregar.`
         : "Ya existe un panel con este mismo nombre pero hecho con otras materias primas. No se guardo nada: para cambiarlo use Catalogo de productos.",
       id: Number(existeId),
     };
@@ -199,7 +211,17 @@ export async function guardarPanel(
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) {
+    // Carrera entre la comprobacion de arriba y el insert (dos pestanas, dos
+    // usuarios). El indice unico de la base es la ultima linea de defensa.
+    if (error.code === "23505") {
+      return {
+        aviso:
+          "Ese panel acaba de quedar en el catalogo (quiza desde otra pantalla). No se creo un duplicado.",
+      };
+    }
+    return { error: error.message };
+  }
 
   revalidatePath("/productos");
   revalidatePath("/configurador");
