@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
+import BarraNavegacion from "@/components/BarraNavegacion";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { pesos, fecha as fmtFecha } from "@/lib/formato";
@@ -65,20 +66,14 @@ export default async function Pagina({
               </Link>
             )}
           </form>
-          <div className="flex gap-2">
+          <BarraNavegacion>
             <Link
               href="/cotizaciones/nueva"
               className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded"
             >
               Nueva cotizacion
             </Link>
-            <Link
-              href="/"
-              className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
-            >
-              Menu
-            </Link>
-          </div>
+          </BarraNavegacion>
         </div>
 
         {error && (

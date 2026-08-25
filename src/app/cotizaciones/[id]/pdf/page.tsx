@@ -77,7 +77,7 @@ export default async function Pagina({
 
   return (
     <div className="bg-white min-h-screen">
-      <BotonImprimir />
+      <BotonImprimir idCotizacion={id} />
 
       <div className="mx-auto bg-white text-[#1A1A1A] p-10 max-w-[820px] print:p-0 print:max-w-none">
         {/* ---- cabecera: marca a la izquierda, folio en el bloque verde ---- */}

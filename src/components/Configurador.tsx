@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { pesos, porcentaje } from "@/lib/formato";
+import BarraNavegacion from "@/components/BarraNavegacion";
 import {
   calcularPanel,
   guardarPanel,
@@ -105,20 +106,14 @@ export default function Configurador({
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-4">
-      <div className="flex justify-end gap-2">
+      <BarraNavegacion>
         <Link
           href="/productos"
-          className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
+          className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded hover:bg-white"
         >
           Catalogo
         </Link>
-        <Link
-          href="/"
-          className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
-        >
-          Menu
-        </Link>
-      </div>
+      </BarraNavegacion>
 
       {/* composicion */}
       <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
@@ -245,6 +240,48 @@ export default function Configurador({
                 />
               )}
             </div>
+
+            {/* Resumen de como se llego al costo: EPS + caras + adhesivo. */}
+            {res.costeo && res.costeo.length > 0 && (
+              <details className="border border-gray-200 rounded" open>
+                <summary className="cursor-pointer bg-gray-50 px-3 py-2 text-xs font-semibold text-dorado-osc">
+                  COMO SE CALCULA ESTE COSTO
+                </summary>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {res.costeo.map((l) => (
+                      <tr key={l.concepto} className="border-t border-gray-100">
+                        <td className="px-3 py-1.5 w-32 text-gray-700">
+                          {l.concepto}
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-500 text-xs">
+                          {l.detalle}
+                        </td>
+                        <td className="px-3 py-1.5 text-right w-28">
+                          {pesos(l.monto)}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 border-gray-300 font-bold">
+                      <td className="px-3 py-1.5" colSpan={2}>
+                        COSTO TOTAL
+                      </td>
+                      <td className="px-3 py-1.5 text-right">{pesos(res.costo)}</td>
+                    </tr>
+                    <tr className="border-t border-gray-100 text-gray-600">
+                      <td className="px-3 py-1.5" colSpan={2}>
+                        Precio = costo / (1 - margen), con margen{" "}
+                        {res.margen != null ? porcentaje(res.margen * 100) : "--"} %
+                        sobre el precio
+                      </td>
+                      <td className="px-3 py-1.5 text-right font-bold text-verde">
+                        {pesos(res.precio)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </details>
+            )}
 
             {esAdmin && (
               <div className="grid md:grid-cols-2 gap-3 pt-2 border-t border-gray-100">

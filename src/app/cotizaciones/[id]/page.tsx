@@ -3,7 +3,9 @@ import Cabecera from "@/components/Cabecera";
 import EditorCotizacion from "@/components/EditorCotizacion";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { leerParametros, pNum } from "@/lib/parametros";
+import { leerParametros, pNum, pTxt } from "@/lib/parametros";
+import EnvioCotizacion from "@/components/EnvioCotizacion";
+import { sumarDias } from "@/lib/formato";
 
 // Ver / modificar una cotizacion existente. Abre en solo lectura (equivalente
 // al modo Visualizar de Access) y recien al pulsar Modificar se habilita.
@@ -27,7 +29,13 @@ export default async function Pagina({
     { data: productos },
     parametros,
   ] = await Promise.all([
-    supabase.from("cotizaciones").select("*").eq("id", id).single(),
+    supabase
+      .from("cotizaciones")
+      .select(
+        "*, clientes(razon_social, contacto, email, telefono), vendedores(nombre, cargo, email, telefono)"
+      )
+      .eq("id", id)
+      .single(),
     supabase
       .from("cotizacion_detalle")
       .select("*")
@@ -44,6 +52,19 @@ export default async function Pagina({
   ]);
 
   if (!cot) notFound();
+
+  const supabaseTot = await createClient();
+  const { data: tot } = await supabaseTot
+    .from("v_cotizacion_totales")
+    .select("total")
+    .eq("id", id)
+    .single();
+
+  type Rel = Record<string, string | null>;
+  const uno = (x: unknown): Rel | null =>
+    Array.isArray(x) ? ((x[0] as Rel) ?? null) : ((x as Rel) ?? null);
+  const cli = uno(cot.clientes);
+  const ven = uno(cot.vendedores);
 
   return (
     <div className="min-h-screen">
@@ -82,6 +103,32 @@ export default async function Pagina({
           })),
         }}
       />
+
+      <div className="max-w-5xl mx-auto px-6 pb-6">
+        <EnvioCotizacion
+          datos={{
+            id,
+            num: cot.num_cotizacion ?? "",
+            total: Number(tot?.total ?? 0),
+            vence: sumarDias(
+              (cot.fecha as string).slice(0, 10),
+              cot.validez_dias ?? 7
+            ),
+            cliente: cli?.razon_social ?? "",
+            contacto: cli?.contacto ?? null,
+            emailCliente: cli?.email ?? null,
+            telefonoCliente: cli?.telefono ?? null,
+            vendedor: ven?.nombre ?? "",
+            cargoVendedor: ven?.cargo ?? null,
+            emailVendedor: ven?.email ?? null,
+            telefonoVendedor: ven?.telefono ?? null,
+            asunto: pTxt(parametros, "AsuntoEmail", "Cotizacion {NUM}"),
+            cuerpo: pTxt(parametros, "CuerpoEmail", ""),
+            mensajeWhatsApp: pTxt(parametros, "MensajeWhatsApp", ""),
+            estado: cot.estado,
+          }}
+        />
+      </div>
     </div>
   );
 }

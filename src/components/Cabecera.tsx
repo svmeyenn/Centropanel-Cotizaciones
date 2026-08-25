@@ -1,3 +1,4 @@
+import Link from "next/link";
 import LOGO from "@/lib/logo";
 
 // Banda verde con logo y titulo/subtitulo. Replica el encabezado canonico que
@@ -10,20 +11,37 @@ import LOGO from "@/lib/logo";
 export default function Cabecera({
   titulo,
   subtitulo,
+  enlazarLogo = true,
 }: {
   titulo: string;
   subtitulo?: string;
+  // El login no tiene a donde volver: ahi el logo va sin enlace.
+  enlazarLogo?: boolean;
 }) {
+  const logo = (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={LOGO}
+      alt="Centro Panel"
+      width={64}
+      height={46}
+      className="shrink-0 h-[46px] w-auto"
+    />
+  );
+
   return (
     <div className="bg-verde px-6 py-4 flex items-center gap-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={LOGO}
-        alt="Centro Panel"
-        width={64}
-        height={46}
-        className="shrink-0 h-[46px] w-auto"
-      />
+      {enlazarLogo ? (
+        <Link
+          href="/"
+          title="Volver al menu principal"
+          className="shrink-0 rounded hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-dorado"
+        >
+          {logo}
+        </Link>
+      ) : (
+        logo
+      )}
       <div>
         <h1 className="text-white text-xl font-bold leading-tight">{titulo}</h1>
         {subtitulo && (

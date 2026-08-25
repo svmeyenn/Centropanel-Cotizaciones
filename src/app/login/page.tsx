@@ -38,6 +38,7 @@ export default function LoginPage() {
         <Cabecera
           titulo="COTIZADOR SIP"
           subtitulo="Ingrese con su correo y contrasena"
+          enlazarLogo={false}
         />
         <form onSubmit={entrar} className="p-6 space-y-4">
           <div>

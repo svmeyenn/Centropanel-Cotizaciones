@@ -10,6 +10,12 @@ export interface Combinacion {
   id_placa_b: number | null;
 }
 
+export interface LineaCosteo {
+  concepto: string;
+  detalle: string;
+  monto: number;
+}
+
 export interface ResultadoPanel {
   descripcion: string | null;
   espesor_total: number | null;
@@ -19,6 +25,9 @@ export interface ResultadoPanel {
   existe_id: number | null;
   misma_config: boolean;
   descripcion_existente: string | null;
+  // Desglose de como se llego al costo, equivalente a CfgDesglose en Access.
+  // Solo se arma para el administrador: detalla el costo de cada insumo.
+  costeo: LineaCosteo[] | null;
 }
 
 // Calcula el panel a partir de la combinacion elegida. Todo el costeo se
@@ -97,6 +106,55 @@ export async function calcularPanel(
     descExistente = rProd.data?.descripcion ?? null;
   }
 
+  // Desglose: EPS + cara A + cara B + adhesivo prorrateado. El balde rinde 30
+  // paneles de dos caras o 60 de una, segun los parametros del sistema.
+  let costeo: LineaCosteo[] | null = null;
+  if (esAdmin) {
+    const ids = [c.id_eps, c.id_placa_a, b].filter(Boolean) as number[];
+    const [{ data: insumos }, { data: adhesivoRaw }, { data: paramsAdh }] =
+      await Promise.all([
+        supabase
+          .from("materias_primas")
+          .select("id, nombre, costo, espesor_nominal")
+          .in("id", ids),
+        supabase.rpc("costo_adhesivo", { p_dos_caras: b != null }),
+        supabase
+          .from("parametros")
+          .select("clave, valor_num")
+          .in("clave", ["AdhesivoRend1Cara", "AdhesivoRend2Caras"]),
+      ]);
+
+    const porId = new Map(
+      (insumos ?? []).map((m) => [Number(m.id), m as { nombre: string; costo: number }])
+    );
+    const rend =
+      paramsAdh?.find((x) =>
+        b != null ? x.clave === "AdhesivoRend2Caras" : x.clave === "AdhesivoRend1Cara"
+      )?.valor_num ?? 0;
+
+    const linea = (rotulo: string, id: number | null): LineaCosteo | null => {
+      if (!id) return null;
+      const m = porId.get(id);
+      if (!m) return null;
+      return { concepto: rotulo, detalle: m.nombre, monto: Number(m.costo) };
+    };
+
+    costeo = [
+      linea("Plancha EPS", c.id_eps),
+      linea("Placa cara A", c.id_placa_a),
+      b
+        ? linea("Placa cara B", b)
+        : { concepto: "Placa cara B", detalle: "sin placa (panel de una cara)", monto: 0 },
+      {
+        concepto: "Adhesivo",
+        detalle: `prorrateado: el balde rinde ${rend} paneles de ${
+          b != null ? "dos caras" : "una cara"
+        }`,
+        monto: Number(adhesivoRaw ?? 0),
+      },
+    ].filter(Boolean) as LineaCosteo[];
+  }
+
   return {
     descripcion: rDesc.data ?? null,
     espesor_total: rEspesor.data ? Number(rEspesor.data) : null,
@@ -108,6 +166,7 @@ export async function calcularPanel(
     existe_id: existeId,
     misma_config: mismaConfig,
     descripcion_existente: descExistente,
+    costeo,
   };
 }
 

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import BarraNavegacion from "@/components/BarraNavegacion";
 import { pesos, unidades as fmtUnid, sumarDias, fecha as fmtFecha } from "@/lib/formato";
 import {
   crearCotizacion,
@@ -184,14 +185,10 @@ export default function EditorCotizacion(p: Props) {
               Ver PDF
             </Link>
           )}
-          <Link
-            href="/cotizaciones"
-            className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
-          >
-            Volver
-          </Link>
         </div>
       </div>
+
+      <BarraNavegacion volverA="/cotizaciones" />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">

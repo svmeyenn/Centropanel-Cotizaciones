@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
+import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorParametros from "@/components/GestorParametros";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
@@ -23,14 +23,7 @@ export default async function Pagina() {
         subtitulo="Margen, IVA, rendimiento del adhesivo y datos de la empresa"
       />
       <div className="max-w-4xl mx-auto p-6 space-y-4">
-        <div className="flex justify-end">
-          <Link
-            href="/"
-            className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
-          >
-            Menu
-          </Link>
-        </div>
+        <BarraNavegacion />
         <GestorParametros parametros={parametros ?? []} />
       </div>
     </div>
