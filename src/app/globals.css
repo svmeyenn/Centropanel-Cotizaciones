@@ -33,6 +33,6 @@ body {
    donde ponerlos y desaparecen. El aire del documento lo da el padding del
    propio contenido, no la pagina. */
 @page {
-  size: A4 portrait;
+  size: letter portrait;
   margin: 0;
 }
