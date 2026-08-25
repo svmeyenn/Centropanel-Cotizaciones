@@ -247,7 +247,7 @@ export default function Configurador({
                 <summary className="cursor-pointer bg-gray-50 px-3 py-2 text-xs font-semibold text-dorado-osc">
                   COMO SE CALCULA ESTE COSTO
                 </summary>
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
                   <tbody>
                     {res.costeo.map((l) => (
                       <tr key={l.concepto} className="border-t border-gray-100">

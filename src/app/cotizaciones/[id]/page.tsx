@@ -27,6 +27,7 @@ export default async function Pagina({
     { data: clientes },
     { data: formasPago },
     { data: productos },
+    { data: materias },
     parametros,
   ] = await Promise.all([
     supabase
@@ -48,6 +49,12 @@ export default async function Pagina({
       .select("id, descripcion, tipo, precio_venta")
       .eq("activo", true)
       .order("descripcion"),
+    // Insumos del panel emergente: la vista de venta no expone costos.
+    supabase
+      .from("v_materias_primas_venta")
+      .select("id, nombre, tipo, etiqueta, espesor_nominal")
+      .eq("activo", true)
+      .order("nombre"),
     leerParametros(),
   ]);
 
@@ -80,6 +87,8 @@ export default async function Pagina({
         clientes={clientes ?? []}
         formasPago={formasPago ?? []}
         productos={productos ?? []}
+        materias={materias ?? []}
+        puedeCrearPanel={v.puede_crear || v.rol === "Administrador"}
         iva={pNum(parametros, "IVA", 0.19)}
         puedeEditar={v.puede_editar || v.rol === "Administrador"}
         inicial={{
@@ -126,6 +135,7 @@ export default async function Pagina({
             cuerpo: pTxt(parametros, "CuerpoEmail", ""),
             mensajeWhatsApp: pTxt(parametros, "MensajeWhatsApp", ""),
             estado: cot.estado,
+            token: cot.token_publico as string,
           }}
         />
       </div>

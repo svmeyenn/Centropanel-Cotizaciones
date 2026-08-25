@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { pesos, fecha as fmtFecha, primerNombre } from "@/lib/formato";
 import { cambiarEstado } from "@/app/cotizaciones/acciones";
 
@@ -21,13 +21,17 @@ export interface DatosEnvio {
   cuerpo: string;
   mensajeWhatsApp: string;
   estado: string;
+  // Token del enlace publico: con el, el cliente abre y descarga la cotizacion
+  // sin cuenta. Es lo que reemplaza al adjunto, que los enlaces no soportan.
+  token: string;
 }
 
 // Reemplaza los marcadores de las plantillas guardadas en parametros. Son los
 // mismos que usaba modCotizacion.bas en Access.
-function aplicar(plantilla: string, d: DatosEnvio): string {
+function aplicar(plantilla: string, d: DatosEnvio, enlace: string): string {
   const nombre = primerNombre(d.contacto) || primerNombre(d.cliente);
   return plantilla
+    .replace(/\{ENLACE\}/g, enlace)
     .replace(/\{NUM\}/g, d.num)
     .replace(/\{NOMBRE\}/g, nombre)
     .replace(/\{CLIENTE\}/g, d.cliente)
@@ -59,9 +63,26 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
   const [pendiente, empezar] = useTransition();
   const [estado, setEstado] = useState(datos.estado);
 
-  const asunto = aplicar(datos.asunto, datos);
-  const cuerpo = aplicar(datos.cuerpo, datos);
-  const mensajeWA = aplicar(datos.mensajeWhatsApp, datos);
+  // El origen solo se conoce en el navegador; en el primer render queda vacio
+  // para no provocar un desajuste de hidratacion.
+  const [origen, setOrigen] = useState("");
+  useEffect(() => setOrigen(window.location.origin), []);
+  const enlace = origen ? `${origen}/c/${datos.token}` : "";
+
+  // Si la plantilla no trae {ENLACE}, el enlace se agrega al final: asi el
+  // cliente siempre recibe como llegar al documento, sin tener que editar las
+  // plantillas guardadas en parametros.
+  function conEnlace(texto: string, plantilla: string): string {
+    if (plantilla.includes("{ENLACE}") || !enlace) return texto;
+    return `${texto}\n\nVer y descargar la cotizacion:\n${enlace}`;
+  }
+
+  const asunto = aplicar(datos.asunto, datos, enlace);
+  const cuerpo = conEnlace(aplicar(datos.cuerpo, datos, enlace), datos.cuerpo);
+  const mensajeWA = conEnlace(
+    aplicar(datos.mensajeWhatsApp, datos, enlace),
+    datos.mensajeWhatsApp
+  );
   const fono = normalizarFono(datos.telefonoCliente);
 
   // Al enviar, la cotizacion pasa a Enviada. Aceptada y Rechazada no se pisan:
@@ -109,22 +130,43 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
 
       {abierto && (
         <div className="px-4 pb-4 space-y-4 border-t border-gray-100 pt-3">
-          <div className="bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded p-3">
-            <strong>Adjunte el PDF a mano.</strong> Ni el correo ni WhatsApp
-            permiten adjuntar un archivo desde un enlace, asi que descargue el PDF
-            con el boton de abajo y adjuntelo en la ventana que se abre. El texto
-            ya va escrito.
+          <div className="bg-blue-50 border border-blue-200 text-blue-900 text-xs rounded p-3 space-y-1">
+            <div>
+              El mensaje lleva un <strong>enlace a la cotizacion</strong>: el
+              cliente la abre y la descarga en PDF sin necesidad de cuenta.
+            </div>
+            <div className="text-blue-800/80">
+              Va por enlace y no como archivo adjunto porque ni el correo ni
+              WhatsApp permiten adjuntar desde un boton web. Si necesita mandarlo
+              como archivo, use &quot;Abrir el PDF&quot;, guardelo y adjuntelo a
+              mano en la ventana que se abre.
+            </div>
           </div>
 
+          {enlace && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-dorado-osc font-semibold">Enlace:</span>
+              <code className="bg-gray-50 border border-gray-200 rounded px-2 py-1 break-all">
+                {enlace}
+              </code>
+              <button
+                onClick={() => copiar(enlace)}
+                className="text-verde underline"
+              >
+                copiar
+              </button>
+              <a
+                href={enlace}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-verde underline"
+              >
+                probar
+              </a>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2">
-            <a
-              href={`/cotizaciones/${datos.id}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border border-verde text-verde text-sm font-semibold px-3 py-1.5 rounded"
-            >
-              1. Abrir PDF para guardarlo
-            </a>
             <a
               href={mailto}
               onClick={marcarEnviada}
@@ -134,7 +176,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
                   : "bg-gray-200 text-gray-400 pointer-events-none"
               }`}
             >
-              2. Enviar por correo
+              Enviar por correo
             </a>
             <a
               href={wa}
@@ -143,7 +185,15 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               onClick={marcarEnviada}
               className="bg-[#25D366] text-white text-sm font-semibold px-3 py-1.5 rounded"
             >
-              2. Enviar por WhatsApp
+              Enviar por WhatsApp
+            </a>
+            <a
+              href={`/cotizaciones/${datos.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border border-verde text-verde text-sm font-semibold px-3 py-1.5 rounded"
+            >
+              Abrir el PDF
             </a>
             {pendiente && (
               <span className="text-xs text-gray-500 self-center">

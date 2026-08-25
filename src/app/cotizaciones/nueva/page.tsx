@@ -12,8 +12,13 @@ export default async function Pagina() {
   const v = await requerirVendedor();
   const supabase = await createClient();
 
-  const [{ data: clientes }, { data: formasPago }, { data: productos }, params] =
-    await Promise.all([
+  const [
+    { data: clientes },
+    { data: formasPago },
+    { data: productos },
+    { data: materias },
+    params,
+  ] = await Promise.all([
       supabase
         .from("clientes")
         .select("*")
@@ -30,6 +35,12 @@ export default async function Pagina() {
         .select("id, descripcion, tipo, precio_venta")
         .eq("activo", true)
         .order("descripcion"),
+      // Insumos del panel emergente: la vista de venta no expone costos.
+      supabase
+        .from("v_materias_primas_venta")
+        .select("id, nombre, tipo, etiqueta, espesor_nominal")
+        .eq("activo", true)
+        .order("nombre"),
       leerParametros(),
     ]);
 
@@ -44,6 +55,8 @@ export default async function Pagina() {
         clientes={clientes ?? []}
         formasPago={formasPago ?? []}
         productos={productos ?? []}
+        materias={materias ?? []}
+        puedeCrearPanel={v.puede_crear || v.rol === "Administrador"}
         iva={pNum(params, "IVA", 0.19)}
         puedeEditar={v.puede_crear || v.rol === "Administrador"}
         inicial={{

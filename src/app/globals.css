@@ -28,7 +28,11 @@ body {
   }
 }
 
+/* Margen 0 a proposito: el navegador solo dibuja su encabezado y su pie (la
+   fecha arriba y la URL abajo) dentro del margen de pagina. Sin margen no tiene
+   donde ponerlos y desaparecen. El aire del documento lo da el padding del
+   propio contenido, no la pagina. */
 @page {
   size: A4 portrait;
-  margin: 12mm;
+  margin: 0;
 }

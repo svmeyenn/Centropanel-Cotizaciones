@@ -167,7 +167,7 @@ export default function GestorClientes({
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-verde text-white">
               <tr>
                 <th className="text-left px-3 py-2">Razon social</th>

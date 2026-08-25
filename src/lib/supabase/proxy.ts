@@ -35,11 +35,15 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const esLogin = request.nextUrl.pathname.startsWith("/login");
+  // /c/<token> es la cotizacion que se le manda al cliente: se abre sin cuenta.
+  // La proteccion no es la sesion sino el token (uuid v4) y la funcion
+  // cotizacion_publica, que solo devuelve lo que va impreso.
+  const esPublica = request.nextUrl.pathname.startsWith("/c/");
   const esEstatico =
     request.nextUrl.pathname.startsWith("/_next") ||
     request.nextUrl.pathname.includes(".");
 
-  if (!user && !esLogin && !esEstatico) {
+  if (!user && !esLogin && !esPublica && !esEstatico) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

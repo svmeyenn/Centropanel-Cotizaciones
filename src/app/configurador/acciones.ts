@@ -30,6 +30,32 @@ export interface ResultadoPanel {
   costeo: LineaCosteo[] | null;
 }
 
+// Devuelve un producto listo para agregarlo a una cotizacion. Lee
+// v_catalogo_venta, asi que no expone costos y sirve tambien a perfil Vendedor.
+// Lo usa el panel emergente del cotizador para incorporar al tiro el panel
+// recien creado sin recargar la pagina (y perder la cotizacion en curso).
+export async function productoParaCotizar(id: number): Promise<{
+  id: number;
+  descripcion: string;
+  tipo: string;
+  precio_venta: number;
+} | null> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("v_catalogo_venta")
+    .select("id, descripcion, tipo, precio_venta")
+    .eq("id", id)
+    .single();
+  if (!data) return null;
+  return {
+    id: Number(data.id),
+    descripcion: data.descripcion as string,
+    tipo: data.tipo as string,
+    precio_venta: Number(data.precio_venta),
+  };
+}
+
 // Calcula el panel a partir de la combinacion elegida. Todo el costeo se
 // resuelve en Postgres (costo_panel, precio_desde_costo, descripcion_panel):
 // no se reimplementa aqui para que la regla valga igual desde cualquier cliente.

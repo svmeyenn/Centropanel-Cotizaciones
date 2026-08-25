@@ -114,7 +114,7 @@ export default function GestorFormasPago({
       )}
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead className="bg-verde text-white">
             <tr>
               <th className="text-left px-3 py-2 w-20">Orden</th>

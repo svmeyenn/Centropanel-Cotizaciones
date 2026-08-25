@@ -3,6 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
+import ModalNuevoPanel from "@/components/ModalNuevoPanel";
+import type { MateriaVenta } from "@/components/Configurador";
 import { pesos, unidades as fmtUnid, sumarDias, fecha as fmtFecha } from "@/lib/formato";
 import {
   crearCotizacion,
@@ -27,6 +29,9 @@ interface Props {
   clientes: Cliente[];
   formasPago: FormaPago[];
   productos: ProductoVenta[];
+  // Insumos para el panel emergente que crea un panel sin salir del cotizador.
+  materias: MateriaVenta[];
+  puedeCrearPanel: boolean;
   iva: number;
   inicial: DatosCotizacion;
   numCotizacion?: string | null;
@@ -51,11 +56,22 @@ export default function EditorCotizacion(p: Props) {
   const [valorUnit, setValorUnit] = useState<string>("");
   const [buscaProd, setBuscaProd] = useState("");
 
+  // Paneles creados desde el panel emergente durante esta sesion. Se guardan
+  // aparte y no se recarga la pagina: recargar descartaria la cotizacion en
+  // curso, que es justo lo que hay que evitar.
+  const [productosExtra, setProductosExtra] = useState<ProductoVenta[]>([]);
+  const [modalPanel, setModalPanel] = useState(false);
+
+  const catalogo = useMemo(() => {
+    const vistos = new Set(p.productos.map((x) => x.id));
+    return [...p.productos, ...productosExtra.filter((x) => !vistos.has(x.id))];
+  }, [p.productos, productosExtra]);
+
   const productosFiltrados = useMemo(() => {
     const q = buscaProd.trim().toLowerCase();
-    if (!q) return p.productos;
-    return p.productos.filter((x) => x.descripcion.toLowerCase().includes(q));
-  }, [buscaProd, p.productos]);
+    if (!q) return catalogo;
+    return catalogo.filter((x) => x.descripcion.toLowerCase().includes(q));
+  }, [buscaProd, catalogo]);
 
   // --- totales, con la misma formula que la vista v_cotizacion_totales ---
   const subtotal = useMemo(
@@ -96,7 +112,7 @@ export default function EditorCotizacion(p: Props) {
       setError("Elija un producto e indique las unidades.");
       return;
     }
-    const prod = p.productos.find((x) => x.id === idProd);
+    const prod = catalogo.find((x) => x.id === idProd);
     if (!prod) return;
     // Valor unitario editable: para flete y mano de obra el precio se pacta en
     // cada cotizacion; si se deja vacio se usa el del catalogo.
@@ -291,7 +307,18 @@ export default function EditorCotizacion(p: Props) {
       {/* agregar item */}
       {!soloLectura && (
         <div className="bg-crema border border-dorado rounded p-4 space-y-2">
-          <div className="text-sm font-semibold text-verde">Agregar producto</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm font-semibold text-verde">Agregar producto</div>
+            {p.puedeCrearPanel && (
+              <button
+                onClick={() => setModalPanel(true)}
+                className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded hover:bg-white"
+                title="Crear un panel que no esta en el catalogo sin salir de esta cotizacion"
+              >
+                + Panel nuevo
+              </button>
+            )}
+          </div>
           <input
             className={inputCls}
             placeholder="Buscar: panel, flete, mano de obra..."
@@ -349,7 +376,7 @@ export default function EditorCotizacion(p: Props) {
           ITEMS DE LA COTIZACION
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 <th className="text-left px-3 py-2 w-10">N</th>
@@ -457,6 +484,23 @@ export default function EditorCotizacion(p: Props) {
           />
         </label>
       </div>
+
+      {modalPanel && (
+        <ModalNuevoPanel
+          materias={p.materias}
+          onCerrar={() => setModalPanel(false)}
+          onCreado={(prod) => {
+            // Queda disponible en la lista y ya seleccionado con su precio, de
+            // modo que solo falta indicar las unidades y pulsar Agregar.
+            setProductosExtra((x) => [...x, prod]);
+            setProdSel(String(prod.id));
+            setValorUnit(String(prod.precio_venta));
+            setBuscaProd("");
+            setModalPanel(false);
+            setAviso(`Panel "${prod.descripcion}" listo para agregar.`);
+          }}
+        />
+      )}
     </div>
   );
 }
