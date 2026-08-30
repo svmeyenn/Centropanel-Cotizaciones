@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { pesos, porcentaje } from "@/lib/formato";
+import { pesos, porcentaje, unidades } from "@/lib/formato";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import {
   calcularPanel,
@@ -199,7 +199,7 @@ export default function Configurador({
               </div>
               {res.espesor_total != null && (
                 <div className="text-xs text-gray-500">
-                  Espesor total: {res.espesor_total} mm
+                  Espesor total: {unidades(res.espesor_total)} mm
                 </div>
               )}
             </div>

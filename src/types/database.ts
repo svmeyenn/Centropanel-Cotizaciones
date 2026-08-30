@@ -58,7 +58,7 @@ export interface Producto {
   id_eps: number | null;
   id_placa_a: number | null;
   id_placa_b: number | null;
-  espesor_total: number | null;
+  espesor_total: number | string | null;
   costo_unitario: number;
   precio_venta: number;
   margen_aplicado: number | null;

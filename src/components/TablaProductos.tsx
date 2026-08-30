@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { pesos, porcentaje } from "@/lib/formato";
+import { pesos, porcentaje, unidades } from "@/lib/formato";
 import {
   actualizarProducto,
   volverAPrecioAutomatico,
   cambiarActivoProducto,
+  crearProductoServicio,
   type DatosProducto,
+  type DatosProductoNuevo,
 } from "@/app/productos/acciones";
 
 interface ProductoFila {
@@ -14,7 +16,7 @@ interface ProductoFila {
   descripcion: string;
   tipo: string;
   activo: boolean;
-  espesor_total?: number | null;
+  espesor_total?: number | string | null;
   costo_unitario?: number | null;
   precio_venta: number;
   margen_aplicado?: number | null;
@@ -32,6 +34,7 @@ export default function TablaProductos({
   const [soloActivos, setSoloActivos] = useState(true);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosProducto | null>(null);
+  const [nuevo, setNuevo] = useState<DatosProductoNuevo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -70,6 +73,16 @@ export default function TablaProductos({
     });
   }
 
+  function crear() {
+    if (!nuevo) return;
+    setError(null);
+    empezar(async () => {
+      const r = await crearProductoServicio(nuevo);
+      if (r?.error) setError(r.error);
+      else setNuevo(null);
+    });
+  }
+
   const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
 
   return (
@@ -92,11 +105,105 @@ export default function TablaProductos({
         <span className="text-sm text-gray-500 ml-auto">
           {filtrados.length} de {productos.length}
         </span>
+        {esAdmin && (
+          <button
+            onClick={() => {
+              setEditando(null);
+              setForm(null);
+              setError(null);
+              setNuevo({ descripcion: "", precio_venta: 0, costo_unitario: null });
+            }}
+            className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded"
+            title="Fletes, mano de obra y otros servicios. Los paneles se crean en el configurador."
+          >
+            + Nuevo producto
+          </button>
+        )}
       </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
           {error}
+        </div>
+      )}
+
+      {nuevo && (
+        <div className="bg-white border border-verde rounded p-4 space-y-3">
+          <div className="text-sm font-semibold text-verde">Nuevo producto</div>
+          <p className="text-xs text-gray-500">
+            Para fletes, mano de obra y otros servicios. Un panel SIP se crea en
+            el configurador, que arma su descripcion y su costo desde la
+            composicion.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-3">
+            <label className="text-sm md:col-span-3">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Descripcion
+              </span>
+              <input
+                className={input}
+                autoFocus
+                value={nuevo.descripcion}
+                onChange={(e) => setNuevo({ ...nuevo, descripcion: e.target.value })}
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Precio de venta
+              </span>
+              <input
+                type="number"
+                className={input}
+                value={nuevo.precio_venta}
+                onChange={(e) =>
+                  setNuevo({ ...nuevo, precio_venta: Number(e.target.value) || 0 })
+                }
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Costo (opcional)
+              </span>
+              <input
+                type="number"
+                className={input}
+                value={nuevo.costo_unitario ?? ""}
+                onChange={(e) =>
+                  setNuevo({
+                    ...nuevo,
+                    costo_unitario: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+              />
+            </label>
+            {nuevo.precio_venta > 0 && nuevo.costo_unitario != null && (
+              <div className="text-xs text-gray-500 md:col-span-3">
+                Margen resultante:{" "}
+                {porcentaje(
+                  ((nuevo.precio_venta - nuevo.costo_unitario) / nuevo.precio_venta) *
+                    100
+                )}{" "}
+                %
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={crear}
+              disabled={pendiente || !nuevo.descripcion.trim()}
+              className="bg-verde text-white text-sm font-semibold px-4 py-1.5 rounded disabled:opacity-50"
+            >
+              {pendiente ? "Grabando..." : "Grabar"}
+            </button>
+            <button
+              onClick={() => setNuevo(null)}
+              className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
 
@@ -217,17 +324,17 @@ export default function TablaProductos({
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs whitespace-nowrap">
             <thead className="bg-verde text-white">
               <tr>
-                <th className="text-left px-3 py-2">Descripcion</th>
-                <th className="text-left px-3 py-2 w-24">Tipo</th>
-                {esAdmin && <th className="text-right px-3 py-2 w-24">Espesor</th>}
-                {esAdmin && <th className="text-right px-3 py-2 w-28">Costo</th>}
-                <th className="text-right px-3 py-2 w-28">Precio</th>
-                {esAdmin && <th className="text-right px-3 py-2 w-24">Margen</th>}
-                <th className="text-left px-3 py-2 w-20">Estado</th>
-                {esAdmin && <th className="w-28" />}
+                <th className="text-left px-3 py-2 w-full">Descripcion</th>
+                <th className="text-left px-2 py-2">Tipo</th>
+                {esAdmin && <th className="text-right px-2 py-2">Espesor</th>}
+                {esAdmin && <th className="text-right px-2 py-2">Costo</th>}
+                <th className="text-right px-2 py-2">Precio</th>
+                {esAdmin && <th className="text-right px-2 py-2">Margen</th>}
+                <th className="text-left px-2 py-2">Estado</th>
+                {esAdmin && <th className="px-2" />}
               </tr>
             </thead>
             <tbody>
@@ -254,28 +361,28 @@ export default function TablaProductos({
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-gray-600">{p.tipo}</td>
+                  <td className="px-2 py-2 text-gray-600">{p.tipo}</td>
                   {esAdmin && (
-                    <td className="px-3 py-2 text-right text-gray-600">
-                      {p.espesor_total ? `${p.espesor_total} mm` : ""}
+                    <td className="px-2 py-2 text-right text-gray-600">
+                      {p.espesor_total ? `${unidades(p.espesor_total)} mm` : ""}
                     </td>
                   )}
                   {esAdmin && (
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-2 py-2 text-right">
                       {pesos(p.costo_unitario)}
                     </td>
                   )}
-                  <td className="px-3 py-2 text-right font-semibold">
+                  <td className="px-2 py-2 text-right font-semibold">
                     {pesos(p.precio_venta)}
                   </td>
                   {esAdmin && (
-                    <td className="px-3 py-2 text-right text-gray-600">
+                    <td className="px-2 py-2 text-right text-gray-600">
                       {p.margen_aplicado != null
                         ? `${porcentaje(p.margen_aplicado * 100)} %`
                         : ""}
                     </td>
                   )}
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     {p.activo ? (
                       <span className="text-green-700">Activo</span>
                     ) : (

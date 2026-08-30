@@ -18,7 +18,7 @@ export interface LineaCosteo {
 
 export interface ResultadoPanel {
   descripcion: string | null;
-  espesor_total: number | null;
+  espesor_total: number | string | null;
   costo: number | null; // null si el perfil no puede ver costos
   precio: number;
   margen: number | null;

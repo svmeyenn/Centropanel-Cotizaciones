@@ -32,7 +32,7 @@ export default async function Pagina() {
         titulo="Catalogo de productos"
         subtitulo="Paneles ya configurados y servicios, con su precio de venta"
       />
-      <div className="max-w-5xl mx-auto p-6 space-y-4">
+      <div className="max-w-7xl mx-auto p-6 space-y-4">
         <BarraNavegacion>
           <Link
             href="/configurador"

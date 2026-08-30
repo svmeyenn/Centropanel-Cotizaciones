@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { pesos } from "@/lib/formato";
+import { pesos, unidades } from "@/lib/formato";
 import {
   calcularPanel,
   guardarPanel,
@@ -212,7 +212,8 @@ export default function ModalNuevoPanel({
               </div>
               <div className="text-xs text-gray-600">
                 Precio de venta: <strong>{pesos(res.precio)}</strong>
-                {res.espesor_total != null && ` · ${res.espesor_total} mm`}
+                {res.espesor_total != null &&
+                  ` · ${unidades(res.espesor_total)} mm`}
               </div>
               {yaEsta && (
                 <div className="mt-2 text-xs text-blue-900 bg-blue-50 border border-blue-200 rounded p-2">

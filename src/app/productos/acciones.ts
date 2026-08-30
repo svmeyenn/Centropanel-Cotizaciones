@@ -117,3 +117,54 @@ export async function cambiarActivoProducto(id: number, activo: boolean) {
   revalidatePath("/productos");
   return { ok: true };
 }
+
+export interface DatosProductoNuevo {
+  descripcion: string;
+  precio_venta: number;
+  costo_unitario: number | null;
+}
+
+// Alta de productos que no son paneles (fletes, mano de obra, servicios). Los
+// paneles no pasan por aqui: su descripcion y su costo los arma la base desde
+// la composicion, y para eso esta el configurador.
+export async function crearProductoServicio(d: DatosProductoNuevo) {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador") {
+    return { error: "Solo el administrador puede editar el catalogo." };
+  }
+  const descripcion = d.descripcion.trim();
+  if (!descripcion) return { error: "Indique la descripcion." };
+  if (d.precio_venta < 0) return { error: "El precio no puede ser negativo." };
+
+  const supabase = await createClient();
+  const costo = d.costo_unitario ?? 0;
+  const { data, error } = await supabase
+    .from("productos")
+    .insert({
+      descripcion,
+      tipo: "Servicio",
+      precio_venta: d.precio_venta,
+      costo_unitario: costo,
+      margen_aplicado:
+        d.precio_venta > 0 ? (d.precio_venta - costo) / d.precio_venta : 0,
+      // Un servicio no se recalcula desde el margen objetivo: su precio es el
+      // que se escribe aqui.
+      precio_manual: true,
+      activo: true,
+    })
+    .select("id, descripcion")
+    .single();
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Ya existe otro producto con esa descripcion."
+          : error.message,
+    };
+  }
+
+  revalidatePath("/productos");
+  revalidatePath("/cotizaciones");
+  return { ok: true, producto: data };
+}
