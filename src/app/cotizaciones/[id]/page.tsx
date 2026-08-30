@@ -46,8 +46,9 @@ export default async function Pagina({
     supabase.from("formas_pago").select("*").eq("activo", true).order("orden"),
     supabase
       .from("v_catalogo_venta")
-      .select("id, descripcion, tipo, precio_venta")
+      .select("id, descripcion, tipo, familia, precio_venta")
       .eq("activo", true)
+      .order("familia")
       .order("descripcion"),
     // Insumos del panel emergente: la vista de venta no expone costos.
     supabase

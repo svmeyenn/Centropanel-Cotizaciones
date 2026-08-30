@@ -38,13 +38,14 @@ export async function productoParaCotizar(id: number): Promise<{
   id: number;
   descripcion: string;
   tipo: string;
+  familia: string | null;
   precio_venta: number;
 } | null> {
   await requerirVendedor();
   const supabase = await createClient();
   const { data } = await supabase
     .from("v_catalogo_venta")
-    .select("id, descripcion, tipo, precio_venta")
+    .select("id, descripcion, tipo, familia, precio_venta")
     .eq("id", id)
     .single();
   if (!data) return null;
@@ -52,6 +53,7 @@ export async function productoParaCotizar(id: number): Promise<{
     id: Number(data.id),
     descripcion: data.descripcion as string,
     tipo: data.tipo as string,
+    familia: (data.familia as string | null) ?? null,
     precio_venta: Number(data.precio_venta),
   };
 }
@@ -253,6 +255,7 @@ export async function guardarPanel(
     .insert({
       descripcion: rDesc.data,
       tipo: "Panel SIP",
+      familia: "Paneles SIP",
       id_eps: c.id_eps,
       id_placa_a: c.id_placa_a,
       id_placa_b: b,

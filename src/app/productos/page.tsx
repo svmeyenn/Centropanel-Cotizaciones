@@ -18,17 +18,27 @@ export default async function Pagina() {
     ? await supabase
         .from("productos")
         .select(
-          "id, descripcion, tipo, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo"
+          "id, descripcion, tipo, familia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo"
         )
-        .order("tipo")
+        .order("familia")
         .order("descripcion")
     : await supabase
         .from("v_catalogo_venta")
-        .select("id, descripcion, tipo, precio_venta, activo")
-        .order("tipo")
+        .select("id, descripcion, tipo, familia, precio_venta, activo")
+        .order("familia")
         .order("descripcion");
 
   const iva = pNum(await leerParametros(), "IVA", 0.19);
+
+  // Familias ya en uso, para sugerirlas al dar de alta y no acabar con
+  // "Tornillos" y "tornillo" como grupos distintos.
+  const familias = [
+    ...new Set(
+      (productos ?? [])
+        .map((p) => (p.familia as string | null) ?? "")
+        .filter(Boolean)
+    ),
+  ].sort();
 
   return (
     <div className="min-h-screen">
@@ -44,7 +54,7 @@ export default async function Pagina() {
           >
             Configurar panel
           </Link>
-          {esAdmin && <BotonNuevoProducto iva={iva} />}
+          {esAdmin && <BotonNuevoProducto iva={iva} familias={familias} />}
         </BarraNavegacion>
         <TablaProductos productos={productos ?? []} esAdmin={esAdmin} iva={iva} />
       </div>

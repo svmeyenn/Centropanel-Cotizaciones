@@ -27,6 +27,7 @@ export interface ProductoVenta {
   id: number;
   descripcion: string;
   tipo: string;
+  familia: string | null;
   precio_venta: number;
 }
 
@@ -89,6 +90,19 @@ export default function EditorCotizacion(p: Props) {
     if (!q) return catalogo;
     return catalogo.filter((x) => x.descripcion.toLowerCase().includes(q));
   }, [buscaProd, catalogo]);
+
+  // El desplegable va agrupado por familia: con un catalogo de decenas de
+  // tornillos y maderas, una lista plana obliga a leerla entera.
+  const porFamilia = useMemo(() => {
+    const g = new Map<string, ProductoVenta[]>();
+    for (const x of productosFiltrados) {
+      const f = x.familia ?? "Otros";
+      const lista = g.get(f);
+      if (lista) lista.push(x);
+      else g.set(f, [x]);
+    }
+    return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
+  }, [productosFiltrados]);
 
   // --- totales, con la misma formula que la vista v_cotizacion_totales ---
   const subtotal = useMemo(
@@ -365,10 +379,14 @@ export default function EditorCotizacion(p: Props) {
               }}
             >
               <option value="">-- producto --</option>
-              {productosFiltrados.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.descripcion}
-                </option>
+              {porFamilia.map(([familia, lista]) => (
+                <optgroup key={familia} label={familia}>
+                  {lista.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.descripcion}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             <label className="text-xs">

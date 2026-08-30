@@ -10,6 +10,7 @@ import {
 
 const VACIO: DatosProductoNuevo = {
   descripcion: "",
+  familia: "",
   precio_venta: 0,
   costo_unitario: null,
 };
@@ -18,7 +19,13 @@ const VACIO: DatosProductoNuevo = {
 // ventana emergente y no en la propia tabla para poder ofrecerse desde la barra
 // de navegacion, al lado de "Configurar panel", que es la otra forma de sumar
 // algo al catalogo.
-export default function BotonNuevoProducto({ iva }: { iva: number }) {
+export default function BotonNuevoProducto({
+  iva,
+  familias,
+}: {
+  iva: number;
+  familias: string[];
+}) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [form, setForm] = useState<DatosProductoNuevo>(VACIO);
@@ -103,6 +110,28 @@ export default function BotonNuevoProducto({ iva }: { iva: number }) {
                     setForm({ ...form, descripcion: e.target.value })
                   }
                 />
+              </label>
+
+              <label className="text-sm block">
+                <span className="block text-dorado-osc font-semibold mb-1">
+                  Familia
+                </span>
+                <input
+                  className={input}
+                  list="familias-producto"
+                  placeholder="Madera, Tornillos, Servicios..."
+                  value={form.familia}
+                  onChange={(e) => setForm({ ...form, familia: e.target.value })}
+                />
+                <datalist id="familias-producto">
+                  {familias.map((f) => (
+                    <option key={f} value={f} />
+                  ))}
+                </datalist>
+                <span className="text-xs text-gray-500">
+                  Agrupa el producto en el catalogo y en el cotizador. En blanco
+                  queda como Servicios.
+                </span>
               </label>
 
               <div className="grid md:grid-cols-2 gap-3">

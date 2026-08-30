@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { Fragment, useMemo, useState, useTransition } from "react";
 import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
 import {
   actualizarProducto,
@@ -13,6 +13,7 @@ interface ProductoFila {
   id: number;
   descripcion: string;
   tipo: string;
+  familia?: string | null;
   activo: boolean;
   espesor_total?: number | string | null;
   costo_unitario?: number | null;
@@ -42,9 +43,25 @@ export default function TablaProductos({
     return productos.filter(
       (p) =>
         (!soloActivos || p.activo) &&
-        (!q || p.descripcion.toLowerCase().includes(q))
+        (!q ||
+          p.descripcion.toLowerCase().includes(q) ||
+          (p.familia ?? "").toLowerCase().includes(q)),
     );
   }, [busca, soloActivos, productos]);
+
+  // El catalogo se lee por familia (Paneles SIP, Madera, Tornillos...): una
+  // lista plana de decenas de tornillos obliga a recorrerla entera para dar
+  // con lo que se busca.
+  const grupos = useMemo(() => {
+    const g = new Map<string, ProductoFila[]>();
+    for (const p of filtrados) {
+      const f = p.familia ?? "Otros";
+      const lista = g.get(f);
+      if (lista) lista.push(p);
+      else g.set(f, [p]);
+    }
+    return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
+  }, [filtrados]);
 
   const enEdicion = productos.find((p) => p.id === editando) ?? null;
 
@@ -104,7 +121,9 @@ export default function TablaProductos({
 
       {form && enEdicion && (
         <div className="bg-white border border-dorado rounded p-4 space-y-3">
-          <div className="text-sm font-semibold text-verde">Modificar producto</div>
+          <div className="text-sm font-semibold text-verde">
+            Modificar producto
+          </div>
 
           <div className="grid md:grid-cols-2 gap-3">
             <label className="text-sm md:col-span-2">
@@ -114,7 +133,9 @@ export default function TablaProductos({
               <input
                 className={input}
                 value={form.descripcion}
-                onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, descripcion: e.target.value })
+                }
               />
             </label>
             <label className="text-sm">
@@ -141,7 +162,7 @@ export default function TablaProductos({
                   {porcentaje(
                     ((form.precio_venta - Number(enEdicion.costo_unitario)) /
                       form.precio_venta) *
-                      100
+                      100,
                   )}{" "}
                   %
                 </span>
@@ -164,7 +185,9 @@ export default function TablaProductos({
                 <input
                   type="checkbox"
                   checked={form.activo}
-                  onChange={(e) => setForm({ ...form, activo: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, activo: e.target.checked })
+                  }
                 />
                 <span className="text-gray-700">Activo</span>
               </label>
@@ -172,9 +195,10 @@ export default function TablaProductos({
           </div>
 
           <p className="text-xs text-gray-500">
-            La composicion (EPS y placas) no se edita aqui: cambiarla convertiria
-            el panel en otro y dejaria las cotizaciones viejas apuntando a algo
-            distinto. Para un panel diferente use el configurador.
+            La composicion (EPS y placas) no se edita aqui: cambiarla
+            convertiria el panel en otro y dejaria las cotizaciones viejas
+            apuntando a algo distinto. Para un panel diferente use el
+            configurador.
           </p>
 
           <div className="flex flex-wrap gap-2">
@@ -223,7 +247,6 @@ export default function TablaProductos({
             <thead className="bg-verde text-white">
               <tr>
                 <th className="text-left px-3 py-2">Descripcion</th>
-                <th className="text-left px-3 py-2">Tipo</th>
                 {esAdmin && <th className="text-right px-3 py-2">Espesor</th>}
                 {esAdmin && <th className="text-right px-3 py-2">Costo</th>}
                 <th className="text-right px-3 py-2">Precio neto</th>
@@ -237,78 +260,97 @@ export default function TablaProductos({
               {filtrados.length === 0 && (
                 <tr>
                   <td
-                    colSpan={esAdmin ? 9 : 5}
+                    colSpan={esAdmin ? 8 : 4}
                     className="text-center text-gray-400 py-8"
                   >
                     Sin productos que coincidan.
                   </td>
                 </tr>
               )}
-              {filtrados.map((p) => (
-                <tr key={p.id} className="border-t border-gray-100 hover:bg-crema">
-                  <td className="px-3 py-2">
-                    {p.descripcion}
-                    {p.precio_manual && (
-                      <span
-                        className="ml-2 text-[10px] bg-dorado text-white px-1.5 py-0.5 rounded"
-                        title="Precio fijado a mano: no se recalcula con el margen"
-                      >
-                        precio manual
+              {grupos.map(([familia, lista]) => (
+                <Fragment key={familia}>
+                  <tr className="bg-crema border-t border-dorado">
+                    <td
+                      colSpan={esAdmin ? 8 : 4}
+                      className="px-3 py-1.5 text-[11px] font-semibold text-verde uppercase tracking-wide"
+                    >
+                      {familia}
+                      <span className="ml-2 font-normal normal-case text-gray-500">
+                        {lista.length}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-gray-600">{p.tipo}</td>
-                  {esAdmin && (
-                    <td className="px-3 py-2 text-right text-gray-600">
-                      {p.espesor_total ? `${unidades(p.espesor_total)} mm` : ""}
                     </td>
-                  )}
-                  {esAdmin && (
-                    <td className="px-3 py-2 text-right">
-                      {pesos(p.costo_unitario)}
-                    </td>
-                  )}
-                  <td className="px-3 py-2 text-right font-semibold">
-                    {pesos(p.precio_venta)}
-                  </td>
-                  <td className="px-3 py-2 text-right text-gray-600">
-                    {pesos(conIva(p.precio_venta, iva))}
-                  </td>
-                  {esAdmin && (
-                    <td className="px-3 py-2 text-right text-gray-600">
-                      {p.margen_aplicado != null
-                        ? `${porcentaje(p.margen_aplicado * 100)} %`
-                        : ""}
-                    </td>
-                  )}
-                  <td className="px-3 py-2">
-                    {p.activo ? (
-                      <span className="text-green-700">Activo</span>
-                    ) : (
-                      <span className="text-gray-400">Inactivo</span>
-                    )}
-                  </td>
-                  {esAdmin && (
-                    <td className="px-2 py-2 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => editar(p)}
-                        className="text-verde text-xs underline mr-2"
-                      >
-                        editar
-                      </button>
-                      <button
-                        onClick={() =>
-                          empezar(async () => {
-                            await cambiarActivoProducto(p.id, !p.activo);
-                          })
-                        }
-                        className="text-gray-500 text-xs underline"
-                      >
-                        {p.activo ? "desactivar" : "activar"}
-                      </button>
-                    </td>
-                  )}
-                </tr>
+                  </tr>
+                  {lista.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-t border-gray-100 hover:bg-crema"
+                    >
+                      <td className="px-3 py-2">
+                        {p.descripcion}
+                        {p.precio_manual && (
+                          <span
+                            className="ml-2 text-[10px] bg-dorado text-white px-1.5 py-0.5 rounded"
+                            title="Precio fijado a mano: no se recalcula con el margen"
+                          >
+                            precio manual
+                          </span>
+                        )}
+                      </td>
+                      {esAdmin && (
+                        <td className="px-3 py-2 text-right text-gray-600">
+                          {p.espesor_total
+                            ? `${unidades(p.espesor_total)} mm`
+                            : ""}
+                        </td>
+                      )}
+                      {esAdmin && (
+                        <td className="px-3 py-2 text-right">
+                          {pesos(p.costo_unitario)}
+                        </td>
+                      )}
+                      <td className="px-3 py-2 text-right font-semibold">
+                        {pesos(p.precio_venta)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-600">
+                        {pesos(conIva(p.precio_venta, iva))}
+                      </td>
+                      {esAdmin && (
+                        <td className="px-3 py-2 text-right text-gray-600">
+                          {p.margen_aplicado != null
+                            ? `${porcentaje(p.margen_aplicado * 100)} %`
+                            : ""}
+                        </td>
+                      )}
+                      <td className="px-3 py-2">
+                        {p.activo ? (
+                          <span className="text-green-700">Activo</span>
+                        ) : (
+                          <span className="text-gray-400">Inactivo</span>
+                        )}
+                      </td>
+                      {esAdmin && (
+                        <td className="px-2 py-2 text-right whitespace-nowrap">
+                          <button
+                            onClick={() => editar(p)}
+                            className="text-verde text-xs underline mr-2"
+                          >
+                            editar
+                          </button>
+                          <button
+                            onClick={() =>
+                              empezar(async () => {
+                                await cambiarActivoProducto(p.id, !p.activo);
+                              })
+                            }
+                            className="text-gray-500 text-xs underline"
+                          >
+                            {p.activo ? "desactivar" : "activar"}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
             </tbody>
           </table>

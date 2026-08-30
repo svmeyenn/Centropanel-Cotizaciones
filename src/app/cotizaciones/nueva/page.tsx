@@ -32,8 +32,9 @@ export default async function Pagina() {
       // v_catalogo_venta y no productos: un Vendedor no puede leer costos.
       supabase
         .from("v_catalogo_venta")
-        .select("id, descripcion, tipo, precio_venta")
+        .select("id, descripcion, tipo, familia, precio_venta")
         .eq("activo", true)
+        .order("familia")
         .order("descripcion"),
       // Insumos del panel emergente: la vista de venta no expone costos.
       supabase
