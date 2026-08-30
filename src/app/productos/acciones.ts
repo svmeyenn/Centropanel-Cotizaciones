@@ -147,9 +147,10 @@ export async function crearProductoServicio(d: DatosProductoNuevo) {
       costo_unitario: costo,
       margen_aplicado:
         d.precio_venta > 0 ? (d.precio_venta - costo) / d.precio_venta : 0,
-      // Un servicio no se recalcula desde el margen objetivo: su precio es el
-      // que se escribe aqui.
-      precio_manual: true,
+      // No se marca como manual: el recosteo del catalogo solo toca paneles
+      // (necesita composicion), asi que estos productos no corren riesgo de que
+      // les pisen el precio y no hay por que ensuciarlos con la etiqueta.
+      precio_manual: false,
       activo: true,
     })
     .select("id, descripcion")
