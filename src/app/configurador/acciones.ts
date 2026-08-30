@@ -41,12 +41,13 @@ export async function productoParaCotizar(id: number): Promise<{
   familia: string | null;
   subfamilia: string | null;
   precio_venta: number;
+  precio_manual: boolean;
 } | null> {
   await requerirVendedor();
   const supabase = await createClient();
   const { data } = await supabase
     .from("v_catalogo_venta")
-    .select("id, descripcion, tipo, familia, subfamilia, precio_venta")
+    .select("id, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
     .eq("id", id)
     .single();
   if (!data) return null;
@@ -56,6 +57,7 @@ export async function productoParaCotizar(id: number): Promise<{
     tipo: data.tipo as string,
     familia: (data.familia as string | null) ?? null,
     subfamilia: (data.subfamilia as string | null) ?? null,
+    precio_manual: Boolean(data.precio_manual),
     precio_venta: Number(data.precio_venta),
   };
 }

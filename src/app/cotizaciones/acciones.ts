@@ -40,6 +40,38 @@ function validar(d: DatosCotizacion): string | null {
   return null;
 }
 
+// Una linea en cero solo se admite si el producto es de precio manual: mano de
+// obra, flete o descuento se pactan en cada cotizacion. Un producto al que
+// simplemente no se le ha cargado el precio no puede irse cotizado en cero.
+// Se comprueba aqui ademas de en pantalla: la pantalla se puede saltar.
+async function precioFaltante(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  d: DatosCotizacion
+): Promise<string | null> {
+  const enCero = d.items.filter((it) => !Number(it.valor_unitario));
+  if (!enCero.length) return null;
+
+  const ids = [
+    ...new Set(enCero.map((it) => it.id_producto).filter((x): x is number => !!x)),
+  ];
+  const manual = new Set<number>();
+  if (ids.length) {
+    const { data } = await supabase
+      .from("v_catalogo_venta")
+      .select("id, precio_manual")
+      .in("id", ids);
+    for (const p of data ?? []) {
+      if (p.precio_manual) manual.add(Number(p.id));
+    }
+  }
+
+  const malo = enCero.find(
+    (it) => it.id_producto == null || !manual.has(it.id_producto)
+  );
+  if (!malo) return null;
+  return `"${malo.descripcion}" no tiene precio de venta. Cargueselo en el catalogo o escriba el valor unitario antes de grabar.`;
+}
+
 export async function crearCotizacion(d: DatosCotizacion) {
   const v = await requerirVendedor();
   if (!v.puede_crear && v.rol !== "Administrador") {
@@ -49,6 +81,9 @@ export async function crearCotizacion(d: DatosCotizacion) {
   if (falta) return { error: falta };
 
   const supabase = await createClient();
+
+  const sinPrecio = await precioFaltante(supabase, d);
+  if (sinPrecio) return { error: sinPrecio };
 
   // El folio lo asigna el trigger trg_asignar_folio con una secuencia: nunca se
   // calcula en el cliente, asi dos personas grabando a la vez no lo repiten.
@@ -106,6 +141,9 @@ export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
   if (falta) return { error: falta };
 
   const supabase = await createClient();
+
+  const sinPrecio = await precioFaltante(supabase, d);
+  if (sinPrecio) return { error: sinPrecio };
 
   const { error: e1 } = await supabase
     .from("cotizaciones")

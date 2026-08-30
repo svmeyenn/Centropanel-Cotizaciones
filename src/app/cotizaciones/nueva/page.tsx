@@ -32,7 +32,7 @@ export default async function Pagina() {
       // v_catalogo_venta y no productos: un Vendedor no puede leer costos.
       supabase
         .from("v_catalogo_venta")
-        .select("id, descripcion, tipo, familia, subfamilia, precio_venta")
+        .select("id, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
         .eq("activo", true)
         .order("familia")
         .order("subfamilia")

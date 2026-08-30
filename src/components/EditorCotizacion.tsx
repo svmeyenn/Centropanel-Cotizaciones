@@ -30,6 +30,9 @@ export interface ProductoVenta {
   familia: string | null;
   subfamilia: string | null;
   precio_venta: number;
+  // Producto cuyo valor se pacta en cada cotizacion (mano de obra, flete,
+  // descuento): son los unicos que pueden ir en cero.
+  precio_manual?: boolean | null;
 }
 
 interface Props {
@@ -151,6 +154,12 @@ export default function EditorCotizacion(p: Props) {
     // Valor unitario editable: para flete y mano de obra el precio se pacta en
     // cada cotizacion; si se deja vacio se usa el del catalogo.
     const valor = valorUnit.trim() ? Number(valorUnit) : prod.precio_venta;
+    if (!valor && !prod.precio_manual) {
+      setError(
+        `"${prod.descripcion}" no tiene precio de venta. Cargueselo en el catalogo o escriba el valor unitario.`
+      );
+      return;
+    }
     const item: ItemBorrador = {
       id_producto: prod.id,
       descripcion: prod.descripcion,
@@ -387,6 +396,7 @@ export default function EditorCotizacion(p: Props) {
                   {lista.map((x) => (
                     <option key={x.id} value={x.id}>
                       {x.descripcion}
+                      {!x.precio_venta && !x.precio_manual ? "  (sin precio)" : ""}
                     </option>
                   ))}
                 </optgroup>
