@@ -23,6 +23,53 @@ export interface DatosMateria {
   unidad: string;
 }
 
+// Alta de insumos. El nombre no se puede repetir: la carga masiva de costos
+// empareja por nombre y con dos iguales no sabria cual actualizar. La base
+// tiene ademas un indice unico detras.
+export async function crearMateria(d: DatosMateria) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+
+  const nombre = d.nombre.trim();
+  if (!nombre) return { error: "Indique el nombre." };
+  if (!["EPS", "Placa", "Adhesivo"].includes(d.tipo)) {
+    return { error: "El tipo debe ser EPS, Placa o Adhesivo." };
+  }
+  if (d.costo < 0) return { error: "El costo no puede ser negativo." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("materias_primas")
+    .insert({
+      nombre,
+      tipo: d.tipo,
+      familia: d.familia.trim() || null,
+      etiqueta: d.etiqueta.trim() || null,
+      ancho_mm: d.ancho_mm,
+      largo_mm: d.largo_mm,
+      espesor_mm: d.espesor_mm,
+      espesor_nominal: d.espesor_nominal,
+      costo: d.costo,
+      unidad: d.unidad.trim() || null,
+      activo: true,
+    })
+    .select("id, nombre")
+    .single();
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Ya existe una materia prima con ese nombre."
+          : error.message,
+    };
+  }
+
+  revalidatePath("/materias-primas");
+  revalidatePath("/configurador");
+  return { ok: true, materia: data };
+}
+
 export async function actualizarMateria(id: number, d: DatosMateria) {
   const err = await soloAdmin();
   if (err) return { error: err };

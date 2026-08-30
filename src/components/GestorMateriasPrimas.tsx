@@ -11,6 +11,7 @@ import {
   type FilaCarga,
 } from "@/app/materias-primas/acciones";
 import type { MateriaPrima } from "@/types/database";
+import ModalNuevaMateria from "@/components/ModalNuevaMateria";
 
 interface Resumen {
   actualizados: number;
@@ -22,8 +23,12 @@ interface Resumen {
 
 export default function GestorMateriasPrimas({
   materias,
+  etiquetas,
+  familias,
 }: {
   materias: MateriaPrima[];
+  etiquetas: string[];
+  familias: string[];
 }) {
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("");
@@ -205,6 +210,7 @@ export default function GestorMateriasPrimas({
           {pendiente && (
             <span className="text-xs text-gray-500">procesando...</span>
           )}
+          <ModalNuevaMateria etiquetas={etiquetas} familias={familias} />
         </div>
       </div>
 
