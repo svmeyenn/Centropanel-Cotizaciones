@@ -6,7 +6,13 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
 import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { MateriaVenta } from "@/components/Configurador";
-import { pesos, unidades as fmtUnid, sumarDias, fecha as fmtFecha } from "@/lib/formato";
+import {
+  pesos,
+  unidades as fmtUnid,
+  sumarDias,
+  fecha as fmtFecha,
+  conIva,
+} from "@/lib/formato";
 import {
   crearCotizacion,
   actualizarCotizacion,
@@ -189,7 +195,7 @@ export default function EditorCotizacion(p: Props) {
           {p.modo !== "crear" && soloLectura && p.puedeEditar && (
             <button
               onClick={() => setEditable(true)}
-              className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Modificar
             </button>
@@ -198,7 +204,7 @@ export default function EditorCotizacion(p: Props) {
             <button
               onClick={guardar}
               disabled={pendiente}
-              className="bg-verde text-white text-sm font-semibold px-4 py-1.5 rounded disabled:opacity-50"
+              className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50"
             >
               {pendiente ? "Grabando..." : "GRABAR"}
             </button>
@@ -207,7 +213,7 @@ export default function EditorCotizacion(p: Props) {
             <Link
               href={`/cotizaciones/${p.id}/pdf`}
               target="_blank"
-              className="border border-verde text-verde text-sm font-semibold px-3 py-1.5 rounded"
+              className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
             >
               Ver PDF
             </Link>
@@ -375,17 +381,22 @@ export default function EditorCotizacion(p: Props) {
               />
             </label>
             <label className="text-xs">
-              <span className="block text-dorado-osc font-semibold">Valor unitario</span>
+              <span className="block text-dorado-osc font-semibold">
+                Valor unitario neto
+              </span>
               <input
                 type="number"
                 className={`${inputCls} w-32`}
                 value={valorUnit}
                 onChange={(e) => setValorUnit(e.target.value)}
               />
+              <span className="block text-gray-500">
+                PVP {pesos(conIva(Number(valorUnit) || 0, p.iva))}
+              </span>
             </label>
             <button
               onClick={agregarItem}
-              className="bg-verde text-white text-sm font-semibold px-4 py-1.5 rounded"
+              className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded"
             >
               Agregar
             </button>
@@ -405,7 +416,8 @@ export default function EditorCotizacion(p: Props) {
                 <th className="text-left px-3 py-2 w-10">N</th>
                 <th className="text-left px-3 py-2">Descripcion</th>
                 <th className="text-right px-3 py-2 w-24">Unid.</th>
-                <th className="text-right px-3 py-2 w-32">V. unitario</th>
+                <th className="text-right px-3 py-2 w-32">V. unit. neto</th>
+                <th className="text-right px-3 py-2 w-32">PVP unit.</th>
                 <th className="text-right px-3 py-2 w-32">Subtotal</th>
                 {!soloLectura && <th className="w-16" />}
               </tr>
@@ -413,7 +425,7 @@ export default function EditorCotizacion(p: Props) {
             <tbody>
               {d.items.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center text-gray-400 py-6">
+                  <td colSpan={7} className="text-center text-gray-400 py-6">
                     Sin items todavia.
                   </td>
                 </tr>
@@ -424,6 +436,9 @@ export default function EditorCotizacion(p: Props) {
                   <td className="px-3 py-2">{it.descripcion}</td>
                   <td className="px-3 py-2 text-right">{fmtUnid(it.unidades)}</td>
                   <td className="px-3 py-2 text-right">{pesos(it.valor_unitario)}</td>
+                  <td className="px-3 py-2 text-right text-gray-500">
+                    {pesos(conIva(it.valor_unitario, p.iva))}
+                  </td>
                   <td className="px-3 py-2 text-right font-semibold">
                     {pesos(it.unidades * it.valor_unitario)}
                   </td>
@@ -511,6 +526,7 @@ export default function EditorCotizacion(p: Props) {
       {modalPanel && (
         <ModalNuevoPanel
           materias={p.materias}
+          iva={p.iva}
           onCerrar={() => setModalPanel(false)}
           onCreado={(prod) => {
             // Queda disponible en la lista y ya seleccionado con su precio, de

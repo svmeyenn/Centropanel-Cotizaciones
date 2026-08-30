@@ -171,11 +171,11 @@ export default function GestorMateriasPrimas({
         <div className="flex flex-wrap gap-2 items-center">
           <button
             onClick={descargarPlantilla}
-            className="border border-verde text-verde text-sm font-semibold px-3 py-1.5 rounded"
+            className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
           >
             Descargar plantilla
           </button>
-          <label className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded cursor-pointer">
+          <label className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded cursor-pointer">
             Subir costos
             <input
               ref={archivoRef}
@@ -198,7 +198,7 @@ export default function GestorMateriasPrimas({
                 });
               })
             }
-            className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
+            className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
           >
             Solo recalcular catalogo
           </button>
@@ -325,7 +325,7 @@ export default function GestorMateriasPrimas({
             <button
               onClick={guardar}
               disabled={pendiente}
-              className="bg-verde text-white text-sm font-semibold px-4 py-1.5 rounded disabled:opacity-50"
+              className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50"
             >
               {pendiente ? "Grabando..." : "Grabar"}
             </button>
@@ -334,7 +334,7 @@ export default function GestorMateriasPrimas({
                 setEditando(null);
                 setForm(null);
               }}
-              className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
+              className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
             >
               Cancelar
             </button>

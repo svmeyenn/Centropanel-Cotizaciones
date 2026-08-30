@@ -55,7 +55,7 @@ export default function GestorFormasPago({
         <div className="flex justify-end">
           <button
             onClick={nuevo}
-            className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Nueva forma de pago
           </button>
@@ -99,13 +99,13 @@ export default function GestorFormasPago({
             <button
               onClick={guardar}
               disabled={pendiente}
-              className="bg-verde text-white text-sm font-semibold px-4 py-1.5 rounded disabled:opacity-50"
+              className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50"
             >
               {pendiente ? "Grabando..." : "Grabar"}
             </button>
             <button
               onClick={() => setEditando(null)}
-              className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
+              className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
             >
               Cancelar
             </button>

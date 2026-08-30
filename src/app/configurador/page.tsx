@@ -2,6 +2,7 @@ import Cabecera from "@/components/Cabecera";
 import Configurador from "@/components/Configurador";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
+import { leerParametros, pNum } from "@/lib/parametros";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
@@ -40,6 +41,7 @@ export default async function Pagina() {
         esAdmin={esAdmin}
         puedeCrear={v.puede_crear || esAdmin}
         margenObjetivo={margenObjetivo}
+        iva={pNum(await leerParametros(), "IVA", 0.19)}
       />
     </div>
   );

@@ -3,7 +3,9 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import TablaProductos from "@/components/TablaProductos";
 import { requerirVendedor } from "@/lib/sesion";
+import BotonNuevoProducto from "@/components/BotonNuevoProducto";
 import { createClient } from "@/lib/supabase/server";
+import { leerParametros, pNum } from "@/lib/parametros";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
@@ -26,6 +28,8 @@ export default async function Pagina() {
         .order("tipo")
         .order("descripcion");
 
+  const iva = pNum(await leerParametros(), "IVA", 0.19);
+
   return (
     <div className="min-h-screen">
       <Cabecera
@@ -36,12 +40,13 @@ export default async function Pagina() {
         <BarraNavegacion>
           <Link
             href="/configurador"
-            className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Configurar panel
           </Link>
+          {esAdmin && <BotonNuevoProducto iva={iva} />}
         </BarraNavegacion>
-        <TablaProductos productos={productos ?? []} esAdmin={esAdmin} />
+        <TablaProductos productos={productos ?? []} esAdmin={esAdmin} iva={iva} />
       </div>
     </div>
   );

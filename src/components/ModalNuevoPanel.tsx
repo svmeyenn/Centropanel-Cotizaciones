@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { pesos, unidades } from "@/lib/formato";
+import { pesos, unidades, conIva } from "@/lib/formato";
 import {
   calcularPanel,
   guardarPanel,
@@ -20,10 +20,12 @@ import type { ProductoVenta } from "@/components/EditorCotizacion";
 // completo: aqui lo unico que importa es obtener el panel y seguir cotizando.
 export default function ModalNuevoPanel({
   materias,
+  iva,
   onCreado,
   onCerrar,
 }: {
   materias: MateriaVenta[];
+  iva: number;
   onCreado: (p: ProductoVenta) => void;
   onCerrar: () => void;
 }) {
@@ -211,7 +213,8 @@ export default function ModalNuevoPanel({
                 {res.descripcion ?? "--"}
               </div>
               <div className="text-xs text-gray-600">
-                Precio de venta: <strong>{pesos(res.precio)}</strong>
+                Precio neto: <strong>{pesos(res.precio)}</strong> · PVP{" "}
+                {pesos(conIva(res.precio, iva))}
                 {res.espesor_total != null &&
                   ` · ${unidades(res.espesor_total)} mm`}
               </div>
@@ -239,7 +242,7 @@ export default function ModalNuevoPanel({
                 !res ||
                 (res.existe_id != null && !res.misma_config)
               }
-              className="bg-verde text-white text-sm font-semibold px-4 py-1.5 rounded disabled:opacity-40"
+              className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40"
             >
               {pendiente
                 ? "Trabajando..."
@@ -249,7 +252,7 @@ export default function ModalNuevoPanel({
             </button>
             <button
               onClick={onCerrar}
-              className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
+              className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
             >
               Cancelar
             </button>

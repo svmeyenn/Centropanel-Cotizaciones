@@ -74,7 +74,7 @@ export default async function Pagina({
               placeholder="Buscar por folio o razon social"
               className="border border-gray-300 rounded px-3 py-1.5 text-sm w-64"
             />
-            <button className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded">
+            <button className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded">
               Buscar
             </button>
             {busca && (
@@ -89,7 +89,7 @@ export default async function Pagina({
           <BarraNavegacion>
             <Link
               href="/cotizaciones/nueva"
-              className="bg-verde text-white text-sm font-semibold px-3 py-1.5 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Nueva cotizacion
             </Link>

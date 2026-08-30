@@ -183,7 +183,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={marcarEnviada}
-              className="bg-[#25D366] text-white text-sm font-semibold px-3 py-1.5 rounded"
+              className="bg-[#25D366] text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Enviar por WhatsApp
             </a>
@@ -191,7 +191,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               href={`/cotizaciones/${datos.id}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
-              className="border border-verde text-verde text-sm font-semibold px-3 py-1.5 rounded"
+              className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
             >
               Abrir el PDF
             </a>

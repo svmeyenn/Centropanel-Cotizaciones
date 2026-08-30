@@ -11,7 +11,7 @@ export default function BarraDescarga({ num }: { num: string }) {
       </span>
       <button
         onClick={() => window.print()}
-        className="bg-verde text-white text-sm font-semibold px-4 py-1.5 rounded"
+        className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded"
       >
         Descargar PDF
       </button>

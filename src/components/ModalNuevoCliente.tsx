@@ -175,13 +175,13 @@ export default function ModalNuevoCliente({
             <button
               onClick={guardar}
               disabled={pendiente || bloqueado}
-              className="bg-verde text-white text-sm font-semibold px-4 py-1.5 rounded disabled:opacity-40"
+              className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40"
             >
               {pendiente ? "Grabando..." : "Crear cliente"}
             </button>
             <button
               onClick={onCerrar}
-              className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded"
+              className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
             >
               Cancelar
             </button>

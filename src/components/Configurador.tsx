@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { pesos, porcentaje, unidades } from "@/lib/formato";
+import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import {
   calcularPanel,
@@ -23,11 +23,13 @@ export default function Configurador({
   esAdmin,
   puedeCrear,
   margenObjetivo,
+  iva,
 }: {
   materias: MateriaVenta[];
   esAdmin: boolean;
   puedeCrear: boolean;
   margenObjetivo: number;
+  iva: number;
 }) {
   const [eps, setEps] = useState("");
   const [placaA, setPlacaA] = useState("");
@@ -109,7 +111,7 @@ export default function Configurador({
       <BarraNavegacion>
         <Link
           href="/productos"
-          className="border border-gray-300 text-gray-700 text-sm px-3 py-1.5 rounded hover:bg-white"
+          className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded hover:bg-white"
         >
           Catalogo
         </Link>
@@ -231,7 +233,11 @@ export default function Configurador({
               {/* Costo y margen van a todos los perfiles: el desglose de abajo,
                   que Stephan pidio abrir, ya los muestra. */}
               <Dato titulo="Costo unitario" valor={pesos(res.costo)} />
-              <Dato titulo="Precio de venta" valor={pesos(res.precio)} destacado />
+              <Dato titulo="Precio de venta neto" valor={pesos(res.precio)} destacado />
+              <Dato
+                titulo={`PVP (IVA ${Math.round(iva * 100)}%)`}
+                valor={pesos(conIva(res.precio, iva))}
+              />
               {res.margen != null && (
                 <Dato
                   titulo="Margen resultante"
@@ -321,7 +327,7 @@ export default function Configurador({
                 <button
                   onClick={onGuardar}
                   disabled={pendiente || (yaExiste && res.misma_config)}
-                  className="bg-verde text-white text-sm font-semibold px-4 py-2 rounded disabled:opacity-40"
+                  className="bg-verde text-white text-xs font-semibold px-3 py-1.5 rounded disabled:opacity-40"
                 >
                   {pendiente ? "Guardando..." : "Guardar en el catalogo"}
                 </button>

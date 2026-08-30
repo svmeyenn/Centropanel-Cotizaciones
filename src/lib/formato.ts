@@ -14,6 +14,16 @@ export function unidades(n: number | string | null | undefined): string {
     : v.toLocaleString("es-CL", { maximumFractionDigits: 2 });
 }
 
+// Precio de venta a publico: el neto con IVA incluido. Se redondea a peso,
+// igual que el IVA del documento, para que lo que se ve sumado en pantalla
+// cuadre con el total de la cotizacion.
+export function conIva(
+  neto: number | string | null | undefined,
+  iva: number
+): number {
+  return Math.round(Number(neto ?? 0) * (1 + iva));
+}
+
 export function porcentaje(n: number | string | null | undefined): string {
   const v = Number(n ?? 0);
   return v.toLocaleString("es-CL", { maximumFractionDigits: 2 });
