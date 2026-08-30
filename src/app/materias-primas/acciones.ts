@@ -21,6 +21,7 @@ export interface DatosMateria {
   espesor_nominal: number | null;
   costo: number;
   unidad: string;
+  activo?: boolean;
 }
 
 // Alta de insumos. El nombre no se puede repetir: la carga masiva de costos
@@ -51,7 +52,7 @@ export async function crearMateria(d: DatosMateria) {
       espesor_nominal: d.espesor_nominal,
       costo: d.costo,
       unidad: d.unidad.trim() || null,
-      activo: true,
+      activo: d.activo ?? true,
     })
     .select("id, nombre")
     .single();

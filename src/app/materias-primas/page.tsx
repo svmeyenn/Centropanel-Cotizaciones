@@ -19,19 +19,14 @@ export default async function Pagina() {
     .order("tipo")
     .order("nombre");
 
-  // Etiquetas y familias ya en uso, para sugerirlas al dar de alta: la
-  // etiqueta es la que despues aparece en el nombre de cada panel, asi que dos
-  // variantes de la misma dejarian nombres incoherentes.
-  const unicos = (campo: "etiqueta" | "familia") =>
-    [
-      ...new Set(
-        (materias ?? [])
-          .map((m) => (m[campo] as string | null) ?? "")
-          .filter(Boolean)
-      ),
-    ].sort();
-  const etiquetas = unicos("etiqueta");
-  const familias = unicos("familia");
+  // Etiquetas ya en uso, para sugerirlas al dar de alta: la etiqueta es la que
+  // despues aparece en el nombre de cada panel, asi que dos variantes de la
+  // misma dejarian nombres incoherentes.
+  const etiquetas = [
+    ...new Set(
+      (materias ?? []).map((m) => (m.etiqueta as string | null) ?? "").filter(Boolean)
+    ),
+  ].sort();
 
   return (
     <div className="min-h-screen">
@@ -41,11 +36,7 @@ export default async function Pagina() {
       />
       <div className="max-w-6xl mx-auto p-6 space-y-4">
         <BarraNavegacion />
-        <GestorMateriasPrimas
-          materias={materias ?? []}
-          etiquetas={etiquetas}
-          familias={familias}
-        />
+        <GestorMateriasPrimas materias={materias ?? []} etiquetas={etiquetas} />
       </div>
     </div>
   );
