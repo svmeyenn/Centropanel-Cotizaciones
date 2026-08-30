@@ -11,6 +11,7 @@ import {
 const VACIO: DatosProductoNuevo = {
   descripcion: "",
   familia: "",
+  subfamilia: "",
   precio_venta: 0,
   costo_unitario: null,
 };
@@ -22,9 +23,11 @@ const VACIO: DatosProductoNuevo = {
 export default function BotonNuevoProducto({
   iva,
   familias,
+  subfamilias,
 }: {
   iva: number;
   familias: string[];
+  subfamilias: string[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -93,9 +96,9 @@ export default function BotonNuevoProducto({
 
             <div className="p-4 space-y-3">
               <p className="text-xs text-gray-500">
-                Para fletes, mano de obra y otros servicios. Un panel SIP se crea
-                en el configurador, que arma su descripcion y su costo desde la
-                composicion.
+                Para fletes, mano de obra y otros servicios. Un panel SIP se
+                crea en el configurador, que arma su descripcion y su costo
+                desde la composicion.
               </p>
 
               <label className="text-sm block">
@@ -112,27 +115,52 @@ export default function BotonNuevoProducto({
                 />
               </label>
 
-              <label className="text-sm block">
-                <span className="block text-dorado-osc font-semibold mb-1">
-                  Familia
-                </span>
-                <input
-                  className={input}
-                  list="familias-producto"
-                  placeholder="Madera, Tornillos, Servicios..."
-                  value={form.familia}
-                  onChange={(e) => setForm({ ...form, familia: e.target.value })}
-                />
-                <datalist id="familias-producto">
-                  {familias.map((f) => (
-                    <option key={f} value={f} />
-                  ))}
-                </datalist>
-                <span className="text-xs text-gray-500">
-                  Agrupa el producto en el catalogo y en el cotizador. En blanco
-                  queda como Servicios.
-                </span>
-              </label>
+              <div className="grid md:grid-cols-2 gap-3">
+                <label className="text-sm">
+                  <span className="block text-dorado-osc font-semibold mb-1">
+                    Familia
+                  </span>
+                  <input
+                    className={input}
+                    list="familias-producto"
+                    placeholder="Madera, Tornillos, Servicios..."
+                    value={form.familia}
+                    onChange={(e) =>
+                      setForm({ ...form, familia: e.target.value })
+                    }
+                  />
+                  <datalist id="familias-producto">
+                    {familias.map((f) => (
+                      <option key={f} value={f} />
+                    ))}
+                  </datalist>
+                  <span className="text-xs text-gray-500">
+                    En blanco queda como Servicios.
+                  </span>
+                </label>
+                <label className="text-sm">
+                  <span className="block text-dorado-osc font-semibold mb-1">
+                    Subfamilia (opcional)
+                  </span>
+                  <input
+                    className={input}
+                    list="subfamilias-producto"
+                    placeholder="Pino Bruta, Amarillo #10[5.0]..."
+                    value={form.subfamilia}
+                    onChange={(e) =>
+                      setForm({ ...form, subfamilia: e.target.value })
+                    }
+                  />
+                  <datalist id="subfamilias-producto">
+                    {subfamilias.map((f) => (
+                      <option key={f} value={f} />
+                    ))}
+                  </datalist>
+                  <span className="text-xs text-gray-500">
+                    Segundo nivel dentro de la familia.
+                  </span>
+                </label>
+              </div>
 
               <div className="grid md:grid-cols-2 gap-3">
                 <label className="text-sm">
@@ -177,7 +205,7 @@ export default function BotonNuevoProducto({
                       {porcentaje(
                         ((form.precio_venta - form.costo_unitario) /
                           form.precio_venta) *
-                          100
+                          100,
                       )}{" "}
                       %
                     </span>

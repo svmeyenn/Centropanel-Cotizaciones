@@ -39,13 +39,14 @@ export async function productoParaCotizar(id: number): Promise<{
   descripcion: string;
   tipo: string;
   familia: string | null;
+  subfamilia: string | null;
   precio_venta: number;
 } | null> {
   await requerirVendedor();
   const supabase = await createClient();
   const { data } = await supabase
     .from("v_catalogo_venta")
-    .select("id, descripcion, tipo, familia, precio_venta")
+    .select("id, descripcion, tipo, familia, subfamilia, precio_venta")
     .eq("id", id)
     .single();
   if (!data) return null;
@@ -54,6 +55,7 @@ export async function productoParaCotizar(id: number): Promise<{
     descripcion: data.descripcion as string,
     tipo: data.tipo as string,
     familia: (data.familia as string | null) ?? null,
+    subfamilia: (data.subfamilia as string | null) ?? null,
     precio_venta: Number(data.precio_venta),
   };
 }
@@ -219,7 +221,7 @@ export async function guardarPanel(
     };
   }
 
-  const [rDesc, rCosto, rEspesor] = await Promise.all([
+  const [rDesc, rCosto, rEspesor, rSub] = await Promise.all([
     supabase.rpc("descripcion_panel", {
       p_eps: c.id_eps,
       p_placa_a: c.id_placa_a,
@@ -232,6 +234,12 @@ export async function guardarPanel(
     }),
     supabase.rpc("espesor_total_panel", {
       p_eps: c.id_eps,
+      p_placa_a: c.id_placa_a,
+      p_placa_b: b,
+    }),
+    // Subgrupo dentro de los paneles: la combinacion de caras, en el orden que
+    // fija la base para que APA+Smart y Smart+APA caigan juntos.
+    supabase.rpc("subfamilia_panel", {
       p_placa_a: c.id_placa_a,
       p_placa_b: b,
     }),
@@ -256,6 +264,7 @@ export async function guardarPanel(
       descripcion: rDesc.data,
       tipo: "Panel SIP",
       familia: "Paneles SIP",
+      subfamilia: rSub.data,
       id_eps: c.id_eps,
       id_placa_a: c.id_placa_a,
       id_placa_b: b,

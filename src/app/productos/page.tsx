@@ -18,13 +18,16 @@ export default async function Pagina() {
     ? await supabase
         .from("productos")
         .select(
-          "id, descripcion, tipo, familia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo"
+          "id, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo",
         )
         .order("familia")
+        .order("subfamilia")
         .order("descripcion")
     : await supabase
         .from("v_catalogo_venta")
-        .select("id, descripcion, tipo, familia, precio_venta, activo")
+        .select(
+          "id, descripcion, tipo, familia, subfamilia, precio_venta, activo",
+        )
         .order("familia")
         .order("descripcion");
 
@@ -36,7 +39,15 @@ export default async function Pagina() {
     ...new Set(
       (productos ?? [])
         .map((p) => (p.familia as string | null) ?? "")
-        .filter(Boolean)
+        .filter(Boolean),
+    ),
+  ].sort();
+
+  const subfamilias = [
+    ...new Set(
+      (productos ?? [])
+        .map((p) => (p.subfamilia as string | null) ?? "")
+        .filter(Boolean),
     ),
   ].sort();
 
@@ -54,9 +65,19 @@ export default async function Pagina() {
           >
             Configurar panel
           </Link>
-          {esAdmin && <BotonNuevoProducto iva={iva} familias={familias} />}
+          {esAdmin && (
+            <BotonNuevoProducto
+              iva={iva}
+              familias={familias}
+              subfamilias={subfamilias}
+            />
+          )}
         </BarraNavegacion>
-        <TablaProductos productos={productos ?? []} esAdmin={esAdmin} iva={iva} />
+        <TablaProductos
+          productos={productos ?? []}
+          esAdmin={esAdmin}
+          iva={iva}
+        />
       </div>
     </div>
   );

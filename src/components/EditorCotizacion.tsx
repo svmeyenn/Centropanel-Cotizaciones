@@ -28,6 +28,7 @@ export interface ProductoVenta {
   descripcion: string;
   tipo: string;
   familia: string | null;
+  subfamilia: string | null;
   precio_venta: number;
 }
 
@@ -91,12 +92,14 @@ export default function EditorCotizacion(p: Props) {
     return catalogo.filter((x) => x.descripcion.toLowerCase().includes(q));
   }, [buscaProd, catalogo]);
 
-  // El desplegable va agrupado por familia: con un catalogo de decenas de
-  // tornillos y maderas, una lista plana obliga a leerla entera.
+  // El desplegable va agrupado por familia y subfamilia: con un catalogo de
+  // decenas de tornillos y maderas, una lista plana obliga a leerla entera.
+  // Un <optgroup> no admite otro dentro, asi que los dos niveles se juntan en
+  // el rotulo del grupo.
   const porFamilia = useMemo(() => {
     const g = new Map<string, ProductoVenta[]>();
     for (const x of productosFiltrados) {
-      const f = x.familia ?? "Otros";
+      const f = (x.familia ?? "Otros") + (x.subfamilia ? ` · ${x.subfamilia}` : "");
       const lista = g.get(f);
       if (lista) lista.push(x);
       else g.set(f, [x]);

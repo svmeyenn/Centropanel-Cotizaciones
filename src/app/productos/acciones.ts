@@ -121,6 +121,7 @@ export async function cambiarActivoProducto(id: number, activo: boolean) {
 export interface DatosProductoNuevo {
   descripcion: string;
   familia: string;
+  subfamilia: string;
   precio_venta: number;
   costo_unitario: number | null;
 }
@@ -147,6 +148,7 @@ export async function crearProductoServicio(d: DatosProductoNuevo) {
       // La familia es lo que agrupa el catalogo: sin ella el producto queda
       // suelto al final de la lista.
       familia: d.familia.trim() || "Servicios",
+      subfamilia: d.subfamilia.trim() || null,
       precio_venta: d.precio_venta,
       costo_unitario: costo,
       margen_aplicado:
@@ -157,7 +159,7 @@ export async function crearProductoServicio(d: DatosProductoNuevo) {
       precio_manual: false,
       activo: true,
     })
-    .select("id, descripcion, familia")
+    .select("id, descripcion, familia, subfamilia")
     .single();
 
   if (error) {

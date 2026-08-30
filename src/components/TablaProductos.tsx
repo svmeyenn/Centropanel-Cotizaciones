@@ -14,6 +14,7 @@ interface ProductoFila {
   descripcion: string;
   tipo: string;
   familia?: string | null;
+  subfamilia?: string | null;
   activo: boolean;
   espesor_total?: number | string | null;
   costo_unitario?: number | null;
@@ -45,22 +46,51 @@ export default function TablaProductos({
         (!soloActivos || p.activo) &&
         (!q ||
           p.descripcion.toLowerCase().includes(q) ||
-          (p.familia ?? "").toLowerCase().includes(q)),
+          (p.familia ?? "").toLowerCase().includes(q) ||
+          (p.subfamilia ?? "").toLowerCase().includes(q)),
     );
   }, [busca, soloActivos, productos]);
 
-  // El catalogo se lee por familia (Paneles SIP, Madera, Tornillos...): una
-  // lista plana de decenas de tornillos obliga a recorrerla entera para dar
-  // con lo que se busca.
+  // El catalogo se lee en dos niveles: familia (Paneles SIP, Madera,
+  // Tornillos...) y dentro de ella subfamilia (APA / Smart, Pino Bruta,
+  // Amarillo #10[5.0]...). Una lista plana de decenas de tornillos obliga a
+  // recorrerla entera para dar con lo que se busca.
   const grupos = useMemo(() => {
-    const g = new Map<string, ProductoFila[]>();
+    const porFamilia = new Map<string, Map<string, ProductoFila[]>>();
     for (const p of filtrados) {
       const f = p.familia ?? "Otros";
-      const lista = g.get(f);
+      const sf = p.subfamilia ?? "";
+      let subs = porFamilia.get(f);
+      if (!subs) {
+        subs = new Map();
+        porFamilia.set(f, subs);
+      }
+      const lista = subs.get(sf);
       if (lista) lista.push(p);
-      else g.set(f, [p]);
+      else subs.set(sf, [p]);
     }
-    return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
+    const cmp = (a: string, b: string) => a.localeCompare(b, "es");
+    return [...porFamilia.entries()]
+      .sort((a, b) => cmp(a[0], b[0]))
+      .map(([familia, subs]) => ({
+        familia,
+        total: [...subs.values()].reduce((n, l) => n + l.length, 0),
+        // Dentro del subgrupo, los paneles ordenados por espesor y no por
+        // nombre: alfabeticamente el 100 va antes que el 96.
+        subgrupos: [...subs.entries()]
+          .sort((a, b) => cmp(a[0], b[0]))
+          .map(([subfamilia, lista]) => ({
+            subfamilia,
+            lista: [...lista].sort((x, y) => {
+              const ex = Number(x.espesor_total ?? NaN);
+              const ey = Number(y.espesor_total ?? NaN);
+              if (Number.isFinite(ex) && Number.isFinite(ey) && ex !== ey) {
+                return ex - ey;
+              }
+              return cmp(x.descripcion, y.descripcion);
+            }),
+          })),
+      }));
   }, [filtrados]);
 
   const enEdicion = productos.find((p) => p.id === editando) ?? null;
@@ -267,88 +297,108 @@ export default function TablaProductos({
                   </td>
                 </tr>
               )}
-              {grupos.map(([familia, lista]) => (
-                <Fragment key={familia}>
+              {grupos.map((g) => (
+                <Fragment key={g.familia}>
                   <tr className="bg-crema border-t border-dorado">
                     <td
                       colSpan={esAdmin ? 8 : 4}
                       className="px-3 py-1.5 text-[11px] font-semibold text-verde uppercase tracking-wide"
                     >
-                      {familia}
+                      {g.familia}
                       <span className="ml-2 font-normal normal-case text-gray-500">
-                        {lista.length}
+                        {g.total}
                       </span>
                     </td>
                   </tr>
-                  {lista.map((p) => (
-                    <tr
-                      key={p.id}
-                      className="border-t border-gray-100 hover:bg-crema"
-                    >
-                      <td className="px-3 py-2">
-                        {p.descripcion}
-                        {p.precio_manual && (
-                          <span
-                            className="ml-2 text-[10px] bg-dorado text-white px-1.5 py-0.5 rounded"
-                            title="Precio fijado a mano: no se recalcula con el margen"
+                  {g.subgrupos.map((sg) => (
+                    <Fragment key={sg.subfamilia}>
+                      {sg.subfamilia && (
+                        <tr className="border-t border-gray-100">
+                          <td
+                            colSpan={esAdmin ? 8 : 4}
+                            className="px-3 pt-2 pb-1 pl-6 text-[11px] font-semibold text-dorado-osc"
                           >
-                            precio manual
-                          </span>
-                        )}
-                      </td>
-                      {esAdmin && (
-                        <td className="px-3 py-2 text-right text-gray-600">
-                          {p.espesor_total
-                            ? `${unidades(p.espesor_total)} mm`
-                            : ""}
-                        </td>
+                            {sg.subfamilia}
+                            <span className="ml-2 font-normal text-gray-400">
+                              {sg.lista.length}
+                            </span>
+                          </td>
+                        </tr>
                       )}
-                      {esAdmin && (
-                        <td className="px-3 py-2 text-right">
-                          {pesos(p.costo_unitario)}
-                        </td>
-                      )}
-                      <td className="px-3 py-2 text-right font-semibold">
-                        {pesos(p.precio_venta)}
-                      </td>
-                      <td className="px-3 py-2 text-right text-gray-600">
-                        {pesos(conIva(p.precio_venta, iva))}
-                      </td>
-                      {esAdmin && (
-                        <td className="px-3 py-2 text-right text-gray-600">
-                          {p.margen_aplicado != null
-                            ? `${porcentaje(p.margen_aplicado * 100)} %`
-                            : ""}
-                        </td>
-                      )}
-                      <td className="px-3 py-2">
-                        {p.activo ? (
-                          <span className="text-green-700">Activo</span>
-                        ) : (
-                          <span className="text-gray-400">Inactivo</span>
-                        )}
-                      </td>
-                      {esAdmin && (
-                        <td className="px-2 py-2 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => editar(p)}
-                            className="text-verde text-xs underline mr-2"
-                          >
-                            editar
-                          </button>
-                          <button
-                            onClick={() =>
-                              empezar(async () => {
-                                await cambiarActivoProducto(p.id, !p.activo);
-                              })
-                            }
-                            className="text-gray-500 text-xs underline"
-                          >
-                            {p.activo ? "desactivar" : "activar"}
-                          </button>
-                        </td>
-                      )}
-                    </tr>
+                      {sg.lista.map((p) => (
+                        <tr
+                          key={p.id}
+                          className="border-t border-gray-100 hover:bg-crema"
+                        >
+                          <td className="px-3 py-2 pl-6">
+                            {p.descripcion}
+                            {p.precio_manual && (
+                              <span
+                                className="ml-2 text-[10px] bg-dorado text-white px-1.5 py-0.5 rounded"
+                                title="Precio fijado a mano: no se recalcula con el margen"
+                              >
+                                precio manual
+                              </span>
+                            )}
+                          </td>
+                          {esAdmin && (
+                            <td className="px-3 py-2 text-right text-gray-600">
+                              {p.espesor_total
+                                ? `${unidades(p.espesor_total)} mm`
+                                : ""}
+                            </td>
+                          )}
+                          {esAdmin && (
+                            <td className="px-3 py-2 text-right">
+                              {pesos(p.costo_unitario)}
+                            </td>
+                          )}
+                          <td className="px-3 py-2 text-right font-semibold">
+                            {pesos(p.precio_venta)}
+                          </td>
+                          <td className="px-3 py-2 text-right text-gray-600">
+                            {pesos(conIva(p.precio_venta, iva))}
+                          </td>
+                          {esAdmin && (
+                            <td className="px-3 py-2 text-right text-gray-600">
+                              {p.margen_aplicado != null
+                                ? `${porcentaje(p.margen_aplicado * 100)} %`
+                                : ""}
+                            </td>
+                          )}
+                          <td className="px-3 py-2">
+                            {p.activo ? (
+                              <span className="text-green-700">Activo</span>
+                            ) : (
+                              <span className="text-gray-400">Inactivo</span>
+                            )}
+                          </td>
+                          {esAdmin && (
+                            <td className="px-2 py-2 text-right whitespace-nowrap">
+                              <button
+                                onClick={() => editar(p)}
+                                className="text-verde text-xs underline mr-2"
+                              >
+                                editar
+                              </button>
+                              <button
+                                onClick={() =>
+                                  empezar(async () => {
+                                    await cambiarActivoProducto(
+                                      p.id,
+                                      !p.activo,
+                                    );
+                                  })
+                                }
+                                className="text-gray-500 text-xs underline"
+                              >
+                                {p.activo ? "desactivar" : "activar"}
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </Fragment>
                   ))}
                 </Fragment>
               ))}
