@@ -12,10 +12,12 @@ export default async function Home() {
   const opciones: { texto: string; href: string; soloAdmin?: boolean }[] = [
     { texto: "Detalle de cotizacion", href: "/cotizaciones/nueva" },
     { texto: "Cotizaciones", href: "/cotizaciones" },
+    { texto: "Pedidos", href: "/pedidos" },
     { texto: "Configurar panel SIP", href: "/configurador" },
     { texto: "Catalogo de productos", href: "/productos" },
     { texto: "Clientes", href: "/clientes" },
     { texto: "Materias primas", href: "/materias-primas", soloAdmin: true },
+    { texto: "Proveedores", href: "/proveedores", soloAdmin: true },
     { texto: "Vendedores y accesos", href: "/vendedores", soloAdmin: true },
     { texto: "Formas de pago", href: "/formas-pago" },
     { texto: "Parametros", href: "/parametros", soloAdmin: true },

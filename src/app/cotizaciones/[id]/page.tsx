@@ -5,6 +5,7 @@ import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros, pNum, pTxt } from "@/lib/parametros";
 import EnvioCotizacion from "@/components/EnvioCotizacion";
+import BotonGenerarPedido from "@/components/BotonGenerarPedido";
 import { sumarDias } from "@/lib/formato";
 
 // Ver / modificar una cotizacion existente. Abre en solo lectura (equivalente
@@ -62,6 +63,14 @@ export default async function Pagina({
 
   if (!cot) notFound();
 
+  // El pedido, si ya se genero: es lo que explica por que la cotizacion esta
+  // congelada, asi que se muestra en la misma pantalla.
+  const { data: pedido } = await supabase
+    .from("pedidos")
+    .select("id, num_pedido")
+    .eq("id_cotizacion", id)
+    .maybeSingle();
+
   const supabaseTot = await createClient();
   const { data: tot } = await supabaseTot
     .from("v_cotizacion_totales")
@@ -114,6 +123,19 @@ export default async function Pagina({
           })),
         }}
       />
+
+      <div className="max-w-5xl mx-auto px-6 pb-4">
+        <BotonGenerarPedido
+          idCotizacion={id}
+          numCotizacion={cot.num_cotizacion ?? ""}
+          pedido={
+            pedido
+              ? { id: Number(pedido.id), num: pedido.num_pedido as string }
+              : null
+          }
+          puede={v.puede_crear || v.rol === "Administrador"}
+        />
+      </div>
 
       <div className="max-w-5xl mx-auto px-6 pb-6">
         <EnvioCotizacion
