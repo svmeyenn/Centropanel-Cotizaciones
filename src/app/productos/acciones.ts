@@ -6,6 +6,9 @@ import { revalidatePath } from "next/cache";
 
 export interface DatosProducto {
   descripcion: string;
+  // El costo solo se acepta en lo que no es panel: el de un panel sale de su
+  // composicion y escribirlo a mano duraria hasta el proximo recosteo.
+  costo_unitario: number;
   precio_venta: number;
   precio_manual: boolean;
   activo: boolean;
@@ -27,15 +30,17 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
 
   const { data: actual } = await supabase
     .from("productos")
-    .select("costo_unitario")
+    .select("costo_unitario, tipo")
     .eq("id", id)
     .single();
-  const costo = Number(actual?.costo_unitario ?? 0);
+  const esPanel = actual?.tipo === "Panel SIP";
+  const costo = esPanel ? Number(actual?.costo_unitario ?? 0) : d.costo_unitario;
 
   const { error } = await supabase
     .from("productos")
     .update({
       descripcion: d.descripcion.trim(),
+      costo_unitario: costo,
       precio_venta: d.precio_venta,
       // Marcar el precio como manual evita que el recalculo del catalogo lo
       // pise con el que sale del margen objetivo.

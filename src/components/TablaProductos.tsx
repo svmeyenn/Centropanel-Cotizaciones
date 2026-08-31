@@ -36,6 +36,13 @@ export default function TablaProductos({
   const [soloActivos, setSoloActivos] = useState(true);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosProducto | null>(null);
+  // Costo, neto, PVP y margen son el mismo numero visto de cuatro maneras: se
+  // guardan costo y neto, y los otros dos se derivan. Mientras se escribe en
+  // uno se respeta lo tecleado y los demas ya se muestran recalculados.
+  const [enFoco, setEnFoco] = useState<
+    "costo" | "neto" | "pvp" | "margen" | null
+  >(null);
+  const [tecleado, setTecleado] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -98,8 +105,10 @@ export default function TablaProductos({
   function editar(p: ProductoFila) {
     setEditando(p.id);
     setError(null);
+    setEnFoco(null);
     setForm({
       descripcion: p.descripcion,
+      costo_unitario: Number(p.costo_unitario ?? 0),
       precio_venta: Number(p.precio_venta),
       precio_manual: Boolean(p.precio_manual),
       activo: p.activo,
@@ -120,6 +129,11 @@ export default function TablaProductos({
   }
 
   const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
+  const esPanel = enEdicion?.tipo === "Panel SIP";
+  const margenForm =
+    form && form.precio_venta > 0
+      ? (form.precio_venta - form.costo_unitario) / form.precio_venta
+      : null;
 
   return (
     <div className="space-y-3">
@@ -155,8 +169,8 @@ export default function TablaProductos({
             Modificar producto
           </div>
 
-          <div className="grid md:grid-cols-2 gap-3">
-            <label className="text-sm md:col-span-2">
+          <div className="grid md:grid-cols-4 gap-3">
+            <label className="text-sm md:col-span-4">
               <span className="block text-dorado-osc font-semibold mb-1">
                 Descripcion
               </span>
@@ -170,35 +184,127 @@ export default function TablaProductos({
             </label>
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">
-                Precio de venta
+                Costo unitario
               </span>
               <input
-                type="number"
-                className={input}
-                value={form.precio_venta}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    precio_venta: Number(e.target.value) || 0,
-                    // Tocar el precio a mano lo marca como manual: si no, el
-                    // proximo recalculo del catalogo lo pisaria.
-                    precio_manual: true,
-                  })
+                type="text"
+                inputMode="numeric"
+                className={`${input} disabled:bg-gray-100`}
+                disabled={esPanel}
+                value={
+                  enFoco === "costo" ? tecleado : pesos(form.costo_unitario)
                 }
+                onFocus={() => {
+                  setEnFoco("costo");
+                  setTecleado(pesos(form.costo_unitario));
+                }}
+                onBlur={() => setEnFoco(null)}
+                onChange={(e) => {
+                  const v = Number(e.target.value.replace(/\D/g, "")) || 0;
+                  setTecleado(pesos(v));
+                  setForm({ ...form, costo_unitario: v });
+                }}
               />
-              {enEdicion.costo_unitario != null && form.precio_venta > 0 && (
+              {esPanel && (
                 <span className="text-xs text-gray-500">
-                  Margen resultante:{" "}
-                  {porcentaje(
-                    ((form.precio_venta - Number(enEdicion.costo_unitario)) /
-                      form.precio_venta) *
-                      100,
-                  )}{" "}
-                  %
+                  Sale de las materias primas del panel.
                 </span>
               )}
             </label>
-            <div className="text-sm space-y-2">
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Precio de venta neto
+              </span>
+              <input
+                type="text"
+                inputMode="numeric"
+                className={input}
+                value={enFoco === "neto" ? tecleado : pesos(form.precio_venta)}
+                onFocus={() => {
+                  setEnFoco("neto");
+                  setTecleado(pesos(form.precio_venta));
+                }}
+                onBlur={() => setEnFoco(null)}
+                onChange={(e) => {
+                  const v = Number(e.target.value.replace(/\D/g, "")) || 0;
+                  setTecleado(pesos(v));
+                  // Tocar el precio a mano lo marca como manual: si no, el
+                  // proximo recalculo del catalogo lo pisaria.
+                  setForm({ ...form, precio_venta: v, precio_manual: true });
+                }}
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                PVP (IVA {Math.round(iva * 100)}%)
+              </span>
+              <input
+                type="text"
+                inputMode="numeric"
+                className={input}
+                value={
+                  enFoco === "pvp"
+                    ? tecleado
+                    : pesos(conIva(form.precio_venta, iva))
+                }
+                onFocus={() => {
+                  setEnFoco("pvp");
+                  setTecleado(pesos(conIva(form.precio_venta, iva)));
+                }}
+                onBlur={() => setEnFoco(null)}
+                onChange={(e) => {
+                  const v = Number(e.target.value.replace(/\D/g, "")) || 0;
+                  setTecleado(pesos(v));
+                  setForm({
+                    ...form,
+                    precio_venta: Math.round(v / (1 + iva)),
+                    precio_manual: true,
+                  });
+                }}
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Margen (%)
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                className={input}
+                value={
+                  enFoco === "margen"
+                    ? tecleado
+                    : margenForm != null
+                      ? porcentaje(margenForm * 100)
+                      : ""
+                }
+                onFocus={() => {
+                  setEnFoco("margen");
+                  setTecleado(
+                    margenForm != null ? porcentaje(margenForm * 100) : "",
+                  );
+                }}
+                onBlur={() => setEnFoco(null)}
+                onChange={(e) => {
+                  const txt = e.target.value.replace(/[^0-9,.-]/g, "");
+                  setTecleado(txt);
+                  const m = Number(txt.replace(",", ".")) / 100;
+                  // Margen sobre el precio: al 100% el precio se iria al
+                  // infinito, asi que ahi no se recalcula nada.
+                  if (Number.isFinite(m) && m < 1) {
+                    setForm({
+                      ...form,
+                      precio_venta: Math.round(form.costo_unitario / (1 - m)),
+                      precio_manual: true,
+                    });
+                  }
+                }}
+              />
+              <span className="text-xs text-gray-500">
+                Sobre el precio, no sobre el costo.
+              </span>
+            </label>
+            <div className="text-sm space-y-2 md:col-span-2">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
