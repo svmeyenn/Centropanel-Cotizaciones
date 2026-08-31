@@ -34,7 +34,7 @@ export default async function Pagina({
       supabase
         .from("pedidos")
         .select(
-          "*, cotizaciones(id, num_cotizacion), clientes(razon_social), vendedores(nombre), formas_pago(descripcion)"
+          "*, cotizaciones(id, num_cotizacion), clientes(razon_social), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre)"
         )
         .eq("id", id)
         .single(),
@@ -79,6 +79,7 @@ export default async function Pagina({
 
   const cot = uno<{ id: number; num_cotizacion: string }>(ped.cotizaciones);
   const fp = uno<{ descripcion: string }>(ped.formas_pago);
+  const mp = uno<{ nombre: string }>(ped.medios_pago);
   const cli = uno<{ razon_social: string }>(ped.clientes);
   const ven = uno<{ nombre: string }>(ped.vendedores);
 
@@ -138,9 +139,13 @@ export default async function Pagina({
         necesidades={necesidades}
         solicitudes={solicitudes}
         formaPago={fp?.descripcion ?? null}
+        medioPago={mp?.nombre ?? null}
         cuenta={{
           total_neto: Number(cta?.total_neto ?? 0),
           iva: Number(cta?.iva ?? 0),
+          total_sin_comision: Number(cta?.total_sin_comision ?? 0),
+          comision_pct: Number(cta?.comision_pct ?? 0),
+          comision_monto: Number(cta?.comision_monto ?? 0),
           total: Number(cta?.total ?? 0),
           pie_pct: Number(cta?.pie_pct ?? 0),
           pie_monto: Number(cta?.pie_monto ?? 0),

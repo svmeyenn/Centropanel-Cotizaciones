@@ -113,11 +113,16 @@ export async function generarSolicitudes(idPedido: number) {
   });
   if (error) return { error: error.message };
 
-  const r = (data ?? {}) as { solicitudes?: number; sin_proveedor?: string[] };
+  const r = (data ?? {}) as {
+    solicitudes?: number;
+    existentes?: number;
+    sin_proveedor?: string[];
+  };
   revalidatePath(`/pedidos/${idPedido}`);
   return {
     ok: true,
     solicitudes: Number(r.solicitudes ?? 0),
+    existentes: Number(r.existentes ?? 0),
     sinProveedor: r.sin_proveedor ?? [],
   };
 }
@@ -185,6 +190,20 @@ export async function anularPago(id: number, idPedido: number) {
   }
   const supabase = await createClient();
   const { error } = await supabase.from("pagos_pedido").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  return { ok: true };
+}
+
+// Borrar la solicitud es la unica forma de volver a pedirle a ese proveedor:
+// generar de nuevo respeta las que ya existen.
+export async function eliminarSolicitud(id: number, idPedido: number) {
+  const v = await requerirVendedor();
+  if (!v.puede_editar && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite eliminar solicitudes." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("solicitudes").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath(`/pedidos/${idPedido}`);
   return { ok: true };

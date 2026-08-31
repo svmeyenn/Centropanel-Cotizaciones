@@ -1,4 +1,4 @@
-import { pesos, unidades as fmtUnid, fecha as fmtFecha, sumarDias } from "@/lib/formato";
+import { pesos, porcentaje, unidades as fmtUnid, fecha as fmtFecha, sumarDias } from "@/lib/formato";
 import { pTxt, pNum, type Parametros } from "@/lib/parametros";
 import { LOGO_PDF } from "@/lib/logo";
 
@@ -32,6 +32,10 @@ export interface CotizacionDoc {
   cliente: PersonaDoc | null;
   vendedor: PersonaDoc | null;
   forma_pago: string | null;
+  medio_pago: string | null;
+  // Comision del medio de pago: no se descuenta, se recarga sobre el total.
+  comision_pct: number;
+  total_a_pagar: number;
   items: ItemDoc[];
   subtotal: number;
   descuento: number;
@@ -158,6 +162,24 @@ export default function DocumentoCotizacion({
               <td className="text-right pr-6 py-1.5">TOTAL</td>
               <td className="text-right py-1.5 pr-2">{pesos(d.total)}</td>
             </tr>
+            {d.comision_pct > 0 && (
+              <>
+                <tr>
+                  <td className="text-right pr-6 py-0.5">
+                    RECARGO {d.medio_pago} {porcentaje(d.comision_pct)}%
+                  </td>
+                  <td className="text-right py-0.5">
+                    {pesos(d.total_a_pagar - d.total)}
+                  </td>
+                </tr>
+                <tr className="bg-dorado-osc text-white font-bold">
+                  <td className="text-right pr-6 py-1.5">TOTAL A PAGAR</td>
+                  <td className="text-right py-1.5 pr-2">
+                    {pesos(d.total_a_pagar)}
+                  </td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
       </div>
@@ -170,7 +192,7 @@ export default function DocumentoCotizacion({
             Validez de la cotizacion: {d.validez_dias} dias corridos (vence el{" "}
             {fmtFecha(vence)}).
           </p>
-          <p>Medio de pago: {pTxt(p, "MedioPagoDefecto")}</p>
+          <p>Medio de pago: {d.medio_pago ?? pTxt(p, "MedioPagoDefecto")}</p>
           {d.forma_pago && <p>Forma de pago: {d.forma_pago}</p>}
           {d.tiempo_entrega && <p>Tiempo de entrega: {d.tiempo_entrega}</p>}
           <p>Tarifas: {pTxt(p, "NotaTarifas")}</p>

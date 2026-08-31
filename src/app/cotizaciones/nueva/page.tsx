@@ -15,6 +15,7 @@ export default async function Pagina() {
   const [
     { data: clientes },
     { data: formasPago },
+    { data: mediosPago },
     { data: productos },
     { data: materias },
     params,
@@ -26,6 +27,11 @@ export default async function Pagina() {
         .order("razon_social"),
       supabase
         .from("formas_pago")
+        .select("*")
+        .eq("activo", true)
+        .order("orden"),
+      supabase
+        .from("medios_pago")
         .select("*")
         .eq("activo", true)
         .order("orden"),
@@ -56,6 +62,12 @@ export default async function Pagina() {
         modo="crear"
         clientes={clientes ?? []}
         formasPago={formasPago ?? []}
+        mediosPago={(mediosPago ?? []).map((m) => ({
+          id: Number(m.id),
+          nombre: m.nombre as string,
+          comision_pct: Number(m.comision_pct),
+          activo: Boolean(m.activo),
+        }))}
         productos={productos ?? []}
         materias={materias ?? []}
         puedeCrearPanel={v.puede_crear || v.rol === "Administrador"}
@@ -65,6 +77,7 @@ export default async function Pagina() {
           id_cliente: null,
           id_vendedor: v.id,
           id_forma_pago: null,
+          id_medio_pago: null,
           fecha: hoyISO(),
           validez_dias: pNum(params, "ValidezDias", 7),
           tiempo_entrega: pTxt(params, "TiempoEntregaDefecto"),

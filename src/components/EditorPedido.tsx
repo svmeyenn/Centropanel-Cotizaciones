@@ -13,6 +13,8 @@ import {
   actualizarLineasPedido,
   quitarLineaPedido,
   generarSolicitudes,
+  cambiarEstadoSolicitud,
+  eliminarSolicitud,
   type DatosPedido,
 } from "@/app/pedidos/acciones";
 
@@ -51,6 +53,7 @@ export default function EditorPedido({
   cuenta,
   pagos,
   formaPago,
+  medioPago,
   puedeEditar,
   puedeCrear,
   esAdmin,
@@ -67,6 +70,7 @@ export default function EditorPedido({
   cuenta: Cuenta;
   pagos: PagoVista[];
   formaPago: string | null;
+  medioPago: string | null;
   puedeEditar: boolean;
   puedeCrear: boolean;
   esAdmin: boolean;
@@ -314,6 +318,7 @@ export default function EditorPedido({
       <CuentaCorrientePedido
         idPedido={id}
         formaPago={formaPago}
+        medioPago={medioPago}
         cuenta={cuenta}
         pagos={pagos}
         puedeCrear={puedeCrear}
@@ -374,6 +379,9 @@ export default function EditorPedido({
                     setSinProveedor(r.sinProveedor ?? []);
                     setAviso(
                       `${r.solicitudes} solicitud(es) generada(s).` +
+                        (r.existentes
+                          ? ` ${r.existentes} proveedor(es) ya tenian una y se dejaron como estaban.`
+                          : "") +
                         (r.sinProveedor?.length
                           ? ` ${r.sinProveedor.length} insumo(s) sin proveedor.`
                           : "")
@@ -393,7 +401,7 @@ export default function EditorPedido({
               </button>
               <span className="text-xs text-gray-500">
                 {cuenta.pie_cubierto
-                  ? "Un documento por proveedor. Volver a generarlas reemplaza las anteriores."
+                  ? "Un documento por proveedor. Las ya emitidas no se tocan: para rehacer una hay que eliminarla."
                   : "Primero hay que registrar el pie en la cuenta corriente."}
               </span>
             </div>
@@ -443,15 +451,57 @@ export default function EditorPedido({
                 <td className="px-3 py-2 font-semibold text-verde">{s.num}</td>
                 <td className="px-3 py-2">{s.proveedor}</td>
                 <td className="px-3 py-2 text-right">{s.lineas}</td>
-                <td className="px-3 py-2">{s.estado}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2">
+                  {s.estado === "Adjudicada" ? (
+                    <span className="bg-verde text-white px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                      ADJUDICADA
+                    </span>
+                  ) : (
+                    s.estado
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">
                   <Link
                     href={`/solicitudes/${s.id}`}
                     target="_blank"
-                    className="text-verde underline"
+                    className="text-verde underline mr-2"
                   >
-                    ver documento
+                    ver
                   </Link>
+                  {puedeEditar && (
+                    <>
+                      <button
+                        onClick={() =>
+                          empezar(async () => {
+                            const r = await cambiarEstadoSolicitud(
+                              s.id,
+                              id,
+                              s.estado === "Adjudicada" ? "Respondida" : "Adjudicada"
+                            );
+                            if (r?.error) setError(r.error);
+                            else router.refresh();
+                          })
+                        }
+                        className="text-verde text-xs underline mr-2"
+                        title="La adjudicada es a la que se le compra"
+                      >
+                        {s.estado === "Adjudicada" ? "quitar adjudicacion" : "adjudicar"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          empezar(async () => {
+                            const r = await eliminarSolicitud(s.id, id);
+                            if (r?.error) setError(r.error);
+                            else router.refresh();
+                          })
+                        }
+                        className="text-red-600 text-xs underline"
+                        title="Eliminarla permite volver a pedirle a este proveedor"
+                      >
+                        eliminar
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

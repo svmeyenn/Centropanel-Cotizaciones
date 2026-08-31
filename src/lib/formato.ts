@@ -66,3 +66,11 @@ export function primerNombre(nombre: string | null | undefined): string {
   if (esp > 0) s = s.slice(0, esp);
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
+
+// Recargo por comision del medio de pago: el total se divide por
+// (1 - comision) para que el neto llegue completo. Con 1 %, cobrar 1.000
+// significa facturar 1.010.
+export function conComision(total: number, comisionPct: number): number {
+  if (!comisionPct || comisionPct <= 0 || comisionPct >= 100) return total;
+  return Math.round(total / (1 - comisionPct / 100));
+}

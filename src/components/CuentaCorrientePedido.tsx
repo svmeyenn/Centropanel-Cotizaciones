@@ -12,6 +12,9 @@ import {
 export interface Cuenta {
   total_neto: number;
   iva: number;
+  total_sin_comision: number;
+  comision_pct: number;
+  comision_monto: number;
   total: number;
   pie_pct: number;
   pie_monto: number;
@@ -29,7 +32,14 @@ export interface PagoVista {
   quien: string | null;
 }
 
-const MEDIOS = ["Transferencia", "Efectivo", "Cheque", "Tarjeta", "Otro"];
+const MEDIOS = [
+  "Transferencia",
+  "Efectivo",
+  "Cheque",
+  "Tarjeta",
+  "Link de Pago",
+  "Otro",
+];
 
 // Cuenta corriente del pedido: lo pactado, lo abonado y lo que falta. El pie
 // no es informativo: mientras no este cubierto, el pedido no puede pedir
@@ -37,6 +47,7 @@ const MEDIOS = ["Transferencia", "Efectivo", "Cheque", "Tarjeta", "Otro"];
 export default function CuentaCorrientePedido({
   idPedido,
   formaPago,
+  medioPago,
   cuenta,
   pagos,
   puedeCrear,
@@ -44,6 +55,7 @@ export default function CuentaCorrientePedido({
 }: {
   idPedido: number;
   formaPago: string | null;
+  medioPago: string | null;
   cuenta: Cuenta;
   pagos: PagoVista[];
   puedeCrear: boolean;
@@ -81,9 +93,19 @@ export default function CuentaCorrientePedido({
           <Dato titulo="Saldo" valor={pesos(cuenta.saldo)} />
         </div>
 
-        {formaPago && (
+        {(formaPago || medioPago) && (
           <p className="text-xs text-gray-500">
-            Forma de pago: {formaPago}
+            {formaPago}
+            {formaPago && medioPago ? " \u00b7 " : ""}
+            {medioPago}
+          </p>
+        )}
+
+        {cuenta.comision_pct > 0 && (
+          <p className="text-xs text-gray-600">
+            Total sin comision {pesos(cuenta.total_sin_comision)} + recargo{" "}
+            {porcentaje(cuenta.comision_pct)} % ({pesos(cuenta.comision_monto)})
+            = {pesos(cuenta.total)}. El recargo hace que el neto llegue completo.
           </p>
         )}
 

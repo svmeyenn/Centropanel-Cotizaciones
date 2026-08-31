@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros } from "@/lib/parametros";
+import { conComision } from "@/lib/formato";
 import BotonImprimir from "./BotonImprimir";
 import DocumentoCotizacion, {
   type CotizacionDoc,
@@ -50,7 +51,7 @@ export default async function Pagina({
     supabase
       .from("cotizaciones")
       .select(
-        "*, clientes(razon_social, rut, contacto, email, telefono), vendedores(nombre, cargo, email, telefono), formas_pago(descripcion)"
+        "*, clientes(razon_social, rut, contacto, email, telefono), vendedores(nombre, cargo, email, telefono), formas_pago(descripcion), medios_pago(nombre, comision_pct)"
       )
       .eq("id", id)
       .single(),
@@ -76,6 +77,7 @@ export default async function Pagina({
   const cli = uno(cot.clientes);
   const ven = uno(cot.vendedores);
   const fp = uno(cot.formas_pago);
+  const mp = uno(cot.medios_pago) as { nombre?: string; comision_pct?: number } | null;
 
   const d: CotizacionDoc = {
     num_cotizacion: cot.num_cotizacion,
@@ -86,6 +88,9 @@ export default async function Pagina({
     cliente: cli,
     vendedor: ven,
     forma_pago: fp?.descripcion ?? null,
+    medio_pago: mp?.nombre ?? null,
+    comision_pct: Number(mp?.comision_pct ?? 0),
+    total_a_pagar: conComision(Number(tot?.total ?? 0), Number(mp?.comision_pct ?? 0)),
     items: (items ?? []).map((it) => ({
       descripcion: it.descripcion,
       unidades: Number(it.unidades),

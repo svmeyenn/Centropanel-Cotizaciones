@@ -6,11 +6,13 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
 import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { MateriaVenta } from "@/components/Configurador";
+import type { MedioPago } from "@/components/GestorMediosPago";
 import {
   pesos,
   unidades as fmtUnid,
   sumarDias,
   fecha as fmtFecha,
+  porcentaje,
 } from "@/lib/formato";
 import {
   crearCotizacion,
@@ -39,6 +41,7 @@ interface Props {
   id?: number;
   clientes: Cliente[];
   formasPago: FormaPago[];
+  mediosPago: MedioPago[];
   productos: ProductoVenta[];
   // Insumos para el panel emergente que crea un panel sin salir del cotizador.
   materias: MateriaVenta[];
@@ -128,6 +131,17 @@ export default function EditorCotizacion(p: Props) {
   const totalNeto = subtotal - descuento;
   const iva = Math.round(totalNeto * p.iva);
   const total = totalNeto + iva;
+
+  // La comision del medio de pago no se descuenta del precio: se recarga sobre
+  // el total, dividiendo por (1 - comision), para que a Centro Panel le llegue
+  // integro lo cotizado.
+  const medio = p.mediosPago.find((m) => m.id === d.id_medio_pago) ?? null;
+  const comisionPct = medio?.comision_pct ?? 0;
+  const medioNombre = medio?.nombre ?? "";
+  const totalConComision =
+    comisionPct > 0 && comisionPct < 100
+      ? Math.round(total / (1 - comisionPct / 100))
+      : total;
 
   const pctMostrado =
     d.descuento_tipo === "Porcentaje"
@@ -303,6 +317,28 @@ export default function EditorCotizacion(p: Props) {
             {p.formasPago.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.descripcion}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="text-sm">
+          <span className="block text-dorado-osc font-semibold mb-1">
+            Medio de pago
+          </span>
+          <select
+            className={inputCls}
+            disabled={soloLectura}
+            value={d.id_medio_pago ?? ""}
+            onChange={(e) => set("id_medio_pago", Number(e.target.value) || null)}
+          >
+            <option value="">-- elija --</option>
+            {p.mediosPago.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nombre}
+                {m.comision_pct > 0
+                  ? `  (comision ${porcentaje(m.comision_pct)} %)`
+                  : ""}
               </option>
             ))}
           </select>
@@ -530,6 +566,23 @@ export default function EditorCotizacion(p: Props) {
             <span>TOTAL</span>
             <span>{pesos(total)}</span>
           </div>
+
+          {comisionPct > 0 && (
+            <>
+              <Fila
+                label={`Recargo ${porcentaje(comisionPct)} % por ${medioNombre}`}
+                valor={pesos(totalConComision - total)}
+              />
+              <div className="flex justify-between bg-dorado-osc text-white px-3 py-2 rounded font-bold">
+                <span>TOTAL A PAGAR</span>
+                <span>{pesos(totalConComision)}</span>
+              </div>
+              <p className="text-xs text-gray-500 text-right">
+                El total se divide por (1 &minus; comision) para que el neto
+                llegue completo.
+              </p>
+            </>
+          )}
         </div>
       </div>
 

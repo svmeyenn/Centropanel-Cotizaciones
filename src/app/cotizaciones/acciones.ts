@@ -18,6 +18,7 @@ export interface DatosCotizacion {
   id_cliente: number | null;
   id_vendedor: number | null;
   id_forma_pago: number | null;
+  id_medio_pago: number | null;
   fecha: string;
   validez_dias: number;
   tiempo_entrega: string;
@@ -95,6 +96,7 @@ export async function crearCotizacion(d: DatosCotizacion) {
       id_cliente: d.id_cliente,
       id_vendedor: d.id_vendedor,
       id_forma_pago: d.id_forma_pago,
+      id_medio_pago: d.id_medio_pago,
       fecha: d.fecha,
       validez_dias: d.validez_dias,
       tiempo_entrega: d.tiempo_entrega,
@@ -151,6 +153,7 @@ export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
       id_cliente: d.id_cliente,
       id_vendedor: d.id_vendedor,
       id_forma_pago: d.id_forma_pago,
+      id_medio_pago: d.id_medio_pago,
       fecha: d.fecha,
       validez_dias: d.validez_dias,
       tiempo_entrega: d.tiempo_entrega,

@@ -27,6 +27,7 @@ export default async function Pagina({
     { data: items },
     { data: clientes },
     { data: formasPago },
+    { data: mediosPago },
     { data: productos },
     { data: materias },
     parametros,
@@ -45,6 +46,7 @@ export default async function Pagina({
       .order("orden"),
     supabase.from("clientes").select("*").eq("activo", true).order("razon_social"),
     supabase.from("formas_pago").select("*").eq("activo", true).order("orden"),
+    supabase.from("medios_pago").select("*").eq("activo", true).order("orden"),
     supabase
       .from("v_catalogo_venta")
       .select("id, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
@@ -97,6 +99,12 @@ export default async function Pagina({
         estado={cot.estado}
         clientes={clientes ?? []}
         formasPago={formasPago ?? []}
+        mediosPago={(mediosPago ?? []).map((m) => ({
+          id: Number(m.id),
+          nombre: m.nombre as string,
+          comision_pct: Number(m.comision_pct),
+          activo: Boolean(m.activo),
+        }))}
         productos={productos ?? []}
         materias={materias ?? []}
         puedeCrearPanel={v.puede_crear || v.rol === "Administrador"}
@@ -106,6 +114,7 @@ export default async function Pagina({
           id_cliente: cot.id_cliente,
           id_vendedor: cot.id_vendedor,
           id_forma_pago: cot.id_forma_pago,
+          id_medio_pago: cot.id_medio_pago,
           fecha: (cot.fecha as string).slice(0, 10),
           validez_dias: cot.validez_dias,
           tiempo_entrega: cot.tiempo_entrega ?? "",

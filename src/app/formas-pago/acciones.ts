@@ -72,3 +72,60 @@ export async function cambiarActivoFormaPago(id: number, activo: boolean) {
   revalidatePath("/formas-pago");
   return { ok: true };
 }
+
+// --- medios de pago ---------------------------------------------------------
+
+// Tarjeta y link de pago cobran comision. No se descuenta del precio: se
+// recarga sobre el total dividiendo por (1 - comision), de modo que a Centro
+// Panel le llegue integro lo cotizado.
+export async function actualizarMedioPago(
+  id: number,
+  nombre: string,
+  comisionPct: number,
+  activo: boolean
+) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  if (!nombre.trim()) return { error: "Indique el nombre." };
+  if (comisionPct < 0 || comisionPct >= 100) {
+    return { error: "La comision debe estar entre 0 y 100." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("medios_pago")
+    .update({ nombre: nombre.trim(), comision_pct: comisionPct, activo })
+    .eq("id", id);
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Ya existe un medio de pago con ese nombre."
+          : error.message,
+    };
+  }
+  revalidatePath("/formas-pago");
+  revalidatePath("/cotizaciones");
+  return { ok: true };
+}
+
+export async function crearMedioPago(nombre: string, comisionPct: number) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  if (!nombre.trim()) return { error: "Indique el nombre." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("medios_pago")
+    .insert({ nombre: nombre.trim(), comision_pct: comisionPct });
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Ya existe un medio de pago con ese nombre."
+          : error.message,
+    };
+  }
+  revalidatePath("/formas-pago");
+  return { ok: true };
+}
