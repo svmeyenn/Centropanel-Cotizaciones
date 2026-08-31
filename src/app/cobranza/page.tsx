@@ -14,6 +14,7 @@ const FILTROS: { clave: string; texto: string }[] = [
   { clave: "pie", texto: "Falta el pie" },
   { clave: "saldo", texto: "Con saldo" },
   { clave: "pagado", texto: "Pagados" },
+  { clave: "sinfactura", texto: "Sin facturar" },
 ];
 
 // Estado de pago de cada pedido, en una sola pantalla. El listado de pedidos
@@ -36,7 +37,7 @@ export default async function Pagina({
 
   const ids = (pedidos ?? []).map((p) => Number(p.id));
 
-  const [{ data: cuentas }, { data: pagos }] = await Promise.all([
+  const [{ data: cuentas }, { data: pagos }, { data: facturas }] = await Promise.all([
     ids.length
       ? supabase.from("v_pedido_cuenta").select("*").in("id", ids)
       : Promise.resolve({ data: [] as Record<string, unknown>[] }),
@@ -47,6 +48,14 @@ export default async function Pagina({
           .in("id_pedido", ids)
           .order("fecha", { ascending: false })
       : Promise.resolve({ data: [] as { id_pedido: number; fecha: string }[] }),
+    ids.length
+      ? supabase
+          .from("facturas")
+          .select("id_pedido, numero, fecha")
+          .in("id_pedido", ids)
+      : Promise.resolve({
+          data: [] as { id_pedido: number; numero: string; fecha: string }[],
+        }),
   ]);
 
   const cuentaDe = new Map(
@@ -58,6 +67,15 @@ export default async function Pagina({
     const k = Number(g.id_pedido);
     if (!ultimoPago.has(k)) ultimoPago.set(k, g.fecha as string);
   }
+
+  // Facturado es lo que tiene factura emitida, no lo vendido: un pedido sin
+  // factura esta pendiente de facturar, por mucho que ya este pagado.
+  const facturaDe = new Map(
+    (facturas ?? []).map((f) => [
+      Number(f.id_pedido),
+      { numero: f.numero as string, fecha: f.fecha as string },
+    ])
+  );
 
   const uno = <T,>(x: unknown): T | null =>
     Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
@@ -85,6 +103,7 @@ export default async function Pagina({
       avance: total > 0 ? (abonado / total) * 100 : 0,
       estado,
       ultimo: ultimoPago.get(Number(p.id)) ?? null,
+      factura: facturaDe.get(Number(p.id)) ?? null,
     };
   });
 
@@ -95,7 +114,9 @@ export default async function Pagina({
         ? r.estado === "Con saldo"
         : filtro === "pagado"
           ? r.estado === "Pagado"
-          : true
+          : filtro === "sinfactura"
+            ? r.factura == null
+            : true
   );
 
   const sum = (f: (r: (typeof filas)[number]) => number) =>
@@ -117,10 +138,18 @@ export default async function Pagina({
           </Link>
         </BarraNavegacion>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <Tarjeta titulo="Pedidos" valor={String(visibles.length)} />
-          <Tarjeta titulo="Facturado" valor={pesos(sum((r) => r.total))} />
+          <Tarjeta titulo="Total pedidos" valor={pesos(sum((r) => r.total))} />
           <Tarjeta titulo="Abonado" valor={pesos(sum((r) => r.abonado))} />
+          <Tarjeta
+            titulo="Facturado"
+            valor={pesos(sum((r) => (r.factura ? r.total : 0)))}
+          />
+          <Tarjeta
+            titulo="Pendiente de factura"
+            valor={pesos(sum((r) => (r.factura ? 0 : r.total)))}
+          />
           <Tarjeta
             titulo="Por cobrar"
             valor={pesos(sum((r) => Math.max(r.saldo, 0)))}
@@ -164,12 +193,13 @@ export default async function Pagina({
                   <th className="text-left px-3 py-2 w-32">Avance</th>
                   <th className="text-left px-3 py-2">Ultimo abono</th>
                   <th className="text-left px-3 py-2">Estado</th>
+                  <th className="text-left px-3 py-2">Factura</th>
                 </tr>
               </thead>
               <tbody>
                 {visibles.length === 0 && (
                   <tr>
-                    <td colSpan={11} className="text-center text-gray-400 py-8">
+                    <td colSpan={12} className="text-center text-gray-400 py-8">
                       {filas.length === 0
                         ? "Todavia no hay pedidos."
                         : "Ningun pedido en ese estado."}
@@ -242,6 +272,13 @@ export default async function Pagina({
                         <span className="text-gray-700">Con saldo</span>
                       )}
                     </td>
+                    <td className="px-3 py-2">
+                      {r.factura ? (
+                        <span className="text-gray-700">{r.factura.numero}</span>
+                      ) : (
+                        <span className="text-amber-700">pendiente</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -251,8 +288,10 @@ export default async function Pagina({
 
         <p className="text-xs text-gray-500">
           El total incluye IVA y el recargo del medio de pago, que es lo que el
-          cliente tiene que transferir. Un pedido con el pie pendiente no puede
-          pedir insumos a los proveedores.
+          cliente tiene que transferir. Facturado es lo que ya tiene factura
+          emitida: un pedido pagado sigue pendiente de factura hasta que se
+          registre. Un pedido con el pie pendiente no puede pedir insumos a los
+          proveedores.
         </p>
       </div>
     </div>
