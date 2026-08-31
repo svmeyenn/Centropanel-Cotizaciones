@@ -208,3 +208,60 @@ export async function eliminarSolicitud(id: number, idPedido: number) {
   revalidatePath(`/pedidos/${idPedido}`);
   return { ok: true };
 }
+
+// --- facturacion ------------------------------------------------------------
+
+// Registrar la factura cierra el pedido. No emite el documento tributario:
+// eso lo hace el sistema de facturacion electronica, y aqui se guarda su
+// numero para amarrar pedido y factura.
+export async function facturarPedido(
+  idPedido: number,
+  numero: string,
+  fecha: string
+) {
+  const v = await requerirVendedor();
+  if (!v.puede_crear && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite facturar." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("facturar_pedido", {
+    p_pedido: idPedido,
+    p_numero: numero,
+    p_fecha: fecha,
+    p_vendedor: v.id,
+  });
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Ya existe una factura con ese numero."
+          : error.message,
+    };
+  }
+
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/pedidos");
+  revalidatePath("/cobranza");
+  return { ok: true, id: Number(data) };
+}
+
+// Anular la factura devuelve el pedido a Despachado: es la unica forma de
+// volver a facturarlo, y solo el administrador puede hacerlo.
+export async function anularFactura(id: number, idPedido: number) {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador") {
+    return { error: "Solo el administrador puede anular una factura." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("facturas").delete().eq("id", id);
+  if (error) return { error: error.message };
+
+  await supabase.from("pedidos").update({ estado: "Despachado" }).eq("id", idPedido);
+
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/pedidos");
+  revalidatePath("/cobranza");
+  return { ok: true };
+}

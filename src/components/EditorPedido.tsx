@@ -8,6 +8,9 @@ import CuentaCorrientePedido, {
   type Cuenta,
   type PagoVista,
 } from "@/components/CuentaCorrientePedido";
+import FacturaPedido, {
+  type FacturaVista,
+} from "@/components/FacturaPedido";
 import {
   actualizarPedido,
   actualizarLineasPedido,
@@ -38,7 +41,13 @@ export interface SolicitudVista {
   lineas: number;
 }
 
-const ESTADOS = ["Emitido", "En preparacion", "Despachado", "Anulado"];
+const ESTADOS = [
+  "Emitido",
+  "En preparacion",
+  "Despachado",
+  "Facturado",
+  "Anulado",
+];
 
 export default function EditorPedido({
   id,
@@ -52,6 +61,7 @@ export default function EditorPedido({
   solicitudes,
   cuenta,
   pagos,
+  factura,
   formaPago,
   medioPago,
   puedeEditar,
@@ -69,6 +79,7 @@ export default function EditorPedido({
   solicitudes: SolicitudVista[];
   cuenta: Cuenta;
   pagos: PagoVista[];
+  factura: FacturaVista | null;
   formaPago: string | null;
   medioPago: string | null;
   puedeEditar: boolean;
@@ -508,6 +519,15 @@ export default function EditorPedido({
           </tbody>
         </table>
       </div>
+
+      <FacturaPedido
+        idPedido={id}
+        factura={factura}
+        total={cuenta.total}
+        saldo={cuenta.saldo}
+        puedeCrear={puedeCrear}
+        esAdmin={esAdmin}
+      />
 
       {/* notas */}
       <div className="bg-white border border-gray-200 rounded p-4">

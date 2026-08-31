@@ -5,6 +5,7 @@ import EditorPedido, {
   type NecesidadVista,
   type SolicitudVista,
 } from "@/components/EditorPedido";
+import type { FacturaVista } from "@/components/FacturaPedido";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import Link from "next/link";
 import { requerirVendedor } from "@/lib/sesion";
@@ -30,6 +31,7 @@ export default async function Pagina({
     { data: sols },
     { data: cta },
     { data: pagos },
+    { data: fact },
   ] = await Promise.all([
       supabase
         .from("pedidos")
@@ -56,6 +58,11 @@ export default async function Pagina({
         .eq("id_pedido", id)
         .order("fecha")
         .order("id"),
+      supabase
+        .from("facturas")
+        .select("id, numero, fecha, neto, iva, total, vendedores(nombre)")
+        .eq("id_pedido", id)
+        .maybeSingle(),
     ]);
 
   if (!ped) notFound();
@@ -161,6 +168,19 @@ export default async function Pagina({
           referencia: g.referencia as string | null,
           quien: uno<{ nombre: string }>(g.vendedores)?.nombre ?? null,
         }))}
+        factura={
+          fact
+            ? ({
+                id: Number(fact.id),
+                numero: fact.numero as string,
+                fecha: fact.fecha as string,
+                neto: Number(fact.neto),
+                iva: Number(fact.iva),
+                total: Number(fact.total),
+                quien: uno<{ nombre: string }>(fact.vendedores)?.nombre ?? null,
+              } satisfies FacturaVista)
+            : null
+        }
         puedeEditar={v.puede_editar || v.rol === "Administrador"}
         puedeCrear={v.puede_crear || v.rol === "Administrador"}
         esAdmin={v.rol === "Administrador"}

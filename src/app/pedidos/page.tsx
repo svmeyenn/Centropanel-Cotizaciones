@@ -61,6 +61,13 @@ export default async function Pagina() {
       (totalPorPedido.get(k) ?? 0) + Number(l.unidades) * Number(l.valor_unitario)
     );
   }
+  const { data: facturas } = ids.length
+    ? await supabase.from("facturas").select("id_pedido, numero").in("id_pedido", ids)
+    : { data: [] as { id_pedido: number; numero: string }[] };
+  const facturaDe = new Map(
+    (facturas ?? []).map((f) => [Number(f.id_pedido), f.numero as string])
+  );
+
   const solPorPedido = new Map<number, number>();
   for (const s of sols ?? []) {
     const k = Number(s.id_pedido);
@@ -106,12 +113,13 @@ export default async function Pagina() {
                   <th className="text-right px-3 py-2">Solicitudes</th>
                   <th className="text-right px-3 py-2">Total con IVA</th>
                   <th className="text-right px-3 py-2">Saldo</th>
+                  <th className="text-left px-3 py-2">Factura</th>
                 </tr>
               </thead>
               <tbody>
                 {(pedidos ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={9} className="text-center text-gray-400 py-8">
+                    <td colSpan={10} className="text-center text-gray-400 py-8">
                       Todavia no hay pedidos. Se generan desde una cotizacion.
                     </td>
                   </tr>
@@ -172,6 +180,9 @@ export default async function Pagina() {
                             pesos(c.saldo)
                           );
                         })()}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600">
+                        {facturaDe.get(Number(p.id)) ?? ""}
                       </td>
                     </tr>
                   );
