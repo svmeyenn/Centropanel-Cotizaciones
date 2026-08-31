@@ -138,22 +138,24 @@ export default async function Pagina({
           </Link>
         </BarraNavegacion>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {/* Las seis cifras en una linea: se leen de un vistazo y en el orden
+            en que se miran, de lo vendido a lo facturado. */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
           <Tarjeta titulo="Pedidos" valor={String(visibles.length)} />
           <Tarjeta titulo="Total pedidos" valor={pesos(sum((r) => r.total))} />
-          <Tarjeta titulo="Abonado" valor={pesos(sum((r) => r.abonado))} />
           <Tarjeta
-            titulo="Facturado"
-            valor={pesos(sum((r) => (r.factura ? r.total : 0)))}
+            titulo="Por cobrar"
+            valor={pesos(sum((r) => Math.max(r.saldo, 0)))}
+            destacado
           />
           <Tarjeta
             titulo="Pendiente de factura"
             valor={pesos(sum((r) => (r.factura ? 0 : r.total)))}
           />
+          <Tarjeta titulo="Abonado" valor={pesos(sum((r) => r.abonado))} />
           <Tarjeta
-            titulo="Por cobrar"
-            valor={pesos(sum((r) => Math.max(r.saldo, 0)))}
-            destacado
+            titulo="Facturado"
+            valor={pesos(sum((r) => (r.factura ? r.total : 0)))}
           />
         </div>
 
@@ -308,10 +310,10 @@ function Tarjeta({
   destacado?: boolean;
 }) {
   return (
-    <div className={`rounded p-3 ${destacado ? "bg-crema" : "bg-gray-50"}`}>
-      <div className="text-xs text-gray-500">{titulo}</div>
+    <div className={`rounded p-2.5 ${destacado ? "bg-crema" : "bg-gray-50"}`}>
+      <div className="text-[11px] leading-tight text-gray-500">{titulo}</div>
       <div
-        className={`font-bold ${destacado ? "text-verde text-lg" : "text-gray-800"}`}
+        className={`font-bold text-sm whitespace-nowrap ${destacado ? "text-verde" : "text-gray-800"}`}
       >
         {valor}
       </div>
