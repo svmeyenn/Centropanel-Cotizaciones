@@ -13,6 +13,7 @@ export default async function Home() {
     { texto: "Detalle de cotizacion", href: "/cotizaciones/nueva" },
     { texto: "Cotizaciones", href: "/cotizaciones" },
     { texto: "Pedidos", href: "/pedidos" },
+    { texto: "Estado de pago", href: "/cobranza" },
     { texto: "Configurar panel SIP", href: "/configurador" },
     { texto: "Catalogo de productos", href: "/productos" },
     { texto: "Clientes", href: "/clientes" },

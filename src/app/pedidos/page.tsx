@@ -79,6 +79,12 @@ export default async function Pagina() {
       <div className="max-w-6xl mx-auto p-6 space-y-4">
         <BarraNavegacion>
           <Link
+            href="/cobranza"
+            className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded hover:bg-white"
+          >
+            Estado de pago
+          </Link>
+          <Link
             href="/cotizaciones"
             className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded hover:bg-white"
           >
