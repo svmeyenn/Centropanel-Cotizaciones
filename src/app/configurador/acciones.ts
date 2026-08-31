@@ -188,111 +188,51 @@ export async function guardarPanel(
   }
 
   const supabase = await createClient();
-  const b = c.id_placa_b ?? null;
 
-  const { data: existeId } = await supabase.rpc("panel_existente", {
+  // Todo el guardado lo hace guardar_panel() en la base. Antes se insertaba
+  // aqui y se pedia la fila de vuelta para conocer su id, pero esa lectura la
+  // frena el RLS de productos --que reserva la tabla a Administrador y
+  // Consulta porque tiene costo y margen--, y un Vendedor terminaba viendo un
+  // error por un panel que en realidad si se habia guardado.
+  const { data, error } = await supabase.rpc("guardar_panel", {
     p_eps: c.id_eps,
     p_placa_a: c.id_placa_a,
-    p_placa_b: b,
+    p_placa_b: c.id_placa_b ?? null,
+    p_precio_manual: precioManual ?? null,
   });
 
-  if (existeId) {
-    const [{ data: misma }, { data: prod }] = await Promise.all([
-      supabase.rpc("panel_misma_config", {
-        p_id: existeId,
-        p_eps: c.id_eps,
-        p_placa_a: c.id_placa_a,
-        p_placa_b: b,
-      }),
-      supabase
-        .from("v_catalogo_venta")
-        .select("descripcion")
-        .eq("id", existeId)
-        .single(),
-    ]);
-    const descExistente = prod?.descripcion ?? null;
-    // "misma" contempla las caras invertidas: un panel APA/EPS/Smart es el
-    // mismo producto que Smart/EPS/APA, solo cambia cual se llamo cara A.
+  if (error) return { error: error.message };
+
+  const r = (data ?? {}) as {
+    ok?: boolean;
+    id?: number;
+    descripcion?: string;
+    existe?: boolean;
+    misma_config?: boolean;
+    duplicado?: boolean;
+  };
+
+  if (r.existe) {
+    // "misma_config" contempla las caras invertidas: un panel APA/EPS/Smart es
+    // el mismo producto que Smart/EPS/APA, solo cambia cual se llamo cara A.
     return {
-      aviso: misma
+      aviso: r.misma_config
         ? `Este panel ya esta en el catalogo${
-            descExistente ? ` como "${descExistente}"` : ""
+            r.descripcion ? ` como "${r.descripcion}"` : ""
           }. Si lo armo con las caras al reves, es el mismo producto: no hay nada que agregar.`
         : "Ya existe un panel con este mismo nombre pero hecho con otras materias primas. No se guardo nada: para cambiarlo use Catalogo de productos.",
-      id: Number(existeId),
+      id: Number(r.id),
     };
   }
 
-  const [rDesc, rCosto, rEspesor, rSub] = await Promise.all([
-    supabase.rpc("descripcion_panel", {
-      p_eps: c.id_eps,
-      p_placa_a: c.id_placa_a,
-      p_placa_b: b,
-    }),
-    supabase.rpc("costo_panel", {
-      p_eps: c.id_eps,
-      p_placa_a: c.id_placa_a,
-      p_placa_b: b,
-    }),
-    supabase.rpc("espesor_total_panel", {
-      p_eps: c.id_eps,
-      p_placa_a: c.id_placa_a,
-      p_placa_b: b,
-    }),
-    // Subgrupo dentro de los paneles: la combinacion de caras, en el orden que
-    // fija la base para que APA+Smart y Smart+APA caigan juntos.
-    supabase.rpc("subfamilia_panel", {
-      p_placa_a: c.id_placa_a,
-      p_placa_b: b,
-    }),
-  ]);
-
-  const costo = Number(rCosto.data ?? 0);
-  let precio: number;
-
-  if (precioManual && precioManual > 0) {
-    precio = precioManual;
-  } else {
-    const { data } = await supabase.rpc("precio_desde_costo", {
-      p_costo: costo,
-      p_margen: null,
-    });
-    precio = Number(data ?? 0);
-  }
-
-  const { data: nuevo, error } = await supabase
-    .from("productos")
-    .insert({
-      descripcion: rDesc.data,
-      tipo: "Panel SIP",
-      familia: "Paneles SIP",
-      subfamilia: rSub.data,
-      id_eps: c.id_eps,
-      id_placa_a: c.id_placa_a,
-      id_placa_b: b,
-      espesor_total: rEspesor.data,
-      costo_unitario: costo,
-      precio_venta: precio,
-      margen_aplicado: precio > 0 ? (precio - costo) / precio : 0,
-      precio_manual: Boolean(precioManual && precioManual > 0),
-      activo: true,
-    })
-    .select("id")
-    .single();
-
-  if (error) {
-    // Carrera entre la comprobacion de arriba y el insert (dos pestanas, dos
-    // usuarios). El indice unico de la base es la ultima linea de defensa.
-    if (error.code === "23505") {
-      return {
-        aviso:
-          "Ese panel acaba de quedar en el catalogo (quiza desde otra pantalla). No se creo un duplicado.",
-      };
-    }
-    return { error: error.message };
+  if (r.duplicado) {
+    return {
+      aviso:
+        "Ese panel acaba de quedar en el catalogo (quiza desde otra pantalla). No se creo un duplicado.",
+    };
   }
 
   revalidatePath("/productos");
   revalidatePath("/configurador");
-  return { ok: true, id: Number(nuevo.id) };
+  return { ok: true, id: Number(r.id) };
 }
