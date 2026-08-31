@@ -11,7 +11,6 @@ import {
   unidades as fmtUnid,
   sumarDias,
   fecha as fmtFecha,
-  conIva,
 } from "@/lib/formato";
 import {
   crearCotizacion,
@@ -421,9 +420,6 @@ export default function EditorCotizacion(p: Props) {
                 value={valorUnit}
                 onChange={(e) => setValorUnit(e.target.value)}
               />
-              <span className="block text-gray-500">
-                PVP {pesos(conIva(Number(valorUnit) || 0, p.iva))}
-              </span>
             </label>
             <button
               onClick={agregarItem}
@@ -448,7 +444,6 @@ export default function EditorCotizacion(p: Props) {
                 <th className="text-left px-3 py-2">Descripcion</th>
                 <th className="text-right px-3 py-2 w-24">Unid.</th>
                 <th className="text-right px-3 py-2 w-32">V. unit. neto</th>
-                <th className="text-right px-3 py-2 w-32">PVP unit.</th>
                 <th className="text-right px-3 py-2 w-32">Subtotal</th>
                 {!soloLectura && <th className="w-16" />}
               </tr>
@@ -456,7 +451,7 @@ export default function EditorCotizacion(p: Props) {
             <tbody>
               {d.items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-400 py-6">
+                  <td colSpan={6} className="text-center text-gray-400 py-6">
                     Sin items todavia.
                   </td>
                 </tr>
@@ -467,9 +462,6 @@ export default function EditorCotizacion(p: Props) {
                   <td className="px-3 py-2">{it.descripcion}</td>
                   <td className="px-3 py-2 text-right">{fmtUnid(it.unidades)}</td>
                   <td className="px-3 py-2 text-right">{pesos(it.valor_unitario)}</td>
-                  <td className="px-3 py-2 text-right text-gray-500">
-                    {pesos(conIva(it.valor_unitario, p.iva))}
-                  </td>
                   <td className="px-3 py-2 text-right font-semibold">
                     {pesos(it.unidades * it.valor_unitario)}
                   </td>
@@ -513,15 +505,16 @@ export default function EditorCotizacion(p: Props) {
             />
             <span className="text-gray-500">%</span>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               className="border border-gray-300 rounded px-2 py-1 text-right w-32 disabled:bg-gray-100"
               disabled={soloLectura}
-              value={descuento}
+              value={pesos(descuento)}
               onChange={(e) =>
                 setD((x) => ({
                   ...x,
                   descuento_tipo: "Monto" as TipoDescuento,
-                  descuento_monto: Number(e.target.value) || 0,
+                  descuento_monto: Number(e.target.value.replace(/\D/g, "")) || 0,
                 }))
               }
               title="Descuento en pesos"
