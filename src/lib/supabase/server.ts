@@ -3,6 +3,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/database";
+import { ESQUEMA } from "@/lib/supabase/esquema";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -11,6 +12,9 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // Produccion o la copia de pruebas, segun la configuracion de este
+      // despliegue.
+      db: { schema: ESQUEMA },
       cookies: {
         getAll() {
           return cookieStore.getAll();
