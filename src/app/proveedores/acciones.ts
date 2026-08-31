@@ -167,3 +167,41 @@ export async function quitarItemProveedor(id: number, idProveedor: number) {
   revalidatePath(`/proveedores/${idProveedor}`);
   return { ok: true };
 }
+
+// Asignacion en lote: se marcan varios productos y se agregan de una vez, con
+// costo en cero para completarlo despues en la propia tabla. Cargar una
+// maestra de decenas de items de a uno, escribiendo el costo cada vez, es lo
+// que hace que la maestra no se cargue nunca.
+export async function agregarItemsProveedor(
+  idProveedor: number,
+  claves: string[]
+) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  if (!claves.length) return { error: "No hay nada marcado." };
+
+  const filas = claves.map((c) => {
+    const [tipo, id] = c.split(":");
+    return {
+      id_proveedor: idProveedor,
+      id_materia_prima: tipo === "mp" ? Number(id) : null,
+      id_producto: tipo === "prod" ? Number(id) : null,
+      costo: 0,
+    };
+  });
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("proveedor_items").insert(filas);
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Alguno de los marcados ya estaba en la maestra. Recargue la pagina."
+          : error.message,
+    };
+  }
+
+  revalidatePath(`/proveedores/${idProveedor}`);
+  return { ok: true, agregados: filas.length };
+}

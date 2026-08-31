@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState, useTransition } from "react";
 import { pesos } from "@/lib/formato";
 import {
   agregarItemProveedor,
+  agregarItemsProveedor,
   actualizarItemProveedor,
   quitarItemProveedor,
 } from "@/app/proveedores/acciones";
@@ -43,6 +44,11 @@ export default function MaestraProveedor({
   const [editCosto, setEditCosto] = useState(0);
   const [editCodigo, setEditCodigo] = useState("");
   const [pendiente, empezar] = useTransition();
+  // Asignacion en lote: marcar varios y agregarlos de una vez, con el costo
+  // en cero para completarlo despues en la tabla de abajo.
+  const [lote, setLote] = useState(false);
+  const [marcados, setMarcados] = useState<Set<string>>(new Set());
+  const [buscaLote, setBuscaLote] = useState("");
 
   const porGrupo = useMemo(() => {
     const g = new Map<string, Candidato[]>();
@@ -87,15 +93,74 @@ export default function MaestraProveedor({
     });
   }
 
+  const candidatosFiltrados = useMemo(() => {
+    const q = buscaLote.trim().toLowerCase();
+    if (!q) return candidatos;
+    return candidatos.filter(
+      (c) =>
+        c.etiqueta.toLowerCase().includes(q) ||
+        c.grupo.toLowerCase().includes(q),
+    );
+  }, [buscaLote, candidatos]);
+
+  const gruposLote = useMemo(() => {
+    const g = new Map<string, Candidato[]>();
+    for (const c of candidatosFiltrados) {
+      const l = g.get(c.grupo);
+      if (l) l.push(c);
+      else g.set(c.grupo, [c]);
+    }
+    return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
+  }, [candidatosFiltrados]);
+
+  function alternar(clave: string) {
+    setMarcados((m) => {
+      const n = new Set(m);
+      if (n.has(clave)) n.delete(clave);
+      else n.add(clave);
+      return n;
+    });
+  }
+
+  function alternarGrupo(lista: Candidato[]) {
+    const todos = lista.every((c) => marcados.has(c.clave));
+    setMarcados((m) => {
+      const n = new Set(m);
+      for (const c of lista) {
+        if (todos) n.delete(c.clave);
+        else n.add(c.clave);
+      }
+      return n;
+    });
+  }
+
   const input = "border border-gray-300 rounded px-2 py-1 text-sm";
 
   return (
     <div className="space-y-3">
       <div className="bg-crema border border-dorado rounded p-4 space-y-2">
-        <div className="text-sm font-semibold text-verde">
-          Agregar a la maestra
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-sm font-semibold text-verde">
+            Agregar a la maestra
+          </div>
+          <button
+            onClick={() => {
+              setLote((x) => !x);
+              setMarcados(new Set());
+              setBuscaLote("");
+            }}
+            className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
+          >
+            {lote ? "Agregar de a uno" : "Asignar varios"}
+          </button>
         </div>
-        <div className="grid md:grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
+        <div
+          className={
+            lote
+              ? "hidden"
+              : "grid md:grid-cols-[1fr_auto_auto_auto] gap-2 items-end"
+          }
+        >
           <label className="text-xs">
             <span className="block text-dorado-osc font-semibold mb-1">
               Materia prima o producto
@@ -150,6 +215,79 @@ export default function MaestraProveedor({
           </button>
         </div>
       </div>
+
+      {lote && (
+        <div className="bg-white border border-verde rounded p-4 space-y-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <input
+              className={`${input} w-64`}
+              placeholder="Filtrar por nombre o grupo"
+              value={buscaLote}
+              onChange={(e) => setBuscaLote(e.target.value)}
+            />
+            <span className="text-xs text-gray-500">
+              {marcados.size} marcado(s) de {candidatos.length} disponibles
+            </span>
+            <button
+              onClick={() =>
+                empezar(async () => {
+                  setError(null);
+                  const r = await agregarItemsProveedor(idProveedor, [
+                    ...marcados,
+                  ]);
+                  if (r?.error) setError(r.error);
+                  else {
+                    setMarcados(new Set());
+                    setLote(false);
+                  }
+                })
+              }
+              disabled={pendiente || marcados.size === 0}
+              className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40 ml-auto"
+            >
+              {pendiente ? "Asignando..." : `Asignar ${marcados.size}`}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500">
+            Entran con costo cero; el costo se completa despues en la tabla de
+            abajo, que es donde se ve todo junto.
+          </p>
+          <div className="max-h-80 overflow-y-auto border border-gray-200 rounded">
+            {gruposLote.length === 0 && (
+              <div className="text-center text-gray-400 text-xs py-6">
+                No queda nada por asignar con ese filtro.
+              </div>
+            )}
+            {gruposLote.map(([grupo, lista]) => (
+              <div key={grupo}>
+                <button
+                  onClick={() => alternarGrupo(lista)}
+                  className="w-full text-left bg-crema border-t border-dorado px-3 py-1.5 text-[11px] font-semibold text-verde uppercase tracking-wide"
+                  title="Marcar o desmarcar todo el grupo"
+                >
+                  {grupo}
+                  <span className="ml-2 font-normal normal-case text-gray-500">
+                    {lista.length}
+                  </span>
+                </button>
+                {lista.map((c) => (
+                  <label
+                    key={c.clave}
+                    className="flex items-center gap-2 px-3 py-1 text-xs border-t border-gray-100 hover:bg-crema cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={marcados.has(c.clave)}
+                      onChange={() => alternar(c.clave)}
+                    />
+                    <span>{c.etiqueta}</span>
+                  </label>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
@@ -216,7 +354,7 @@ export default function MaestraProveedor({
                             value={pesos(editCosto)}
                             onChange={(e) =>
                               setEditCosto(
-                                Number(e.target.value.replace(/\D/g, "")) || 0
+                                Number(e.target.value.replace(/\D/g, "")) || 0,
                               )
                             }
                           />
@@ -242,7 +380,7 @@ export default function MaestraProveedor({
                                     idProveedor,
                                     editCosto,
                                     editCodigo,
-                                    it.activo
+                                    it.activo,
                                   );
                                   if (r?.error) setError(r.error);
                                   else setEdit(null);
@@ -279,7 +417,7 @@ export default function MaestraProveedor({
                                     idProveedor,
                                     it.costo,
                                     it.codigo ?? "",
-                                    !it.activo
+                                    !it.activo,
                                   );
                                   if (r?.error) setError(r.error);
                                 })
@@ -293,7 +431,7 @@ export default function MaestraProveedor({
                                 empezar(async () => {
                                   const r = await quitarItemProveedor(
                                     it.id,
-                                    idProveedor
+                                    idProveedor,
                                   );
                                   if (r?.error) setError(r.error);
                                 })
