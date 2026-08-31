@@ -251,7 +251,9 @@ export default function Configurador({
               </div>
             )}
 
-            <div className="grid md:grid-cols-3 gap-3">
+            {/* Cuatro columnas: las cuatro cifras del panel se leen de una
+                sola pasada, sin que el margen caiga a una segunda linea. */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {/* Costo y margen van a todos los perfiles: el desglose de abajo,
                   que Stephan pidio abrir, ya los muestra. */}
               <Dato titulo="Costo unitario" valor={pesos(res.costo)} />
