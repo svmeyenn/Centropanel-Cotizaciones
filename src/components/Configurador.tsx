@@ -34,8 +34,14 @@ export default function Configurador({
   const [eps, setEps] = useState("");
   const [placaA, setPlacaA] = useState("");
   const [placaB, setPlacaB] = useState("");
-  const [margen, setMargen] = useState<string>("");
-  const [precioManual, setPrecioManual] = useState<string>("");
+  // Precio neto, PVP y margen son tres caras del mismo numero. Se guarda uno
+  // solo --el neto-- y los otros dos se derivan; asi tocar cualquiera mueve a
+  // los demas sin que puedan quedar contradiciendose.
+  const [precioTocado, setPrecioTocado] = useState<number | null>(null);
+  // Mientras se escribe en un campo se respeta lo tecleado; los otros dos se
+  // muestran ya derivados.
+  const [enFoco, setEnFoco] = useState<"neto" | "pvp" | "margen" | null>(null);
+  const [tecleado, setTecleado] = useState("");
   const [res, setRes] = useState<ResultadoPanel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -44,11 +50,11 @@ export default function Configurador({
 
   const listaEps = useMemo(
     () => materias.filter((m) => m.tipo === "EPS"),
-    [materias]
+    [materias],
   );
   const listaPlacas = useMemo(
     () => materias.filter((m) => m.tipo === "Placa"),
-    [materias]
+    [materias],
   );
 
   // Recalcula cada vez que cambia la combinacion o el margen, igual que
@@ -57,6 +63,7 @@ export default function Configurador({
   useEffect(() => {
     setError(null);
     setExito(null);
+    setPrecioTocado(null);
     if (!eps || !placaA) {
       setRes(null);
       return;
@@ -69,7 +76,7 @@ export default function Configurador({
           id_placa_a: Number(placaA),
           id_placa_b: placaB ? Number(placaB) : null,
         },
-        margen ? Number(margen) : null
+        null,
       );
       if (cancelado) return;
       if ("error" in r) {
@@ -82,7 +89,9 @@ export default function Configurador({
     return () => {
       cancelado = true;
     };
-  }, [eps, placaA, placaB, margen]);
+    // Cambiar la composicion es cambiar de panel: el precio escrito a mano
+    // para el anterior no tiene por que seguir valiendo.
+  }, [eps, placaA, placaB]);
 
   function onGuardar() {
     setError(null);
@@ -95,7 +104,7 @@ export default function Configurador({
           id_placa_a: Number(placaA),
           id_placa_b: placaB ? Number(placaB) : null,
         },
-        precioManual ? Number(precioManual) : null
+        precioTocado,
       );
       if (r.error) setError(r.error);
       else if (r.aviso) setAviso(r.aviso);
@@ -105,6 +114,13 @@ export default function Configurador({
 
   const sel = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
   const yaExiste = res?.existe_id != null;
+
+  // El neto manda; el PVP y el margen se derivan de el y del costo.
+  const neto = precioTocado ?? res?.precio ?? 0;
+  const pvp = conIva(neto, iva);
+  const costoActual = res?.costo ?? null;
+  const margenActual =
+    costoActual != null && neto > 0 ? (neto - costoActual) / neto : null;
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-4">
@@ -119,13 +135,19 @@ export default function Configurador({
 
       {/* composicion */}
       <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-        <div className="text-sm font-semibold text-verde">Composicion del panel</div>
+        <div className="text-sm font-semibold text-verde">
+          Composicion del panel
+        </div>
         <div className="grid md:grid-cols-3 gap-3">
           <label className="text-sm">
             <span className="block text-dorado-osc font-semibold mb-1">
               Plancha EPS
             </span>
-            <select className={sel} value={eps} onChange={(e) => setEps(e.target.value)}>
+            <select
+              className={sel}
+              value={eps}
+              onChange={(e) => setEps(e.target.value)}
+            >
               <option value="">-- elija --</option>
               {listaEps.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -233,15 +255,19 @@ export default function Configurador({
               {/* Costo y margen van a todos los perfiles: el desglose de abajo,
                   que Stephan pidio abrir, ya los muestra. */}
               <Dato titulo="Costo unitario" valor={pesos(res.costo)} />
-              <Dato titulo="Precio de venta neto" valor={pesos(res.precio)} destacado />
+              <Dato
+                titulo="Precio de venta neto"
+                valor={pesos(neto)}
+                destacado
+              />
               <Dato
                 titulo={`PVP (IVA ${Math.round(iva * 100)}%)`}
-                valor={pesos(conIva(res.precio, iva))}
+                valor={pesos(pvp)}
               />
-              {res.margen != null && (
+              {margenActual != null && (
                 <Dato
                   titulo="Margen resultante"
-                  valor={`${porcentaje(res.margen * 100)} %`}
+                  valor={`${porcentaje(margenActual * 100)} %`}
                 />
               )}
             </div>
@@ -271,16 +297,20 @@ export default function Configurador({
                       <td className="px-3 py-1.5" colSpan={2}>
                         COSTO TOTAL
                       </td>
-                      <td className="px-3 py-1.5 text-right">{pesos(res.costo)}</td>
+                      <td className="px-3 py-1.5 text-right">
+                        {pesos(res.costo)}
+                      </td>
                     </tr>
                     <tr className="border-t border-gray-100 text-gray-600">
                       <td className="px-3 py-1.5" colSpan={2}>
                         Precio = costo / (1 - margen), con margen{" "}
-                        {res.margen != null ? porcentaje(res.margen * 100) : "--"} %
-                        sobre el precio
+                        {margenActual != null
+                          ? porcentaje(margenActual * 100)
+                          : "--"}{" "}
+                        % sobre el precio
                       </td>
                       <td className="px-3 py-1.5 text-right font-bold text-verde">
-                        {pesos(res.precio)}
+                        {pesos(neto)}
                       </td>
                     </tr>
                   </tbody>
@@ -289,36 +319,106 @@ export default function Configurador({
             )}
 
             {esAdmin && (
-              <div className="grid md:grid-cols-2 gap-3 pt-2 border-t border-gray-100">
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">
-                    Margen objetivo (%)
-                  </span>
-                  <input
-                    type="number"
-                    className={sel}
-                    placeholder={String(Math.round(margenObjetivo * 100))}
-                    value={margen}
-                    onChange={(e) => setMargen(e.target.value)}
-                  />
+              <div className="pt-2 border-t border-gray-100 space-y-2">
+                <div className="grid md:grid-cols-3 gap-3">
+                  <label className="text-sm">
+                    <span className="block text-dorado-osc font-semibold mb-1">
+                      Precio de venta neto
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className={sel}
+                      value={enFoco === "neto" ? tecleado : pesos(neto)}
+                      onFocus={() => {
+                        setEnFoco("neto");
+                        setTecleado(pesos(neto));
+                      }}
+                      onBlur={() => setEnFoco(null)}
+                      onChange={(e) => {
+                        const v =
+                          Number(e.target.value.replace(/\D/g, "")) || 0;
+                        setTecleado(pesos(v));
+                        setPrecioTocado(v);
+                      }}
+                    />
+                  </label>
+                  <label className="text-sm">
+                    <span className="block text-dorado-osc font-semibold mb-1">
+                      PVP (IVA {Math.round(iva * 100)}%)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className={sel}
+                      value={enFoco === "pvp" ? tecleado : pesos(pvp)}
+                      onFocus={() => {
+                        setEnFoco("pvp");
+                        setTecleado(pesos(pvp));
+                      }}
+                      onBlur={() => setEnFoco(null)}
+                      onChange={(e) => {
+                        const v =
+                          Number(e.target.value.replace(/\D/g, "")) || 0;
+                        setTecleado(pesos(v));
+                        setPrecioTocado(Math.round(v / (1 + iva)));
+                      }}
+                    />
+                  </label>
+                  <label className="text-sm">
+                    <span className="block text-dorado-osc font-semibold mb-1">
+                      Margen (%)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      className={sel}
+                      value={
+                        enFoco === "margen"
+                          ? tecleado
+                          : margenActual != null
+                            ? porcentaje(margenActual * 100)
+                            : ""
+                      }
+                      onFocus={() => {
+                        setEnFoco("margen");
+                        setTecleado(
+                          margenActual != null
+                            ? porcentaje(margenActual * 100)
+                            : "",
+                        );
+                      }}
+                      onBlur={() => setEnFoco(null)}
+                      onChange={(e) => {
+                        const txt = e.target.value.replace(/[^0-9,.-]/g, "");
+                        setTecleado(txt);
+                        const m = Number(txt.replace(",", ".")) / 100;
+                        // Margen sobre el precio: al 100% el precio se iria al
+                        // infinito, asi que ahi no se recalcula nada.
+                        if (Number.isFinite(m) && m < 1) {
+                          if (costoActual != null) {
+                            setPrecioTocado(Math.round(costoActual / (1 - m)));
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="flex flex-wrap gap-3 items-center">
                   <span className="text-xs text-gray-500">
-                    Vacio usa el margen del sistema (
-                    {Math.round(margenObjetivo * 100)} %). El margen es sobre el
-                    precio, no sobre el costo.
+                    Los tres van juntos: al cambiar uno se recalculan los otros.
+                    El margen es sobre el precio, no sobre el costo.
                   </span>
-                </label>
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">
-                    Precio manual (opcional)
-                  </span>
-                  <input
-                    type="number"
-                    className={sel}
-                    placeholder="dejar vacio para usar el calculado"
-                    value={precioManual}
-                    onChange={(e) => setPrecioManual(e.target.value)}
-                  />
-                </label>
+                  {precioTocado != null && (
+                    <button
+                      onClick={() => setPrecioTocado(null)}
+                      className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+                      title={`Vuelve al margen del sistema (${Math.round(margenObjetivo * 100)} %)`}
+                    >
+                      Volver al precio automatico
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
