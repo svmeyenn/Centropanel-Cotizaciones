@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
@@ -13,6 +14,7 @@ import {
   sumarDias,
   fecha as fmtFecha,
   porcentaje,
+  hoyISO,
 } from "@/lib/formato";
 import {
   crearCotizacion,
@@ -54,6 +56,7 @@ interface Props {
 }
 
 export default function EditorCotizacion(p: Props) {
+  const router = useRouter();
   const [d, setD] = useState<DatosCotizacion>(p.inicial);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -212,6 +215,32 @@ export default function EditorCotizacion(p: Props) {
     });
   }
 
+  // Empezar otra cotizacion sin salir de la pantalla. Si hay algo escrito se
+  // pide confirmar: limpiar no se puede deshacer y perder una cotizacion a
+  // medio armar es caro.
+  const [confirmarNueva, setConfirmarNueva] = useState(false);
+  const hayAlgoEscrito =
+    d.items.length > 0 || d.id_cliente != null || d.notas.trim() !== "";
+
+  function nuevaCotizacion() {
+    if (p.modo !== "crear") {
+      // Sobre una cotizacion ya grabada no se limpia el formulario: se abre
+      // una nueva, que es lo que se espera.
+      router.push("/cotizaciones/nueva");
+      return;
+    }
+    setD({ ...p.inicial, fecha: hoyISO(), items: [] });
+    setProdSel("");
+    setCantidad("1");
+    setValorUnit("");
+    setBuscaProd("");
+    setProductosExtra([]);
+    setClientesExtra([]);
+    setError(null);
+    setAviso(null);
+    setConfirmarNueva(false);
+  }
+
   const inputCls =
     "border border-gray-300 rounded px-2 py-1 text-sm w-full disabled:bg-gray-100 disabled:text-gray-500";
 
@@ -246,6 +275,33 @@ export default function EditorCotizacion(p: Props) {
               className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50"
             >
               {pendiente ? "Grabando..." : "GRABAR"}
+            </button>
+          )}
+          {confirmarNueva ? (
+            <>
+              <button
+                onClick={nuevaCotizacion}
+                className="bg-dorado-osc text-white text-xs font-semibold px-2.5 py-1 rounded"
+              >
+                Si, empezar de nuevo
+              </button>
+              <button
+                onClick={() => setConfirmarNueva(false)}
+                className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
+              >
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                if (p.modo === "crear" && hayAlgoEscrito) setConfirmarNueva(true);
+                else nuevaCotizacion();
+              }}
+              className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
+              title="Deja la pantalla en blanco para cotizar de nuevo"
+            >
+              Nueva cotizacion
             </button>
           )}
           {p.id && (
