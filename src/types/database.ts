@@ -71,6 +71,9 @@ export interface FormaPago {
   id: number;
   descripcion: string;
   orden: number | null;
+  // Pie que exige esta forma de pago, en % del total con IVA. Es lo que el
+  // pedido tiene que tener abonado antes de comprar insumos.
+  pie_pct?: number | null;
   activo: boolean;
 }
 

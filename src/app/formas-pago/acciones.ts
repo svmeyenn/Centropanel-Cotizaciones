@@ -10,7 +10,11 @@ async function soloAdmin() {
   return null;
 }
 
-export async function crearFormaPago(descripcion: string, orden: number) {
+export async function crearFormaPago(
+  descripcion: string,
+  orden: number,
+  piePct: number
+) {
   const err = await soloAdmin();
   if (err) return { error: err };
   if (!descripcion.trim()) return { error: "Indique la descripcion." };
@@ -18,7 +22,12 @@ export async function crearFormaPago(descripcion: string, orden: number) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("formas_pago")
-    .insert({ descripcion: descripcion.trim(), orden, activo: true });
+    .insert({
+      descripcion: descripcion.trim(),
+      orden,
+      pie_pct: piePct,
+      activo: true,
+    });
   // La descripcion es unica: se traduce el error tecnico a algo entendible.
   if (error) {
     return {
@@ -32,7 +41,8 @@ export async function crearFormaPago(descripcion: string, orden: number) {
 export async function actualizarFormaPago(
   id: number,
   descripcion: string,
-  orden: number
+  orden: number,
+  piePct: number
 ) {
   const err = await soloAdmin();
   if (err) return { error: err };
@@ -41,7 +51,7 @@ export async function actualizarFormaPago(
   const supabase = await createClient();
   const { error } = await supabase
     .from("formas_pago")
-    .update({ descripcion: descripcion.trim(), orden })
+    .update({ descripcion: descripcion.trim(), orden, pie_pct: piePct })
     .eq("id", id);
   if (error) {
     return {

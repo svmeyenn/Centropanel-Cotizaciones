@@ -18,6 +18,7 @@ export default function GestorFormasPago({
   const [editando, setEditando] = useState<number | null>(null);
   const [desc, setDesc] = useState("");
   const [orden, setOrden] = useState<string>("");
+  const [pie, setPie] = useState<string>("0");
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -35,6 +36,7 @@ export default function GestorFormasPago({
     setError(null);
     setDesc(f.descripcion);
     setOrden(String(f.orden ?? 0));
+    setPie(String(f.pie_pct ?? 0));
   }
 
   function guardar() {
@@ -42,8 +44,13 @@ export default function GestorFormasPago({
     empezar(async () => {
       const r =
         editando === 0
-          ? await crearFormaPago(desc, Number(orden) || 0)
-          : await actualizarFormaPago(editando as number, desc, Number(orden) || 0);
+          ? await crearFormaPago(desc, Number(orden) || 0, Number(pie) || 0)
+          : await actualizarFormaPago(
+              editando as number,
+              desc,
+              Number(orden) || 0,
+              Number(pie) || 0
+            );
       if (r?.error) setError(r.error);
       else setEditando(null);
     });
@@ -73,7 +80,7 @@ export default function GestorFormasPago({
           <div className="text-sm font-semibold text-verde">
             {editando === 0 ? "Nueva forma de pago" : "Modificar forma de pago"}
           </div>
-          <div className="grid md:grid-cols-[1fr_auto] gap-3">
+          <div className="grid md:grid-cols-[1fr_auto_auto] gap-3">
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">
                 Descripcion
@@ -84,6 +91,20 @@ export default function GestorFormasPago({
                 onChange={(e) => setDesc(e.target.value)}
                 placeholder="50% de pie y 50% antes del retiro del material"
               />
+            </label>
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Pie (%)
+              </span>
+              <input
+                type="number"
+                className="border border-gray-300 rounded px-2 py-1 text-sm w-24"
+                value={pie}
+                onChange={(e) => setPie(e.target.value)}
+              />
+              <span className="block text-xs text-gray-500">
+                Sobre el total con IVA.
+              </span>
             </label>
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">Orden</span>
@@ -119,6 +140,7 @@ export default function GestorFormasPago({
             <tr>
               <th className="text-left px-3 py-2 w-20">Orden</th>
               <th className="text-left px-3 py-2">Descripcion</th>
+              <th className="text-right px-3 py-2 w-20">Pie</th>
               <th className="text-left px-3 py-2 w-20">Estado</th>
               {esAdmin && <th className="w-28" />}
             </tr>
@@ -128,6 +150,9 @@ export default function GestorFormasPago({
               <tr key={f.id} className="border-t border-gray-100 hover:bg-crema">
                 <td className="px-3 py-2 text-gray-500">{f.orden}</td>
                 <td className="px-3 py-2">{f.descripcion}</td>
+                <td className="px-3 py-2 text-right text-gray-600">
+                  {Number(f.pie_pct ?? 0) > 0 ? `${Number(f.pie_pct)} %` : "--"}
+                </td>
                 <td className="px-3 py-2">
                   {f.activo ? (
                     <span className="text-green-700">Activa</span>
