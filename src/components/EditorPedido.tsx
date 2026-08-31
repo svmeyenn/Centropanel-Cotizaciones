@@ -4,6 +4,10 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { pesos, unidades as fmtUnid } from "@/lib/formato";
+import CuentaCorrientePedido, {
+  type Cuenta,
+  type PagoVista,
+} from "@/components/CuentaCorrientePedido";
 import {
   actualizarPedido,
   actualizarLineasPedido,
@@ -44,8 +48,12 @@ export default function EditorPedido({
   lineas,
   necesidades,
   solicitudes,
+  cuenta,
+  pagos,
+  formaPago,
   puedeEditar,
   puedeCrear,
+  esAdmin,
 }: {
   id: number;
   num: string;
@@ -56,8 +64,12 @@ export default function EditorPedido({
   lineas: LineaVista[];
   necesidades: NecesidadVista[];
   solicitudes: SolicitudVista[];
+  cuenta: Cuenta;
+  pagos: PagoVista[];
+  formaPago: string | null;
   puedeEditar: boolean;
   puedeCrear: boolean;
+  esAdmin: boolean;
 }) {
   const router = useRouter();
   const [editable, setEditable] = useState(false);
@@ -299,6 +311,15 @@ export default function EditorPedido({
         </div>
       </div>
 
+      <CuentaCorrientePedido
+        idPedido={id}
+        formaPago={formaPago}
+        cuenta={cuenta}
+        pagos={pagos}
+        puedeCrear={puedeCrear}
+        esAdmin={esAdmin}
+      />
+
       {/* abastecimiento */}
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="bg-verde text-white text-xs font-semibold px-3 py-2">
@@ -360,14 +381,20 @@ export default function EditorPedido({
                     router.refresh();
                   })
                 }
-                disabled={pendiente}
-                className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50"
+                disabled={pendiente || !cuenta.pie_cubierto}
+                className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40"
+                title={
+                  cuenta.pie_cubierto
+                    ? undefined
+                    : "Falta el pie del cliente"
+                }
               >
                 {pendiente ? "Generando..." : "Generar solicitudes a proveedores"}
               </button>
               <span className="text-xs text-gray-500">
-                Un documento por proveedor. Volver a generarlas reemplaza las
-                anteriores.
+                {cuenta.pie_cubierto
+                  ? "Un documento por proveedor. Volver a generarlas reemplaza las anteriores."
+                  : "Primero hay que registrar el pie en la cuenta corriente."}
               </span>
             </div>
           )}

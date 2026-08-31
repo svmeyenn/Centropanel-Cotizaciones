@@ -21,6 +21,26 @@ export default async function Pagina() {
     .order("id", { ascending: false });
 
   const ids = (pedidos ?? []).map((p) => Number(p.id));
+
+  // El saldo y si el pie esta cubierto salen de la vista de cuenta corriente:
+  // ahi ya estan aplicados descuento e IVA.
+  const { data: cuentas } = ids.length
+    ? await supabase
+        .from("v_pedido_cuenta")
+        .select("id, total, saldo, pie_cubierto")
+        .in("id", ids)
+    : { data: [] as { id: number; total: number; saldo: number; pie_cubierto: boolean }[] };
+
+  const cuentaPorPedido = new Map(
+    (cuentas ?? []).map((c) => [
+      Number(c.id),
+      {
+        total: Number(c.total),
+        saldo: Number(c.saldo),
+        pie_cubierto: Boolean(c.pie_cubierto),
+      },
+    ])
+  );
   const [{ data: lineas }, { data: sols }] = await Promise.all([
     ids.length
       ? supabase
@@ -78,13 +98,14 @@ export default async function Pagina() {
                   <th className="text-left px-3 py-2">Ejecutivo</th>
                   <th className="text-left px-3 py-2">Estado</th>
                   <th className="text-right px-3 py-2">Solicitudes</th>
-                  <th className="text-right px-3 py-2">Total neto</th>
+                  <th className="text-right px-3 py-2">Total con IVA</th>
+                  <th className="text-right px-3 py-2">Saldo</th>
                 </tr>
               </thead>
               <tbody>
                 {(pedidos ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={8} className="text-center text-gray-400 py-8">
+                    <td colSpan={9} className="text-center text-gray-400 py-8">
                       Todavia no hay pedidos. Se generan desde una cotizacion.
                     </td>
                   </tr>
@@ -129,7 +150,22 @@ export default async function Pagina() {
                         )}
                       </td>
                       <td className="px-3 py-2 text-right font-semibold">
-                        {pesos(totalPorPedido.get(Number(p.id)) ?? 0)}
+                        {pesos(cuentaPorPedido.get(Number(p.id))?.total ?? 0)}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {(() => {
+                          const c = cuentaPorPedido.get(Number(p.id));
+                          if (!c) return "";
+                          return c.saldo === 0 ? (
+                            <span className="text-green-700">pagado</span>
+                          ) : !c.pie_cubierto ? (
+                            <span className="text-amber-700" title="Falta el pie">
+                              {pesos(c.saldo)}
+                            </span>
+                          ) : (
+                            pesos(c.saldo)
+                          );
+                        })()}
                       </td>
                     </tr>
                   );

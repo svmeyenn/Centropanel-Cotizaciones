@@ -23,12 +23,18 @@ export default async function Pagina({
   if (!Number.isFinite(id)) notFound();
 
   const supabase = await createClient();
-  const [{ data: ped }, { data: lineas }, { data: nec }, { data: sols }] =
-    await Promise.all([
+  const [
+    { data: ped },
+    { data: lineas },
+    { data: nec },
+    { data: sols },
+    { data: cta },
+    { data: pagos },
+  ] = await Promise.all([
       supabase
         .from("pedidos")
         .select(
-          "*, cotizaciones(id, num_cotizacion), clientes(razon_social), vendedores(nombre)"
+          "*, cotizaciones(id, num_cotizacion), clientes(razon_social), vendedores(nombre), formas_pago(descripcion)"
         )
         .eq("id", id)
         .single(),
@@ -42,6 +48,13 @@ export default async function Pagina({
         .from("solicitudes")
         .select("id, num_solicitud, estado, proveedores(razon_social)")
         .eq("id_pedido", id)
+        .order("id"),
+      supabase.from("v_pedido_cuenta").select("*").eq("id", id).single(),
+      supabase
+        .from("pagos_pedido")
+        .select("id, fecha, monto, medio, referencia, vendedores(nombre)")
+        .eq("id_pedido", id)
+        .order("fecha")
         .order("id"),
     ]);
 
@@ -65,6 +78,7 @@ export default async function Pagina({
     Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
   const cot = uno<{ id: number; num_cotizacion: string }>(ped.cotizaciones);
+  const fp = uno<{ descripcion: string }>(ped.formas_pago);
   const cli = uno<{ razon_social: string }>(ped.clientes);
   const ven = uno<{ nombre: string }>(ped.vendedores);
 
@@ -123,8 +137,28 @@ export default async function Pagina({
         lineas={filas}
         necesidades={necesidades}
         solicitudes={solicitudes}
+        formaPago={fp?.descripcion ?? null}
+        cuenta={{
+          total_neto: Number(cta?.total_neto ?? 0),
+          iva: Number(cta?.iva ?? 0),
+          total: Number(cta?.total ?? 0),
+          pie_pct: Number(cta?.pie_pct ?? 0),
+          pie_monto: Number(cta?.pie_monto ?? 0),
+          abonado: Number(cta?.abonado ?? 0),
+          saldo: Number(cta?.saldo ?? 0),
+          pie_cubierto: Boolean(cta?.pie_cubierto),
+        }}
+        pagos={(pagos ?? []).map((g) => ({
+          id: Number(g.id),
+          fecha: g.fecha as string,
+          monto: Number(g.monto),
+          medio: g.medio as string | null,
+          referencia: g.referencia as string | null,
+          quien: uno<{ nombre: string }>(g.vendedores)?.nombre ?? null,
+        }))}
         puedeEditar={v.puede_editar || v.rol === "Administrador"}
         puedeCrear={v.puede_crear || v.rol === "Administrador"}
+        esAdmin={v.rol === "Administrador"}
       />
     </div>
   );

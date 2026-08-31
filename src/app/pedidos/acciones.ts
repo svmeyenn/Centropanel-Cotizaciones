@@ -141,3 +141,51 @@ export async function cambiarEstadoSolicitud(
   revalidatePath(`/solicitudes/${id}`);
   return { ok: true };
 }
+
+// --- cuenta corriente del pedido -------------------------------------------
+
+export interface DatosPago {
+  fecha: string;
+  monto: number;
+  medio: string;
+  referencia: string;
+  notas: string;
+}
+
+export async function registrarPago(idPedido: number, d: DatosPago) {
+  const v = await requerirVendedor();
+  if (!v.puede_crear && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite registrar pagos." };
+  }
+  if (!d.monto) return { error: "Indique el monto." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("pagos_pedido").insert({
+    id_pedido: idPedido,
+    fecha: d.fecha,
+    monto: d.monto,
+    medio: d.medio.trim() || null,
+    referencia: d.referencia.trim() || null,
+    notas: d.notas.trim() || null,
+    id_vendedor: v.id,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/pedidos");
+  return { ok: true };
+}
+
+// Un pago mal cargado se anula borrandolo: solo el administrador, porque la
+// cuenta corriente es el respaldo de lo que se cobro.
+export async function anularPago(id: number, idPedido: number) {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador") {
+    return { error: "Solo el administrador puede anular un pago." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("pagos_pedido").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  return { ok: true };
+}
