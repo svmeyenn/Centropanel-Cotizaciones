@@ -92,6 +92,7 @@ export default async function Pagina({
     comision_pct: Number(mp?.comision_pct ?? 0),
     total_a_pagar: conComision(Number(tot?.total ?? 0), Number(mp?.comision_pct ?? 0)),
     items: (items ?? []).map((it) => ({
+      sku: (it.sku as string | null) ?? null,
       descripcion: it.descripcion,
       unidades: Number(it.unidades),
       valor_unitario: Number(it.valor_unitario),

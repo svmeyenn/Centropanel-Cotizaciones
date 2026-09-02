@@ -140,6 +140,7 @@ export default async function Pagina({
           <thead>
             <tr className="bg-[#1D4E4A] text-white">
               <th className="text-left px-2 py-1 w-8">N</th>
+              <th className="text-left px-2 py-1 w-20">SKU</th>
               <th className="text-left px-2 py-1">Producto</th>
               <th className="text-right px-2 py-1 w-20">Cantidad</th>
               <th className="text-right px-2 py-1 w-28">Precio unitario</th>
@@ -149,6 +150,9 @@ export default async function Pagina({
             {(lineas ?? []).map((l, i) => (
               <tr key={l.id as number} className="border-b border-gray-200">
                 <td className="px-2 py-1 text-gray-500">{i + 1}</td>
+                <td className="px-2 py-1 text-gray-500">
+                  {(l.sku as string | null) ?? ""}
+                </td>
                 <td className="px-2 py-1">{l.descripcion}</td>
                 <td className="px-2 py-1 text-right font-semibold">
                   {fmtUnid(Number(l.unidades))}

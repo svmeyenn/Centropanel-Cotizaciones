@@ -6,12 +6,19 @@ import {
   actualizarProducto,
   volverAPrecioAutomatico,
   cambiarActivoProducto,
+  editarComposicionPanel,
+  eliminarProducto,
   type DatosProducto,
 } from "@/app/productos/acciones";
+import type { MateriaVenta } from "@/components/Configurador";
 
 interface ProductoFila {
   id: number;
+  sku?: string | null;
   descripcion: string;
+  id_eps?: number | null;
+  id_placa_a?: number | null;
+  id_placa_b?: number | null;
   tipo: string;
   familia?: string | null;
   subfamilia?: string | null;
@@ -27,15 +34,31 @@ export default function TablaProductos({
   productos,
   esAdmin,
   iva,
+  materias = [],
 }: {
   productos: ProductoFila[];
   esAdmin: boolean;
+  materias?: MateriaVenta[];
   iva: number;
 }) {
   const [busca, setBusca] = useState("");
   const [soloActivos, setSoloActivos] = useState(true);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosProducto | null>(null);
+  // Composicion del panel en edicion. Un panel mal armado solo se podia
+  // arreglar creando otro y desactivando el anterior.
+  const [comp, setComp] = useState({ eps: "", a: "", b: "" });
+  const [avisoComp, setAvisoComp] = useState<string | null>(null);
+  const [confirmarBorrar, setConfirmarBorrar] = useState<number | null>(null);
+
+  const listaEps = useMemo(
+    () => materias.filter((m) => m.tipo === "EPS"),
+    [materias]
+  );
+  const listaPlacas = useMemo(
+    () => materias.filter((m) => m.tipo === "Placa"),
+    [materias]
+  );
   // Costo, neto, PVP y margen son el mismo numero visto de cuatro maneras: se
   // guardan costo y neto, y los otros dos se derivan. Mientras se escribe en
   // uno se respeta lo tecleado y los demas ya se muestran recalculados.
@@ -104,6 +127,11 @@ export default function TablaProductos({
 
   function editar(p: ProductoFila) {
     setEditando(p.id);
+    setComp({
+      eps: p.id_eps ? String(p.id_eps) : "",
+      a: p.id_placa_a ? String(p.id_placa_a) : "",
+      b: p.id_placa_b ? String(p.id_placa_b) : "",
+    });
     setError(null);
     setEnFoco(null);
     setForm({
@@ -168,6 +196,103 @@ export default function TablaProductos({
           <div className="text-sm font-semibold text-verde">
             Modificar producto
           </div>
+
+          {esPanel && materias.length > 0 && (
+            <div className="bg-crema border border-dorado rounded p-3 space-y-2">
+              <div className="text-xs font-semibold text-verde">
+                Composicion del panel
+              </div>
+              <div className="grid md:grid-cols-3 gap-2">
+                <label className="text-xs">
+                  <span className="block text-dorado-osc font-semibold mb-0.5">
+                    Plancha EPS
+                  </span>
+                  <select
+                    className={input}
+                    value={comp.eps}
+                    onChange={(e) => setComp({ ...comp, eps: e.target.value })}
+                  >
+                    <option value="">-- elija --</option>
+                    {listaEps.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs">
+                  <span className="block text-dorado-osc font-semibold mb-0.5">
+                    Placa cara A
+                  </span>
+                  <select
+                    className={input}
+                    value={comp.a}
+                    onChange={(e) => setComp({ ...comp, a: e.target.value })}
+                  >
+                    <option value="">-- elija --</option>
+                    {listaPlacas.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs">
+                  <span className="block text-dorado-osc font-semibold mb-0.5">
+                    Placa cara B
+                  </span>
+                  <select
+                    className={input}
+                    value={comp.b}
+                    onChange={(e) => setComp({ ...comp, b: e.target.value })}
+                  >
+                    <option value="">(sin placa: una cara)</option>
+                    {listaPlacas.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  onClick={() =>
+                    empezar(async () => {
+                      if (editando == null) return;
+                      setError(null);
+                      setAvisoComp(null);
+                      const r = await editarComposicionPanel(
+                        editando,
+                        Number(comp.eps),
+                        Number(comp.a),
+                        comp.b ? Number(comp.b) : null
+                      );
+                      if (r?.error) setError(r.error);
+                      else {
+                        setAvisoComp(
+                          `Panel actualizado: ${r.descripcion ?? ""}. Recargue para ver la lista al dia.`
+                        );
+                      }
+                    })
+                  }
+                  disabled={pendiente || !comp.eps || !comp.a}
+                  className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-40"
+                >
+                  Actualizar composicion
+                </button>
+                <span className="text-[11px] text-gray-600">
+                  Recalcula descripcion, espesor, costo y precio. Si esa
+                  composicion ya existe, se avisa y no se graba.
+                </span>
+              </div>
+              {avisoComp && (
+                <div className="text-[11px] text-verde font-semibold">
+                  {avisoComp}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid md:grid-cols-4 gap-3">
             <label className="text-sm md:col-span-4">
@@ -382,6 +507,7 @@ export default function TablaProductos({
           <table className="w-full text-xs whitespace-nowrap">
             <thead className="bg-verde text-white">
               <tr>
+                <th className="text-left px-3 py-2 w-24">SKU</th>
                 <th className="text-left px-3 py-2">Descripcion</th>
                 {esAdmin && <th className="text-right px-3 py-2">Espesor</th>}
                 {esAdmin && <th className="text-right px-3 py-2">Costo</th>}
@@ -396,7 +522,7 @@ export default function TablaProductos({
               {filtrados.length === 0 && (
                 <tr>
                   <td
-                    colSpan={esAdmin ? 8 : 4}
+                    colSpan={esAdmin ? 9 : 5}
                     className="text-center text-gray-400 py-8"
                   >
                     Sin productos que coincidan.
@@ -407,7 +533,7 @@ export default function TablaProductos({
                 <Fragment key={g.familia}>
                   <tr className="bg-crema border-t border-dorado">
                     <td
-                      colSpan={esAdmin ? 8 : 4}
+                      colSpan={esAdmin ? 9 : 5}
                       className="px-3 py-1.5 text-[11px] font-semibold text-verde uppercase tracking-wide"
                     >
                       {g.familia}
@@ -421,7 +547,7 @@ export default function TablaProductos({
                       {sg.subfamilia && (
                         <tr className="border-t border-gray-100">
                           <td
-                            colSpan={esAdmin ? 8 : 4}
+                            colSpan={esAdmin ? 9 : 5}
                             className="px-3 pt-2 pb-1 pl-6 text-[11px] font-semibold text-dorado-osc"
                           >
                             {sg.subfamilia}
@@ -436,7 +562,10 @@ export default function TablaProductos({
                           key={p.id}
                           className="border-t border-gray-100 hover:bg-crema"
                         >
-                          <td className="px-3 py-2 pl-6">
+                          <td className="px-3 py-2 pl-6 text-gray-500 font-mono text-[11px]">
+                            {p.sku ?? ""}
+                          </td>
+                          <td className="px-3 py-2">
                             {p.descripcion}
                             {p.precio_manual && (
                               <span
@@ -500,6 +629,40 @@ export default function TablaProductos({
                               >
                                 {p.activo ? "desactivar" : "activar"}
                               </button>
+                              {confirmarBorrar === p.id ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      empezar(async () => {
+                                        setError(null);
+                                        const r = await eliminarProducto(p.id);
+                                        if (r?.error) setError(r.error);
+                                        setConfirmarBorrar(null);
+                                      })
+                                    }
+                                    className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-2"
+                                  >
+                                    si, eliminar
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmarBorrar(null)}
+                                    className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-2"
+                                  >
+                                    no
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setError(null);
+                                    setConfirmarBorrar(p.id);
+                                  }}
+                                  className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-2"
+                                  title="Elimina el producto. Se niega si ya figura en una cotizacion, pedido o solicitud"
+                                >
+                                  eliminar
+                                </button>
+                              )}
                             </td>
                           )}
                         </tr>

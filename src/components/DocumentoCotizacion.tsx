@@ -18,6 +18,9 @@ export interface PersonaDoc {
 }
 
 export interface ItemDoc {
+  // Codigo del producto tal como estaba al emitir, no el actual: el documento
+  // es una foto.
+  sku?: string | null;
   descripcion: string | null;
   unidades: number;
   valor_unitario: number;
@@ -112,6 +115,7 @@ export default function DocumentoCotizacion({
       <table className="w-full text-[11px] mb-5">
         <thead>
           <tr className="bg-verde text-white text-[10px]">
+            <th className="text-left px-2 py-1.5 w-20">SKU</th>
             <th className="text-left px-2 py-1.5">DESCRIPCION</th>
             <th className="text-right px-2 py-1.5 w-16">UNID.</th>
             <th className="text-right px-2 py-1.5 w-28">V. UNITARIO</th>
@@ -121,6 +125,7 @@ export default function DocumentoCotizacion({
         <tbody>
           {d.items.map((it, i) => (
             <tr key={i} className={i % 2 ? "bg-gray-50" : ""}>
+              <td className="px-2 py-1 text-gray-500">{it.sku ?? ""}</td>
               <td className="px-2 py-1">{it.descripcion}</td>
               <td className="px-2 py-1 text-right">{fmtUnid(it.unidades)}</td>
               <td className="px-2 py-1 text-right">{pesos(it.valor_unitario)}</td>

@@ -36,13 +36,13 @@ export default async function Pagina({
       supabase
         .from("pedidos")
         .select(
-          "*, cotizaciones(id, num_cotizacion), clientes(razon_social), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre)"
+          "*, cotizaciones(id, num_cotizacion), clientes(razon_social, rut, contacto, telefono, ciudad), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre)"
         )
         .eq("id", id)
         .single(),
       supabase
         .from("pedido_detalle")
-        .select("id, descripcion, unidades, valor_unitario")
+        .select("id, sku, descripcion, unidades, valor_unitario")
         .eq("id_pedido", id)
         .order("orden"),
       supabase.rpc("necesidades_pedido", { p_pedido: id }),
@@ -89,11 +89,18 @@ export default async function Pagina({
   const cot = uno<{ id: number; num_cotizacion: string }>(ped.cotizaciones);
   const fp = uno<{ descripcion: string }>(ped.formas_pago);
   const mp = uno<{ nombre: string }>(ped.medios_pago);
-  const cli = uno<{ razon_social: string }>(ped.clientes);
+  const cli = uno<{
+    razon_social: string;
+    rut: string | null;
+    contacto: string | null;
+    telefono: string | null;
+    ciudad: string | null;
+  }>(ped.clientes);
   const ven = uno<{ nombre: string }>(ped.vendedores);
 
   const filas: LineaVista[] = (lineas ?? []).map((l) => ({
     id: Number(l.id),
+    sku: (l.sku as string | null) ?? null,
     descripcion: l.descripcion as string,
     unidades: Number(l.unidades),
     valor_unitario: Number(l.valor_unitario),
@@ -136,6 +143,10 @@ export default async function Pagina({
         num={ped.num_pedido as string}
         cotizacion={cot ? { id: cot.id, num: cot.num_cotizacion } : null}
         cliente={cli?.razon_social ?? ""}
+        clienteRut={cli?.rut ?? null}
+        clienteContacto={cli?.contacto ?? null}
+        clienteTelefono={cli?.telefono ?? null}
+        clienteCiudad={cli?.ciudad ?? null}
         vendedor={ven?.nombre ?? ""}
         inicial={{
           fecha: (ped.fecha as string).slice(0, 10),

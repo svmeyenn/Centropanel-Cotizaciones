@@ -208,3 +208,22 @@ export async function cambiarEstado(id: number, estado: string) {
   revalidatePath("/cotizaciones");
   return { ok: true };
 }
+
+// Repetir una venta era volver a armarla linea por linea. Duplicar copia
+// cliente, condiciones e items con sus cantidades, pero refresca el precio
+// desde el catalogo: lo que se repite es lo que se vende, no lo que valia.
+export async function duplicarCotizacion(id: number) {
+  const v = await requerirVendedor();
+  if (!v.puede_crear && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite crear cotizaciones." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("duplicar_cotizacion", {
+    p_cotizacion: id,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath("/cotizaciones");
+  return { ok: true, id: Number(data) };
+}

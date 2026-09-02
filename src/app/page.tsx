@@ -34,7 +34,10 @@ const GRUPOS: { titulo: string; nota: string; opciones: Opcion[] }[] = [
   {
     titulo: "Cobrar",
     nota: "Estado de la cuenta de cada pedido",
-    opciones: [{ texto: "Estado de pago", href: "/cobranza" }],
+    opciones: [
+      { texto: "Estado de pago", href: "/cobranza" },
+      { texto: "Facturas emitidas", href: "/facturas" },
+    ],
   },
   {
     titulo: "Catalogo",
