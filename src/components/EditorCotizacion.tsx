@@ -281,13 +281,13 @@ export default function EditorCotizacion(p: Props) {
             <>
               <button
                 onClick={nuevaCotizacion}
-                className="bg-dorado-osc text-white text-xs font-semibold px-2.5 py-1 rounded"
+                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
               >
                 Si, empezar de nuevo
               </button>
               <button
                 onClick={() => setConfirmarNueva(false)}
-                className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
+                className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
               >
                 Cancelar
               </button>

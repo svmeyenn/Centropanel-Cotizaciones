@@ -127,7 +127,7 @@ export default function Configurador({
       <BarraNavegacion>
         <Link
           href="/productos"
-          className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded hover:bg-white"
+          className="border border-verde text-verde text-xs px-2.5 py-1 rounded hover:bg-white"
         >
           Catalogo
         </Link>

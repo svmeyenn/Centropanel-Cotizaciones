@@ -201,7 +201,7 @@ export default function GestorMateriasPrimas({
                 });
               })
             }
-            className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
+            className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
           >
             Solo recalcular catalogo
           </button>
@@ -343,7 +343,7 @@ export default function GestorMateriasPrimas({
                 setEditando(null);
                 setForm(null);
               }}
-              className="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded"
+              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
             >
               Cancelar
             </button>
