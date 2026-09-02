@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
+import { ESQUEMA } from "@/lib/supabase/esquema";
 
 // Convierte una cotizacion en pedido. Todo el trabajo lo hace generar_pedido()
 // en la base, en una sola transaccion: copia cabecera y lineas y deja la
@@ -264,4 +265,128 @@ export async function anularFactura(id: number, idPedido: number) {
   revalidatePath("/pedidos");
   revalidatePath("/cobranza");
   return { ok: true };
+}
+
+// --- Archivo de la factura ------------------------------------------------
+// El documento tributario lo emite el sistema de facturacion electronica; aqui
+// se guarda una copia (PDF o foto) para tenerla junto al pedido. El archivo va
+// a Storage y en la tabla queda solo la ruta.
+
+const TIPOS_FACTURA = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+];
+const MAX_FACTURA = 10 * 1024 * 1024;
+
+export async function subirArchivoFactura(
+  idFactura: number,
+  idPedido: number,
+  datos: FormData
+) {
+  const v = await requerirVendedor();
+  if (!v.puede_crear && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite adjuntar la factura." };
+  }
+
+  const archivo = datos.get("archivo");
+  if (!(archivo instanceof File) || archivo.size === 0) {
+    return { error: "Seleccione un archivo." };
+  }
+  if (!TIPOS_FACTURA.includes(archivo.type)) {
+    return { error: "Solo se aceptan archivos PDF, JPG, PNG o WEBP." };
+  }
+  if (archivo.size > MAX_FACTURA) {
+    return { error: "El archivo no puede pesar mas de 10 MB." };
+  }
+
+  const supabase = await createClient();
+
+  // La ruta lleva el ambiente adelante para que pruebas y produccion no se
+  // pisen, y un sufijo de tiempo para no chocar al reemplazar el archivo.
+  const ext = archivo.name.split(".").pop()?.toLowerCase() ?? "pdf";
+  const ruta = `${ESQUEMA}/${idPedido}/${idFactura}-${Date.now()}.${ext}`;
+
+  const { error: errSubida } = await supabase.storage
+    .from("facturas")
+    .upload(ruta, archivo, { contentType: archivo.type, upsert: false });
+  if (errSubida) return { error: errSubida.message };
+
+  // Si ya habia un archivo, se borra recien ahora: si la subida falla, el
+  // anterior sigue disponible.
+  const { data: previo } = await supabase
+    .from("facturas")
+    .select("archivo")
+    .eq("id", idFactura)
+    .single();
+
+  const { error } = await supabase
+    .from("facturas")
+    .update({
+      archivo: ruta,
+      archivo_nombre: archivo.name,
+      archivo_subido: new Date().toISOString(),
+    })
+    .eq("id", idFactura);
+
+  if (error) {
+    await supabase.storage.from("facturas").remove([ruta]);
+    return { error: error.message };
+  }
+
+  if (previo?.archivo && previo.archivo !== ruta) {
+    await supabase.storage.from("facturas").remove([previo.archivo]);
+  }
+
+  revalidatePath(`/pedidos/${idPedido}`);
+  return { ok: true };
+}
+
+export async function quitarArchivoFactura(idFactura: number, idPedido: number) {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador") {
+    return { error: "Solo el administrador puede quitar la factura adjunta." };
+  }
+
+  const supabase = await createClient();
+  const { data: previo } = await supabase
+    .from("facturas")
+    .select("archivo")
+    .eq("id", idFactura)
+    .single();
+
+  const { error } = await supabase
+    .from("facturas")
+    .update({ archivo: null, archivo_nombre: null, archivo_subido: null })
+    .eq("id", idFactura);
+  if (error) return { error: error.message };
+
+  if (previo?.archivo) {
+    await supabase.storage.from("facturas").remove([previo.archivo]);
+  }
+
+  revalidatePath(`/pedidos/${idPedido}`);
+  return { ok: true };
+}
+
+// El bucket es privado: para ver el archivo se pide un enlace firmado, valido
+// por unos minutos.
+export async function enlaceArchivoFactura(idFactura: number) {
+  await requerirVendedor();
+  const supabase = await createClient();
+
+  const { data: f } = await supabase
+    .from("facturas")
+    .select("archivo")
+    .eq("id", idFactura)
+    .single();
+  if (!f?.archivo) return { error: "Esta factura no tiene archivo adjunto." };
+
+  const { data, error } = await supabase.storage
+    .from("facturas")
+    .createSignedUrl(f.archivo, 300);
+  if (error) return { error: error.message };
+
+  return { ok: true, url: data.signedUrl };
 }
