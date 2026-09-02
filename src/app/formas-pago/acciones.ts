@@ -129,3 +129,28 @@ export async function crearMedioPago(nombre: string, comisionPct: number) {
   revalidatePath("/formas-pago");
   return { ok: true };
 }
+
+// Cual forma de pago viene propuesta al abrir una cotizacion. Es una sola: se
+// apagan todas y se prende la elegida, en ese orden, porque el indice unico de
+// la base no admite dos marcadas ni por un instante.
+export async function marcarFormaPagoPorDefecto(id: number) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  const supabase = await createClient();
+
+  const { error: e1 } = await supabase
+    .from("formas_pago")
+    .update({ por_defecto: false })
+    .eq("por_defecto", true);
+  if (e1) return { error: e1.message };
+
+  const { error: e2 } = await supabase
+    .from("formas_pago")
+    .update({ por_defecto: true })
+    .eq("id", id);
+  if (e2) return { error: e2.message };
+
+  revalidatePath("/formas-pago");
+  revalidatePath("/cotizaciones/nueva");
+  return { ok: true };
+}
