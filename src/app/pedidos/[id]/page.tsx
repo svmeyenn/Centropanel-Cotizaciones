@@ -60,7 +60,9 @@ export default async function Pagina({
         .order("id"),
       supabase
         .from("facturas")
-        .select("id, numero, fecha, neto, iva, total, vendedores(nombre)")
+        .select(
+          "id, numero, fecha, neto, iva, total, archivo, archivo_nombre, vendedores(nombre)"
+        )
         .eq("id_pedido", id)
         .maybeSingle(),
     ]);
@@ -178,6 +180,8 @@ export default async function Pagina({
                 iva: Number(fact.iva),
                 total: Number(fact.total),
                 quien: uno<{ nombre: string }>(fact.vendedores)?.nombre ?? null,
+                archivo: (fact.archivo as string | null) ?? null,
+                archivo_nombre: (fact.archivo_nombre as string | null) ?? null,
               } satisfies FacturaVista)
             : null
         }
