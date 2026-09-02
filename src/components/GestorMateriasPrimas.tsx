@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
-import { pesos } from "@/lib/formato";
+import { pesos, unidades } from "@/lib/formato";
 import {
   actualizarMateria,
   cambiarActivoMateria,
@@ -292,21 +292,26 @@ export default function GestorMateriasPrimas({
             />
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">
-                Espesor nominal (mm)
+                Espesor (mm)
               </span>
               <input
                 type="number"
+                step="any"
                 className={input}
-                value={form.espesor_nominal ?? ""}
-                onChange={(e) =>
+                value={form.espesor_mm ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value ? Number(e.target.value) : null;
+                  // El nominal es solo para agrupar; el que manda es este.
                   setForm({
                     ...form,
-                    espesor_nominal: e.target.value ? Number(e.target.value) : null,
-                  })
-                }
+                    espesor_mm: v,
+                    espesor_nominal: v == null ? null : Math.round(v),
+                  });
+                }}
               />
               <span className="text-xs text-gray-500">
-                Es el que usa el nombre del panel.
+                Admite decimales (12,7). Es el que suma al espesor del panel y
+                el que sale en su descripcion.
               </span>
             </label>
             <label className="text-sm">
@@ -372,7 +377,9 @@ export default function GestorMateriasPrimas({
                   <td className="px-3 py-2 text-gray-600">{m.tipo}</td>
                   <td className="px-3 py-2 text-gray-600">{m.etiqueta}</td>
                   <td className="px-3 py-2 text-right text-gray-600">
-                    {m.espesor_nominal ?? ""}
+                    {m.espesor_mm != null
+                      ? unidades(m.espesor_mm)
+                      : (m.espesor_nominal ?? "")}
                   </td>
                   <td className="px-3 py-2 text-right font-semibold">
                     {pesos(m.costo)}
