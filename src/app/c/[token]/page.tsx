@@ -71,6 +71,7 @@ export default async function Pagina({
     comision_pct: Number(j.comision_pct ?? 0),
     total_a_pagar: Number(j.total_a_pagar ?? t.total ?? 0),
     items: (j.items ?? []).map((it: Record<string, unknown>) => ({
+      sku: (it.sku as string | null) ?? null,
       descripcion: (it.descripcion as string) ?? null,
       unidades: Number(it.unidades),
       valor_unitario: Number(it.valor_unitario),

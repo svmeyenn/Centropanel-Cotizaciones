@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BuscadorProducto from "@/components/BuscadorProducto";
+import BotonDuplicar from "@/components/BotonDuplicar";
 import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
@@ -302,6 +303,9 @@ export default function EditorCotizacion(p: Props) {
               Nueva cotizacion
             </button>
           )}
+          {p.id && p.puedeEditar && (
+            <BotonDuplicar tipo="cotizacion" id={p.id} />
+          )}
           {p.id && (
             <Link
               href={`/cotizaciones/${p.id}/pdf`}
@@ -440,7 +444,7 @@ export default function EditorCotizacion(p: Props) {
           />
         </label>
 
-        <label className="text-xs md:col-span-3 lg:col-span-4">
+        <label className="text-xs md:col-span-2">
           <span className="block text-dorado-osc font-semibold mb-0.5">Despachar a</span>
           <input
             className={inputCls}

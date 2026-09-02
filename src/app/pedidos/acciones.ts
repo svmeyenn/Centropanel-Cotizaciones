@@ -390,3 +390,23 @@ export async function enlaceArchivoFactura(idFactura: number) {
 
   return { ok: true, url: data.signedUrl };
 }
+
+// Duplicar un pedido es duplicar la venta entera: cada pedido cuelga de su
+// propia cotizacion, asi que la base copia la cotizacion con precios frescos y
+// de ahi genera el pedido nuevo, listo para producir.
+export async function duplicarPedido(id: number) {
+  const v = await requerirVendedor();
+  if (!v.puede_crear && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite crear pedidos." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("duplicar_pedido", {
+    p_pedido: id,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath("/pedidos");
+  revalidatePath("/cotizaciones");
+  return { ok: true, id: Number(data) };
+}

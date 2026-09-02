@@ -2,6 +2,7 @@ import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import TablaProductos from "@/components/TablaProductos";
+import type { MateriaVenta } from "@/components/Configurador";
 import { requerirVendedor } from "@/lib/sesion";
 import BotonNuevoProducto from "@/components/BotonNuevoProducto";
 import { createClient } from "@/lib/supabase/server";
@@ -18,7 +19,7 @@ export default async function Pagina() {
     ? await supabase
         .from("productos")
         .select(
-          "id, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo",
+          "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b",
         )
         .order("familia")
         .order("subfamilia")
@@ -32,6 +33,16 @@ export default async function Pagina() {
         .order("descripcion");
 
   const iva = pNum(await leerParametros(), "IVA", 0.19);
+
+  // Insumos para editar la composicion de un panel. Solo los ve el
+  // administrador, que es quien puede editarla.
+  const { data: materias } = esAdmin
+    ? await supabase
+        .from("v_materias_primas_venta")
+        .select("id, nombre, tipo, etiqueta, espesor_nominal")
+        .eq("activo", true)
+        .order("nombre")
+    : { data: [] as unknown[] };
 
   // Familias ya en uso, para sugerirlas al dar de alta y no acabar con
   // "Tornillos" y "tornillo" como grupos distintos.
@@ -77,6 +88,7 @@ export default async function Pagina() {
           productos={productos ?? []}
           esAdmin={esAdmin}
           iva={iva}
+          materias={(materias ?? []) as MateriaVenta[]}
         />
       </div>
     </div>

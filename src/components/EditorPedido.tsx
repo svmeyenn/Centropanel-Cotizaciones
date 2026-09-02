@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { pesos, unidades as fmtUnid } from "@/lib/formato";
+import { pesos, unidades as fmtUnid, telefono as fmtTelefono } from "@/lib/formato";
+import BotonDuplicar from "@/components/BotonDuplicar";
 import CuentaCorrientePedido, {
   type Cuenta,
   type PagoVista,
@@ -23,6 +24,7 @@ import {
 
 export interface LineaVista {
   id: number;
+  sku?: string | null;
   descripcion: string;
   unidades: number;
   valor_unitario: number;
@@ -54,6 +56,10 @@ export default function EditorPedido({
   num,
   cotizacion,
   cliente,
+  clienteRut,
+  clienteContacto,
+  clienteTelefono,
+  clienteCiudad,
   vendedor,
   inicial,
   lineas,
@@ -72,6 +78,13 @@ export default function EditorPedido({
   num: string;
   cotizacion: { id: number; num: string } | null;
   cliente: string;
+  // Los mismos datos que muestra la cotizacion: quien firma, con quien se
+  // habla y adonde llega la factura. Antes el pedido solo traia el nombre y
+  // habia que volver a la cotizacion o a la ficha para lo demas.
+  clienteRut: string | null;
+  clienteContacto: string | null;
+  clienteTelefono: string | null;
+  clienteCiudad: string | null;
   vendedor: string;
   inicial: DatosPedido;
   lineas: LineaVista[];
@@ -164,6 +177,7 @@ export default function EditorPedido({
               {pendiente ? "Grabando..." : "GRABAR"}
             </button>
           )}
+          {puedeEditar && <BotonDuplicar tipo="pedido" id={id} />}
         </div>
       </div>
 
@@ -174,9 +188,23 @@ export default function EditorPedido({
       )}
 
       {/* cabecera */}
-      <div className="bg-white border border-gray-200 rounded p-4 grid md:grid-cols-3 gap-3">
-        <Dato titulo="Cliente" valor={cliente} />
+      <div className="bg-white border border-gray-200 rounded p-3 grid md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-2">
+        <div className="md:col-span-2">
+          <Dato titulo="Cliente" valor={cliente} />
+          <span className="block mt-1 text-[11px] leading-tight text-gray-600">
+            {clienteRut ? (
+              <span>RUT {clienteRut}</span>
+            ) : (
+              <span className="text-gray-400">sin RUT</span>
+            )}
+            {clienteContacto ? <span> {"·"} {clienteContacto}</span> : null}
+            {clienteTelefono ? <span> {"·"} {fmtTelefono(clienteTelefono)}</span> : null}
+            {clienteCiudad ? <span> {"·"} {clienteCiudad}</span> : null}
+          </span>
+        </div>
         <Dato titulo="Ejecutivo" valor={vendedor} />
+        <Dato titulo="Forma de pago" valor={formaPago ?? "--"} />
+        <Dato titulo="Medio de pago" valor={medioPago ?? "--"} />
         <label className="text-sm">
           <span className="block text-dorado-osc font-semibold mb-1">Estado</span>
           <select
@@ -236,6 +264,7 @@ export default function EditorPedido({
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 <th className="text-left px-3 py-2 w-10">N</th>
+                <th className="text-left px-3 py-2 w-24">SKU</th>
                 <th className="text-left px-3 py-2">Descripcion</th>
                 <th className="text-right px-3 py-2 w-24">Unid.</th>
                 <th className="text-right px-3 py-2 w-32">V. unitario</th>
@@ -247,6 +276,9 @@ export default function EditorPedido({
               {ls.map((l, i) => (
                 <tr key={l.id} className="border-t border-gray-100">
                   <td className="px-3 py-2 text-gray-500">{i + 1}</td>
+                  <td className="px-3 py-2 text-gray-500 font-mono text-[11px]">
+                    {l.sku ?? ""}
+                  </td>
                   <td className="px-3 py-2">{l.descripcion}</td>
                   <td className="px-3 py-2 text-right">
                     {soloLectura ? (
