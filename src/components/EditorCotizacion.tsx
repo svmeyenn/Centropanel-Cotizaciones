@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import BuscadorProducto from "@/components/BuscadorProducto";
 import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
@@ -71,7 +72,6 @@ export default function EditorCotizacion(p: Props) {
   const [prodSel, setProdSel] = useState<string>("");
   const [cantidad, setCantidad] = useState<string>("1");
   const [valorUnit, setValorUnit] = useState<string>("");
-  const [buscaProd, setBuscaProd] = useState("");
 
   // Paneles creados desde el panel emergente durante esta sesion. Se guardan
   // aparte y no se recarga la pagina: recargar descartaria la cotizacion en
@@ -93,27 +93,6 @@ export default function EditorCotizacion(p: Props) {
     const vistos = new Set(p.productos.map((x) => x.id));
     return [...p.productos, ...productosExtra.filter((x) => !vistos.has(x.id))];
   }, [p.productos, productosExtra]);
-
-  const productosFiltrados = useMemo(() => {
-    const q = buscaProd.trim().toLowerCase();
-    if (!q) return catalogo;
-    return catalogo.filter((x) => x.descripcion.toLowerCase().includes(q));
-  }, [buscaProd, catalogo]);
-
-  // El desplegable va agrupado por familia y subfamilia: con un catalogo de
-  // decenas de tornillos y maderas, una lista plana obliga a leerla entera.
-  // Un <optgroup> no admite otro dentro, asi que los dos niveles se juntan en
-  // el rotulo del grupo.
-  const porFamilia = useMemo(() => {
-    const g = new Map<string, ProductoVenta[]>();
-    for (const x of productosFiltrados) {
-      const f = (x.familia ?? "Otros") + (x.subfamilia ? ` · ${x.subfamilia}` : "");
-      const lista = g.get(f);
-      if (lista) lista.push(x);
-      else g.set(f, [x]);
-    }
-    return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
-  }, [productosFiltrados]);
 
   // --- totales, con la misma formula que la vista v_cotizacion_totales ---
   const subtotal = useMemo(
@@ -187,7 +166,6 @@ export default function EditorCotizacion(p: Props) {
     setProdSel("");
     setCantidad("1");
     setValorUnit("");
-    setBuscaProd("");
   }
 
   function quitarItem(i: number) {
@@ -233,7 +211,6 @@ export default function EditorCotizacion(p: Props) {
     setProdSel("");
     setCantidad("1");
     setValorUnit("");
-    setBuscaProd("");
     setProductosExtra([]);
     setClientesExtra([]);
     setError(null);
@@ -465,34 +442,16 @@ export default function EditorCotizacion(p: Props) {
               </button>
             )}
           </div>
-          <input
-            className={inputCls}
-            placeholder="Buscar: panel, flete, mano de obra..."
-            value={buscaProd}
-            onChange={(e) => setBuscaProd(e.target.value)}
-          />
           <div className="grid md:grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
-            <select
-              className={inputCls}
-              value={prodSel}
-              onChange={(e) => {
-                setProdSel(e.target.value);
-                const pr = p.productos.find((x) => x.id === Number(e.target.value));
+            <BuscadorProducto
+              productos={catalogo}
+              valor={prodSel ? Number(prodSel) : null}
+              onElegir={(pr) => {
+                setProdSel(pr ? String(pr.id) : "");
                 if (pr) setValorUnit(String(pr.precio_venta));
               }}
-            >
-              <option value="">-- producto --</option>
-              {porFamilia.map(([familia, lista]) => (
-                <optgroup key={familia} label={familia}>
-                  {lista.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.descripcion}
-                      {!x.precio_venta && !x.precio_manual ? "  (sin precio)" : ""}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              className={inputCls}
+            />
             <label className="text-xs">
               <span className="block text-dorado-osc font-semibold">Cantidad</span>
               <input
@@ -667,7 +626,6 @@ export default function EditorCotizacion(p: Props) {
             setProductosExtra((x) => [...x, prod]);
             setProdSel(String(prod.id));
             setValorUnit(String(prod.precio_venta));
-            setBuscaProd("");
             setModalPanel(false);
             setAviso(`Panel "${prod.descripcion}" listo para agregar.`);
           }}
