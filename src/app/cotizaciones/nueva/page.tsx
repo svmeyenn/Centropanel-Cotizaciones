@@ -52,6 +52,12 @@ export default async function Pagina() {
       leerParametros(),
     ]);
 
+  // Se propone la forma de pago marcada como predeterminada --hoy el 50/50--,
+  // y queda modificable como cualquier otro campo. Cual es se define en
+  // Formas de pago, no aqui.
+  const formaPorDefecto =
+    (formasPago ?? []).find((f) => f.por_defecto)?.id ?? null;
+
   return (
     <div className="min-h-screen">
       <Cabecera
@@ -76,7 +82,7 @@ export default async function Pagina() {
         inicial={{
           id_cliente: null,
           id_vendedor: v.id,
-          id_forma_pago: null,
+          id_forma_pago: formaPorDefecto,
           id_medio_pago: null,
           fecha: hoyISO(),
           validez_dias: pNum(params, "ValidezDias", 7),

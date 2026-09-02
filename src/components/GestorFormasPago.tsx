@@ -5,6 +5,7 @@ import {
   crearFormaPago,
   actualizarFormaPago,
   cambiarActivoFormaPago,
+  marcarFormaPagoPorDefecto,
 } from "@/app/formas-pago/acciones";
 import type { FormaPago } from "@/types/database";
 
@@ -142,6 +143,7 @@ export default function GestorFormasPago({
               <th className="text-left px-3 py-2">Descripcion</th>
               <th className="text-right px-3 py-2 w-20">Pie</th>
               <th className="text-left px-3 py-2 w-20">Estado</th>
+              <th className="text-left px-3 py-2 w-28">Por defecto</th>
               {esAdmin && <th className="w-28" />}
             </tr>
           </thead>
@@ -158,6 +160,25 @@ export default function GestorFormasPago({
                     <span className="text-green-700">Activa</span>
                   ) : (
                     <span className="text-gray-400">Inactiva</span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  {f.por_defecto ? (
+                    <span className="text-verde font-semibold">Si</span>
+                  ) : esAdmin && f.activo ? (
+                    <button
+                      onClick={() =>
+                        empezar(async () => {
+                          await marcarFormaPagoPorDefecto(f.id);
+                        })
+                      }
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+                      title="Sera la propuesta al abrir una cotizacion nueva"
+                    >
+                      usar esta
+                    </button>
+                  ) : (
+                    <span className="text-gray-400">--</span>
                   )}
                 </td>
                 {esAdmin && (
