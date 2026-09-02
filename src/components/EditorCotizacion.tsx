@@ -89,6 +89,11 @@ export default function EditorCotizacion(p: Props) {
     return [...p.clientes, ...clientesExtra.filter((c) => !vistos.has(c.id))];
   }, [p.clientes, clientesExtra]);
 
+  const clienteElegido = useMemo(
+    () => listaClientes.find((c) => c.id === d.id_cliente) ?? null,
+    [listaClientes, d.id_cliente]
+  );
+
   const catalogo = useMemo(() => {
     const vistos = new Set(p.productos.map((x) => x.id));
     return [...p.productos, ...productosExtra.filter((x) => !vistos.has(x.id))];
@@ -175,6 +180,20 @@ export default function EditorCotizacion(p: Props) {
   function guardar() {
     setError(null);
     setAviso(null);
+
+    const faltan: string[] = [];
+    if (d.id_cliente == null) faltan.push("Cliente");
+    if (d.id_forma_pago == null) faltan.push("Forma de pago");
+    if (d.id_medio_pago == null) faltan.push("Medio de pago");
+    if (faltan.length > 0) {
+      setError(
+        faltan.length === 1
+          ? `Falta ${faltan[0]}.`
+          : `Faltan: ${faltan.join(", ")}.`
+      );
+      return;
+    }
+
     const payload: DatosCotizacion = {
       ...d,
       descuento_monto: descuento,
@@ -310,7 +329,7 @@ export default function EditorCotizacion(p: Props) {
       <div className="bg-white border border-gray-200 rounded p-4 grid md:grid-cols-2 gap-3">
         <label className="text-sm">
           <span className="flex items-center justify-between mb-1">
-            <span className="text-dorado-osc font-semibold">Cliente</span>
+            <span className="text-dorado-osc font-semibold">Cliente *</span>
             {!soloLectura && p.puedeCrearPanel && (
               <button
                 type="button"
@@ -336,10 +355,13 @@ export default function EditorCotizacion(p: Props) {
               </option>
             ))}
           </select>
+          <DatosDelCliente cliente={clienteElegido} />
         </label>
 
         <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">Forma de pago</span>
+          <span className="block text-dorado-osc font-semibold mb-1">
+            Forma de pago *
+          </span>
           <select
             className={inputCls}
             disabled={soloLectura}
@@ -357,7 +379,7 @@ export default function EditorCotizacion(p: Props) {
 
         <label className="text-sm">
           <span className="block text-dorado-osc font-semibold mb-1">
-            Medio de pago
+            Medio de pago *
           </span>
           <select
             className={inputCls}
@@ -661,5 +683,18 @@ function Fila({
       <span className="text-gray-700">{label}</span>
       <span>{valor}</span>
     </div>
+  );
+}
+
+// Razon social y contacto del cliente elegido. Se muestran aqui para no tener
+// que salir a la ficha del cliente a confirmar a quien se le esta cotizando.
+function DatosDelCliente({ cliente }: { cliente: Cliente | null }) {
+  if (!cliente) return null;
+  return (
+    <span className="block mt-1 text-xs text-gray-600">
+      <span className="font-semibold text-gray-800">{cliente.razon_social}</span>
+      {cliente.contacto ? ` · Contacto: ${cliente.contacto}` : " · sin contacto registrado"}
+      {cliente.telefono ? ` · ${cliente.telefono}` : ""}
+    </span>
   );
 }
