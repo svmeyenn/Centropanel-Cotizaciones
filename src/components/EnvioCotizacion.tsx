@@ -151,7 +151,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               </code>
               <button
                 onClick={() => copiar(enlace)}
-                className="text-verde underline"
+                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
               >
                 copiar
               </button>
@@ -191,7 +191,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               href={`/cotizaciones/${datos.id}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
-              className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Abrir el PDF
             </a>
@@ -227,7 +227,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
                   </span>
                   <button
                     onClick={() => copiar(asunto)}
-                    className="text-xs text-verde underline"
+                    className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                   >
                     copiar
                   </button>
@@ -243,7 +243,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
                   </span>
                   <button
                     onClick={() => copiar(cuerpo)}
-                    className="text-xs text-verde underline"
+                    className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                   >
                     copiar
                   </button>
@@ -259,7 +259,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
                   </span>
                   <button
                     onClick={() => copiar(mensajeWA)}
-                    className="text-xs text-verde underline"
+                    className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                   >
                     copiar
                   </button>

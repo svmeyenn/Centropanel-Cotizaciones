@@ -98,7 +98,7 @@ export default async function Pagina({
         <BarraNavegacion volverA="/proveedores">
           <Link
             href="/proveedores"
-            className="border border-verde text-verde text-xs px-2.5 py-1 rounded hover:bg-white"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Todos los proveedores
           </Link>

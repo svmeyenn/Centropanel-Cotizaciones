@@ -103,7 +103,7 @@ export default function GestorMediosPago({
           </button>
           <button
             onClick={() => setNuevo(false)}
-            className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Cancelar
           </button>
@@ -173,13 +173,13 @@ export default function GestorMediosPago({
                               else setEdit(null);
                             })
                           }
-                          className="text-verde text-xs underline mr-2"
+                          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                         >
                           grabar
                         </button>
                         <button
                           onClick={() => setEdit(null)}
-                          className="text-gray-500 text-xs underline"
+                          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                         >
                           cancelar
                         </button>
@@ -193,7 +193,7 @@ export default function GestorMediosPago({
                             setNombre(m.nombre);
                             setComision(String(m.comision_pct));
                           }}
-                          className="text-verde text-xs underline mr-2"
+                          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                         >
                           editar
                         </button>
@@ -209,7 +209,7 @@ export default function GestorMediosPago({
                               if (r?.error) setError(r.error);
                             })
                           }
-                          className="text-gray-500 text-xs underline"
+                          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                         >
                           {m.activo ? "desactivar" : "activar"}
                         </button>

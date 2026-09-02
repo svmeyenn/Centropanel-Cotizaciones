@@ -79,7 +79,7 @@ export default async function Home() {
           <form action="/api/auth/logout" method="post">
             <button
               type="submit"
-              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Cerrar sesion
             </button>

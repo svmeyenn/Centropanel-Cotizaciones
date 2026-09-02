@@ -229,7 +229,7 @@ export default function BotonNuevoProducto({
                 </button>
                 <button
                   onClick={() => setAbierto(false)}
-                  className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+                  className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                 >
                   Cancelar
                 </button>

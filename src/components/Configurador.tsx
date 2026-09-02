@@ -127,7 +127,7 @@ export default function Configurador({
       <BarraNavegacion>
         <Link
           href="/productos"
-          className="border border-verde text-verde text-xs px-2.5 py-1 rounded hover:bg-white"
+          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
         >
           Catalogo
         </Link>
@@ -414,7 +414,7 @@ export default function Configurador({
                   {precioTocado != null && (
                     <button
                       onClick={() => setPrecioTocado(null)}
-                      className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                       title={`Vuelve al margen del sistema (${Math.round(margenObjetivo * 100)} %)`}
                     >
                       Volver al precio automatico

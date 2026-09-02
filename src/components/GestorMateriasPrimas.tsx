@@ -174,7 +174,7 @@ export default function GestorMateriasPrimas({
         <div className="flex flex-wrap gap-2 items-center">
           <button
             onClick={descargarPlantilla}
-            className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Descargar plantilla
           </button>
@@ -201,7 +201,7 @@ export default function GestorMateriasPrimas({
                 });
               })
             }
-            className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Solo recalcular catalogo
           </button>
@@ -343,7 +343,7 @@ export default function GestorMateriasPrimas({
                 setEditando(null);
                 setForm(null);
               }}
-              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Cancelar
             </button>
@@ -394,7 +394,7 @@ export default function GestorMateriasPrimas({
                   <td className="px-2 py-2 text-right whitespace-nowrap">
                     <button
                       onClick={() => editar(m)}
-                      className="text-verde text-xs underline mr-2"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                     >
                       editar
                     </button>
@@ -404,7 +404,7 @@ export default function GestorMateriasPrimas({
                           await cambiarActivoMateria(m.id, !m.activo);
                         })
                       }
-                      className="text-gray-500 text-xs underline"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                     >
                       {m.activo ? "desactivar" : "activar"}
                     </button>

@@ -358,7 +358,7 @@ export default function TablaProductos({
                   })
                 }
                 disabled={pendiente}
-                className="border border-verde text-verde text-xs px-2.5 py-1 rounded disabled:opacity-50"
+                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-50"
                 title="Recalcula el precio desde el costo y el margen objetivo"
               >
                 Volver al precio automatico
@@ -369,7 +369,7 @@ export default function TablaProductos({
                 setEditando(null);
                 setForm(null);
               }}
-              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Cancelar
             </button>
@@ -483,7 +483,7 @@ export default function TablaProductos({
                             <td className="px-2 py-2 text-right whitespace-nowrap">
                               <button
                                 onClick={() => editar(p)}
-                                className="text-verde text-xs underline mr-2"
+                                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                               >
                                 editar
                               </button>
@@ -496,7 +496,7 @@ export default function TablaProductos({
                                     );
                                   })
                                 }
-                                className="text-gray-500 text-xs underline"
+                                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                               >
                                 {p.activo ? "desactivar" : "activar"}
                               </button>

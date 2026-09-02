@@ -192,7 +192,7 @@ export default function GestorVendedores({
                 setEditando(null);
                 setForm(null);
               }}
-              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Cancelar
             </button>
@@ -248,7 +248,7 @@ export default function GestorVendedores({
                   <td className="px-2 py-2 text-right">
                     <button
                       onClick={() => editar(v)}
-                      className="text-verde text-xs underline"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                     >
                       editar
                     </button>

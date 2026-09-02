@@ -113,7 +113,7 @@ export default function GestorParametros({
         <button
           onClick={() => guardar(clave)}
           disabled={pendiente}
-          className="border border-verde text-verde text-xs font-semibold px-3 py-1 rounded disabled:opacity-50"
+          className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50"
         >
           {guardado === clave ? "guardado" : "guardar"}
         </button>
