@@ -1,6 +1,6 @@
 import Cabecera from "@/components/Cabecera";
 import EditorCotizacion from "@/components/EditorCotizacion";
-import { requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros, pNum, pTxt } from "@/lib/parametros";
 import { hoyISO } from "@/lib/formato";
@@ -58,6 +58,8 @@ export default async function Pagina() {
   const formaPorDefecto =
     (formasPago ?? []).find((f) => f.por_defecto)?.id ?? null;
 
+  const { paises, esAdminGeneral } = await contextoMercado(v);
+
   return (
     <div className="min-h-screen">
       <Cabecera
@@ -67,6 +69,8 @@ export default async function Pagina() {
       <EditorCotizacion
         modo="crear"
         clientes={clientes ?? []}
+        paises={paises}
+        esAdminGeneral={esAdminGeneral}
         formasPago={formasPago ?? []}
         mediosPago={(mediosPago ?? []).map((m) => ({
           id: Number(m.id),

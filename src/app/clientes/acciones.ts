@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
+import { faltantesCliente } from "@/lib/validacion";
 
 export interface DatosCliente {
   razon_social: string;
@@ -11,6 +12,11 @@ export interface DatosCliente {
   email: string;
   telefono: string;
   direccion: string;
+  comuna: string;
+  ciudad: string;
+  // Mercado al que pertenece el cliente. Solo lo elige el administrador
+  // general; al resto se lo pone la base con el suyo.
+  id_pais?: number | null;
 }
 
 function limpiar(d: DatosCliente) {
@@ -21,8 +27,12 @@ function limpiar(d: DatosCliente) {
     email: d.email.trim() || null,
     telefono: d.telefono.trim() || null,
     direccion: d.direccion.trim() || null,
+    comuna: d.comuna.trim() || null,
+    ciudad: d.ciudad.trim() || null,
+    ...(d.id_pais ? { id_pais: d.id_pais } : {}),
   };
 }
+
 
 export interface ClienteChoque {
   id: number;
@@ -64,7 +74,10 @@ export async function crearCliente(d: DatosCliente) {
   if (!v.puede_crear && v.rol !== "Administrador") {
     return { error: "Su perfil no permite crear clientes." };
   }
-  if (!d.razon_social.trim()) return { error: "Indique la razon social." };
+  const faltan = faltantesCliente(d);
+  if (faltan.length > 0) {
+    return { error: `Faltan datos del cliente: ${faltan.join(", ")}.` };
+  }
 
   // Aviso con nombre y apellido antes de intentar el insert. El indice unico de
   // la base sigue detras como ultima linea de defensa (dos pantallas a la vez).
@@ -75,7 +88,9 @@ export async function crearCliente(d: DatosCliente) {
   const { data: nuevo, error } = await supabase
     .from("clientes")
     .insert({ ...limpiar(d), activo: true })
-    .select("id, razon_social, rut, contacto, email, telefono, direccion, activo")
+    .select(
+      "id, razon_social, rut, contacto, email, telefono, direccion, comuna, ciudad, id_pais, activo"
+    )
     .single();
 
   if (error) {
@@ -98,7 +113,10 @@ export async function actualizarCliente(id: number, d: DatosCliente) {
   if (!v.puede_editar && v.rol !== "Administrador") {
     return { error: "Su perfil no permite modificar clientes." };
   }
-  if (!d.razon_social.trim()) return { error: "Indique la razon social." };
+  const faltan = faltantesCliente(d);
+  if (faltan.length > 0) {
+    return { error: `Faltan datos del cliente: ${faltan.join(", ")}.` };
+  }
 
   // Renombrar un cliente para dejarlo igual a otro tambien es duplicarlo.
   const choque = await buscarClienteDuplicado(d.razon_social, d.rut, id);

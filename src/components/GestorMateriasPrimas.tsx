@@ -5,12 +5,13 @@ import { pesos, unidades } from "@/lib/formato";
 import {
   actualizarMateria,
   cambiarActivoMateria,
+  eliminarMateria,
   cargarCostos,
   recalcularCatalogo,
   type DatosMateria,
   type FilaCarga,
 } from "@/app/materias-primas/acciones";
-import type { MateriaPrima } from "@/types/database";
+import type { MateriaPrima, Pais, TipoMateria } from "@/types/database";
 import ModalNuevaMateria from "@/components/ModalNuevaMateria";
 
 interface Resumen {
@@ -24,15 +25,22 @@ interface Resumen {
 export default function GestorMateriasPrimas({
   materias,
   etiquetas,
+  tipos,
+  paises,
+  esAdminGeneral,
 }: {
   materias: MateriaPrima[];
   etiquetas: string[];
+  tipos: TipoMateria[];
+  paises: Pais[];
+  esAdminGeneral: boolean;
 }) {
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("");
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosMateria | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmarBorrar, setConfirmarBorrar] = useState<number | null>(null);
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [pendiente, empezar] = useTransition();
   const archivoRef = useRef<HTMLInputElement>(null);
@@ -208,7 +216,12 @@ export default function GestorMateriasPrimas({
           {pendiente && (
             <span className="text-xs text-gray-500">procesando...</span>
           )}
-          <ModalNuevaMateria etiquetas={etiquetas} />
+          <ModalNuevaMateria
+            etiquetas={etiquetas}
+            tipos={tipos}
+            paises={paises}
+            eligePais={esAdminGeneral}
+          />
         </div>
       </div>
 
@@ -258,9 +271,11 @@ export default function GestorMateriasPrimas({
           onChange={(e) => setTipo(e.target.value)}
         >
           <option value="">Todos los tipos</option>
-          <option value="EPS">EPS</option>
-          <option value="Placa">Placa</option>
-          <option value="Adhesivo">Adhesivo</option>
+          {tipos.map((t) => (
+            <option key={t.id} value={t.nombre}>
+              {t.nombre}
+            </option>
+          ))}
         </select>
         <span className="text-sm text-gray-500 ml-auto">
           {filtrados.length} de {materias.length}
@@ -278,6 +293,26 @@ export default function GestorMateriasPrimas({
               onChange={(v) => setForm({ ...form, nombre: v })}
               cls={input}
             />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Tipo
+              </span>
+              <select
+                className={input}
+                value={form.tipo}
+                onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+              >
+                <option value="">-- elija --</option>
+                {tipos.map((t) => (
+                  <option key={t.id} value={t.nombre}>
+                    {t.nombre}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-gray-500">
+                El EPS es el nucleo del panel y la Placa sus caras.
+              </span>
+            </label>
             <Campo
               label="Etiqueta"
               value={form.etiqueta}
@@ -362,6 +397,7 @@ export default function GestorMateriasPrimas({
             <thead className="bg-verde text-white">
               <tr>
                 <th className="text-left px-3 py-2">Nombre</th>
+                <th className="text-left px-3 py-2 w-24">SKU</th>
                 <th className="text-left px-3 py-2 w-20">Tipo</th>
                 <th className="text-left px-3 py-2 w-24">Etiqueta</th>
                 <th className="text-right px-3 py-2 w-20">Esp.</th>
@@ -374,6 +410,9 @@ export default function GestorMateriasPrimas({
               {filtrados.map((m) => (
                 <tr key={m.id} className="border-t border-gray-100 hover:bg-crema">
                   <td className="px-3 py-2">{m.nombre}</td>
+                  <td className="px-3 py-2 text-gray-500 font-mono text-[11px]">
+                    {m.sku}
+                  </td>
                   <td className="px-3 py-2 text-gray-600">{m.tipo}</td>
                   <td className="px-3 py-2 text-gray-600">{m.etiqueta}</td>
                   <td className="px-3 py-2 text-right text-gray-600">
@@ -408,6 +447,40 @@ export default function GestorMateriasPrimas({
                     >
                       {m.activo ? "desactivar" : "activar"}
                     </button>
+                    {confirmarBorrar === m.id ? (
+                      <>
+                        <button
+                          onClick={() =>
+                            empezar(async () => {
+                              setError(null);
+                              const r = await eliminarMateria(m.id);
+                              if (r?.error) setError(r.error);
+                              setConfirmarBorrar(null);
+                            })
+                          }
+                          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-2"
+                        >
+                          si, eliminar
+                        </button>
+                        <button
+                          onClick={() => setConfirmarBorrar(null)}
+                          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-2"
+                        >
+                          no
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setError(null);
+                          setConfirmarBorrar(m.id);
+                        }}
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-2"
+                        title="Elimina el insumo. Se niega si compone un panel o figura en una solicitud"
+                      >
+                        eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

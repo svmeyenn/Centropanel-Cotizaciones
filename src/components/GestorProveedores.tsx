@@ -8,6 +8,10 @@ import {
   cambiarActivoProveedor,
   type DatosProveedor,
 } from "@/app/proveedores/acciones";
+import type { Pais } from "@/types/database";
+import { faltantesProveedor } from "@/lib/validacion";
+import { rut as fmtRut } from "@/lib/formato";
+import CampoTelefono from "@/components/CampoTelefono";
 
 interface Fila {
   id: number;
@@ -17,11 +21,13 @@ interface Fila {
   email: string | null;
   telefono: string | null;
   direccion: string | null;
+  id_pais: number | null;
   activo: boolean;
   items: number;
 }
 
 const VACIO: DatosProveedor = {
+  id_pais: null,
   razon_social: "",
   rut: "",
   contacto: "",
@@ -33,8 +39,12 @@ const VACIO: DatosProveedor = {
 
 export default function GestorProveedores({
   proveedores,
+  paises,
+  esAdminGeneral,
 }: {
   proveedores: Fila[];
+  paises: Pais[];
+  esAdminGeneral: boolean;
 }) {
   const [busca, setBusca] = useState("");
   const [soloActivos, setSoloActivos] = useState(true);
@@ -42,6 +52,11 @@ export default function GestorProveedores({
   const [form, setForm] = useState<DatosProveedor>(VACIO);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
+
+  const paisDelForm = paises.find((x) => x.id === form.id_pais) ?? paises[0];
+  const prefijo = paisDelForm?.prefijo_telefono ?? "+56";
+  const etiquetaId = paisDelForm?.etiqueta_id ?? "RUT";
+  const faltan = faltantesProveedor(form);
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -114,46 +129,84 @@ export default function GestorProveedores({
           </div>
           <div className="grid md:grid-cols-3 gap-3">
             <Campo
-              label="Razon social"
+              label="Razon social *"
               value={form.razon_social}
               onChange={(v) => setForm({ ...form, razon_social: v })}
               cls={input}
             />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                {etiquetaId} *
+              </span>
+              <input
+                className={input}
+                value={form.rut}
+                placeholder="12.345.678-9"
+                onChange={(e) => setForm({ ...form, rut: e.target.value })}
+                onBlur={(e) => setForm({ ...form, rut: fmtRut(e.target.value) })}
+              />
+            </label>
             <Campo
-              label="RUT"
-              value={form.rut}
-              onChange={(v) => setForm({ ...form, rut: v })}
-              cls={input}
-            />
-            <Campo
-              label="Contacto"
+              label="Contacto *"
               value={form.contacto}
               onChange={(v) => setForm({ ...form, contacto: v })}
               cls={input}
             />
             <Campo
-              label="Correo"
+              label="Correo *"
               value={form.email}
               onChange={(v) => setForm({ ...form, email: v })}
               cls={input}
             />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Telefono *
+              </span>
+              <CampoTelefono
+                valor={form.telefono}
+                onChange={(v) => setForm({ ...form, telefono: v })}
+                prefijo={prefijo}
+                className={input}
+                requerido
+              />
+            </label>
             <Campo
-              label="Telefono"
-              value={form.telefono}
-              onChange={(v) => setForm({ ...form, telefono: v })}
-              cls={input}
-            />
-            <Campo
-              label="Direccion"
+              label="Direccion *"
               value={form.direccion}
               onChange={(v) => setForm({ ...form, direccion: v })}
               cls={input}
             />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Pais *
+              </span>
+              <select
+                className={input}
+                value={form.id_pais ?? ""}
+                disabled={!esAdminGeneral}
+                onChange={(e) =>
+                  setForm({ ...form, id_pais: Number(e.target.value) || null })
+                }
+              >
+                {esAdminGeneral && <option value="">-- elija --</option>}
+                {paises.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
+          {faltan.length > 0 && (
+            <div className="text-xs text-gray-500">
+              Al proveedor no le puede faltar ninguno. Falta
+              {faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
+            </div>
+          )}
           <div className="flex gap-2">
             <button
               onClick={guardar}
-              disabled={pendiente || !form.razon_social.trim()}
+              disabled={pendiente || faltan.length > 0}
               className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40"
             >
               {pendiente ? "Grabando..." : "Grabar"}
@@ -237,6 +290,7 @@ export default function GestorProveedores({
                           email: p.email ?? "",
                           telefono: p.telefono ?? "",
                           direccion: p.direccion ?? "",
+                          id_pais: p.id_pais,
                           activo: p.activo,
                         });
                       }}

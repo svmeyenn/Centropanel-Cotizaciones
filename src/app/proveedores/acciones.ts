@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
+import { faltantesProveedor } from "@/lib/validacion";
 
 async function soloAdmin() {
   const v = await requerirVendedor();
@@ -18,23 +19,29 @@ export interface DatosProveedor {
   telefono: string;
   direccion: string;
   activo?: boolean;
+  // Mercado del proveedor. Solo lo elige el administrador general.
+  id_pais?: number | null;
 }
 
 export async function crearProveedor(d: DatosProveedor) {
   const err = await soloAdmin();
   if (err) return { error: err };
-  if (!d.razon_social.trim()) return { error: "Indique la razon social." };
+  const faltan = faltantesProveedor(d);
+  if (faltan.length > 0) {
+    return { error: `Faltan datos del proveedor: ${faltan.join(", ")}.` };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("proveedores")
     .insert({
       razon_social: d.razon_social.trim(),
-      rut: d.rut.trim() || null,
-      contacto: d.contacto.trim() || null,
-      email: d.email.trim() || null,
-      telefono: d.telefono.trim() || null,
-      direccion: d.direccion.trim() || null,
+      rut: d.rut.trim(),
+      contacto: d.contacto.trim(),
+      email: d.email.trim(),
+      telefono: d.telefono.trim(),
+      direccion: d.direccion.trim(),
+      ...(d.id_pais ? { id_pais: d.id_pais } : {}),
     })
     .select("id, razon_social")
     .single();
@@ -55,18 +62,22 @@ export async function crearProveedor(d: DatosProveedor) {
 export async function actualizarProveedor(id: number, d: DatosProveedor) {
   const err = await soloAdmin();
   if (err) return { error: err };
-  if (!d.razon_social.trim()) return { error: "Indique la razon social." };
+  const faltan = faltantesProveedor(d);
+  if (faltan.length > 0) {
+    return { error: `Faltan datos del proveedor: ${faltan.join(", ")}.` };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("proveedores")
     .update({
       razon_social: d.razon_social.trim(),
-      rut: d.rut.trim() || null,
-      contacto: d.contacto.trim() || null,
-      email: d.email.trim() || null,
-      telefono: d.telefono.trim() || null,
-      direccion: d.direccion.trim() || null,
+      rut: d.rut.trim(),
+      contacto: d.contacto.trim(),
+      email: d.email.trim(),
+      telefono: d.telefono.trim(),
+      direccion: d.direccion.trim(),
+      ...(d.id_pais ? { id_pais: d.id_pais } : {}),
       activo: d.activo ?? true,
     })
     .eq("id", id);

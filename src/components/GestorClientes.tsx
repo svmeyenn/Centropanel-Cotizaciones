@@ -7,7 +7,10 @@ import {
   type DatosCliente,
 } from "@/app/clientes/acciones";
 import ModalNuevoCliente from "@/components/ModalNuevoCliente";
-import type { Cliente } from "@/types/database";
+import type { Cliente, Pais } from "@/types/database";
+import { faltantesCliente } from "@/lib/validacion";
+import { rut as fmtRut } from "@/lib/formato";
+import CampoTelefono from "@/components/CampoTelefono";
 import { useRouter } from "next/navigation";
 
 const VACIO: DatosCliente = {
@@ -17,14 +20,21 @@ const VACIO: DatosCliente = {
   email: "",
   telefono: "",
   direccion: "",
+  comuna: "",
+  ciudad: "",
+  id_pais: null,
 };
 
 export default function GestorClientes({
   clientes,
   puedeEditar,
+  paises,
+  esAdminGeneral,
 }: {
   clientes: Cliente[];
   puedeEditar: boolean;
+  paises: Pais[];
+  esAdminGeneral: boolean;
 }) {
   const [busca, setBusca] = useState("");
   const [editando, setEditando] = useState<number | null>(null);
@@ -59,6 +69,9 @@ export default function GestorClientes({
       email: c.email ?? "",
       telefono: c.telefono ?? "",
       direccion: c.direccion ?? "",
+      comuna: c.comuna ?? "",
+      ciudad: c.ciudad ?? "",
+      id_pais: c.id_pais ?? null,
     });
   }
 
@@ -74,6 +87,12 @@ export default function GestorClientes({
       }
     });
   }
+
+  const paisDelForm =
+    paises.find((x) => x.id === form.id_pais) ?? paises[0];
+  const prefijo = paisDelForm?.prefijo_telefono ?? "+56";
+  const etiquetaId = paisDelForm?.etiqueta_id ?? "RUT";
+  const faltan = faltantesCliente(form);
 
   const inputCls = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
 
@@ -107,19 +126,25 @@ export default function GestorClientes({
           <div className="text-sm font-semibold text-verde">Modificar cliente</div>
           <div className="grid md:grid-cols-2 gap-3">
             <Campo
-              label="Razon social"
+              label="Razon social *"
               value={form.razon_social}
               onChange={(v) => setForm({ ...form, razon_social: v })}
               cls={inputCls}
             />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                {etiquetaId}
+              </span>
+              <input
+                className={inputCls}
+                value={form.rut}
+                placeholder="12.345.678-9"
+                onChange={(e) => setForm({ ...form, rut: e.target.value })}
+                onBlur={(e) => setForm({ ...form, rut: fmtRut(e.target.value) })}
+              />
+            </label>
             <Campo
-              label="RUT"
-              value={form.rut}
-              onChange={(v) => setForm({ ...form, rut: v })}
-              cls={inputCls}
-            />
-            <Campo
-              label="Contacto"
+              label="Contacto *"
               value={form.contacto}
               onChange={(v) => setForm({ ...form, contacto: v })}
               cls={inputCls}
@@ -130,23 +155,71 @@ export default function GestorClientes({
               onChange={(v) => setForm({ ...form, email: v })}
               cls={inputCls}
             />
-            <Campo
-              label="Telefono"
-              value={form.telefono}
-              onChange={(v) => setForm({ ...form, telefono: v })}
-              cls={inputCls}
-            />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Telefono *
+              </span>
+              <CampoTelefono
+                valor={form.telefono}
+                onChange={(v) => setForm({ ...form, telefono: v })}
+                prefijo={prefijo}
+                className={inputCls}
+                requerido
+              />
+            </label>
             <Campo
               label="Direccion"
               value={form.direccion}
               onChange={(v) => setForm({ ...form, direccion: v })}
               cls={inputCls}
             />
+            <Campo
+              label="Comuna"
+              value={form.comuna}
+              onChange={(v) => setForm({ ...form, comuna: v })}
+              cls={inputCls}
+            />
+            <Campo
+              label="Ciudad *"
+              value={form.ciudad}
+              onChange={(v) => setForm({ ...form, ciudad: v })}
+              cls={inputCls}
+            />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Pais *
+              </span>
+              <select
+                className={inputCls}
+                value={form.id_pais ?? ""}
+                disabled={!esAdminGeneral}
+                onChange={(e) =>
+                  setForm({ ...form, id_pais: Number(e.target.value) || null })
+                }
+              >
+                {esAdminGeneral && <option value="">-- elija --</option>}
+                {paises.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.nombre}
+                  </option>
+                ))}
+              </select>
+              {!esAdminGeneral && (
+                <span className="block text-[11px] text-gray-500 mt-0.5">
+                  Solo el administrador general puede cambiar de mercado.
+                </span>
+              )}
+            </label>
           </div>
+          {faltan.length > 0 && (
+            <div className="text-xs text-gray-500">
+              Falta{faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
+            </div>
+          )}
           <div className="flex gap-2">
             <button
               onClick={guardar}
-              disabled={pendiente}
+              disabled={pendiente || faltan.length > 0}
               className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50"
             >
               {pendiente ? "Grabando..." : "Grabar"}
@@ -226,6 +299,8 @@ export default function GestorClientes({
 
       {modalNuevo && (
         <ModalNuevoCliente
+          paises={paises}
+          eligePais={esAdminGeneral}
           onCerrar={() => setModalNuevo(false)}
           onCreado={() => {
             setModalNuevo(false);
