@@ -17,11 +17,44 @@ export interface Vendedor {
   email: string | null;
   telefono: string | null;
   rol: Rol;
+  // Chile, Peru o Ambos. 'Ambos' con rol Administrador es el
+  // administrador general: el unico que cruza mercados.
+  mercado: "Chile" | "Peru" | "Ambos";
   puede_ver: boolean;
   puede_crear: boolean;
   puede_editar: boolean;
   puede_admin: boolean;
   debe_cambiar_password: boolean;
+  activo: boolean;
+}
+
+export interface Pais {
+  id: number;
+  codigo: string;
+  nombre: string;
+  moneda_base: string;
+  prefijo_telefono: string;
+  // Como se llama el identificador tributario alli: RUT en Chile, RUC en Peru.
+  etiqueta_id: string;
+  activo: boolean;
+}
+
+export interface Moneda {
+  codigo: string;
+  nombre: string;
+  simbolo: string;
+  decimales: number;
+  activo: boolean;
+}
+
+export interface TipoMateria {
+  id: number;
+  nombre: string;
+  // El nucleo del panel (EPS) y las caras (Placa). El configurador los
+  // necesita distinguidos; un tipo nuevo entra sin ninguna de las dos.
+  es_nucleo: boolean;
+  es_cara: boolean;
+  orden: number;
   activo: boolean;
 }
 
@@ -33,11 +66,17 @@ export interface Cliente {
   email: string | null;
   telefono: string | null;
   direccion: string | null;
+  comuna?: string | null;
+  ciudad?: string | null;
+  id_pais?: number | null;
   activo: boolean;
 }
 
 export interface MateriaPrima {
   id: number;
+  // Codigo corto y estable para nombrarla en un documento o en el taller.
+  sku?: string;
+  id_pais?: number | null;
   nombre: string;
   tipo: "EPS" | "Placa" | "Adhesivo";
   familia: string | null;

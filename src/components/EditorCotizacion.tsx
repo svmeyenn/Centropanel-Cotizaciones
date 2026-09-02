@@ -23,7 +23,7 @@ import {
   type DatosCotizacion,
   type ItemBorrador,
 } from "@/app/cotizaciones/acciones";
-import type { Cliente, FormaPago, TipoDescuento } from "@/types/database";
+import type { Cliente, FormaPago, Pais, TipoDescuento } from "@/types/database";
 
 // Producto tal como lo ve el vendedor: sin costo_unitario, porque el catalogo
 // llega por v_catalogo_venta (el RLS impide a un Vendedor ver costos).
@@ -43,6 +43,8 @@ interface Props {
   modo: "crear" | "editar" | "ver";
   id?: number;
   clientes: Cliente[];
+  paises: Pais[];
+  esAdminGeneral: boolean;
   formasPago: FormaPago[];
   mediosPago: MedioPago[];
   productos: ProductoVenta[];
@@ -656,6 +658,8 @@ export default function EditorCotizacion(p: Props) {
 
       {modalCliente && (
         <ModalNuevoCliente
+          paises={p.paises}
+          eligePais={p.esAdminGeneral}
           onCerrar={() => setModalCliente(false)}
           onCreado={(cli) => {
             setClientesExtra((x) => [...x, cli]);

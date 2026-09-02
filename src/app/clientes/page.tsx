@@ -1,7 +1,7 @@
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorClientes from "@/components/GestorClientes";
-import { requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Pagina() {
@@ -11,6 +11,7 @@ export default async function Pagina() {
     .from("clientes")
     .select("*")
     .order("razon_social");
+  const { paises, esAdminGeneral } = await contextoMercado(v);
 
   return (
     <div className="min-h-screen">
@@ -20,6 +21,8 @@ export default async function Pagina() {
         <GestorClientes
           clientes={clientes ?? []}
           puedeEditar={v.puede_editar || v.rol === "Administrador"}
+          paises={paises}
+          esAdminGeneral={esAdminGeneral}
         />
       </div>
     </div>

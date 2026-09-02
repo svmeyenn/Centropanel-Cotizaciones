@@ -7,7 +7,10 @@ import {
   type DatosCliente,
   type ClienteChoque,
 } from "@/app/clientes/acciones";
-import type { Cliente } from "@/types/database";
+import type { Cliente, Pais } from "@/types/database";
+import { faltantesCliente } from "@/lib/validacion";
+import { rut as fmtRut } from "@/lib/formato";
+import CampoTelefono from "@/components/CampoTelefono";
 
 const VACIO: DatosCliente = {
   razon_social: "",
@@ -16,6 +19,9 @@ const VACIO: DatosCliente = {
   email: "",
   telefono: "",
   direccion: "",
+  comuna: "",
+  ciudad: "",
+  id_pais: null,
 };
 
 // Alta de cliente en ventana emergente. Se usa desde el cotizador (donde
@@ -28,9 +34,15 @@ const VACIO: DatosCliente = {
 export default function ModalNuevoCliente({
   onCreado,
   onCerrar,
+  paises = [],
+  eligePais,
 }: {
   onCreado: (c: Cliente) => void;
   onCerrar: () => void;
+  // Solo el administrador general elige mercado: los demas tienen el suyo y
+  // se lo pone la base.
+  paises?: Pais[];
+  eligePais?: boolean;
 }) {
   const [form, setForm] = useState<DatosCliente>(VACIO);
   const [choque, setChoque] = useState<ClienteChoque | null>(null);
@@ -78,7 +90,13 @@ export default function ModalNuevoCliente({
   }
 
   const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
-  const bloqueado = choque != null || !form.razon_social.trim();
+  const paisElegido = paises.find((x) => x.id === form.id_pais) ?? paises[0];
+  const prefijo = paisElegido?.prefijo_telefono ?? "+56";
+  const etiquetaId = paisElegido?.etiqueta_id ?? "RUT";
+
+  const faltan = faltantesCliente(form);
+  if (eligePais && form.id_pais == null) faltan.push("Pais");
+  const bloqueado = choque != null || faltan.length > 0;
 
   return (
     <div
@@ -103,19 +121,27 @@ export default function ModalNuevoCliente({
         <div className="p-4 space-y-3">
           <div className="grid md:grid-cols-2 gap-3">
             <Campo
-              label="Razon social"
+              label="Razon social *"
               value={form.razon_social}
               onChange={(v) => setForm({ ...form, razon_social: v })}
               cls={input}
             />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                {etiquetaId}
+              </span>
+              <input
+                className={input}
+                value={form.rut}
+                placeholder="12.345.678-9"
+                onChange={(e) => setForm({ ...form, rut: e.target.value })}
+                onBlur={(e) =>
+                  setForm({ ...form, rut: fmtRut(e.target.value) })
+                }
+              />
+            </label>
             <Campo
-              label="RUT"
-              value={form.rut}
-              onChange={(v) => setForm({ ...form, rut: v })}
-              cls={input}
-            />
-            <Campo
-              label="Contacto"
+              label="Contacto *"
               value={form.contacto}
               onChange={(v) => setForm({ ...form, contacto: v })}
               cls={input}
@@ -126,18 +152,61 @@ export default function ModalNuevoCliente({
               onChange={(v) => setForm({ ...form, email: v })}
               cls={input}
             />
-            <Campo
-              label="Telefono"
-              value={form.telefono}
-              onChange={(v) => setForm({ ...form, telefono: v })}
-              cls={input}
-            />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Telefono *
+              </span>
+              <CampoTelefono
+                valor={form.telefono}
+                onChange={(v) => setForm({ ...form, telefono: v })}
+                prefijo={prefijo}
+                className={input}
+                requerido
+              />
+            </label>
             <Campo
               label="Direccion"
               value={form.direccion}
               onChange={(v) => setForm({ ...form, direccion: v })}
               cls={input}
             />
+            <Campo
+              label="Comuna"
+              value={form.comuna}
+              onChange={(v) => setForm({ ...form, comuna: v })}
+              cls={input}
+            />
+            <Campo
+              label="Ciudad *"
+              value={form.ciudad}
+              onChange={(v) => setForm({ ...form, ciudad: v })}
+              cls={input}
+            />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Pais *
+              </span>
+              <select
+                className={input}
+                value={form.id_pais ?? ""}
+                disabled={!eligePais}
+                onChange={(e) =>
+                  setForm({ ...form, id_pais: Number(e.target.value) || null })
+                }
+              >
+                {eligePais && <option value="">-- elija --</option>}
+                {paises.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.nombre}
+                  </option>
+                ))}
+              </select>
+              {!eligePais && (
+                <span className="block text-[11px] text-gray-500 mt-0.5">
+                  Su mercado. Solo el administrador general puede cambiarlo.
+                </span>
+              )}
+            </label>
           </div>
 
           {choque && (
@@ -185,9 +254,9 @@ export default function ModalNuevoCliente({
             >
               Cancelar
             </button>
-            {!form.razon_social.trim() && (
+            {faltan.length > 0 && (
               <span className="text-xs text-gray-500 self-center">
-                La razon social es obligatoria.
+                Falta{faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
               </span>
             )}
           </div>

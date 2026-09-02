@@ -11,6 +11,9 @@ export interface DatosVendedor {
   email: string;
   telefono: string;
   rol: Rol;
+  // A que mercado entra: Chile, Peru o Ambos. Administrador + Ambos es el
+  // administrador general, el unico que cruza paises.
+  mercado: "Chile" | "Peru" | "Ambos";
   puede_ver: boolean;
   puede_crear: boolean;
   puede_editar: boolean;
@@ -61,6 +64,7 @@ export async function actualizarVendedor(id: number, d: DatosVendedor) {
       email: d.email.trim() || null,
       telefono: d.telefono.trim() || null,
       rol: d.rol,
+      mercado: d.mercado,
       puede_ver: d.puede_ver,
       puede_crear: d.puede_crear,
       puede_editar: d.puede_editar,

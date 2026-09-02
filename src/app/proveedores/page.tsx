@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorProveedores from "@/components/GestorProveedores";
-import { requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -33,11 +33,14 @@ export default async function Pagina() {
     rut: p.rut as string | null,
     contacto: p.contacto as string | null,
     email: p.email as string | null,
+    id_pais: p.id_pais as number | null,
     telefono: p.telefono as string | null,
     direccion: p.direccion as string | null,
     activo: Boolean(p.activo),
     items: cuenta.get(Number(p.id)) ?? 0,
   }));
+
+  const { paises, esAdminGeneral } = await contextoMercado(v);
 
   return (
     <div className="min-h-screen">
@@ -47,7 +50,11 @@ export default async function Pagina() {
       />
       <div className="max-w-6xl mx-auto p-6 space-y-4">
         <BarraNavegacion />
-        <GestorProveedores proveedores={filas} />
+        <GestorProveedores
+          proveedores={filas}
+          paises={paises}
+          esAdminGeneral={esAdminGeneral}
+        />
       </div>
     </div>
   );

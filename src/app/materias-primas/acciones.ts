@@ -22,6 +22,8 @@ export interface DatosMateria {
   costo: number;
   unidad: string;
   activo?: boolean;
+  // Mercado del insumo. Solo lo elige el administrador general.
+  id_pais?: number | null;
 }
 
 // Alta de insumos. El nombre no se puede repetir: la carga masiva de costos
@@ -33,8 +35,15 @@ export async function crearMateria(d: DatosMateria) {
 
   const nombre = d.nombre.trim();
   if (!nombre) return { error: "Indique el nombre." };
-  if (!["EPS", "Placa", "Adhesivo"].includes(d.tipo)) {
-    return { error: "El tipo debe ser EPS, Placa o Adhesivo." };
+  if (!d.tipo.trim()) return { error: "Elija el tipo." };
+
+  const supabaseTipos = await createClient();
+  const { data: tipos } = await supabaseTipos
+    .from("tipos_materia")
+    .select("nombre")
+    .eq("activo", true);
+  if (!(tipos ?? []).some((t) => t.nombre === d.tipo)) {
+    return { error: `El tipo "${d.tipo}" no esta en la lista de tipos.` };
   }
   if (d.costo < 0) return { error: "El costo no puede ser negativo." };
 
@@ -52,9 +61,10 @@ export async function crearMateria(d: DatosMateria) {
       espesor_nominal: d.espesor_nominal,
       costo: d.costo,
       unidad: d.unidad.trim() || null,
+      ...(d.id_pais ? { id_pais: d.id_pais } : {}),
       activo: d.activo ?? true,
     })
-    .select("id, nombre")
+    .select("id, nombre, sku")
     .single();
 
   if (error) {
@@ -227,4 +237,39 @@ export async function recalcularCatalogo(): Promise<number> {
     n++;
   }
   return n;
+}
+
+// Eliminar de verdad, no desactivar: para lo que se cargo por error. La base
+// se niega si el insumo compone un panel o ya figura en una solicitud, porque
+// borrarlo dejaria un documento hablando de algo que no existe.
+export async function eliminarMateria(id: number) {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador") {
+    return { error: "Solo el administrador puede eliminar materias primas." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("eliminar_materia", { p_id: id });
+  if (error) return { error: error.message };
+
+  const r = data as {
+    ok?: boolean;
+    en_uso?: boolean;
+    paneles?: number;
+    solicitudes?: number;
+    proveedores_limpiados?: number;
+  };
+
+  if (r?.en_uso) {
+    const partes: string[] = [];
+    if (r.paneles) partes.push(`${r.paneles} panel(es) la usan`);
+    if (r.solicitudes) partes.push(`figura en ${r.solicitudes} solicitud(es)`);
+    return {
+      error: `No se puede eliminar: ${partes.join(" y ")}. Desactivela en vez de borrarla.`,
+    };
+  }
+
+  revalidatePath("/materias-primas");
+  revalidatePath("/configurador");
+  return { ok: true, proveedoresLimpiados: r?.proveedores_limpiados ?? 0 };
 }

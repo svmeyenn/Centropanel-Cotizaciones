@@ -180,3 +180,83 @@ export async function crearProductoServicio(d: DatosProductoNuevo) {
   revalidatePath("/cotizaciones");
   return { ok: true, producto: data };
 }
+
+// Cambiar la composicion de un panel ya creado. Todo lo hace actualizar_panel()
+// en la base: valida, comprueba duplicidad --caras invertidas incluidas-- y
+// recalcula descripcion, espesor, costo y precio de una sola vez.
+export async function editarComposicionPanel(
+  id: number,
+  idEps: number,
+  idPlacaA: number,
+  idPlacaB: number | null
+) {
+  const v = await requerirVendedor();
+  if (!v.puede_crear && v.rol !== "Administrador") {
+    return { error: "Su perfil no permite editar paneles." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("actualizar_panel", {
+    p_id: id,
+    p_eps: idEps,
+    p_placa_a: idPlacaA,
+    p_placa_b: idPlacaB,
+  });
+  if (error) return { error: error.message };
+
+  const r = data as {
+    ok?: boolean;
+    existe?: boolean;
+    duplicado?: boolean;
+    id?: number;
+    descripcion?: string;
+  };
+
+  if (r?.existe) {
+    return {
+      error: `Esa composicion ya existe en el catalogo: ${r.descripcion}. Use ese panel en vez de duplicarlo.`,
+    };
+  }
+  if (r?.duplicado) {
+    return { error: "Otro usuario acaba de crear ese mismo panel." };
+  }
+
+  revalidatePath("/productos");
+  revalidatePath("/configurador");
+  return { ok: true, descripcion: r?.descripcion };
+}
+
+// Eliminar un producto del catalogo. La base se niega si ya figura en una
+// cotizacion, un pedido o una solicitud: un documento emitido no puede quedar
+// citando algo inexistente.
+export async function eliminarProducto(id: number) {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador") {
+    return { error: "Solo el administrador puede eliminar productos." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("eliminar_producto", { p_id: id });
+  if (error) return { error: error.message };
+
+  const r = data as {
+    ok?: boolean;
+    en_uso?: boolean;
+    cotizaciones?: number;
+    pedidos?: number;
+    solicitudes?: number;
+  };
+
+  if (r?.en_uso) {
+    const partes: string[] = [];
+    if (r.cotizaciones) partes.push(`${r.cotizaciones} cotizacion(es)`);
+    if (r.pedidos) partes.push(`${r.pedidos} pedido(s)`);
+    if (r.solicitudes) partes.push(`${r.solicitudes} solicitud(es)`);
+    return {
+      error: `No se puede eliminar: aparece en ${partes.join(", ")}. Desactivelo en vez de borrarlo.`,
+    };
+  }
+
+  revalidatePath("/productos");
+  return { ok: true };
+}

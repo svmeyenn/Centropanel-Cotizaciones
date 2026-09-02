@@ -3,10 +3,11 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { crearMateria, type DatosMateria } from "@/app/materias-primas/acciones";
+import type { Pais, TipoMateria } from "@/types/database";
 
 const VACIO: DatosMateria = {
   nombre: "",
-  tipo: "Placa",
+  tipo: "",
   familia: "",
   etiqueta: "",
   ancho_mm: null,
@@ -23,8 +24,16 @@ const VACIO: DatosMateria = {
 // el costo de la unidad completa.
 export default function ModalNuevaMateria({
   etiquetas,
+  tipos,
+  paises = [],
+  eligePais,
 }: {
   etiquetas: string[];
+  // Los tipos vienen de la tabla, no del codigo: agregar uno nuevo --sellos,
+  // cintas, herrajes-- no deberia requerir tocar el programa.
+  tipos: TipoMateria[];
+  paises?: Pais[];
+  eligePais?: boolean;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -113,9 +122,35 @@ export default function ModalNuevaMateria({
                     value={form.tipo}
                     onChange={(e) => setForm({ ...form, tipo: e.target.value })}
                   >
-                    <option value="Placa">Placa</option>
-                    <option value="EPS">EPS</option>
-                    <option value="Adhesivo">Adhesivo</option>
+                    <option value="">-- elija --</option>
+                    {tipos.map((t) => (
+                      <option key={t.id} value={t.nombre}>
+                        {t.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-sm">
+                  <span className="block text-dorado-osc font-semibold mb-1">
+                    Pais
+                  </span>
+                  <select
+                    className={input}
+                    value={form.id_pais ?? ""}
+                    disabled={!eligePais}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        id_pais: Number(e.target.value) || null,
+                      })
+                    }
+                  >
+                    {eligePais && <option value="">-- elija --</option>}
+                    {paises.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.nombre}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label className="text-sm">

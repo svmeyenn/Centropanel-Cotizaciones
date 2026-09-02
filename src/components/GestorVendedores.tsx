@@ -40,6 +40,7 @@ export default function GestorVendedores({
       email: v.email ?? "",
       telefono: v.telefono ?? "",
       rol: v.rol,
+      mercado: v.mercado ?? "Chile",
       puede_ver: v.puede_ver,
       puede_crear: v.puede_crear,
       puede_editar: v.puede_editar,
@@ -140,6 +141,29 @@ export default function GestorVendedores({
                 <option value="Consulta">Consulta</option>
               </select>
             </label>
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Mercado
+              </span>
+              <select
+                className={input}
+                value={form.mercado}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    mercado: e.target.value as "Chile" | "Peru" | "Ambos",
+                  })
+                }
+              >
+                <option value="Chile">Chile</option>
+                <option value="Peru">Peru</option>
+                <option value="Ambos">Ambos</option>
+              </select>
+              <span className="block text-[11px] text-gray-500 mt-0.5">
+                Decide que clientes, productos e insumos ve. Administrador con
+                Ambos es el administrador general.
+              </span>
+            </label>
             <label className="text-sm flex items-end gap-2 pb-1">
               <input
                 type="checkbox"
@@ -209,6 +233,7 @@ export default function GestorVendedores({
                 <th className="text-left px-3 py-2">Cargo</th>
                 <th className="text-left px-3 py-2">Correo</th>
                 <th className="text-left px-3 py-2 w-32">Perfil</th>
+                <th className="text-left px-3 py-2 w-24">Mercado</th>
                 <th className="text-center px-3 py-2 w-40">Privilegios</th>
                 <th className="text-left px-3 py-2 w-20">Estado</th>
                 <th className="w-20" />
@@ -228,6 +253,7 @@ export default function GestorVendedores({
                   <td className="px-3 py-2 text-gray-600">{v.cargo}</td>
                   <td className="px-3 py-2 text-gray-600">{v.email}</td>
                   <td className="px-3 py-2">{v.rol}</td>
+                  <td className="px-3 py-2 text-gray-600">{v.mercado}</td>
                   <td className="px-3 py-2 text-center text-xs text-gray-600">
                     {[
                       v.puede_ver && "Ver",

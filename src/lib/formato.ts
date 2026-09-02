@@ -74,3 +74,39 @@ export function conComision(total: number, comisionPct: number): number {
   if (!comisionPct || comisionPct <= 0 || comisionPct >= 100) return total;
   return Math.round(total / (1 - comisionPct / 100));
 }
+
+// --- identificadores y telefonos -------------------------------------------
+
+// RUT chileno con puntos y guion: 123456789 -> 12.345.678-9. Se formatea al
+// mostrarlo y al salir del campo; en la base se guarda como se escribio.
+export function rut(v: string | null | undefined): string {
+  const limpio = (v ?? "").replace(/[^0-9kK]/g, "").toUpperCase();
+  if (limpio.length < 2) return limpio;
+  const dv = limpio.slice(-1);
+  const cuerpo = limpio.slice(0, -1).replace(/^0+/, "");
+  if (!cuerpo) return limpio;
+  return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}-${dv}`;
+}
+
+// El telefono se muestra como +56 123 456 789: codigo de pais aparte y el
+// resto en grupos de tres. Sin codigo de area no sirve para llamar desde otro
+// pais, que es justo lo que empieza a pasar con Peru.
+export function telefono(v: string | null | undefined): string {
+  const bruto = (v ?? "").trim();
+  if (!bruto) return "";
+  const digitos = bruto.replace(/[^\d+]/g, "");
+  if (!digitos.startsWith("+")) return bruto;
+
+  // Los codigos que usamos son de dos digitos (+56 Chile, +51 Peru).
+  const cod = digitos.slice(1, 3);
+  const resto = digitos.slice(3);
+  const grupos = resto.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `+${cod} ${grupos}`.trim();
+}
+
+// Un telefono sirve solo si trae el codigo de area: +56 y al menos ocho
+// digitos mas.
+export function telefonoValido(v: string | null | undefined): boolean {
+  const d = (v ?? "").replace(/[^\d+]/g, "");
+  return /^\+\d{2}\d{8,12}$/.test(d);
+}
