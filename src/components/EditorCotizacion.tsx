@@ -326,9 +326,9 @@ export default function EditorCotizacion(p: Props) {
       )}
 
       {/* cabecera */}
-      <div className="bg-white border border-gray-200 rounded p-4 grid md:grid-cols-2 gap-3">
-        <label className="text-sm">
-          <span className="flex items-center justify-between mb-1">
+      <div className="bg-white border border-gray-200 rounded p-3 grid md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-2">
+        <label className="text-xs md:col-span-3 lg:col-span-2">
+          <span className="flex items-center justify-between mb-0.5">
             <span className="text-dorado-osc font-semibold">Cliente *</span>
             {!soloLectura && p.puedeCrearPanel && (
               <button
@@ -358,8 +358,8 @@ export default function EditorCotizacion(p: Props) {
           <DatosDelCliente cliente={clienteElegido} />
         </label>
 
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">
+        <label className="text-xs md:col-span-2">
+          <span className="block text-dorado-osc font-semibold mb-0.5">
             Forma de pago *
           </span>
           <select
@@ -377,8 +377,8 @@ export default function EditorCotizacion(p: Props) {
           </select>
         </label>
 
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">
+        <label className="text-xs">
+          <span className="block text-dorado-osc font-semibold mb-0.5">
             Medio de pago *
           </span>
           <select
@@ -399,8 +399,8 @@ export default function EditorCotizacion(p: Props) {
           </select>
         </label>
 
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">Fecha</span>
+        <label className="text-xs">
+          <span className="block text-dorado-osc font-semibold mb-0.5">Fecha</span>
           <input
             type="date"
             className={inputCls}
@@ -410,9 +410,9 @@ export default function EditorCotizacion(p: Props) {
           />
         </label>
 
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">
-            Validez (dias corridos)
+        <label className="text-xs">
+          <span className="block text-dorado-osc font-semibold mb-0.5">
+            Validez (dias)
           </span>
           <input
             type="number"
@@ -421,13 +421,13 @@ export default function EditorCotizacion(p: Props) {
             value={d.validez_dias}
             onChange={(e) => set("validez_dias", Number(e.target.value) || 0)}
           />
-          <span className="text-xs text-gray-500">
+          <span className="text-[11px] text-gray-500">
             Vence el {fmtFecha(sumarDias(d.fecha, d.validez_dias))}
           </span>
         </label>
 
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">
+        <label className="text-xs">
+          <span className="block text-dorado-osc font-semibold mb-0.5">
             Tiempo de entrega
           </span>
           <input
@@ -438,8 +438,8 @@ export default function EditorCotizacion(p: Props) {
           />
         </label>
 
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">Despachar a</span>
+        <label className="text-xs md:col-span-3 lg:col-span-4">
+          <span className="block text-dorado-osc font-semibold mb-0.5">Despachar a</span>
           <input
             className={inputCls}
             disabled={soloLectura}
@@ -686,15 +686,25 @@ function Fila({
   );
 }
 
-// Razon social y contacto del cliente elegido. Se muestran aqui para no tener
-// que salir a la ficha del cliente a confirmar a quien se le esta cotizando.
+// Razon social, RUT y contacto del cliente elegido. Se muestran aqui para no
+// tener que salir a la ficha a confirmar a quien se le esta cotizando, y son
+// los mismos datos que salen impresos en la cotizacion.
+//
+// La razon social siempre esta --es obligatoria en el cliente--; el RUT puede
+// faltar, y se dice, porque hay clientes que se cotizan antes de tenerlo.
 function DatosDelCliente({ cliente }: { cliente: Cliente | null }) {
   if (!cliente) return null;
+  const rut = cliente.rut?.trim();
   return (
-    <span className="block mt-1 text-xs text-gray-600">
+    <span className="block mt-1 text-[11px] leading-tight text-gray-600">
       <span className="font-semibold text-gray-800">{cliente.razon_social}</span>
-      {cliente.contacto ? ` · Contacto: ${cliente.contacto}` : " · sin contacto registrado"}
-      {cliente.telefono ? ` · ${cliente.telefono}` : ""}
+      {rut ? (
+        <span> {"·"} RUT {rut}</span>
+      ) : (
+        <span className="text-gray-400"> {"·"} sin RUT</span>
+      )}
+      {cliente.contacto ? <span> {"·"} {cliente.contacto}</span> : null}
+      {cliente.telefono ? <span> {"·"} {cliente.telefono}</span> : null}
     </span>
   );
 }
