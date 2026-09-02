@@ -153,7 +153,7 @@ export default function GestorClientes({
             </button>
             <button
               onClick={() => setEditando(null)}
-              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Cancelar
             </button>
@@ -201,7 +201,7 @@ export default function GestorClientes({
                     <td className="px-2 py-2 text-right whitespace-nowrap">
                       <button
                         onClick={() => editar(c)}
-                        className="text-verde text-xs underline mr-2"
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                       >
                         editar
                       </button>
@@ -211,7 +211,7 @@ export default function GestorClientes({
                             await cambiarActivoCliente(c.id, !c.activo);
                           })
                         }
-                        className="text-gray-500 text-xs underline"
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                       >
                         {c.activo ? "desactivar" : "activar"}
                       </button>

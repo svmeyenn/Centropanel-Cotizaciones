@@ -7,14 +7,14 @@ export default function BotonImprimir({ idCotizacion }: { idCotizacion?: number 
     <div className="print:hidden bg-crema border-b border-gray-200 px-6 py-3 flex gap-2 items-center">
       <button
         onClick={() => window.history.back()}
-        className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
       >
         ← Volver
       </button>
       {idCotizacion != null && (
         <a
           href={`/cotizaciones/${idCotizacion}`}
-          className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
         >
           Ver cotizacion
         </a>

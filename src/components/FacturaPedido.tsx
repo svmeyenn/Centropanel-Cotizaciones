@@ -89,7 +89,7 @@ export default function FacturaPedido({
                       else router.refresh();
                     })
                   }
-                  className="text-red-600 text-xs underline ml-auto"
+                  className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-auto"
                   title="Devuelve el pedido a Despachado para poder volver a facturarlo"
                 >
                   anular factura
@@ -205,7 +205,7 @@ export default function FacturaPedido({
                     </button>
                     <button
                       onClick={() => setAbierto(false)}
-                      className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                     >
                       Cancelar
                     </button>
@@ -329,7 +329,7 @@ function ArchivoFactura({
                 })
               }
               disabled={pendiente}
-              className="text-red-600 text-xs underline"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               quitar archivo
             </button>

@@ -163,7 +163,7 @@ export default function GestorProveedores({
                 setEditando(null);
                 setForm(VACIO);
               }}
-              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Cancelar
             </button>
@@ -240,7 +240,7 @@ export default function GestorProveedores({
                           activo: p.activo,
                         });
                       }}
-                      className="text-verde text-xs underline mr-2"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                     >
                       editar
                     </button>
@@ -250,7 +250,7 @@ export default function GestorProveedores({
                           await cambiarActivoProveedor(p.id, !p.activo);
                         })
                       }
-                      className="text-gray-500 text-xs underline"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                     >
                       {p.activo ? "desactivar" : "activar"}
                     </button>

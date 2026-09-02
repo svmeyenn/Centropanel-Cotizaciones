@@ -173,7 +173,7 @@ export default function CuentaCorrientePedido({
                   {faltaPie > 0 && (
                     <button
                       onClick={() => setD({ ...d, monto: faltaPie })}
-                      className="text-[11px] text-verde underline mt-0.5"
+                      className="bg-verde text-white text-[11px] font-semibold px-2 py-0.5 rounded mt-0.5"
                     >
                       usar el pie que falta ({pesos(faltaPie)})
                     </button>
@@ -229,7 +229,7 @@ export default function CuentaCorrientePedido({
                 </button>
                 <button
                   onClick={() => setAbierto(false)}
-                  className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+                  className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                 >
                   Cancelar
                 </button>
@@ -292,7 +292,7 @@ export default function CuentaCorrientePedido({
                             else router.refresh();
                           })
                         }
-                        className="text-red-600 text-xs underline"
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                       >
                         anular
                       </button>

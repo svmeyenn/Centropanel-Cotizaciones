@@ -87,13 +87,13 @@ export default async function Pagina() {
         <BarraNavegacion>
           <Link
             href="/cobranza"
-            className="border border-verde text-verde text-xs px-2.5 py-1 rounded hover:bg-white"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Estado de pago
           </Link>
           <Link
             href="/cotizaciones"
-            className="border border-verde text-verde text-xs px-2.5 py-1 rounded hover:bg-white"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Cotizaciones
           </Link>

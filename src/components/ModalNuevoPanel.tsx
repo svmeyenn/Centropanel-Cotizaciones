@@ -252,7 +252,7 @@ export default function ModalNuevoPanel({
             </button>
             <button
               onClick={onCerrar}
-              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Cancelar
             </button>

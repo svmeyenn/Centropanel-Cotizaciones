@@ -287,7 +287,7 @@ export default function EditorCotizacion(p: Props) {
               </button>
               <button
                 onClick={() => setConfirmarNueva(false)}
-                className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
               >
                 Cancelar
               </button>
@@ -298,7 +298,7 @@ export default function EditorCotizacion(p: Props) {
                 if (p.modo === "crear" && hayAlgoEscrito) setConfirmarNueva(true);
                 else nuevaCotizacion();
               }}
-              className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
               title="Deja la pantalla en blanco para cotizar de nuevo"
             >
               Nueva cotizacion
@@ -308,7 +308,7 @@ export default function EditorCotizacion(p: Props) {
             <Link
               href={`/cotizaciones/${p.id}/pdf`}
               target="_blank"
-              className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Ver PDF
             </Link>
@@ -338,7 +338,7 @@ export default function EditorCotizacion(p: Props) {
               <button
                 type="button"
                 onClick={() => setModalCliente(true)}
-                className="border border-verde text-verde text-xs font-semibold px-2 py-0.5 rounded hover:bg-crema"
+                className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded"
                 title="Crear un cliente sin salir de esta cotizacion"
               >
                 + Nuevo cliente
@@ -458,7 +458,7 @@ export default function EditorCotizacion(p: Props) {
             {p.puedeCrearPanel && (
               <button
                 onClick={() => setModalPanel(true)}
-                className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded hover:bg-white"
+                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                 title="Crear un panel que no esta en el catalogo sin salir de esta cotizacion"
               >
                 + Panel nuevo
@@ -561,7 +561,7 @@ export default function EditorCotizacion(p: Props) {
                     <td className="px-2 text-right">
                       <button
                         onClick={() => quitarItem(i)}
-                        className="text-red-600 text-xs underline"
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                       >
                         quitar
                       </button>

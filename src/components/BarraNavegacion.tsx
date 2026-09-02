@@ -27,13 +27,13 @@ export default function BarraNavegacion({
     <div className="flex flex-wrap gap-2 items-center">
       <button
         onClick={atras}
-        className="border border-verde text-verde text-xs px-2.5 py-1 rounded hover:bg-white"
+        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
       >
         ← Volver
       </button>
       <Link
         href="/"
-        className="border border-verde text-verde text-xs px-2.5 py-1 rounded hover:bg-white"
+        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
       >
         Menu principal
       </Link>

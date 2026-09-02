@@ -149,7 +149,7 @@ export default function MaestraProveedor({
               setMarcados(new Set());
               setBuscaLote("");
             }}
-            className="border border-verde text-verde text-xs font-semibold px-2.5 py-1 rounded"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             {lote ? "Agregar de a uno" : "Asignar varios"}
           </button>
@@ -386,13 +386,13 @@ export default function MaestraProveedor({
                                   else setEdit(null);
                                 })
                               }
-                              className="text-verde text-xs underline mr-2"
+                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                             >
                               grabar
                             </button>
                             <button
                               onClick={() => setEdit(null)}
-                              className="text-gray-500 text-xs underline"
+                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                             >
                               cancelar
                             </button>
@@ -405,7 +405,7 @@ export default function MaestraProveedor({
                                 setEditCosto(it.costo);
                                 setEditCodigo(it.codigo ?? "");
                               }}
-                              className="text-verde text-xs underline mr-2"
+                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                             >
                               editar
                             </button>
@@ -422,7 +422,7 @@ export default function MaestraProveedor({
                                   if (r?.error) setError(r.error);
                                 })
                               }
-                              className="text-gray-500 text-xs underline mr-2"
+                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                             >
                               {it.activo ? "desactivar" : "activar"}
                             </button>
@@ -436,7 +436,7 @@ export default function MaestraProveedor({
                                   if (r?.error) setError(r.error);
                                 })
                               }
-                              className="text-red-600 text-xs underline"
+                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                             >
                               quitar
                             </button>

@@ -126,7 +126,7 @@ export default function GestorFormasPago({
             </button>
             <button
               onClick={() => setEditando(null)}
-              className="border border-verde text-verde text-xs px-2.5 py-1 rounded"
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
               Cancelar
             </button>
@@ -164,7 +164,7 @@ export default function GestorFormasPago({
                   <td className="px-2 py-2 text-right whitespace-nowrap">
                     <button
                       onClick={() => editar(f)}
-                      className="text-verde text-xs underline mr-2"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                     >
                       editar
                     </button>
@@ -174,7 +174,7 @@ export default function GestorFormasPago({
                           await cambiarActivoFormaPago(f.id, !f.activo);
                         })
                       }
-                      className="text-gray-500 text-xs underline"
+                      className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                     >
                       {f.activo ? "desactivar" : "activar"}
                     </button>

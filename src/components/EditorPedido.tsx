@@ -306,7 +306,7 @@ export default function EditorPedido({
                             else setLs((x) => x.filter((y) => y.id !== l.id));
                           })
                         }
-                        className="text-red-600 text-xs underline"
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                       >
                         quitar
                       </button>
@@ -493,7 +493,7 @@ export default function EditorPedido({
                             else router.refresh();
                           })
                         }
-                        className="text-verde text-xs underline mr-2"
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                         title="La adjudicada es a la que se le compra"
                       >
                         {s.estado === "Adjudicada" ? "quitar adjudicacion" : "adjudicar"}
@@ -506,7 +506,7 @@ export default function EditorPedido({
                             else router.refresh();
                           })
                         }
-                        className="text-red-600 text-xs underline"
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                         title="Eliminarla permite volver a pedirle a este proveedor"
                       >
                         eliminar
