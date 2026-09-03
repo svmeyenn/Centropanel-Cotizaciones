@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { actualizarVendedor, type DatosVendedor } from "@/app/vendedores/acciones";
+import {
+  actualizarVendedor,
+  crearVendedor,
+  type DatosVendedor,
+} from "@/app/vendedores/acciones";
 import type { Rol, Vendedor } from "@/types/database";
 
 // Perfiles predefinidos, los mismos tres de Access. Vive en el cliente porque
@@ -24,7 +28,11 @@ export default function GestorVendedores({
   vendedores: Vendedor[];
   miId: number;
 }) {
-  const [editando, setEditando] = useState<number | null>(null);
+  // "crear" cuando se esta dando de alta a alguien nuevo; el id cuando se
+  // modifica a alguien existente.
+  const [editando, setEditando] = useState<number | "crear" | null>(null);
+  const [clave, setClave] = useState("");
+  const [aviso, setAviso] = useState<string | null>(null);
   const [form, setForm] = useState<DatosVendedor | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -49,6 +57,24 @@ export default function GestorVendedores({
     });
   }
 
+  function nuevo() {
+    setEditando("crear");
+    setError(null);
+    setOk(false);
+    setAviso(null);
+    setClave(claveTemporal());
+    setForm({
+      nombre: "",
+      cargo: "",
+      email: "",
+      telefono: "",
+      rol: "Vendedor",
+      mercado: "Chile",
+      ...privilegiosDeRol("Vendedor"),
+      activo: true,
+    });
+  }
+
   function cambiarRol(rol: Rol) {
     if (!form) return;
     // Al elegir un perfil se aplican sus privilegios; despues se pueden afinar
@@ -60,7 +86,23 @@ export default function GestorVendedores({
     if (!form || editando == null) return;
     setError(null);
     setOk(false);
+    setAviso(null);
     empezar(async () => {
+      if (editando === "crear") {
+        const r = await crearVendedor(form, clave);
+        if (r?.error) {
+          setError(r.error);
+          return;
+        }
+        setAviso(
+          r?.confirmacionPendiente
+            ? `${form.nombre} quedo creado. Le llego un correo a ${form.email} para confirmar la direccion; hasta que lo abra no podra entrar. Su clave temporal es ${clave}.`
+            : `${form.nombre} quedo creado. Entregue la clave temporal ${clave}: el sistema le pedira cambiarla al entrar.`
+        );
+        setEditando(null);
+        setForm(null);
+        return;
+      }
       const r = await actualizarVendedor(editando, form);
       if (r?.error) setError(r.error);
       else {
@@ -78,13 +120,29 @@ export default function GestorVendedores({
       <div className="bg-blue-50 border border-blue-200 text-blue-900 text-sm rounded p-3">
         El perfil define que puede hacer cada persona. <strong>Administrador</strong>{" "}
         ve costos y parametros; <strong>Vendedor</strong> cotiza sin ver costos;{" "}
-        <strong>Consulta</strong> solo mira. Las contrasenas no se gestionan aqui:
-        cada uno la cambia desde su correo con &quot;olvide mi contrasena&quot;.
+        <strong>Consulta</strong> solo mira. El <strong>mercado</strong> decide que
+        clientes, productos y proveedores ve: Chile, Peru, o Ambos para quien
+        trabaja los dos. Al crear a alguien se genera una clave temporal que
+        usted le entrega; el sistema le pide cambiarla al entrar.
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={nuevo}
+          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+        >
+          + Nuevo usuario
+        </button>
       </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
           {error}
+        </div>
+      )}
+      {aviso && (
+        <div className="bg-crema border border-dorado text-dorado-osc text-sm rounded p-3">
+          {aviso}
         </div>
       )}
       {ok && (
@@ -96,13 +154,37 @@ export default function GestorVendedores({
       {form && editando != null && (
         <div className="bg-white border border-dorado rounded p-4 space-y-3">
           <div className="text-sm font-semibold text-verde">
-            Modificar vendedor
+            {editando === "crear" ? "Nuevo usuario" : "Modificar vendedor"}
             {editando === miId && (
               <span className="ml-2 text-xs font-normal text-gray-500">
                 (es su propia cuenta)
               </span>
             )}
           </div>
+
+          {editando === "crear" && (
+            <div className="bg-crema border border-dorado rounded p-3 text-xs space-y-1">
+              <div className="text-dorado-osc font-semibold">
+                Clave temporal
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="bg-white border border-gray-200 rounded px-2 py-1 text-sm">
+                  {clave}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => setClave(claveTemporal())}
+                  className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+                >
+                  otra
+                </button>
+              </div>
+              <div className="text-gray-600">
+                Antela o copiela ahora: despues de grabar no se vuelve a
+                mostrar. El correo es con lo que entra al sistema.
+              </div>
+            </div>
+          )}
 
           <div className="grid md:grid-cols-2 gap-3">
             <Campo
@@ -305,5 +387,20 @@ function Campo({
       <span className="block text-dorado-osc font-semibold mb-1">{label}</span>
       <input className={cls} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
+  );
+}
+
+// Clave de un solo uso para entrar la primera vez. Se muestra al administrador
+// para que se la entregue; el sistema obliga a cambiarla al primer ingreso.
+function claveTemporal() {
+  const letras = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const minus = "abcdefghijkmnopqrstuvwxyz";
+  const digitos = "23456789";
+  const al = (s: string) => s[Math.floor(Math.random() * s.length)];
+  return (
+    al(letras) +
+    Array.from({ length: 5 }, () => al(minus)).join("") +
+    Array.from({ length: 3 }, () => al(digitos)).join("") +
+    "!"
   );
 }
