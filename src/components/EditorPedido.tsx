@@ -110,8 +110,11 @@ export default function EditorPedido({
 
   const soloLectura = !editable || !puedeEditar;
   const total = ls.reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
+  // Un solo alto y un solo tamano de letra para todos los campos de la
+  // cabecera, editables o no: antes los de solo lectura eran bloques grises
+  // con letra grande y los editables cajas chicas, y la fila quedaba despareja.
   const input =
-    "border border-gray-300 rounded px-2 py-1 text-sm w-full disabled:bg-gray-100 disabled:text-gray-500";
+    "border border-gray-300 rounded px-2 py-1 text-xs w-full h-7 disabled:bg-gray-100 disabled:text-gray-500";
 
   function grabar() {
     setError(null);
@@ -188,8 +191,8 @@ export default function EditorPedido({
       )}
 
       {/* cabecera */}
-      <div className="bg-white border border-gray-200 rounded p-3 grid md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-2">
-        <div className="md:col-span-2">
+      <div className="bg-white border border-gray-200 rounded p-3 grid md:grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-2 items-start">
+        <div className="lg:col-span-2">
           <Dato titulo="Cliente" valor={cliente} />
           <span className="block mt-1 text-[11px] leading-tight text-gray-600">
             {clienteRut ? (
@@ -203,10 +206,8 @@ export default function EditorPedido({
           </span>
         </div>
         <Dato titulo="Ejecutivo" valor={vendedor} />
-        <Dato titulo="Forma de pago" valor={formaPago ?? "--"} />
-        <Dato titulo="Medio de pago" valor={medioPago ?? "--"} />
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">Estado</span>
+        <label className="text-xs">
+          <span className="block text-dorado-osc font-semibold mb-0.5">Estado</span>
           <select
             className={input}
             disabled={soloLectura}
@@ -220,8 +221,10 @@ export default function EditorPedido({
             ))}
           </select>
         </label>
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">Fecha</span>
+        <Dato titulo="Forma de pago" valor={formaPago ?? "--"} ancho="lg:col-span-2" />
+        <Dato titulo="Medio de pago" valor={medioPago ?? "--"} />
+        <label className="text-xs">
+          <span className="block text-dorado-osc font-semibold mb-0.5">Fecha</span>
           <input
             type="date"
             className={input}
@@ -230,8 +233,8 @@ export default function EditorPedido({
             onChange={(e) => setD({ ...d, fecha: e.target.value })}
           />
         </label>
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">
+        <label className="text-xs lg:col-span-2">
+          <span className="block text-dorado-osc font-semibold mb-0.5">
             Tiempo de entrega
           </span>
           <input
@@ -241,8 +244,8 @@ export default function EditorPedido({
             onChange={(e) => setD({ ...d, tiempo_entrega: e.target.value })}
           />
         </label>
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">
+        <label className="text-xs lg:col-span-2">
+          <span className="block text-dorado-osc font-semibold mb-0.5">
             Despachar a
           </span>
           <input
@@ -579,11 +582,27 @@ export default function EditorPedido({
   );
 }
 
-function Dato({ titulo, valor }: { titulo: string; valor: string }) {
+// Dato de solo lectura con el mismo aspecto que un campo editable: rotulo
+// arriba y caja del mismo alto. Asi la cabecera se lee como una sola rejilla y
+// no como dos disenos mezclados.
+function Dato({
+  titulo,
+  valor,
+  ancho,
+}: {
+  titulo: string;
+  valor: string;
+  ancho?: string;
+}) {
   return (
-    <div className="bg-gray-50 rounded p-3">
-      <div className="text-xs text-gray-500">{titulo}</div>
-      <div className="font-semibold text-gray-800">{valor}</div>
+    <div className={`text-xs ${ancho ?? ""}`}>
+      <div className="text-dorado-osc font-semibold mb-0.5">{titulo}</div>
+      <div
+        className="border border-gray-200 bg-gray-50 rounded px-2 py-1 h-7 flex items-center font-semibold text-gray-800 truncate"
+        title={valor}
+      >
+        {valor}
+      </div>
     </div>
   );
 }
