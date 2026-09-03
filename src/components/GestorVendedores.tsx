@@ -7,6 +7,7 @@ import {
   type DatosVendedor,
 } from "@/app/vendedores/acciones";
 import type { Rol, Vendedor } from "@/types/database";
+import CampoTelefono from "@/components/CampoTelefono";
 
 // Perfiles predefinidos, los mismos tres de Access. Vive en el cliente porque
 // es logica pura: en un archivo "use server" toda exportacion debe ser async.
@@ -205,12 +206,17 @@ export default function GestorVendedores({
               onChange={(v) => setForm({ ...form, email: v })}
               cls={input}
             />
-            <Campo
-              label="Telefono"
-              value={form.telefono}
-              onChange={(v) => setForm({ ...form, telefono: v })}
-              cls={input}
-            />
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Telefono
+              </span>
+              <CampoTelefono
+                valor={form.telefono}
+                onChange={(v) => setForm({ ...form, telefono: v })}
+                prefijo={form.mercado === "Peru" ? "+51" : "+56"}
+                className={input}
+              />
+            </label>
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">Perfil</span>
               <select
