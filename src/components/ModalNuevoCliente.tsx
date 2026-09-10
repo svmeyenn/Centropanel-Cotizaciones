@@ -12,7 +12,7 @@ import { faltantesCliente } from "@/lib/validacion";
 import { rut as fmtRut } from "@/lib/formato";
 import CampoTelefono from "@/components/CampoTelefono";
 
-const VACIO: DatosCliente = {
+const vacio = (pais: number | null): DatosCliente => ({
   razon_social: "",
   rut: "",
   contacto: "",
@@ -21,8 +21,8 @@ const VACIO: DatosCliente = {
   direccion: "",
   comuna: "",
   ciudad: "",
-  id_pais: null,
-};
+  id_pais: pais,
+});
 
 // Alta de cliente en ventana emergente. Se usa desde el cotizador (donde
 // abandonar la pantalla costaria la cotizacion en curso) y desde Clientes, de
@@ -44,7 +44,11 @@ export default function ModalNuevoCliente({
   paises?: Pais[];
   eligePais?: boolean;
 }) {
-  const [form, setForm] = useState<DatosCliente>(VACIO);
+  // Quien trabaja un solo mercado no elige: su pais viene puesto. El
+  // administrador general, que alcanza los dos, tiene que decidir.
+  const paisPorDefecto = paises.length === 1 ? paises[0].id : null;
+
+  const [form, setForm] = useState<DatosCliente>(vacio(paisPorDefecto));
   const [choque, setChoque] = useState<ClienteChoque | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();

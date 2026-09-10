@@ -26,8 +26,8 @@ interface Fila {
   items: number;
 }
 
-const VACIO: DatosProveedor = {
-  id_pais: null,
+const vacio = (pais: number | null): DatosProveedor => ({
+  id_pais: pais,
   razon_social: "",
   rut: "",
   contacto: "",
@@ -35,7 +35,7 @@ const VACIO: DatosProveedor = {
   telefono: "",
   direccion: "",
   activo: true,
-};
+});
 
 export default function GestorProveedores({
   proveedores,
@@ -48,8 +48,12 @@ export default function GestorProveedores({
 }) {
   const [busca, setBusca] = useState("");
   const [soloActivos, setSoloActivos] = useState(true);
+  // Quien trabaja un solo mercado no elige: su pais viene puesto. El
+  // administrador general, que alcanza los dos, tiene que decidir.
+  const paisPorDefecto = paises.length === 1 ? paises[0].id : null;
+
   const [editando, setEditando] = useState<number | "nuevo" | null>(null);
-  const [form, setForm] = useState<DatosProveedor>(VACIO);
+  const [form, setForm] = useState<DatosProveedor>(vacio(paisPorDefecto));
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -77,7 +81,7 @@ export default function GestorProveedores({
       if (r?.error) setError(r.error);
       else {
         setEditando(null);
-        setForm(VACIO);
+        setForm(vacio(paisPorDefecto));
       }
     });
   }
@@ -107,7 +111,7 @@ export default function GestorProveedores({
         <button
           onClick={() => {
             setError(null);
-            setForm(VACIO);
+            setForm(vacio(paisPorDefecto));
             setEditando("nuevo");
           }}
           className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
@@ -214,7 +218,7 @@ export default function GestorProveedores({
             <button
               onClick={() => {
                 setEditando(null);
-                setForm(VACIO);
+                setForm(vacio(paisPorDefecto));
               }}
               className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >

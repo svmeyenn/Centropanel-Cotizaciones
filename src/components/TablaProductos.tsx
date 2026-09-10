@@ -11,6 +11,7 @@ import {
   type DatosProducto,
 } from "@/app/productos/acciones";
 import type { MateriaVenta } from "@/components/Configurador";
+import type { Pais } from "@/types/database";
 
 interface ProductoFila {
   id: number;
@@ -28,6 +29,7 @@ interface ProductoFila {
   precio_venta: number;
   margen_aplicado?: number | null;
   precio_manual?: boolean | null;
+  id_pais?: number | null;
 }
 
 export default function TablaProductos({
@@ -35,11 +37,15 @@ export default function TablaProductos({
   esAdmin,
   iva,
   materias = [],
+  paises = [],
+  esAdminGeneral = false,
 }: {
   productos: ProductoFila[];
   esAdmin: boolean;
   materias?: MateriaVenta[];
   iva: number;
+  paises?: Pais[];
+  esAdminGeneral?: boolean;
 }) {
   const [busca, setBusca] = useState("");
   const [soloActivos, setSoloActivos] = useState(true);
@@ -140,6 +146,7 @@ export default function TablaProductos({
       precio_venta: Number(p.precio_venta),
       precio_manual: Boolean(p.precio_manual),
       activo: p.activo,
+      id_pais: p.id_pais ?? null,
     });
   }
 
@@ -266,7 +273,8 @@ export default function TablaProductos({
                         editando,
                         Number(comp.eps),
                         Number(comp.a),
-                        comp.b ? Number(comp.b) : null
+                        comp.b ? Number(comp.b) : null,
+                        form?.id_pais ?? null
                       );
                       if (r?.error) setError(r.error);
                       else {
@@ -295,6 +303,31 @@ export default function TablaProductos({
           )}
 
           <div className="grid md:grid-cols-4 gap-3">
+            <label className="text-sm md:col-span-4">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Mercado
+              </span>
+              <select
+                className={`${input} md:w-64`}
+                value={form.id_pais ?? ""}
+                disabled={!esAdminGeneral}
+                onChange={(e) =>
+                  setForm({ ...form, id_pais: Number(e.target.value) || null })
+                }
+              >
+                {form.id_pais == null && <option value="">--</option>}
+                {paises.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.nombre}
+                  </option>
+                ))}
+              </select>
+              {!esAdminGeneral && (
+                <span className="block text-[11px] text-gray-500 mt-0.5">
+                  Solo el administrador general puede cambiar de mercado.
+                </span>
+              )}
+            </label>
             <label className="text-sm md:col-span-4">
               <span className="block text-dorado-osc font-semibold mb-1">
                 Descripcion

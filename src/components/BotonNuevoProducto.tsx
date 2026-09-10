@@ -3,18 +3,20 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { pesos, porcentaje, conIva } from "@/lib/formato";
+import type { Pais } from "@/types/database";
 import {
   crearProductoServicio,
   type DatosProductoNuevo,
 } from "@/app/productos/acciones";
 
-const VACIO: DatosProductoNuevo = {
+const vacio = (pais: number | null): DatosProductoNuevo => ({
   descripcion: "",
   familia: "",
   subfamilia: "",
   precio_venta: 0,
   costo_unitario: null,
-};
+  id_pais: pais,
+});
 
 // Alta de productos que no son paneles: fletes, mano de obra, servicios. Va en
 // ventana emergente y no en la propia tabla para poder ofrecerse desde la barra
@@ -24,14 +26,18 @@ export default function BotonNuevoProducto({
   iva,
   familias,
   subfamilias,
+  paises,
 }: {
   iva: number;
   familias: string[];
   subfamilias: string[];
+  paises: Pais[];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const [form, setForm] = useState<DatosProductoNuevo>(VACIO);
+  // Quien trabaja un solo mercado no elige: su pais viene puesto.
+  const paisPorDefecto = paises.length === 1 ? paises[0].id : null;
+  const [form, setForm] = useState<DatosProductoNuevo>(vacio(paisPorDefecto));
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -53,7 +59,7 @@ export default function BotonNuevoProducto({
         return;
       }
       setAbierto(false);
-      setForm(VACIO);
+      setForm(vacio(paisPorDefecto));
       router.refresh();
     });
   }
@@ -65,7 +71,7 @@ export default function BotonNuevoProducto({
       <button
         onClick={() => {
           setError(null);
-          setForm(VACIO);
+          setForm(vacio(paisPorDefecto));
           setAbierto(true);
         }}
         className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
@@ -113,6 +119,27 @@ export default function BotonNuevoProducto({
                     setForm({ ...form, descripcion: e.target.value })
                   }
                 />
+              </label>
+
+              <label className="text-sm block">
+                <span className="block text-dorado-osc font-semibold mb-1">
+                  Mercado *
+                </span>
+                <select
+                  className={input}
+                  value={form.id_pais ?? ""}
+                  disabled={paises.length === 1}
+                  onChange={(e) =>
+                    setForm({ ...form, id_pais: Number(e.target.value) || null })
+                  }
+                >
+                  {paises.length !== 1 && <option value="">-- elija --</option>}
+                  {paises.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.nombre}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <div className="grid md:grid-cols-2 gap-3">

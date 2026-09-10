@@ -645,6 +645,7 @@ export default function EditorCotizacion(p: Props) {
 
       {modalPanel && (
         <ModalNuevoPanel
+          idPais={clienteElegido?.id_pais ?? null}
           materias={p.materias}
           iva={p.iva}
           onCerrar={() => setModalPanel(false)}
