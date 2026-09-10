@@ -3,7 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import TablaProductos from "@/components/TablaProductos";
 import type { MateriaVenta } from "@/components/Configurador";
-import { requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import BotonNuevoProducto from "@/components/BotonNuevoProducto";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros, pNum } from "@/lib/parametros";
@@ -19,7 +19,7 @@ export default async function Pagina() {
     ? await supabase
         .from("productos")
         .select(
-          "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b",
+          "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais",
         )
         .order("familia")
         .order("subfamilia")
@@ -33,6 +33,7 @@ export default async function Pagina() {
         .order("descripcion");
 
   const iva = pNum(await leerParametros(), "IVA", 0.19);
+  const { paises, esAdminGeneral } = await contextoMercado(v);
 
   // Insumos para editar la composicion de un panel. Solo los ve el
   // administrador, que es quien puede editarla.
@@ -81,6 +82,7 @@ export default async function Pagina() {
               iva={iva}
               familias={familias}
               subfamilias={subfamilias}
+              paises={paises}
             />
           )}
         </BarraNavegacion>
@@ -89,6 +91,8 @@ export default async function Pagina() {
           esAdmin={esAdmin}
           iva={iva}
           materias={(materias ?? []) as MateriaVenta[]}
+          paises={paises}
+          esAdminGeneral={esAdminGeneral}
         />
       </div>
     </div>

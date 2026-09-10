@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 
 export interface DatosProducto {
   descripcion: string;
+  // Mercado al que pertenece. Solo el administrador general puede moverlo.
+  id_pais: number | null;
   // El costo solo se acepta en lo que no es panel: el de un panel sale de su
   // composicion y escribirlo a mano duraria hasta el proximo recosteo.
   costo_unitario: number;
@@ -30,15 +32,19 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
 
   const { data: actual } = await supabase
     .from("productos")
-    .select("costo_unitario, tipo")
+    .select("costo_unitario, tipo, id_pais")
     .eq("id", id)
     .single();
   const esPanel = actual?.tipo === "Panel SIP";
   const costo = esPanel ? Number(actual?.costo_unitario ?? 0) : d.costo_unitario;
 
+  const cambiaMercado =
+    d.id_pais != null && d.id_pais !== Number(actual?.id_pais);
+
   const { error } = await supabase
     .from("productos")
     .update({
+      ...(cambiaMercado ? { id_pais: d.id_pais } : {}),
       descripcion: d.descripcion.trim(),
       costo_unitario: costo,
       precio_venta: d.precio_venta,
@@ -55,7 +61,9 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
       error:
         error.code === "23505"
           ? "Ya existe otro producto con esa descripcion."
-          : error.message,
+          : error.code === "42501"
+            ? "Solo el administrador general puede cambiar un producto de mercado."
+            : error.message,
     };
   }
 
@@ -129,6 +137,9 @@ export interface DatosProductoNuevo {
   subfamilia: string;
   precio_venta: number;
   costo_unitario: number | null;
+  // Mercado al que pertenece. Viene puesto para quien trabaja un solo pais; el
+  // administrador general tiene que elegirlo.
+  id_pais: number | null;
 }
 
 // Alta de productos que no son paneles (fletes, mano de obra, servicios). Los
@@ -142,12 +153,14 @@ export async function crearProductoServicio(d: DatosProductoNuevo) {
   const descripcion = d.descripcion.trim();
   if (!descripcion) return { error: "Indique la descripcion." };
   if (d.precio_venta < 0) return { error: "El precio no puede ser negativo." };
+  if (d.id_pais == null) return { error: "Indique el mercado del producto." };
 
   const supabase = await createClient();
   const costo = d.costo_unitario ?? 0;
   const { data, error } = await supabase
     .from("productos")
     .insert({
+      id_pais: d.id_pais,
       descripcion,
       tipo: "Servicio",
       // La familia es lo que agrupa el catalogo: sin ella el producto queda
@@ -188,7 +201,8 @@ export async function editarComposicionPanel(
   id: number,
   idEps: number,
   idPlacaA: number,
-  idPlacaB: number | null
+  idPlacaB: number | null,
+  idPais: number | null = null
 ) {
   const v = await requerirVendedor();
   if (!v.puede_crear && v.rol !== "Administrador") {
@@ -201,6 +215,7 @@ export async function editarComposicionPanel(
     p_eps: idEps,
     p_placa_a: idPlacaA,
     p_placa_b: idPlacaB,
+    p_pais: idPais,
   });
   if (error) return { error: error.message };
 

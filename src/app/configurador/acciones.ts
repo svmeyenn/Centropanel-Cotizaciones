@@ -177,7 +177,8 @@ export async function calcularPanel(
 // reescribiria el producto existente y le cambiaria el costo sin que se note.
 export async function guardarPanel(
   c: Combinacion,
-  precioManual?: number | null
+  precioManual?: number | null,
+  idPais?: number | null
 ): Promise<{ ok?: true; id?: number; error?: string; aviso?: string }> {
   const v = await requerirVendedor();
   if (!v.puede_crear && v.rol !== "Administrador") {
@@ -199,6 +200,7 @@ export async function guardarPanel(
     p_placa_a: c.id_placa_a,
     p_placa_b: c.id_placa_b ?? null,
     p_precio_manual: precioManual ?? null,
+    p_pais: idPais ?? null,
   });
 
   if (error) return { error: error.message };

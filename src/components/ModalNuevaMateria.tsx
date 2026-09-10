@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { crearMateria, type DatosMateria } from "@/app/materias-primas/acciones";
 import type { Pais, TipoMateria } from "@/types/database";
 
-const VACIO: DatosMateria = {
+const vacio = (pais: number | null): DatosMateria => ({
   nombre: "",
   tipo: "",
   familia: "",
@@ -17,7 +17,7 @@ const VACIO: DatosMateria = {
   costo: 0,
   unidad: "",
   activo: true,
-};
+});
 
 // Alta de un insumo: descripcion, tipo, etiqueta, espesor, costo y estado. Nada
 // mas -- las medidas de la plancha no intervienen en el costeo, que trabaja con
@@ -35,9 +35,13 @@ export default function ModalNuevaMateria({
   paises?: Pais[];
   eligePais?: boolean;
 }) {
+  // Quien trabaja un solo mercado no elige: su pais viene puesto. El
+  // administrador general, que alcanza los dos, tiene que decidir.
+  const paisPorDefecto = paises.length === 1 ? paises[0].id : null;
+
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const [form, setForm] = useState<DatosMateria>(VACIO);
+  const [form, setForm] = useState<DatosMateria>(vacio(paisPorDefecto));
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -59,7 +63,7 @@ export default function ModalNuevaMateria({
         return;
       }
       setAbierto(false);
-      setForm(VACIO);
+      setForm(vacio(paisPorDefecto));
       router.refresh();
     });
   }
@@ -71,7 +75,7 @@ export default function ModalNuevaMateria({
       <button
         onClick={() => {
           setError(null);
-          setForm(VACIO);
+          setForm(vacio(paisPorDefecto));
           setAbierto(true);
         }}
         className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-auto"

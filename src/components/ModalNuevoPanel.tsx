@@ -23,11 +23,15 @@ export default function ModalNuevoPanel({
   iva,
   onCreado,
   onCerrar,
+  idPais = null,
 }: {
   materias: MateriaVenta[];
   iva: number;
   onCreado: (p: ProductoVenta) => void;
   onCerrar: () => void;
+  // Mercado del panel: el del cliente de la cotizacion. No se pregunta, porque
+  // un panel creado aqui se vende en esa cotizacion y en ningun otro mercado.
+  idPais?: number | null;
 }) {
   const [eps, setEps] = useState("");
   const [placaA, setPlacaA] = useState("");
@@ -91,11 +95,15 @@ export default function ModalNuevoPanel({
       let id = yaEsta ? (res?.existe_id as number) : null;
 
       if (id == null) {
-        const r = await guardarPanel({
-          id_eps: Number(eps),
-          id_placa_a: Number(placaA),
-          id_placa_b: placaB ? Number(placaB) : null,
-        });
+        const r = await guardarPanel(
+          {
+            id_eps: Number(eps),
+            id_placa_a: Number(placaA),
+            id_placa_b: placaB ? Number(placaB) : null,
+          },
+          null,
+          idPais
+        );
         if (r.error) {
           setError(r.error);
           return;

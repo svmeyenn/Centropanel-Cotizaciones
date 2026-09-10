@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import type { Pais } from "@/types/database";
 import Link from "next/link";
 import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
 import BarraNavegacion from "@/components/BarraNavegacion";
@@ -24,13 +25,19 @@ export default function Configurador({
   puedeCrear,
   margenObjetivo,
   iva,
+  paises = [],
 }: {
   materias: MateriaVenta[];
   esAdmin: boolean;
   puedeCrear: boolean;
   margenObjetivo: number;
   iva: number;
+  paises?: Pais[];
 }) {
+  // Quien trabaja un solo mercado no elige: su pais viene puesto.
+  const [idPais, setIdPais] = useState<number | null>(
+    paises.length === 1 ? paises[0].id : null
+  );
   const [eps, setEps] = useState("");
   const [placaA, setPlacaA] = useState("");
   const [placaB, setPlacaB] = useState("");
@@ -105,6 +112,7 @@ export default function Configurador({
           id_placa_b: placaB ? Number(placaB) : null,
         },
         precioTocado,
+        idPais,
       );
       if (r.error) setError(r.error);
       else if (r.aviso) setAviso(r.aviso);
@@ -135,8 +143,27 @@ export default function Configurador({
 
       {/* composicion */}
       <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-        <div className="text-sm font-semibold text-verde">
-          Composicion del panel
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-sm font-semibold text-verde">
+            Composicion del panel
+          </div>
+          {paises.length > 1 && (
+            <label className="text-xs">
+              <span className="text-dorado-osc font-semibold mr-2">Mercado</span>
+              <select
+                className="border border-gray-300 rounded px-2 py-1 text-xs"
+                value={idPais ?? ""}
+                onChange={(e) => setIdPais(Number(e.target.value) || null)}
+              >
+                <option value="">-- elija --</option>
+                {paises.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
         <div className="grid md:grid-cols-3 gap-3">
           <label className="text-sm">

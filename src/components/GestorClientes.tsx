@@ -13,7 +13,7 @@ import { rut as fmtRut } from "@/lib/formato";
 import CampoTelefono from "@/components/CampoTelefono";
 import { useRouter } from "next/navigation";
 
-const VACIO: DatosCliente = {
+const vacio = (pais: number | null): DatosCliente => ({
   razon_social: "",
   rut: "",
   contacto: "",
@@ -22,8 +22,8 @@ const VACIO: DatosCliente = {
   direccion: "",
   comuna: "",
   ciudad: "",
-  id_pais: null,
-};
+  id_pais: pais,
+});
 
 export default function GestorClientes({
   clientes,
@@ -37,8 +37,12 @@ export default function GestorClientes({
   esAdminGeneral: boolean;
 }) {
   const [busca, setBusca] = useState("");
+  // Quien trabaja un solo mercado no elige: su pais viene puesto. El
+  // administrador general, que alcanza los dos, tiene que decidir.
+  const paisPorDefecto = paises.length === 1 ? paises[0].id : null;
+
   const [editando, setEditando] = useState<number | null>(null);
-  const [form, setForm] = useState<DatosCliente>(VACIO);
+  const [form, setForm] = useState<DatosCliente>(vacio(paisPorDefecto));
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
   // El alta va por la ventana emergente, la misma que usa el cotizador: un solo
@@ -83,7 +87,7 @@ export default function GestorClientes({
       if (r?.error) setError(r.error);
       else {
         setEditando(null);
-        setForm(VACIO);
+        setForm(vacio(paisPorDefecto));
       }
     });
   }

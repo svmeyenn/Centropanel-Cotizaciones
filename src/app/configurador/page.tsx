@@ -1,6 +1,6 @@
 import Cabecera from "@/components/Cabecera";
 import Configurador from "@/components/Configurador";
-import { requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros, pNum } from "@/lib/parametros";
 
@@ -30,6 +30,8 @@ export default async function Pagina() {
     if (data?.valor_num != null) margenObjetivo = Number(data.valor_num);
   }
 
+  const { paises } = await contextoMercado(v);
+
   return (
     <div className="min-h-screen">
       <Cabecera
@@ -42,6 +44,7 @@ export default async function Pagina() {
         puedeCrear={v.puede_crear || esAdmin}
         margenObjetivo={margenObjetivo}
         iva={pNum(await leerParametros(), "IVA", 0.19)}
+        paises={paises}
       />
     </div>
   );
