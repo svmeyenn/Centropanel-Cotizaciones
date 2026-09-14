@@ -19,7 +19,7 @@ Version vigente: **v0053-20260914**
 | v0046-20260903 | 03-09-2026 | Cabecera del pedido: campos parejos y ordenados | 078f6d1 |
 | v0045-20260903 | 03-09-2026 | Duplicar, editar composición, facturas emitidas y cabecera del pedido | 3ae4be5 |
 | v0044-20260903 | 03-09-2026 | Datos obligatorios, formatos, SKU, tipos y eliminación | bd32bc5 |
-| v0043-20260903 | 03-09-2026 | Razon social y RUT del cliente en la cotización, y cabecera más apretada | c879740 |
+| v0043-20260903 | 03-09-2026 | Razón social y RUT del cliente en la cotización, y cabecera más apretada | c879740 |
 | v0042-20260903 | 03-09-2026 | El mercado de la cotización sale del cliente, no de una pregunta | 6e03e50 |
 | v0041-20260903 | 03-09-2026 | Un solo campo para elegir el producto en la cotización | 13d8686 |
 | v0040-20260903 | 03-09-2026 | La cotización abre con la forma de pago 50/50 propuesta | 833f284 |
