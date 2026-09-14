@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Cabecera from "@/components/CabeceraBase";
+import { VERSION } from "@/lib/version";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -84,6 +85,7 @@ export default function LoginPage() {
               Olvide mi contrasena
             </a>
           </p>
+          <p className="text-center text-[11px] text-gray-500">Version {VERSION}</p>
         </form>
       </div>
     </div>
