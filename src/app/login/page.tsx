@@ -79,6 +79,11 @@ export default function LoginPage() {
           >
             {cargando ? "Entrando..." : "Entrar"}
           </button>
+          <p className="text-center text-xs">
+            <a href="/recuperar" className="text-verde underline">
+              Olvide mi contrasena
+            </a>
+          </p>
         </form>
       </div>
     </div>

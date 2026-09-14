@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import {
   actualizarVendedor,
   crearVendedor,
+  blanquearClave,
   type DatosVendedor,
 } from "@/app/vendedores/acciones";
 import type { Rol, Vendedor } from "@/types/database";
@@ -34,6 +35,10 @@ export default function GestorVendedores({
   const [editando, setEditando] = useState<number | "crear" | null>(null);
   const [clave, setClave] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
+  // Blanqueo en curso: a quien y con que clave temporal, a la espera de confirmar.
+  const [blanqueo, setBlanqueo] = useState<
+    { id: number; nombre: string; clave: string } | null
+  >(null);
   const [form, setForm] = useState<DatosVendedor | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -144,6 +149,61 @@ export default function GestorVendedores({
       {aviso && (
         <div className="bg-crema border border-dorado text-dorado-osc text-sm rounded p-3">
           {aviso}
+        </div>
+      )}
+
+      {blanqueo && (
+        <div className="bg-white border border-dorado rounded p-4 space-y-3">
+          <div className="text-sm font-semibold text-verde">
+            Blanquear la clave de {blanqueo.nombre}
+          </div>
+          <p className="text-xs text-gray-600">
+            Su clave actual deja de servir, se cierran sus sesiones abiertas y al
+            entrar el sistema le pedira elegir una nueva.
+          </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-dorado-osc font-semibold">Clave temporal</span>
+            <code className="bg-crema border border-dorado rounded px-2 py-1 text-sm">
+              {blanqueo.clave}
+            </code>
+            <button
+              type="button"
+              onClick={() => setBlanqueo({ ...blanqueo, clave: claveTemporal() })}
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+            >
+              otra
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={pendiente}
+              onClick={() =>
+                empezar(async () => {
+                  setError(null);
+                  const r = await blanquearClave(blanqueo.id, blanqueo.clave);
+                  if (r?.error) {
+                    setError(r.error);
+                    return;
+                  }
+                  setAviso(
+                    `Clave de ${blanqueo.nombre} blanqueada. Entreguele la clave temporal ${blanqueo.clave}: al entrar el sistema le pedira cambiarla.`
+                  );
+                  setBlanqueo(null);
+                })
+              }
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-40"
+            >
+              {pendiente ? "Blanqueando..." : "Confirmar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setBlanqueo(null)}
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
       {ok && (
@@ -359,7 +419,24 @@ export default function GestorVendedores({
                       <span className="text-gray-400">Inactivo</span>
                     )}
                   </td>
-                  <td className="px-2 py-2 text-right">
+                  <td className="px-2 py-2 text-right whitespace-nowrap">
+                    {v.id !== miId && v.user_id && (
+                      <button
+                        onClick={() => {
+                          setError(null);
+                          setAviso(null);
+                          setBlanqueo({
+                            id: v.id,
+                            nombre: v.nombre,
+                            clave: claveTemporal(),
+                          });
+                        }}
+                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
+                        title="Fija una clave temporal y obliga a cambiarla al entrar"
+                      >
+                        blanquear clave
+                      </button>
+                    )}
                     <button
                       onClick={() => editar(v)}
                       className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
