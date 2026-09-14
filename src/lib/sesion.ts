@@ -30,6 +30,10 @@ export const requerirVendedor = cache(async function requerirVendedor(): Promise
     redirect("/login");
   }
 
+  // Quien entro con una clave temporal --creada o blanqueada por el
+  // administrador-- no sigue hasta elegir la suya.
+  if ((vendedor as Vendedor).debe_cambiar_password) redirect("/cambiar-clave");
+
   return vendedor as Vendedor;
 });
 

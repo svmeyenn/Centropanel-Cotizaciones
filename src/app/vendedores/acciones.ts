@@ -162,3 +162,28 @@ export async function crearVendedor(d: DatosVendedor, password: string) {
   // pantalla avisa segun corresponda.
   return { ok: true, confirmacionPendiente: alta.session == null };
 }
+
+// Blanquea la clave de otra persona: le fija una clave temporal, le cierra las
+// sesiones abiertas y la obliga a cambiarla al entrar. Lo hace la base, porque
+// sin llave de administrador el servidor no puede tocar claves ajenas.
+export async function blanquearClave(id: number, clave: string) {
+  const yo = await requerirVendedor();
+  if (yo.rol !== "Administrador") {
+    return { error: "Solo el administrador puede blanquear claves." };
+  }
+  // La propia no: se cambia con "Olvide mi contrasena", y blanquearla cerraria
+  // la sesion con la que se esta trabajando.
+  if (id === yo.id) {
+    return { error: "Su propia clave se cambia desde \"Olvide mi contrasena\"." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("blanquear_clave", {
+    p_vendedor: id,
+    p_clave: clave,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath("/vendedores");
+  return { ok: true };
+}
