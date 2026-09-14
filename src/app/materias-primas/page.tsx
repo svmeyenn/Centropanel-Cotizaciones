@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorMateriasPrimas from "@/components/GestorMateriasPrimas";
-import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Pagina() {
@@ -13,9 +13,11 @@ export default async function Pagina() {
   if (v.rol !== "Administrador") redirect("/");
 
   const supabase = await createClient();
-  const { data: materias } = await supabase
-    .from("materias_primas")
-    .select("*")
+  const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
+  const { data: materias } = await conPais(
+    supabase.from("materias_primas").select("*"),
+    idPaisActivo
+  )
     .order("tipo")
     .order("nombre");
 
@@ -28,7 +30,6 @@ export default async function Pagina() {
     ),
   ].sort();
 
-  const { paises, esAdminGeneral } = await contextoMercado(v);
   const { data: tipos } = await supabase
     .from("tipos_materia")
     .select("id, nombre, es_nucleo, es_cara, orden, activo")

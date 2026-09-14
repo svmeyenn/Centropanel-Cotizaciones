@@ -1,6 +1,6 @@
 import Cabecera from "@/components/Cabecera";
 import Configurador from "@/components/Configurador";
-import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros, pNum } from "@/lib/parametros";
 
@@ -11,11 +11,14 @@ export default async function Pagina() {
 
   // v_materias_primas_venta y no la tabla: no expone el costo de cada insumo,
   // asi el configurador funciona tambien con perfil Vendedor.
-  const { data: materias } = await supabase
-    .from("v_materias_primas_venta")
-    .select("id, nombre, tipo, etiqueta, espesor_nominal")
-    .eq("activo", true)
-    .order("nombre");
+  const { paises, idPaisActivo } = await contextoMercado(v);
+  const { data: materias } = await conPais(
+    supabase
+      .from("v_materias_primas_venta")
+      .select("id, nombre, tipo, etiqueta, espesor_nominal")
+      .eq("activo", true),
+    idPaisActivo
+  ).order("nombre");
 
   // MargenObjetivo queda deliberadamente fuera de v_parametros_publicos: revela
   // la estructura de costos. Solo el administrador lo lee, y solo a el se le
@@ -29,8 +32,6 @@ export default async function Pagina() {
       .single();
     if (data?.valor_num != null) margenObjetivo = Number(data.valor_num);
   }
-
-  const { paises } = await contextoMercado(v);
 
   return (
     <div className="min-h-screen">

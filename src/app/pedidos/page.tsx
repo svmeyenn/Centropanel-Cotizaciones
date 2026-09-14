@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
-import { requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import Bandera from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
 import { fecha as fmtFecha, pesos } from "@/lib/formato";
 
@@ -10,15 +11,21 @@ export const dynamic = "force-dynamic";
 // Listado de pedidos. El pedido nace de una cotizacion aceptada y es el
 // documento vivo desde ahi en adelante.
 export default async function Pagina() {
-  await requerirVendedor();
+  const v = await requerirVendedor();
   const supabase = await createClient();
+  const { accesibles, idPaisActivo } = await contextoMercado(v);
+  // Viendo los dos mercados juntos hace falta saber de cual es cada fila.
+  const verPais = idPaisActivo == null && accesibles.length > 1;
+  const paisPorId = new Map(accesibles.map((p) => [p.id, p]));
 
-  const { data: pedidos } = await supabase
-    .from("pedidos")
-    .select(
-      "id, num_pedido, fecha, estado, id_cotizacion, cotizaciones(num_cotizacion), clientes(razon_social), vendedores(nombre)"
-    )
-    .order("id", { ascending: false });
+  const { data: pedidos } = await conPais(
+    supabase
+      .from("pedidos")
+      .select(
+        "id, num_pedido, fecha, estado, id_pais, id_cotizacion, cotizaciones(num_cotizacion), clientes(razon_social), vendedores(nombre)"
+      ),
+    idPaisActivo
+  ).order("id", { ascending: false });
 
   const ids = (pedidos ?? []).map((p) => Number(p.id));
 
@@ -105,6 +112,7 @@ export default async function Pagina() {
               <thead className="bg-verde text-white">
                 <tr>
                   <th className="text-left px-3 py-2">N pedido</th>
+                  {verPais && <th className="text-left px-3 py-2">Pais</th>}
                   <th className="text-left px-3 py-2">Cotizacion</th>
                   <th className="text-left px-3 py-2">Razon social</th>
                   <th className="text-left px-3 py-2">Fecha</th>
@@ -119,7 +127,7 @@ export default async function Pagina() {
               <tbody>
                 {(pedidos ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={10} className="text-center text-gray-400 py-8">
+                    <td colSpan={verPais ? 11 : 10} className="text-center text-gray-400 py-8">
                       Todavia no hay pedidos. Se generan desde una cotizacion.
                     </td>
                   </tr>
@@ -142,6 +150,11 @@ export default async function Pagina() {
                           {p.num_pedido}
                         </Link>
                       </td>
+                      {verPais && (
+                        <td className="px-3 py-2">
+                          <CeldaPais pais={paisPorId.get(p.id_pais as number)} />
+                        </td>
+                      )}
                       <td className="px-3 py-2">
                         <Link
                           href={`/cotizaciones/${p.id_cotizacion}`}
@@ -193,5 +206,15 @@ export default async function Pagina() {
         </div>
       </div>
     </div>
+  );
+}
+
+function CeldaPais({ pais }: { pais?: { codigo: string; nombre: string } }) {
+  if (!pais) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <Bandera codigo={pais.codigo} />
+      {pais.nombre}
+    </span>
   );
 }

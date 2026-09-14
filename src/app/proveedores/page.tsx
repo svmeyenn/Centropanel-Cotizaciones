@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorProveedores from "@/components/GestorProveedores";
-import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +14,9 @@ export default async function Pagina() {
   if (v.rol !== "Administrador") redirect("/");
 
   const supabase = await createClient();
+  const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
   const [{ data: proveedores }, { data: items }] = await Promise.all([
-    supabase.from("proveedores").select("*").order("razon_social"),
+    conPais(supabase.from("proveedores").select("*"), idPaisActivo).order("razon_social"),
     supabase.from("proveedor_items").select("id_proveedor"),
   ]);
 
@@ -39,8 +40,6 @@ export default async function Pagina() {
     activo: Boolean(p.activo),
     items: cuenta.get(Number(p.id)) ?? 0,
   }));
-
-  const { paises, esAdminGeneral } = await contextoMercado(v);
 
   return (
     <div className="min-h-screen">

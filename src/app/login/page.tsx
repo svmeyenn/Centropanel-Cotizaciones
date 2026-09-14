@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import Cabecera from "@/components/Cabecera";
+import Cabecera from "@/components/CabeceraBase";
 
 export default function LoginPage() {
   const router = useRouter();

@@ -1,17 +1,17 @@
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorClientes from "@/components/GestorClientes";
-import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
   const supabase = await createClient();
-  const { data: clientes } = await supabase
-    .from("clientes")
-    .select("*")
-    .order("razon_social");
-  const { paises, esAdminGeneral } = await contextoMercado(v);
+  const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
+  const { data: clientes } = await conPais(
+    supabase.from("clientes").select("*"),
+    idPaisActivo
+  ).order("razon_social");
 
   return (
     <div className="min-h-screen">
