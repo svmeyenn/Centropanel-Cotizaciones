@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import { requerirVendedor } from "@/lib/sesion";
+import { VERSION } from "@/lib/version";
+import { ES_SANDBOX } from "@/lib/supabase/esquema";
 
 interface Opcion {
   texto: string;
@@ -110,6 +112,13 @@ export default async function Home() {
             </section>
           ))}
         </div>
+
+        {/* Version vigente: sube con cada entrega a produccion (VERSIONES.md).
+            En pruebas se aclara que hay cambios que aun no estan en ella. */}
+        <p className="mt-8 text-[11px] text-gray-500">
+          Version {VERSION}
+          {ES_SANDBOX ? " · con cambios en prueba aun no publicados" : ""}
+        </p>
       </div>
     </div>
   );
