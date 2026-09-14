@@ -3,7 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import TablaProductos from "@/components/TablaProductos";
 import type { MateriaVenta } from "@/components/Configurador";
-import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import BotonNuevoProducto from "@/components/BotonNuevoProducto";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros, pNum } from "@/lib/parametros";
@@ -12,37 +12,45 @@ export default async function Pagina() {
   const v = await requerirVendedor();
   const esAdmin = v.rol === "Administrador";
   const supabase = await createClient();
+  const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
 
   // El administrador ve la tabla completa (con costo y margen); el resto ve la
   // vista de venta, que omite los costos por RLS.
   const { data: productos } = esAdmin
-    ? await supabase
-        .from("productos")
-        .select(
-          "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais",
-        )
+    ? await conPais(
+        supabase
+          .from("productos")
+          .select(
+            "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais",
+          ),
+        idPaisActivo,
+      )
         .order("familia")
         .order("subfamilia")
         .order("descripcion")
-    : await supabase
-        .from("v_catalogo_venta")
-        .select(
-          "id, descripcion, tipo, familia, subfamilia, precio_venta, activo",
-        )
+    : await conPais(
+        supabase
+          .from("v_catalogo_venta")
+          .select(
+            "id, descripcion, tipo, familia, subfamilia, precio_venta, activo",
+          ),
+        idPaisActivo,
+      )
         .order("familia")
         .order("descripcion");
 
   const iva = pNum(await leerParametros(), "IVA", 0.19);
-  const { paises, esAdminGeneral } = await contextoMercado(v);
 
   // Insumos para editar la composicion de un panel. Solo los ve el
   // administrador, que es quien puede editarla.
   const { data: materias } = esAdmin
-    ? await supabase
-        .from("v_materias_primas_venta")
-        .select("id, nombre, tipo, etiqueta, espesor_nominal")
-        .eq("activo", true)
-        .order("nombre")
+    ? await conPais(
+        supabase
+          .from("v_materias_primas_venta")
+          .select("id, nombre, tipo, etiqueta, espesor_nominal")
+          .eq("activo", true),
+        idPaisActivo,
+      ).order("nombre")
     : { data: [] as unknown[] };
 
   // Familias ya en uso, para sugerirlas al dar de alta y no acabar con

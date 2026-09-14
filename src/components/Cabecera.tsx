@@ -1,66 +1,43 @@
-import Link from "next/link";
-import LOGO from "@/lib/logo";
-import { ES_SANDBOX } from "@/lib/supabase/esquema";
+import CabeceraBase from "@/components/CabeceraBase";
+import Bandera, { colorMercado } from "@/components/Bandera";
+import SelectorMercado from "@/components/SelectorMercado";
+import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 
-// Banda verde con logo y titulo/subtitulo. Replica el encabezado canonico que
-// se uniformo en los 12 formularios de Access (recCab 900 twips, logo chico,
-// titulo 17pt, subtitulo 9pt dorado): ver memoria del proyecto.
-//
-// El logo va como data URI (src/lib/logo.ts) y con <img> en vez de next/image:
-// asi viaja dentro del bundle y no depende de subir el binario por separado en
-// cada despliegue, que es justo donde se perdio la primera vez.
-export default function Cabecera({
+// Cabecera de las pantallas con sesion: la banda de siempre mas el mercado en
+// que se esta trabajando, para que nunca haya duda de si se esta en Chile o en
+// Peru. Quien trabaja un solo pais ve el suyo fijo; quien trabaja los dos lo
+// elige aqui, y la franja de color cambia con la eleccion.
+export default async function Cabecera({
   titulo,
   subtitulo,
-  enlazarLogo = true,
 }: {
   titulo: string;
   subtitulo?: string;
-  // El login no tiene a donde volver: ahi el logo va sin enlace.
-  enlazarLogo?: boolean;
 }) {
-  const logo = (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={LOGO}
-      alt="Centro Panel"
-      width={64}
-      height={46}
-      className="shrink-0 h-[46px] w-auto"
+  const v = await requerirVendedor();
+  const { accesibles, esAdminGeneral, activo } = await contextoMercado(v);
+
+  const derecha = esAdminGeneral ? (
+    <SelectorMercado
+      paises={accesibles.map((p) => ({ codigo: p.codigo, nombre: p.nombre }))}
+      activo={activo?.codigo ?? null}
     />
-  );
+  ) : activo ? (
+    <div
+      className="flex items-center gap-2 bg-white/10 text-white text-xs font-semibold px-2.5 py-1 rounded"
+      title="Mercado en que trabaja su usuario"
+    >
+      <Bandera codigo={activo.codigo} />
+      {activo.nombre}
+    </div>
+  ) : null;
 
   return (
-    <>
-      {/* Copia de pruebas: se avisa en cada pantalla para que nadie cotice a
-          un cliente creyendo que esta en el sistema de verdad. */}
-      {ES_SANDBOX && (
-        <div className="bg-dorado-osc text-white text-xs font-bold text-center px-4 py-1.5 print:hidden">
-          AMBIENTE DE PRUEBAS &middot; los datos de esta copia no son los del
-          sistema real y no llegan a produccion
-        </div>
-      )}
-      <div className="bg-verde px-6 py-4 flex items-center gap-4">
-        {enlazarLogo ? (
-          <Link
-            href="/"
-            title="Volver al menu principal"
-            className="shrink-0 rounded hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-dorado"
-          >
-            {logo}
-          </Link>
-        ) : (
-          logo
-        )}
-        <div>
-          <h1 className="text-white text-xl font-bold leading-tight">
-            {titulo}
-          </h1>
-          {subtitulo && (
-            <p className="text-dorado text-sm leading-tight">{subtitulo}</p>
-          )}
-        </div>
-      </div>
-    </>
+    <CabeceraBase
+      titulo={titulo}
+      subtitulo={subtitulo}
+      derecha={derecha}
+      franja={colorMercado(activo?.codigo ?? null)}
+    />
   );
 }

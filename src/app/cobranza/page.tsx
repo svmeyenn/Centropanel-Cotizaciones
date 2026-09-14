@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
-import { requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { pesos, porcentaje, fecha as fmtFecha } from "@/lib/formato";
 
@@ -24,16 +24,19 @@ export default async function Pagina({
 }: {
   searchParams: Promise<{ f?: string }>;
 }) {
-  await requerirVendedor();
+  const v = await requerirVendedor();
   const { f: filtro = "" } = await searchParams;
   const supabase = await createClient();
+  const { idPaisActivo } = await contextoMercado(v);
 
-  const { data: pedidos } = await supabase
-    .from("pedidos")
-    .select(
-      "id, num_pedido, fecha, estado, clientes(razon_social), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre)"
-    )
-    .order("id", { ascending: false });
+  const { data: pedidos } = await conPais(
+    supabase
+      .from("pedidos")
+      .select(
+        "id, num_pedido, fecha, estado, clientes(razon_social), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre)"
+      ),
+    idPaisActivo
+  ).order("id", { ascending: false });
 
   const ids = (pedidos ?? []).map((p) => Number(p.id));
 

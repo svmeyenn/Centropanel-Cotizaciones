@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
-import { requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { pesos, fecha as fmtFecha } from "@/lib/formato";
 
@@ -15,18 +15,24 @@ export default async function Pagina({
 }: {
   searchParams: Promise<{ q?: string; desde?: string; hasta?: string }>;
 }) {
-  await requerirVendedor();
+  const v = await requerirVendedor();
   const { q, desde, hasta } = await searchParams;
   const supabase = await createClient();
+  const { idPaisActivo } = await contextoMercado(v);
 
+  // La factura no guarda pais: es el de su pedido. Con un mercado activo el
+  // pedido se une en forma estricta para poder filtrar por el.
   let consulta = supabase
     .from("facturas")
     .select(
-      "id, numero, fecha, neto, iva, total, archivo, pedidos(id, num_pedido, clientes(razon_social)), vendedores(nombre)"
+      idPaisActivo == null
+        ? "id, numero, fecha, neto, iva, total, archivo, pedidos(id, num_pedido, clientes(razon_social)), vendedores(nombre)"
+        : "id, numero, fecha, neto, iva, total, archivo, pedidos!inner(id, num_pedido, id_pais, clientes(razon_social)), vendedores(nombre)"
     )
     .order("fecha", { ascending: false })
     .order("id", { ascending: false });
 
+  if (idPaisActivo != null) consulta = consulta.eq("pedidos.id_pais", idPaisActivo);
   if (desde) consulta = consulta.gte("fecha", desde);
   if (hasta) consulta = consulta.lte("fecha", hasta);
 

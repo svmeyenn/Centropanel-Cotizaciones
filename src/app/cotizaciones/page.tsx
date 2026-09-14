@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
-import { requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import Bandera from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
 import { pesos, fecha as fmtFecha } from "@/lib/formato";
 
@@ -13,11 +14,15 @@ export default async function Pagina({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  await requerirVendedor();
+  const v = await requerirVendedor();
   const { q } = await searchParams;
   const busca = (q ?? "").trim();
 
   const supabase = await createClient();
+  const { accesibles, idPaisActivo } = await contextoMercado(v);
+  // Viendo los dos mercados juntos hace falta saber de cual es cada fila.
+  const verPais = idPaisActivo == null && accesibles.length > 1;
+  const paisPorId = new Map(accesibles.map((p) => [p.id, p]));
 
   // La busqueda tambien mira la razon social del cliente. Se resuelve buscando
   // primero los clientes que coinciden y filtrando por sus id: un or() sobre una
@@ -25,18 +30,21 @@ export default async function Pagina({
   // cliente asignado.
   let idsCliente: number[] = [];
   if (busca) {
-    const { data: clis } = await supabase
-      .from("clientes")
-      .select("id")
-      .ilike("razon_social", `%${busca}%`);
+    const { data: clis } = await conPais(
+      supabase.from("clientes").select("id"),
+      idPaisActivo
+    ).ilike("razon_social", `%${busca}%`);
     idsCliente = (clis ?? []).map((c) => c.id as number);
   }
 
-  let consulta = supabase
-    .from("cotizaciones")
-    .select(
-      "id, num_cotizacion, fecha, estado, clientes(razon_social), vendedores(nombre)"
-    )
+  let consulta = conPais(
+    supabase
+      .from("cotizaciones")
+      .select(
+        "id, num_cotizacion, fecha, estado, id_pais, clientes(razon_social), vendedores(nombre)"
+      ),
+    idPaisActivo
+  )
     .order("id", { ascending: false })
     .limit(200);
 
@@ -108,6 +116,7 @@ export default async function Pagina({
               <thead className="bg-verde text-white">
                 <tr>
                   <th className="text-left px-3 py-2">N cotizacion</th>
+                  {verPais && <th className="text-left px-3 py-2 w-24">Pais</th>}
                   <th className="text-left px-3 py-2">Razon social</th>
                   <th className="text-left px-3 py-2 w-28">Fecha</th>
                   <th className="text-left px-3 py-2">Ejecutivo</th>
@@ -118,7 +127,7 @@ export default async function Pagina({
               <tbody>
                 {(cots ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center text-gray-400 py-8">
+                    <td colSpan={verPais ? 7 : 6} className="text-center text-gray-400 py-8">
                       {busca
                         ? "Ninguna cotizacion coincide con la busqueda."
                         : "Todavia no hay cotizaciones."}
@@ -145,6 +154,11 @@ export default async function Pagina({
                           {c.num_cotizacion}
                         </Link>
                       </td>
+                      {verPais && (
+                        <td className="px-3 py-2">
+                          <CeldaPais pais={paisPorId.get(c.id_pais as number)} />
+                        </td>
+                      )}
                       <td className="px-3 py-2">{cli?.razon_social ?? ""}</td>
                       <td className="px-3 py-2">{fmtFecha(c.fecha as string)}</td>
                       <td className="px-3 py-2">{ven?.nombre ?? ""}</td>
@@ -161,5 +175,15 @@ export default async function Pagina({
         </div>
       </div>
     </div>
+  );
+}
+
+function CeldaPais({ pais }: { pais?: { codigo: string; nombre: string } }) {
+  if (!pais) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <Bandera codigo={pais.codigo} />
+      {pais.nombre}
+    </span>
   );
 }

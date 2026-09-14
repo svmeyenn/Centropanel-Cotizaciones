@@ -1,6 +1,6 @@
 import Cabecera from "@/components/Cabecera";
 import EditorCotizacion from "@/components/EditorCotizacion";
-import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros, pNum, pTxt } from "@/lib/parametros";
 import { hoyISO } from "@/lib/formato";
@@ -11,6 +11,7 @@ import { hoyISO } from "@/lib/formato";
 export default async function Pagina() {
   const v = await requerirVendedor();
   const supabase = await createClient();
+  const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
 
   const [
     { data: clientes },
@@ -20,11 +21,10 @@ export default async function Pagina() {
     { data: materias },
     params,
   ] = await Promise.all([
-      supabase
-        .from("clientes")
-        .select("*")
-        .eq("activo", true)
-        .order("razon_social"),
+      conPais(
+        supabase.from("clientes").select("*").eq("activo", true),
+        idPaisActivo
+      ).order("razon_social"),
       supabase
         .from("formas_pago")
         .select("*")
@@ -36,19 +36,24 @@ export default async function Pagina() {
         .eq("activo", true)
         .order("orden"),
       // v_catalogo_venta y no productos: un Vendedor no puede leer costos.
-      supabase
-        .from("v_catalogo_venta")
-        .select("id, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
-        .eq("activo", true)
+      conPais(
+        supabase
+          .from("v_catalogo_venta")
+          .select("id, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
+          .eq("activo", true),
+        idPaisActivo
+      )
         .order("familia")
         .order("subfamilia")
         .order("descripcion"),
       // Insumos del panel emergente: la vista de venta no expone costos.
-      supabase
-        .from("v_materias_primas_venta")
-        .select("id, nombre, tipo, etiqueta, espesor_nominal")
-        .eq("activo", true)
-        .order("nombre"),
+      conPais(
+        supabase
+          .from("v_materias_primas_venta")
+          .select("id, nombre, tipo, etiqueta, espesor_nominal")
+          .eq("activo", true),
+        idPaisActivo
+      ).order("nombre"),
       leerParametros(),
     ]);
 
@@ -57,8 +62,6 @@ export default async function Pagina() {
   // Formas de pago, no aqui.
   const formaPorDefecto =
     (formasPago ?? []).find((f) => f.por_defecto)?.id ?? null;
-
-  const { paises, esAdminGeneral } = await contextoMercado(v);
 
   return (
     <div className="min-h-screen">
