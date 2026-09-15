@@ -117,7 +117,10 @@ export default async function Pagina({
               PROVEEDOR
             </div>
             <Campo rotulo="Razon social" valor={prov?.razon_social} />
-            <Campo rotulo="RUT" valor={prov?.rut} />
+            <Campo
+              rotulo={pTxt(parametros, "EtiquetaIdTributario", "RUT")}
+              valor={prov?.rut}
+            />
             <Campo rotulo="Contacto" valor={prov?.contacto} />
             <Campo rotulo="Correo" valor={prov?.email} />
             <Campo rotulo="Telefono" valor={prov?.telefono} />

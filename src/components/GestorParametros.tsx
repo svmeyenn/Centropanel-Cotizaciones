@@ -13,6 +13,7 @@ const GRUPOS: { titulo: string; claves: string[] }[] = [
       "EmpresaMarca",
       "EmpresaGiro",
       "EmpresaRUT",
+      "EtiquetaIdTributario",
       "EmpresaDireccion",
       "EmpresaFono",
     ],
