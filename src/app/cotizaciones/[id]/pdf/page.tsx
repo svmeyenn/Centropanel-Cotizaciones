@@ -47,7 +47,7 @@ export default async function Pagina({
 
   const supabase = await createClient();
 
-  const [{ data: cot }, { data: items }, { data: tot }, p] = await Promise.all([
+  const [{ data: cot }, { data: items }, { data: tot }] = await Promise.all([
     supabase
       .from("cotizaciones")
       .select(
@@ -61,10 +61,12 @@ export default async function Pagina({
       .eq("id_cotizacion", id)
       .order("orden"),
     supabase.from("v_cotizacion_totales").select("*").eq("id", id).single(),
-    leerParametros(),
   ]);
 
   if (!cot) notFound();
+
+  // Empresa, banco e impuesto del mercado de la cotizacion.
+  const p = await leerParametros(Number(cot.id_pais));
 
   // PostgREST devuelve la relacion como objeto o como arreglo segun la
   // cardinalidad que infiera del esquema; se normaliza a un solo registro.

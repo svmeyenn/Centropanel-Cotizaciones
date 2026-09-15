@@ -23,21 +23,25 @@ export default function Configurador({
   materias,
   esAdmin,
   puedeCrear,
-  margenObjetivo,
-  iva,
+  margenPorPais,
+  ivaPorPais,
   paises = [],
 }: {
   materias: MateriaVenta[];
   esAdmin: boolean;
   puedeCrear: boolean;
-  margenObjetivo: number;
-  iva: number;
+  margenPorPais: Record<number, number>;
+  ivaPorPais: Record<number, number>;
   paises?: Pais[];
 }) {
   // Quien trabaja un solo mercado no elige: su pais viene puesto.
   const [idPais, setIdPais] = useState<number | null>(
     paises.length === 1 ? paises[0].id : null
   );
+  // IVA y margen del mercado del panel.
+  const paisCalculo = idPais ?? paises[0]?.id ?? 0;
+  const iva = ivaPorPais[paisCalculo] ?? 0;
+  const margenObjetivo = margenPorPais[paisCalculo] ?? 0.3;
   const [eps, setEps] = useState("");
   const [placaA, setPlacaA] = useState("");
   const [placaB, setPlacaB] = useState("");

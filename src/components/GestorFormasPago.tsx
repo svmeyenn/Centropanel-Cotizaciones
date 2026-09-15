@@ -10,9 +10,11 @@ import {
 import type { FormaPago } from "@/types/database";
 
 export default function GestorFormasPago({
+  idPais,
   formas,
   esAdmin,
 }: {
+  idPais: number;
   formas: FormaPago[];
   esAdmin: boolean;
 }) {
@@ -45,7 +47,7 @@ export default function GestorFormasPago({
     empezar(async () => {
       const r =
         editando === 0
-          ? await crearFormaPago(desc, Number(orden) || 0, Number(pie) || 0)
+          ? await crearFormaPago(idPais, desc, Number(orden) || 0, Number(pie) || 0)
           : await actualizarFormaPago(
               editando as number,
               desc,

@@ -3,7 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import EditorCotizacion from "@/components/EditorCotizacion";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { leerParametros, pNum, pTxt } from "@/lib/parametros";
+import { leerIvaPorPais, leerParametros, pTxt } from "@/lib/parametros";
 import EnvioCotizacion from "@/components/EnvioCotizacion";
 import BotonGenerarPedido from "@/components/BotonGenerarPedido";
 import { sumarDias } from "@/lib/formato";
@@ -30,7 +30,7 @@ export default async function Pagina({
     { data: mediosPago },
     { data: productos },
     { data: materias },
-    parametros,
+    ivaPorPais,
   ] = await Promise.all([
     supabase
       .from("cotizaciones")
@@ -60,10 +60,13 @@ export default async function Pagina({
       .select("id, nombre, tipo, etiqueta, espesor_nominal")
       .eq("activo", true)
       .order("nombre"),
-    leerParametros(),
+    leerIvaPorPais(),
   ]);
 
   if (!cot) notFound();
+
+  // Textos de correo y WhatsApp del mercado de la cotizacion.
+  const parametros = await leerParametros(Number(cot.id_pais));
 
   // El pedido, si ya se genero: es lo que explica por que la cotizacion esta
   // congelada, asi que se muestra en la misma pantalla.
@@ -108,11 +111,12 @@ export default async function Pagina({
           nombre: m.nombre as string,
           comision_pct: Number(m.comision_pct),
           activo: Boolean(m.activo),
+          id_pais: Number(m.id_pais),
         }))}
         productos={productos ?? []}
         materias={materias ?? []}
         puedeCrearPanel={v.puede_crear || v.rol === "Administrador"}
-        iva={pNum(parametros, "IVA", 0.19)}
+        ivaPorPais={ivaPorPais}
         puedeEditar={v.puede_editar || v.rol === "Administrador"}
         inicial={{
           id_cliente: cot.id_cliente,

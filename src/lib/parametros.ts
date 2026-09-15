@@ -8,14 +8,33 @@ export type Parametros = Record<string, { num: number | null; texto: string | nu
 // Se lee v_parametros_publicos y no la tabla: parametros esta restringida a
 // Administrador por RLS, y estos valores los necesita cualquier vendedor para
 // armar el PDF. La vista expone solo la lista blanca, sin MargenObjetivo.
-export async function leerParametros(): Promise<Parametros> {
+//
+// Cada mercado tiene los suyos (empresa, banco, IVA/IGV): se piden siempre los
+// del pais del documento o del mercado en que se esta trabajando.
+export async function leerParametros(idPais: number): Promise<Parametros> {
   const supabase = await createClient();
-  const { data } = await supabase.from("v_parametros_publicos").select("*");
+  const { data } = await supabase
+    .from("v_parametros_publicos")
+    .select("*")
+    .eq("id_pais", idPais);
   const out: Parametros = {};
   for (const p of data ?? []) {
     out[p.clave] = { num: p.valor_num, texto: p.valor_texto };
   }
   return out;
+}
+
+// IVA de cada mercado, para las pantallas donde conviven documentos o
+// productos de los dos paises.
+export async function leerIvaPorPais(): Promise<Record<number, number>> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("v_parametros_publicos")
+    .select("id_pais, valor_num")
+    .eq("clave", "IVA");
+  return Object.fromEntries(
+    (data ?? []).map((p) => [Number(p.id_pais), Number(p.valor_num ?? 0)])
+  );
 }
 
 export function pTxt(p: Parametros, clave: string, porDefecto = ""): string {

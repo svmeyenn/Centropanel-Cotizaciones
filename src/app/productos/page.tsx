@@ -6,7 +6,7 @@ import type { MateriaVenta } from "@/components/Configurador";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import BotonNuevoProducto from "@/components/BotonNuevoProducto";
 import { createClient } from "@/lib/supabase/server";
-import { leerParametros, pNum } from "@/lib/parametros";
+import { leerIvaPorPais } from "@/lib/parametros";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
@@ -39,7 +39,8 @@ export default async function Pagina() {
         .order("familia")
         .order("descripcion");
 
-  const iva = pNum(await leerParametros(), "IVA", 0.19);
+  // El PVP de cada producto lleva el IVA de su mercado.
+  const ivaPorPais = await leerIvaPorPais();
 
   // Insumos para editar la composicion de un panel. Solo los ve el
   // administrador, que es quien puede editarla.
@@ -87,7 +88,7 @@ export default async function Pagina() {
           </Link>
           {esAdmin && (
             <BotonNuevoProducto
-              iva={iva}
+              ivaPorPais={ivaPorPais}
               familias={familias}
               subfamilias={subfamilias}
               paises={paises}
@@ -97,7 +98,7 @@ export default async function Pagina() {
         <TablaProductos
           productos={productos ?? []}
           esAdmin={esAdmin}
-          iva={iva}
+          ivaPorPais={ivaPorPais}
           materias={(materias ?? []) as MateriaVenta[]}
           paises={paises}
           esAdminGeneral={esAdminGeneral}

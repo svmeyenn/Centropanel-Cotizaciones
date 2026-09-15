@@ -201,7 +201,7 @@ export async function recalcularCatalogo(): Promise<number> {
   const supabase = await createClient();
   const { data: paneles } = await supabase
     .from("productos")
-    .select("id, id_eps, id_placa_a, id_placa_b, precio_venta, precio_manual")
+    .select("id, id_eps, id_placa_a, id_placa_b, precio_venta, precio_manual, id_pais")
     .eq("tipo", "Panel SIP");
 
   let n = 0;
@@ -219,9 +219,11 @@ export async function recalcularCatalogo(): Promise<number> {
     if (p.precio_manual) {
       precio = Number(p.precio_venta);
     } else {
+      // Cada panel con el margen objetivo de su mercado.
       const { data } = await supabase.rpc("precio_desde_costo", {
         p_costo: costo,
         p_margen: null,
+        p_pais: p.id_pais,
       });
       precio = Number(data ?? 0);
     }

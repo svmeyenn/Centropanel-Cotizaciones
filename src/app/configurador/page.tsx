@@ -2,7 +2,7 @@ import Cabecera from "@/components/Cabecera";
 import Configurador from "@/components/Configurador";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { leerParametros, pNum } from "@/lib/parametros";
+import { leerIvaPorPais } from "@/lib/parametros";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
@@ -22,15 +22,16 @@ export default async function Pagina() {
 
   // MargenObjetivo queda deliberadamente fuera de v_parametros_publicos: revela
   // la estructura de costos. Solo el administrador lo lee, y solo a el se le
-  // muestra el campo de margen en pantalla.
-  let margenObjetivo = 0.3;
+  // muestra el campo de margen en pantalla. Cada mercado tiene el suyo.
+  let margenPorPais: Record<number, number> = {};
   if (esAdmin) {
     const { data } = await supabase
       .from("parametros")
-      .select("valor_num")
-      .eq("clave", "MargenObjetivo")
-      .single();
-    if (data?.valor_num != null) margenObjetivo = Number(data.valor_num);
+      .select("id_pais, valor_num")
+      .eq("clave", "MargenObjetivo");
+    margenPorPais = Object.fromEntries(
+      (data ?? []).map((m) => [Number(m.id_pais), Number(m.valor_num ?? 0.3)])
+    );
   }
 
   return (
@@ -43,8 +44,8 @@ export default async function Pagina() {
         materias={materias ?? []}
         esAdmin={esAdmin}
         puedeCrear={v.puede_crear || esAdmin}
-        margenObjetivo={margenObjetivo}
-        iva={pNum(await leerParametros(), "IVA", 0.19)}
+        margenPorPais={margenPorPais}
+        ivaPorPais={await leerIvaPorPais()}
         paises={paises}
       />
     </div>

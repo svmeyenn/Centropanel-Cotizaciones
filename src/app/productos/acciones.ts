@@ -83,7 +83,7 @@ export async function volverAPrecioAutomatico(id: number) {
   const supabase = await createClient();
   const { data: p } = await supabase
     .from("productos")
-    .select("id_eps, id_placa_a, id_placa_b, tipo")
+    .select("id_eps, id_placa_a, id_placa_b, tipo, id_pais")
     .eq("id", id)
     .single();
 
@@ -101,6 +101,7 @@ export async function volverAPrecioAutomatico(id: number) {
   const { data: precioRaw } = await supabase.rpc("precio_desde_costo", {
     p_costo: costo,
     p_margen: null,
+    p_pais: p.id_pais,
   });
   const precio = Number(precioRaw ?? 0);
 

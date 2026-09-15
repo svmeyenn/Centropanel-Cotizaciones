@@ -23,7 +23,14 @@ const GRUPOS: { titulo: string; claves: string[] }[] = [
   },
   {
     titulo: "Calculo",
-    claves: ["MargenObjetivo", "IVA", "AdhesivoRend1Cara", "AdhesivoRend2Caras", "AdhesivoIdMP"],
+    claves: [
+      "MargenObjetivo",
+      "IVA",
+      "NombreImpuesto",
+      "AdhesivoRend1Cara",
+      "AdhesivoRend2Caras",
+      "AdhesivoIdMP",
+    ],
   },
   {
     titulo: "Cotizacion",
@@ -40,8 +47,10 @@ const GRUPOS: { titulo: string; claves: string[] }[] = [
 ];
 
 export default function GestorParametros({
+  idPais,
   parametros,
 }: {
+  idPais: number;
   parametros: Parametro[];
 }) {
   const [valores, setValores] = useState<Record<string, Parametro>>(
@@ -59,7 +68,7 @@ export default function GestorParametros({
     setGuardado(null);
     const p = valores[clave];
     empezar(async () => {
-      const r = await guardarParametro(clave, p.valor_num, p.valor_texto);
+      const r = await guardarParametro(clave, idPais, p.valor_num, p.valor_texto);
       if (r?.error) setError(r.error);
       else setGuardado(clave);
     });
