@@ -4,7 +4,7 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorFormasPago from "@/components/GestorFormasPago";
 import GestorMediosPago from "@/components/GestorMediosPago";
 import PestanasPais from "@/components/PestanasPais";
-import { contextoMercado, paisAdministrado, requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, paisAdministrado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Pagina({
@@ -42,7 +42,7 @@ export default async function Pagina({
           idPais={pais.id}
           impuesto={pais.codigo === "PE" ? "IGV" : "IVA"}
           formas={formas ?? []}
-          esAdmin={v.rol === "Administrador"}
+          esAdmin={tienePerfilAdmin(v)}
         />
         <GestorMediosPago
           key={`m${pais.id}`}
@@ -54,7 +54,7 @@ export default async function Pagina({
             activo: Boolean(m.activo),
             id_pais: Number(m.id_pais),
           }))}
-          esAdmin={v.rol === "Administrador"}
+          esAdmin={tienePerfilAdmin(v)}
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 
 export interface DatosProducto {
@@ -22,7 +22,7 @@ export interface DatosProducto {
 // distinto se usa el configurador.
 export async function actualizarProducto(id: number, d: DatosProducto) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede editar el catalogo." };
   }
   if (!d.descripcion.trim()) return { error: "Indique la descripcion." };
@@ -76,7 +76,7 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
 // devuelve a "precio automatico".
 export async function volverAPrecioAutomatico(id: number) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede editar el catalogo." };
   }
 
@@ -122,7 +122,7 @@ export async function volverAPrecioAutomatico(id: number) {
 
 export async function cambiarActivoProducto(id: number, activo: boolean) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede editar el catalogo." };
   }
   const supabase = await createClient();
@@ -148,7 +148,7 @@ export interface DatosProductoNuevo {
 // la composicion, y para eso esta el configurador.
 export async function crearProductoServicio(d: DatosProductoNuevo) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede editar el catalogo." };
   }
   const descripcion = d.descripcion.trim();
@@ -206,7 +206,7 @@ export async function editarComposicionPanel(
   idPais: number | null = null
 ) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite editar paneles." };
   }
 
@@ -247,7 +247,7 @@ export async function editarComposicionPanel(
 // citando algo inexistente.
 export async function eliminarProducto(id: number) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede eliminar productos." };
   }
 

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorMateriasPrimas from "@/components/GestorMateriasPrimas";
-import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Pagina() {
@@ -10,7 +10,7 @@ export default async function Pagina() {
   // Pantalla de administracion: contiene los costos de cada insumo. El RLS ya
   // lo impide a nivel de datos, pero se corta antes para no mostrar una tabla
   // vacia sin explicacion.
-  if (v.rol !== "Administrador") redirect("/");
+  if (!tienePerfilAdmin(v)) redirect("/");
 
   const supabase = await createClient();
   const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);

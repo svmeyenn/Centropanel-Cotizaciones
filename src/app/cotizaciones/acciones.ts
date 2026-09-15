@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { TipoDescuento } from "@/types/database";
@@ -75,7 +75,7 @@ async function precioFaltante(
 
 export async function crearCotizacion(d: DatosCotizacion) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite crear cotizaciones." };
   }
   const falta = validar(d);
@@ -136,7 +136,7 @@ export async function crearCotizacion(d: DatosCotizacion) {
 
 export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar cotizaciones." };
   }
   const falta = validar(d);
@@ -195,7 +195,7 @@ export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
 // Rechazada son manuales y no se pisan solas (misma regla que en Access).
 export async function cambiarEstado(id: number, estado: string) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar cotizaciones." };
   }
   const supabase = await createClient();
@@ -214,7 +214,7 @@ export async function cambiarEstado(id: number, estado: string) {
 // desde el catalogo: lo que se repite es lo que se vende, no lo que valia.
 export async function duplicarCotizacion(id: number) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite crear cotizaciones." };
   }
 

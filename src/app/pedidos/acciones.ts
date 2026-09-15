@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 import { ESQUEMA } from "@/lib/supabase/esquema";
 
@@ -11,7 +11,7 @@ import { ESQUEMA } from "@/lib/supabase/esquema";
 // dejaria una cotizacion aceptada sin pedido.
 export async function generarPedido(idCotizacion: number) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite generar pedidos." };
   }
 
@@ -38,7 +38,7 @@ export interface DatosPedido {
 
 export async function actualizarPedido(id: number, d: DatosPedido) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar pedidos." };
   }
   const supabase = await createClient();
@@ -72,7 +72,7 @@ export async function actualizarLineasPedido(
   lineas: LineaPedido[]
 ) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar pedidos." };
   }
   const supabase = await createClient();
@@ -89,7 +89,7 @@ export async function actualizarLineasPedido(
 
 export async function quitarLineaPedido(id: number, idPedido: number) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar pedidos." };
   }
   const supabase = await createClient();
@@ -104,7 +104,7 @@ export async function quitarLineaPedido(id: number, idPedido: number) {
 // sin proveedor, que es lo que hay que salir a buscar a mano.
 export async function generarSolicitudes(idPedido: number) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite generar solicitudes." };
   }
 
@@ -134,7 +134,7 @@ export async function cambiarEstadoSolicitud(
   estado: string
 ) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar solicitudes." };
   }
   const supabase = await createClient();
@@ -160,7 +160,7 @@ export interface DatosPago {
 
 export async function registrarPago(idPedido: number, d: DatosPago) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite registrar pagos." };
   }
   if (!d.monto) return { error: "Indique el monto." };
@@ -186,7 +186,7 @@ export async function registrarPago(idPedido: number, d: DatosPago) {
 // cuenta corriente es el respaldo de lo que se cobro.
 export async function anularPago(id: number, idPedido: number) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede anular un pago." };
   }
   const supabase = await createClient();
@@ -200,7 +200,7 @@ export async function anularPago(id: number, idPedido: number) {
 // generar de nuevo respeta las que ya existen.
 export async function eliminarSolicitud(id: number, idPedido: number) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite eliminar solicitudes." };
   }
   const supabase = await createClient();
@@ -221,7 +221,7 @@ export async function facturarPedido(
   fecha: string
 ) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite facturar." };
   }
 
@@ -252,7 +252,7 @@ export async function facturarPedido(
 // volver a facturarlo, y solo el administrador puede hacerlo.
 export async function anularFactura(id: number, idPedido: number) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede anular una factura." };
   }
   const supabase = await createClient();
@@ -286,7 +286,7 @@ export async function subirArchivoFactura(
   datos: FormData
 ) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite adjuntar la factura." };
   }
 
@@ -345,7 +345,7 @@ export async function subirArchivoFactura(
 
 export async function quitarArchivoFactura(idFactura: number, idPedido: number) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede quitar la factura adjunta." };
   }
 
@@ -396,7 +396,7 @@ export async function enlaceArchivoFactura(idFactura: number) {
 // de ahi genera el pedido nuevo, listo para producir.
 export async function duplicarPedido(id: number) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite crear pedidos." };
   }
 

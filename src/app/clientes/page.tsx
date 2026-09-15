@@ -1,7 +1,7 @@
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorClientes from "@/components/GestorClientes";
-import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Pagina() {
@@ -20,7 +20,7 @@ export default async function Pagina() {
         <BarraNavegacion />
         <GestorClientes
           clientes={clientes ?? []}
-          puedeEditar={v.puede_editar || v.rol === "Administrador"}
+          puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
           paises={paises}
           esAdminGeneral={esAdminGeneral}
         />

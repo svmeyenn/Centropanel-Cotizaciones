@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import EditorCotizacion from "@/components/EditorCotizacion";
-import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais, leerParametros, pTxt } from "@/lib/parametros";
 import EnvioCotizacion from "@/components/EnvioCotizacion";
@@ -115,9 +115,9 @@ export default async function Pagina({
         }))}
         productos={productos ?? []}
         materias={materias ?? []}
-        puedeCrearPanel={v.puede_crear || v.rol === "Administrador"}
+        puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
-        puedeEditar={v.puede_editar || v.rol === "Administrador"}
+        puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
         inicial={{
           id_cliente: cot.id_cliente,
           id_vendedor: cot.id_vendedor,
@@ -150,7 +150,7 @@ export default async function Pagina({
               ? { id: Number(pedido.id), num: pedido.num_pedido as string }
               : null
           }
-          puede={v.puede_crear || v.rol === "Administrador"}
+          puede={v.puede_crear || tienePerfilAdmin(v)}
         />
       </div>
 

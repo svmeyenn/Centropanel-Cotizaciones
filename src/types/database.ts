@@ -1,6 +1,6 @@
 // Tipos minimos del esquema (a mano por ahora). Se pueden regenerar con
 // `supabase gen types typescript` cuando el CLI este conectado al proyecto.
-export type Rol = "Administrador" | "Vendedor" | "Consulta";
+export type Rol = "Administrador" | "Supervisor" | "Vendedor" | "Consulta";
 export type EstadoCotizacion =
   | "Borrador"
   | "Emitida"

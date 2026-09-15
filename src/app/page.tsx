@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin, administraUsuarios } from "@/lib/sesion";
 import { VERSION } from "@/lib/version";
 import { ES_SANDBOX } from "@/lib/supabase/esquema";
 
@@ -8,6 +8,8 @@ interface Opcion {
   texto: string;
   href: string;
   soloAdmin?: boolean;
+  // Solo el Administrador: el Supervisor no administra usuarios ni claves.
+  soloUsuarios?: boolean;
 }
 
 // Menu principal. Eran doce botones en una lista plana, en el orden en que
@@ -55,7 +57,7 @@ const GRUPOS: { titulo: string; nota: string; opciones: Opcion[] }[] = [
     nota: "Reglas del sistema y quien entra",
     opciones: [
       { texto: "Formas de pago", href: "/formas-pago" },
-      { texto: "Vendedores y accesos", href: "/vendedores", soloAdmin: true },
+      { texto: "Vendedores y accesos", href: "/vendedores", soloUsuarios: true },
       { texto: "Parametros", href: "/parametros", soloAdmin: true },
     ],
   },
@@ -63,11 +65,12 @@ const GRUPOS: { titulo: string; nota: string; opciones: Opcion[] }[] = [
 
 export default async function Home() {
   const v = await requerirVendedor();
-  const esAdmin = v.rol === "Administrador";
+  const esAdmin = tienePerfilAdmin(v);
+  const veUsuarios = administraUsuarios(v);
 
   const grupos = GRUPOS.map((g) => ({
     ...g,
-    opciones: g.opciones.filter((o) => !o.soloAdmin || esAdmin),
+    opciones: g.opciones.filter((o) => (!o.soloAdmin || esAdmin) && (!o.soloUsuarios || veUsuarios)),
   })).filter((g) => g.opciones.length > 0);
 
   return (

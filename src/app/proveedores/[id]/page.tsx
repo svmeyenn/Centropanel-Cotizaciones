@@ -6,7 +6,7 @@ import MaestraProveedor, {
   type Candidato,
   type ItemMaestra,
 } from "@/components/MaestraProveedor";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function Pagina({
   params: Promise<{ id: string }>;
 }) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") redirect("/");
+  if (!tienePerfilAdmin(v)) redirect("/");
 
   const { id: idTexto } = await params;
   const id = Number(idTexto);

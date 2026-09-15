@@ -3,14 +3,14 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import TablaProductos from "@/components/TablaProductos";
 import type { MateriaVenta } from "@/components/Configurador";
-import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import BotonNuevoProducto from "@/components/BotonNuevoProducto";
 import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais } from "@/lib/parametros";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
-  const esAdmin = v.rol === "Administrador";
+  const esAdmin = tienePerfilAdmin(v);
   const supabase = await createClient();
   const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
 

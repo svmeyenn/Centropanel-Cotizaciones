@@ -1,12 +1,12 @@
 import Cabecera from "@/components/Cabecera";
 import Configurador from "@/components/Configurador";
-import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais } from "@/lib/parametros";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
-  const esAdmin = v.rol === "Administrador";
+  const esAdmin = tienePerfilAdmin(v);
   const supabase = await createClient();
 
   // v_materias_primas_venta y no la tabla: no expone el costo de cada insumo,

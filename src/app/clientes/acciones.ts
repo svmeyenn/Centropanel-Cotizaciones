@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 import { faltantesCliente } from "@/lib/validacion";
 import { etiquetaIdDe } from "@/lib/paises";
@@ -72,7 +72,7 @@ function mensajeChoque(c: ClienteChoque, etiquetaId: string): string {
 
 export async function crearCliente(d: DatosCliente) {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite crear clientes." };
   }
   const faltan = faltantesCliente(d);
@@ -116,7 +116,7 @@ export async function crearCliente(d: DatosCliente) {
 
 export async function actualizarCliente(id: number, d: DatosCliente) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar clientes." };
   }
   const faltan = faltantesCliente(d);
@@ -145,7 +145,7 @@ export async function actualizarCliente(id: number, d: DatosCliente) {
 // borrarlo dejaria historial huerfano (la FK ademas lo impediria).
 export async function cambiarActivoCliente(id: number, activo: boolean) {
   const v = await requerirVendedor();
-  if (!v.puede_editar && v.rol !== "Administrador") {
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar clientes." };
   }
   const supabase = await createClient();

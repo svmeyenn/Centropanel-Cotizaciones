@@ -16,6 +16,9 @@ function privilegiosDeRol(rol: Rol) {
   switch (rol) {
     case "Administrador":
       return { puede_ver: true, puede_crear: true, puede_editar: true, puede_admin: true };
+    // Todo lo del Administrador menos usuarios y claves.
+    case "Supervisor":
+      return { puede_ver: true, puede_crear: true, puede_editar: true, puede_admin: true };
     case "Vendedor":
       return { puede_ver: true, puede_crear: true, puede_editar: true, puede_admin: false };
     case "Consulta":
@@ -285,6 +288,7 @@ export default function GestorVendedores({
                 onChange={(e) => cambiarRol(e.target.value as Rol)}
               >
                 <option value="Administrador">Administrador</option>
+                <option value="Supervisor">Supervisor (sin gestion de usuarios)</option>
                 <option value="Vendedor">Vendedor</option>
                 <option value="Consulta">Consulta</option>
               </select>
