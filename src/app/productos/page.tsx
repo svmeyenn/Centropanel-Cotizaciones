@@ -32,7 +32,7 @@ export default async function Pagina() {
         supabase
           .from("v_catalogo_venta")
           .select(
-            "id, descripcion, tipo, familia, subfamilia, precio_venta, activo",
+            "id, descripcion, tipo, familia, subfamilia, precio_venta, activo, id_pais",
           ),
         idPaisActivo,
       )
