@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0054-20260915**
+Version vigente: **v0055-20260915**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0055-20260915 | 15-09-2026 | IGV en las vistas de Perú; el vendedor ve el PVP con impuesto en el catálogo | 85b0d58 |
 | v0054-20260915 | 15-09-2026 | Parámetros, formas y medios de pago por país; RUC e IGV en los documentos de Perú; número de versión visible | e830658 |
 | v0053-20260914 | 14-09-2026 | Blanquear clave desde accesos y recuperar la propia desde el ingreso | a36e27d |
 | v0052-20260914 | 14-09-2026 | Mercado activo visible en la cabecera y selector para quien trabaja los dos | ae5c065 |
