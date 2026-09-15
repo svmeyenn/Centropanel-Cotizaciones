@@ -33,10 +33,14 @@ export interface DatosObligatoriosProveedor {
 
 // En el proveedor no sobra ninguno: la solicitud de cotizacion se le envia por
 // correo, se le llama para apurarla y la factura llega a nombre de su RUT.
-export function faltantesProveedor(d: DatosObligatoriosProveedor): string[] {
+// El identificador se nombra como en su pais: RUT en Chile, RUC en Peru.
+export function faltantesProveedor(
+  d: DatosObligatoriosProveedor,
+  etiquetaId = "RUT"
+): string[] {
   const faltan: string[] = [];
   if (!d.razon_social.trim()) faltan.push("Razon social");
-  if (!d.rut.trim()) faltan.push("RUT");
+  if (!d.rut.trim()) faltan.push(etiquetaId);
   if (!d.contacto.trim()) faltan.push("Contacto");
   if (!d.email.trim()) faltan.push("Correo");
   if (!d.telefono.trim()) faltan.push("Telefono");

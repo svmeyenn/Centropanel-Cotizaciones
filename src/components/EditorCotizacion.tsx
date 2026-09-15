@@ -395,7 +395,12 @@ export default function EditorCotizacion(p: Props) {
               </option>
             ))}
           </select>
-          <DatosDelCliente cliente={clienteElegido} />
+          <DatosDelCliente
+            cliente={clienteElegido}
+            etiqueta={
+              p.paises.find((x) => x.id === clienteElegido?.id_pais)?.etiqueta_id ?? "RUT"
+            }
+          />
         </label>
 
         <label className="text-xs md:col-span-2">
@@ -738,16 +743,23 @@ function Fila({
 //
 // La razon social siempre esta --es obligatoria en el cliente--; el RUT puede
 // faltar, y se dice, porque hay clientes que se cotizan antes de tenerlo.
-function DatosDelCliente({ cliente }: { cliente: Cliente | null }) {
+function DatosDelCliente({
+  cliente,
+  etiqueta,
+}: {
+  cliente: Cliente | null;
+  // RUT en Chile, RUC en Peru.
+  etiqueta: string;
+}) {
   if (!cliente) return null;
   const rut = cliente.rut?.trim();
   return (
     <span className="block mt-1 text-[11px] leading-tight text-gray-600">
       <span className="font-semibold text-gray-800">{cliente.razon_social}</span>
       {rut ? (
-        <span> {"·"} RUT {rut}</span>
+        <span> {"·"} {etiqueta} {rut}</span>
       ) : (
-        <span className="text-gray-400"> {"·"} sin RUT</span>
+        <span className="text-gray-400"> {"·"} sin {etiqueta}</span>
       )}
       {cliente.contacto ? <span> {"·"} {cliente.contacto}</span> : null}
       {cliente.telefono ? <span> {"·"} {cliente.telefono}</span> : null}

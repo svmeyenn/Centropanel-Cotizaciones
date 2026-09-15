@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 import { faltantesProveedor } from "@/lib/validacion";
+import { etiquetaIdDe } from "@/lib/paises";
 
 async function soloAdmin() {
   const v = await requerirVendedor();
@@ -26,7 +27,7 @@ export interface DatosProveedor {
 export async function crearProveedor(d: DatosProveedor) {
   const err = await soloAdmin();
   if (err) return { error: err };
-  const faltan = faltantesProveedor(d);
+  const faltan = faltantesProveedor(d, await etiquetaIdDe(d.id_pais));
   if (faltan.length > 0) {
     return { error: `Faltan datos del proveedor: ${faltan.join(", ")}.` };
   }
@@ -62,7 +63,7 @@ export async function crearProveedor(d: DatosProveedor) {
 export async function actualizarProveedor(id: number, d: DatosProveedor) {
   const err = await soloAdmin();
   if (err) return { error: err };
-  const faltan = faltantesProveedor(d);
+  const faltan = faltantesProveedor(d, await etiquetaIdDe(d.id_pais));
   if (faltan.length > 0) {
     return { error: `Faltan datos del proveedor: ${faltan.join(", ")}.` };
   }

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 import { faltantesCliente } from "@/lib/validacion";
+import { etiquetaIdDe } from "@/lib/paises";
 
 export interface DatosCliente {
   razon_social: string;
@@ -63,8 +64,8 @@ export async function buscarClienteDuplicado(
   return (data as ClienteChoque | null) ?? null;
 }
 
-function mensajeChoque(c: ClienteChoque): string {
-  const como = c.motivo === "rut" ? `el RUT ${c.rut}` : "esa razon social";
+function mensajeChoque(c: ClienteChoque, etiquetaId: string): string {
+  const como = c.motivo === "rut" ? `el ${etiquetaId} ${c.rut}` : "esa razon social";
   const estado = c.activo ? "" : " Ese registro esta desactivado: reactivelo en Clientes en vez de crear otro.";
   return `Ya existe un cliente con ${como}: "${c.razon_social}". No se creo un duplicado.${estado}`;
 }
@@ -82,7 +83,12 @@ export async function crearCliente(d: DatosCliente) {
   // Aviso con nombre y apellido antes de intentar el insert. El indice unico de
   // la base sigue detras como ultima linea de defensa (dos pantallas a la vez).
   const choque = await buscarClienteDuplicado(d.razon_social, d.rut);
-  if (choque) return { error: mensajeChoque(choque), duplicado: choque };
+  if (choque) {
+    return {
+      error: mensajeChoque(choque, await etiquetaIdDe(d.id_pais)),
+      duplicado: choque,
+    };
+  }
 
   const supabase = await createClient();
   const { data: nuevo, error } = await supabase
@@ -120,7 +126,7 @@ export async function actualizarCliente(id: number, d: DatosCliente) {
 
   // Renombrar un cliente para dejarlo igual a otro tambien es duplicarlo.
   const choque = await buscarClienteDuplicado(d.razon_social, d.rut, id);
-  if (choque) return { error: mensajeChoque(choque) };
+  if (choque) return { error: mensajeChoque(choque, await etiquetaIdDe(d.id_pais)) };
 
   const supabase = await createClient();
   const { error } = await supabase.from("clientes").update(limpiar(d)).eq("id", id);

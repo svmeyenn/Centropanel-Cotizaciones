@@ -96,6 +96,11 @@ export default function GestorClientes({
     paises.find((x) => x.id === form.id_pais) ?? paises[0];
   const prefijo = paisDelForm?.prefijo_telefono ?? "+56";
   const etiquetaId = paisDelForm?.etiqueta_id ?? "RUT";
+  // En la lista: el del mercado activo, o los dos en la vista Todos.
+  const etiquetaLista =
+    paises.length === 1
+      ? paises[0].etiqueta_id
+      : [...new Set(paises.map((x) => x.etiqueta_id))].join(" / ") || "RUT";
   const faltan = faltantesCliente(form);
 
   const inputCls = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
@@ -105,7 +110,7 @@ export default function GestorClientes({
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <input
           className="border border-gray-300 rounded px-3 py-1.5 text-sm w-72"
-          placeholder="Buscar por razon social, RUT o contacto"
+          placeholder={`Buscar por razon social, ${etiquetaLista} o contacto`}
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
@@ -244,7 +249,7 @@ export default function GestorClientes({
             <thead className="bg-verde text-white">
               <tr>
                 <th className="text-left px-3 py-2">Razon social</th>
-                <th className="text-left px-3 py-2 w-32">RUT</th>
+                <th className="text-left px-3 py-2 w-32">{etiquetaLista}</th>
                 <th className="text-left px-3 py-2">Contacto</th>
                 <th className="text-left px-3 py-2">Correo</th>
                 <th className="text-left px-3 py-2 w-32">Telefono</th>
