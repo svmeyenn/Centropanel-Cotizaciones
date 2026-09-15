@@ -57,6 +57,7 @@ export default function EditorPedido({
   cotizacion,
   cliente,
   clienteRut,
+  etiquetaId = "RUT",
   clienteContacto,
   clienteTelefono,
   clienteCiudad,
@@ -78,6 +79,8 @@ export default function EditorPedido({
   num: string;
   cotizacion: { id: number; num: string } | null;
   cliente: string;
+  // RUT en Chile, RUC en Peru.
+  etiquetaId?: string;
   // Los mismos datos que muestra la cotizacion: quien firma, con quien se
   // habla y adonde llega la factura. Antes el pedido solo traia el nombre y
   // habia que volver a la cotizacion o a la ficha para lo demas.
@@ -196,9 +199,9 @@ export default function EditorPedido({
           <Dato titulo="Cliente" valor={cliente} />
           <span className="block mt-1 text-[11px] leading-tight text-gray-600">
             {clienteRut ? (
-              <span>RUT {clienteRut}</span>
+              <span>{etiquetaId} {clienteRut}</span>
             ) : (
-              <span className="text-gray-400">sin RUT</span>
+              <span className="text-gray-400">sin {etiquetaId}</span>
             )}
             {clienteContacto ? <span> {"·"} {clienteContacto}</span> : null}
             {clienteTelefono ? <span> {"·"} {fmtTelefono(clienteTelefono)}</span> : null}

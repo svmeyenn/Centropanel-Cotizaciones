@@ -36,7 +36,7 @@ export default async function Pagina({
       supabase
         .from("pedidos")
         .select(
-          "*, cotizaciones(id, num_cotizacion), clientes(razon_social, rut, contacto, telefono, ciudad), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre)"
+          "*, cotizaciones(id, num_cotizacion), clientes(razon_social, rut, contacto, telefono, ciudad), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre), paises(etiqueta_id)"
         )
         .eq("id", id)
         .single(),
@@ -144,6 +144,7 @@ export default async function Pagina({
         cotizacion={cot ? { id: cot.id, num: cot.num_cotizacion } : null}
         cliente={cli?.razon_social ?? ""}
         clienteRut={cli?.rut ?? null}
+        etiquetaId={uno<{ etiqueta_id: string }>(ped.paises)?.etiqueta_id ?? "RUT"}
         clienteContacto={cli?.contacto ?? null}
         clienteTelefono={cli?.telefono ?? null}
         clienteCiudad={cli?.ciudad ?? null}

@@ -60,7 +60,12 @@ export default function GestorProveedores({
   const paisDelForm = paises.find((x) => x.id === form.id_pais) ?? paises[0];
   const prefijo = paisDelForm?.prefijo_telefono ?? "+56";
   const etiquetaId = paisDelForm?.etiqueta_id ?? "RUT";
-  const faltan = faltantesProveedor(form);
+  // En la lista: el del mercado activo, o los dos en la vista Todos.
+  const etiquetaLista =
+    paises.length === 1
+      ? paises[0].etiqueta_id
+      : [...new Set(paises.map((x) => x.etiqueta_id))].join(" / ") || "RUT";
+  const faltan = faltantesProveedor(form, etiquetaId);
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -234,7 +239,7 @@ export default function GestorProveedores({
             <thead className="bg-verde text-white">
               <tr>
                 <th className="text-left px-3 py-2">Razon social</th>
-                <th className="text-left px-3 py-2">RUT</th>
+                <th className="text-left px-3 py-2">{etiquetaLista}</th>
                 <th className="text-left px-3 py-2">Contacto</th>
                 <th className="text-left px-3 py-2">Correo</th>
                 <th className="text-right px-3 py-2">Items</th>

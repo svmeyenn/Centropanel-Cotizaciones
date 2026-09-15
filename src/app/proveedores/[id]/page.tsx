@@ -26,7 +26,7 @@ export default async function Pagina({
   const supabase = await createClient();
   const [{ data: prov }, { data: items }, { data: materias }, { data: productos }] =
     await Promise.all([
-      supabase.from("proveedores").select("*").eq("id", id).single(),
+      supabase.from("proveedores").select("*, paises(etiqueta_id)").eq("id", id).single(),
       supabase
         .from("proveedor_items")
         .select(
@@ -105,7 +105,10 @@ export default async function Pagina({
         </BarraNavegacion>
 
         <div className="bg-white border border-gray-200 rounded p-4 text-sm grid md:grid-cols-4 gap-3">
-          <Dato titulo="RUT" valor={(prov.rut as string) ?? "--"} />
+          <Dato
+            titulo={uno<{ etiqueta_id: string }>(prov.paises)?.etiqueta_id ?? "RUT"}
+            valor={(prov.rut as string) ?? "--"}
+          />
           <Dato titulo="Contacto" valor={(prov.contacto as string) ?? "--"} />
           <Dato titulo="Correo" valor={(prov.email as string) ?? "--"} />
           <Dato titulo="Telefono" valor={(prov.telefono as string) ?? "--"} />

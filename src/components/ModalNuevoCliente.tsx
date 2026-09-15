@@ -218,13 +218,13 @@ export default function ModalNuevoCliente({
               <strong>Este cliente ya existe.</strong>{" "}
               {choque.motivo === "rut" ? (
                 <>
-                  El RUT {choque.rut} ya esta registrado como &quot;
+                  El {etiquetaId} {choque.rut} ya esta registrado como &quot;
                   {choque.razon_social}&quot;.
                 </>
               ) : (
                 <>
                   Ya hay un cliente llamado &quot;{choque.razon_social}&quot;
-                  {choque.rut ? ` (RUT ${choque.rut})` : ""}.
+                  {choque.rut ? ` (${etiquetaId} ${choque.rut})` : ""}.
                 </>
               )}{" "}
               No se puede crear otro igual.
