@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 // borrar, y el aviso de la pantalla lo deja claro.
 export async function guardarParametro(
   clave: string,
+  idPais: number,
   valorNum: number | null,
   valorTexto: string | null
 ) {
@@ -33,7 +34,8 @@ export async function guardarParametro(
   const { error } = await supabase
     .from("parametros")
     .update({ valor_num: valorNum, valor_texto: valorTexto })
-    .eq("clave", clave);
+    .eq("clave", clave)
+    .eq("id_pais", idPais);
   if (error) return { error: error.message };
 
   revalidatePath("/parametros");

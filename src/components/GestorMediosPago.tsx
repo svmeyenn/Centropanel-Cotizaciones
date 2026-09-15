@@ -12,15 +12,18 @@ export interface MedioPago {
   nombre: string;
   comision_pct: number;
   activo: boolean;
+  id_pais?: number;
 }
 
 // Como paga el cliente. Tarjeta y link de pago cobran comision: no se descuenta
 // del precio, se recarga sobre el total dividiendo por (1 - comision), para que
 // a Centro Panel le llegue integro lo cotizado.
 export default function GestorMediosPago({
+  idPais,
   medios,
   esAdmin,
 }: {
+  idPais: number;
   medios: MedioPago[];
   esAdmin: boolean;
 }) {
@@ -91,7 +94,7 @@ export default function GestorMediosPago({
           <button
             onClick={() =>
               empezar(async () => {
-                const r = await crearMedioPago(nombre, Number(comision) || 0);
+                const r = await crearMedioPago(idPais, nombre, Number(comision) || 0);
                 if (r?.error) setError(r.error);
                 else setNuevo(false);
               })

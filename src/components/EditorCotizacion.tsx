@@ -52,7 +52,7 @@ interface Props {
   // Insumos para el panel emergente que crea un panel sin salir del cotizador.
   materias: MateriaVenta[];
   puedeCrearPanel: boolean;
-  iva: number;
+  ivaPorPais: Record<number, number>;
   inicial: DatosCotizacion;
   numCotizacion?: string | null;
   estado?: string;
@@ -97,6 +97,16 @@ export default function EditorCotizacion(p: Props) {
     [listaClientes, d.id_cliente]
   );
 
+  // El mercado de la cotizacion es el de su cliente: las formas y medios de
+  // pago y el IVA que se ofrecen son los de ese pais.
+  const idPaisDoc =
+    clienteElegido?.id_pais ?? (p.paises.length === 1 ? p.paises[0].id : null);
+  const formasDelPais = p.formasPago.filter((f) => f.id_pais === idPaisDoc);
+  const mediosDelPais = p.mediosPago.filter((m) => m.id_pais === idPaisDoc);
+  const tasaIva = p.ivaPorPais[idPaisDoc ?? p.paises[0]?.id ?? 0] ?? 0;
+  const nombreImpuesto =
+    p.paises.find((x) => x.id === idPaisDoc)?.codigo === "PE" ? "IGV" : "IVA";
+
   const catalogo = useMemo(() => {
     const vistos = new Set(p.productos.map((x) => x.id));
     return [...p.productos, ...productosExtra.filter((x) => !vistos.has(x.id))];
@@ -119,7 +129,7 @@ export default function EditorCotizacion(p: Props) {
   }, [d.descuento_tipo, d.descuento_pct, d.descuento_monto, subtotal]);
 
   const totalNeto = subtotal - descuento;
-  const iva = Math.round(totalNeto * p.iva);
+  const iva = Math.round(totalNeto * tasaIva);
   const total = totalNeto + iva;
 
   // La comision del medio de pago no se descuenta del precio: se recarga sobre
@@ -142,6 +152,30 @@ export default function EditorCotizacion(p: Props) {
 
   function set<K extends keyof DatosCotizacion>(k: K, v: DatosCotizacion[K]) {
     setD((x) => ({ ...x, [k]: v }));
+  }
+
+  // Un cliente de otro mercado trae otras condiciones: se conserva la forma y
+  // el medio si existen en su pais; si no, se propone la forma por defecto de
+  // ese pais y el medio queda por elegir.
+  function elegirCliente(id: number | null) {
+    const nuevo = listaClientes.find((c) => c.id === id) ?? null;
+    const pais = nuevo?.id_pais ?? idPaisDoc;
+    setD((x) => {
+      const formaOk = p.formasPago.some(
+        (f) => f.id === x.id_forma_pago && f.id_pais === pais
+      );
+      const medioOk = p.mediosPago.some(
+        (m) => m.id === x.id_medio_pago && m.id_pais === pais
+      );
+      return {
+        ...x,
+        id_cliente: id,
+        id_forma_pago: formaOk
+          ? x.id_forma_pago
+          : (p.formasPago.find((f) => f.id_pais === pais && f.por_defecto)?.id ?? null),
+        id_medio_pago: medioOk ? x.id_medio_pago : null,
+      };
+    });
   }
 
   function agregarItem() {
@@ -351,7 +385,7 @@ export default function EditorCotizacion(p: Props) {
             className={inputCls}
             disabled={soloLectura}
             value={d.id_cliente ?? ""}
-            onChange={(e) => set("id_cliente", Number(e.target.value) || null)}
+            onChange={(e) => elegirCliente(Number(e.target.value) || null)}
           >
             <option value="">-- elija --</option>
             {listaClientes.map((c) => (
@@ -375,7 +409,7 @@ export default function EditorCotizacion(p: Props) {
             onChange={(e) => set("id_forma_pago", Number(e.target.value) || null)}
           >
             <option value="">-- elija --</option>
-            {p.formasPago.map((f) => (
+            {formasDelPais.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.descripcion}
               </option>
@@ -394,7 +428,7 @@ export default function EditorCotizacion(p: Props) {
             onChange={(e) => set("id_medio_pago", Number(e.target.value) || null)}
           >
             <option value="">-- elija --</option>
-            {p.mediosPago.map((m) => (
+            {mediosDelPais.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.nombre}
                 {m.comision_pct > 0
@@ -604,7 +638,10 @@ export default function EditorCotizacion(p: Props) {
           </p>
 
           <Fila label="TOTAL NETO" valor={pesos(totalNeto)} fuerte />
-          <Fila label={`IVA ${Math.round(p.iva * 100)}%`} valor={pesos(iva)} />
+          <Fila
+            label={`${nombreImpuesto} ${Math.round(tasaIva * 100)}%`}
+            valor={pesos(iva)}
+          />
           <div className="flex justify-between bg-verde text-white px-3 py-2 rounded font-bold">
             <span>TOTAL</span>
             <span>{pesos(total)}</span>
@@ -647,7 +684,7 @@ export default function EditorCotizacion(p: Props) {
         <ModalNuevoPanel
           idPais={clienteElegido?.id_pais ?? null}
           materias={p.materias}
-          iva={p.iva}
+          iva={tasaIva}
           onCerrar={() => setModalPanel(false)}
           onCreado={(prod) => {
             // Queda disponible en la lista y ya seleccionado con su precio, de
@@ -668,7 +705,7 @@ export default function EditorCotizacion(p: Props) {
           onCerrar={() => setModalCliente(false)}
           onCreado={(cli) => {
             setClientesExtra((x) => [...x, cli]);
-            set("id_cliente", cli.id);
+            elegirCliente(cli.id);
             setModalCliente(false);
             setAviso(`Cliente "${cli.razon_social}" creado y seleccionado.`);
           }}

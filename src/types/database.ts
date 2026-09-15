@@ -116,9 +116,11 @@ export interface FormaPago {
   // La que viene propuesta al abrir una cotizacion nueva. Solo una la lleva.
   por_defecto?: boolean;
   activo: boolean;
+  id_pais?: number;
 }
 
 export interface Parametro {
+  id_pais?: number;
   clave: string;
   valor_num: number | null;
   valor_texto: string | null;

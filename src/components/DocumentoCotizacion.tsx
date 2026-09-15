@@ -159,7 +159,7 @@ export default function DocumentoCotizacion({
             </tr>
             <tr>
               <td className="text-right pr-6 py-0.5">
-                IVA {Math.round(pNum(p, "IVA", 0.19) * 100)}%
+                {pTxt(p, "NombreImpuesto", "IVA")} {Math.round(pNum(p, "IVA", 0.19) * 100)}%
               </td>
               <td className="text-right py-0.5">{pesos(d.iva)}</td>
             </tr>

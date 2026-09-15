@@ -108,9 +108,16 @@ export async function calcularPanel(
       ? margenPersonalizado / 100
       : null;
 
+  // El margen objetivo es el del mercado del panel, que es el de su plancha EPS.
+  const { data: eps } = await supabase
+    .from("v_materias_primas_venta")
+    .select("id_pais")
+    .eq("id", c.id_eps)
+    .single();
   const rPrecio = await supabase.rpc("precio_desde_costo", {
     p_costo: costo,
     p_margen: margen,
+    p_pais: eps?.id_pais ?? null,
   });
   if (rPrecio.error) return { error: rPrecio.error.message };
   const precio = Number(rPrecio.data ?? 0);

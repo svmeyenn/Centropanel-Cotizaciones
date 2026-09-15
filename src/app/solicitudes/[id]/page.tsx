@@ -17,7 +17,7 @@ const leerSolicitud = cache(async (id: number) => {
   const { data } = await supabase
     .from("solicitudes")
     .select(
-      "*, proveedores(razon_social, rut, contacto, email, telefono, direccion), pedidos(num_pedido, tiempo_entrega)"
+      "*, proveedores(razon_social, rut, contacto, email, telefono, direccion), pedidos(num_pedido, tiempo_entrega, id_pais)"
     )
     .eq("id", id)
     .single();
@@ -50,6 +50,11 @@ export default async function Pagina({
   const sol = await leerSolicitud(id);
   if (!sol) notFound();
 
+  // La empresa que pide es la del mercado del pedido.
+  const pedidoSol = (Array.isArray(sol.pedidos) ? sol.pedidos[0] : sol.pedidos) as
+    | { id_pais?: number | null }
+    | null;
+
   const supabase = await createClient();
   const [{ data: lineas }, parametros] = await Promise.all([
     supabase
@@ -57,7 +62,7 @@ export default async function Pagina({
       .select("*")
       .eq("id_solicitud", id)
       .order("orden"),
-    leerParametros(),
+    leerParametros(Number(pedidoSol?.id_pais ?? 1)),
   ]);
 
   const uno = <T,>(x: unknown): T | null =>

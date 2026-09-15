@@ -2,7 +2,7 @@ import Cabecera from "@/components/Cabecera";
 import EditorCotizacion from "@/components/EditorCotizacion";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { leerParametros, pNum, pTxt } from "@/lib/parametros";
+import { leerIvaPorPais, leerParametros, pNum, pTxt } from "@/lib/parametros";
 import { hoyISO } from "@/lib/formato";
 
 // Alta de cotizacion. Nada se escribe en la base hasta pulsar GRABAR: el
@@ -11,7 +11,8 @@ import { hoyISO } from "@/lib/formato";
 export default async function Pagina() {
   const v = await requerirVendedor();
   const supabase = await createClient();
-  const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
+  const { paises, esAdminGeneral, idPaisActivo, idPaisTrabajo } =
+    await contextoMercado(v);
 
   const [
     { data: clientes },
@@ -20,21 +21,22 @@ export default async function Pagina() {
     { data: productos },
     { data: materias },
     params,
+    ivaPorPais,
   ] = await Promise.all([
       conPais(
         supabase.from("clientes").select("*").eq("activo", true),
         idPaisActivo
       ).order("razon_social"),
-      supabase
-        .from("formas_pago")
-        .select("*")
-        .eq("activo", true)
-        .order("orden"),
-      supabase
-        .from("medios_pago")
-        .select("*")
-        .eq("activo", true)
-        .order("orden"),
+      // De todos los mercados que alcanza: el editor muestra los del pais
+      // del cliente elegido.
+      conPais(
+        supabase.from("formas_pago").select("*").eq("activo", true),
+        idPaisActivo
+      ).order("orden"),
+      conPais(
+        supabase.from("medios_pago").select("*").eq("activo", true),
+        idPaisActivo
+      ).order("orden"),
       // v_catalogo_venta y no productos: un Vendedor no puede leer costos.
       conPais(
         supabase
@@ -54,14 +56,19 @@ export default async function Pagina() {
           .eq("activo", true),
         idPaisActivo
       ).order("nombre"),
-      leerParametros(),
+      leerParametros(idPaisTrabajo),
+      leerIvaPorPais(),
     ]);
 
   // Se propone la forma de pago marcada como predeterminada --hoy el 50/50--,
   // y queda modificable como cualquier otro campo. Cual es se define en
-  // Formas de pago, no aqui.
+  // Formas de pago, no aqui. Con los dos mercados se propone al elegir cliente.
   const formaPorDefecto =
-    (formasPago ?? []).find((f) => f.por_defecto)?.id ?? null;
+    paises.length === 1
+      ? ((formasPago ?? []).find(
+          (f) => f.por_defecto && Number(f.id_pais) === paises[0].id
+        )?.id ?? null)
+      : null;
 
   return (
     <div className="min-h-screen">
@@ -80,11 +87,12 @@ export default async function Pagina() {
           nombre: m.nombre as string,
           comision_pct: Number(m.comision_pct),
           activo: Boolean(m.activo),
+          id_pais: Number(m.id_pais),
         }))}
         productos={productos ?? []}
         materias={materias ?? []}
         puedeCrearPanel={v.puede_crear || v.rol === "Administrador"}
-        iva={pNum(params, "IVA", 0.19)}
+        ivaPorPais={ivaPorPais}
         puedeEditar={v.puede_crear || v.rol === "Administrador"}
         inicial={{
           id_cliente: null,

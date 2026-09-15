@@ -23,12 +23,12 @@ const vacio = (pais: number | null): DatosProductoNuevo => ({
 // de navegacion, al lado de "Configurar panel", que es la otra forma de sumar
 // algo al catalogo.
 export default function BotonNuevoProducto({
-  iva,
+  ivaPorPais,
   familias,
   subfamilias,
   paises,
 }: {
-  iva: number;
+  ivaPorPais: Record<number, number>;
   familias: string[];
   subfamilias: string[];
   paises: Pais[];
@@ -38,6 +38,7 @@ export default function BotonNuevoProducto({
   // Quien trabaja un solo mercado no elige: su pais viene puesto.
   const paisPorDefecto = paises.length === 1 ? paises[0].id : null;
   const [form, setForm] = useState<DatosProductoNuevo>(vacio(paisPorDefecto));
+  const iva = ivaPorPais[form.id_pais ?? 0] ?? 0;
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 

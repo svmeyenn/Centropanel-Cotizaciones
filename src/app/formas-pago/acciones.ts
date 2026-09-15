@@ -11,6 +11,7 @@ async function soloAdmin() {
 }
 
 export async function crearFormaPago(
+  idPais: number,
   descripcion: string,
   orden: number,
   piePct: number
@@ -23,6 +24,7 @@ export async function crearFormaPago(
   const { error } = await supabase
     .from("formas_pago")
     .insert({
+      id_pais: idPais,
       descripcion: descripcion.trim(),
       orden,
       pie_pct: piePct,
@@ -109,7 +111,11 @@ export async function actualizarMedioPago(
   return { ok: true };
 }
 
-export async function crearMedioPago(nombre: string, comisionPct: number) {
+export async function crearMedioPago(
+  idPais: number,
+  nombre: string,
+  comisionPct: number
+) {
   const err = await soloAdmin();
   if (err) return { error: err };
   if (!nombre.trim()) return { error: "Indique el nombre." };
@@ -117,7 +123,7 @@ export async function crearMedioPago(nombre: string, comisionPct: number) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("medios_pago")
-    .insert({ nombre: nombre.trim(), comision_pct: comisionPct });
+    .insert({ id_pais: idPais, nombre: nombre.trim(), comision_pct: comisionPct });
   if (error) {
     return {
       error:
@@ -130,18 +136,26 @@ export async function crearMedioPago(nombre: string, comisionPct: number) {
   return { ok: true };
 }
 
-// Cual forma de pago viene propuesta al abrir una cotizacion. Es una sola: se
-// apagan todas y se prende la elegida, en ese orden, porque el indice unico de
-// la base no admite dos marcadas ni por un instante.
+// Cual forma de pago viene propuesta al abrir una cotizacion. Es una por pais:
+// se apagan las de ese pais y se prende la elegida, en ese orden, porque el
+// indice unico de la base no admite dos marcadas ni por un instante.
 export async function marcarFormaPagoPorDefecto(id: number) {
   const err = await soloAdmin();
   if (err) return { error: err };
   const supabase = await createClient();
 
+  const { data: forma } = await supabase
+    .from("formas_pago")
+    .select("id_pais")
+    .eq("id", id)
+    .single();
+  if (!forma) return { error: "La forma de pago no existe." };
+
   const { error: e1 } = await supabase
     .from("formas_pago")
     .update({ por_defecto: false })
-    .eq("por_defecto", true);
+    .eq("por_defecto", true)
+    .eq("id_pais", forma.id_pais);
   if (e1) return { error: e1.message };
 
   const { error: e2 } = await supabase

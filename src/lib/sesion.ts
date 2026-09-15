@@ -82,8 +82,25 @@ export const contextoMercado = cache(async function contextoMercado(v: Vendedor)
     paisPropio: esAdminGeneral ? null : (accesibles[0]?.id ?? null),
     activo,
     idPaisActivo: activo?.id ?? null,
+    // Pais cuyos parametros valen cuando no hay un documento que lo diga:
+    // el activo, o el primero que alcanza la persona.
+    idPaisTrabajo: activo?.id ?? accesibles[0]?.id ?? 1,
   };
 });
+
+// Pais que se administra en Parametros y Formas de pago. Con un mercado activo
+// es ese; en la vista Todos, el que se elija en la pantalla.
+export function paisAdministrado(
+  ctx: { accesibles: Pais[]; activo: Pais | null },
+  codigo?: string
+): Pais | null {
+  return (
+    ctx.activo ??
+    ctx.accesibles.find((p) => p.codigo === codigo) ??
+    ctx.accesibles[0] ??
+    null
+  );
+}
 
 // Acota una consulta al mercado activo. Sin mercado activo --vista Todos-- la
 // deja como esta; las reglas de acceso de la base siguen mandando igual.

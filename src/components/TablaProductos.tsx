@@ -35,7 +35,7 @@ interface ProductoFila {
 export default function TablaProductos({
   productos,
   esAdmin,
-  iva,
+  ivaPorPais,
   materias = [],
   paises = [],
   esAdminGeneral = false,
@@ -43,7 +43,7 @@ export default function TablaProductos({
   productos: ProductoFila[];
   esAdmin: boolean;
   materias?: MateriaVenta[];
-  iva: number;
+  ivaPorPais: Record<number, number>;
   paises?: Pais[];
   esAdminGeneral?: boolean;
 }) {
@@ -51,6 +51,9 @@ export default function TablaProductos({
   const [soloActivos, setSoloActivos] = useState(true);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosProducto | null>(null);
+  // Cada producto con el IVA de su mercado.
+  const ivaDe = (idPais?: number | null) => ivaPorPais[idPais ?? 0] ?? 0;
+  const iva = ivaDe(form?.id_pais);
   // Composicion del panel en edicion. Un panel mal armado solo se podia
   // arreglar creando otro y desactivando el anterior.
   const [comp, setComp] = useState({ eps: "", a: "", b: "" });
@@ -625,7 +628,7 @@ export default function TablaProductos({
                             {pesos(p.precio_venta)}
                           </td>
                           <td className="px-3 py-2 text-right text-gray-600">
-                            {pesos(conIva(p.precio_venta, iva))}
+                            {pesos(conIva(p.precio_venta, ivaDe(p.id_pais)))}
                           </td>
                           {esAdmin && (
                             <td className="px-3 py-2 text-right text-gray-600">
