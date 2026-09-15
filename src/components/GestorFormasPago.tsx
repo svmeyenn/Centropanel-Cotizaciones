@@ -11,10 +11,13 @@ import type { FormaPago } from "@/types/database";
 
 export default function GestorFormasPago({
   idPais,
+  impuesto = "IVA",
   formas,
   esAdmin,
 }: {
   idPais: number;
+  // IVA en Chile, IGV en Peru.
+  impuesto?: string;
   formas: FormaPago[];
   esAdmin: boolean;
 }) {
@@ -106,7 +109,7 @@ export default function GestorFormasPago({
                 onChange={(e) => setPie(e.target.value)}
               />
               <span className="block text-xs text-gray-500">
-                Sobre el total con IVA.
+                Sobre el total con {impuesto}.
               </span>
             </label>
             <label className="text-sm">

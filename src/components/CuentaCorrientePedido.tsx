@@ -49,6 +49,7 @@ export default function CuentaCorrientePedido({
   formaPago,
   medioPago,
   cuenta,
+  impuesto = "IVA",
   pagos,
   puedeCrear,
   esAdmin,
@@ -57,6 +58,8 @@ export default function CuentaCorrientePedido({
   formaPago: string | null;
   medioPago: string | null;
   cuenta: Cuenta;
+  // IVA en Chile, IGV en Peru.
+  impuesto?: string;
   pagos: PagoVista[];
   puedeCrear: boolean;
   esAdmin: boolean;
@@ -84,7 +87,7 @@ export default function CuentaCorrientePedido({
 
       <div className="p-3 space-y-3">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Dato titulo="Total con IVA" valor={pesos(cuenta.total)} destacado />
+          <Dato titulo={`Total con ${impuesto}`} valor={pesos(cuenta.total)} destacado />
           <Dato
             titulo={`Pie exigido (${porcentaje(cuenta.pie_pct)} %)`}
             valor={pesos(cuenta.pie_monto)}

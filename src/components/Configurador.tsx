@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import type { Pais } from "@/types/database";
 import Link from "next/link";
 import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
+import { nombreImpuesto } from "@/lib/impuesto";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import {
   calcularPanel,
@@ -42,6 +43,7 @@ export default function Configurador({
   const paisCalculo = idPais ?? paises[0]?.id ?? 0;
   const iva = ivaPorPais[paisCalculo] ?? 0;
   const margenObjetivo = margenPorPais[paisCalculo] ?? 0.3;
+  const impuesto = nombreImpuesto(paises, paisCalculo);
   const [eps, setEps] = useState("");
   const [placaA, setPlacaA] = useState("");
   const [placaB, setPlacaB] = useState("");
@@ -294,7 +296,7 @@ export default function Configurador({
                 destacado
               />
               <Dato
-                titulo={`PVP (IVA ${Math.round(iva * 100)}%)`}
+                titulo={`PVP (${impuesto} ${Math.round(iva * 100)}%)`}
                 valor={pesos(pvp)}
               />
               {margenActual != null && (
@@ -378,7 +380,7 @@ export default function Configurador({
                   </label>
                   <label className="text-sm">
                     <span className="block text-dorado-osc font-semibold mb-1">
-                      PVP (IVA {Math.round(iva * 100)}%)
+                      PVP ({impuesto} {Math.round(iva * 100)}%)
                     </span>
                     <input
                       type="text"

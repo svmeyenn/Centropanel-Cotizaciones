@@ -2,6 +2,7 @@ import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { nombreImpuesto } from "@/lib/impuesto";
 import Bandera from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
 import { fecha as fmtFecha, pesos } from "@/lib/formato";
@@ -16,6 +17,7 @@ export default async function Pagina() {
   const { accesibles, idPaisActivo } = await contextoMercado(v);
   // Viendo los dos mercados juntos hace falta saber de cual es cada fila.
   const verPais = idPaisActivo == null && accesibles.length > 1;
+  const impuesto = nombreImpuesto(accesibles, idPaisActivo);
   const paisPorId = new Map(accesibles.map((p) => [p.id, p]));
 
   const { data: pedidos } = await conPais(
@@ -119,7 +121,7 @@ export default async function Pagina() {
                   <th className="text-left px-3 py-2">Ejecutivo</th>
                   <th className="text-left px-3 py-2">Estado</th>
                   <th className="text-right px-3 py-2">Solicitudes</th>
-                  <th className="text-right px-3 py-2">Total con IVA</th>
+                  <th className="text-right px-3 py-2">Total con {impuesto}</th>
                   <th className="text-right px-3 py-2">Saldo</th>
                   <th className="text-left px-3 py-2">Factura</th>
                 </tr>
