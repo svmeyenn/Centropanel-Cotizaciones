@@ -80,7 +80,7 @@ export default function DocumentoCotizacion({
         <div className="bg-verde text-white px-4 py-2.5 text-right min-w-[260px]">
           <div className="text-xl font-bold leading-tight">{d.num_cotizacion}</div>
           <div className="text-[10px] text-dorado">
-            {pTxt(p, "EmpresaNombre")} &nbsp; RUT {pTxt(p, "EmpresaRUT")}
+            {pTxt(p, "EmpresaNombre")} &nbsp; {pTxt(p, "EtiquetaIdTributario", "RUT")} {pTxt(p, "EmpresaRUT")}
           </div>
           <div className="text-[10px]">
             Emitida {fmtFecha(d.fecha)} &nbsp; Vence {fmtFecha(vence)}
@@ -95,7 +95,7 @@ export default function DocumentoCotizacion({
             CLIENTE
           </div>
           <Campo rotulo="Razon social" valor={d.cliente?.razon_social} />
-          <Campo rotulo="RUT" valor={d.cliente?.rut} />
+          <Campo rotulo={pTxt(p, "EtiquetaIdTributario", "RUT")} valor={d.cliente?.rut} />
           <Campo rotulo="Contacto" valor={d.cliente?.contacto} />
           <Campo rotulo="Correo" valor={d.cliente?.email} />
           <Campo rotulo="Telefono" valor={d.cliente?.telefono} />
@@ -207,7 +207,7 @@ export default function DocumentoCotizacion({
         <div>
           <div className="text-dorado-osc font-bold mb-1">DATOS PARA EL DEPOSITO</div>
           <p>{pTxt(p, "EmpresaNombre")}</p>
-          <p>RUT: {pTxt(p, "EmpresaRUT")}</p>
+          <p>{pTxt(p, "EtiquetaIdTributario", "RUT")}: {pTxt(p, "EmpresaRUT")}</p>
           <p>Banco: {pTxt(p, "Banco")}</p>
           <p>Tipo de cuenta: {pTxt(p, "TipoCuenta")}</p>
           <p>N de cuenta: {pTxt(p, "NumeroCuenta")}</p>
