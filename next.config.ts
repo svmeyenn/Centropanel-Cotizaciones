@@ -12,6 +12,9 @@ const esquema =
   (process.env.VERCEL_GIT_COMMIT_REF === "sandbox" ? "sandbox" : "public");
 
 const nextConfig: NextConfig = {
+  // react-pdf trae fuentes y binarios propios: se carga desde node_modules en
+  // vez de empaquetarse, o el PDF falla en Vercel.
+  serverExternalPackages: ["@react-pdf/renderer"],
   env: {
     NEXT_PUBLIC_DB_SCHEMA: esquema,
   },

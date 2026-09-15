@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { pesos, fecha as fmtFecha, primerNombre } from "@/lib/formato";
 import { cambiarEstado } from "@/app/cotizaciones/acciones";
+import { enviarCotizacionPorCorreo } from "@/app/cotizaciones/envio";
 
 export interface DatosEnvio {
   id: number;
@@ -22,7 +23,7 @@ export interface DatosEnvio {
   mensajeWhatsApp: string;
   estado: string;
   // Token del enlace publico: con el, el cliente abre y descarga la cotizacion
-  // sin cuenta. Es lo que reemplaza al adjunto, que los enlaces no soportan.
+  // sin cuenta. Va en el mensaje ademas del adjunto.
   token: string;
 }
 
@@ -58,16 +59,48 @@ function normalizarFono(fono: string | null): string | null {
   return n;
 }
 
+// El menu de compartir del sistema acepta archivos en celulares; en la mayoria
+// de los computadores no, y ahi se sigue usando wa.me con el enlace.
+function puedeCompartirArchivos(): boolean {
+  if (typeof navigator === "undefined" || !navigator.canShare) return false;
+  const prueba = new File([""], "prueba.pdf", { type: "application/pdf" });
+  return navigator.canShare({ files: [prueba] });
+}
+
 export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
   const [abierto, setAbierto] = useState(false);
   const [pendiente, empezar] = useTransition();
   const [estado, setEstado] = useState(datos.estado);
+  const [enviando, setEnviando] = useState(false);
+  const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
 
   // El origen solo se conoce en el navegador; en el primer render queda vacio
   // para no provocar un desajuste de hidratacion.
   const [origen, setOrigen] = useState("");
   useEffect(() => setOrigen(window.location.origin), []);
   const enlace = origen ? `${origen}/c/${datos.token}` : "";
+
+  // En el celular el PDF se baja apenas se abre el panel: el telefono solo
+  // deja abrir el menu de compartir justo despues del toque, y esperar la
+  // descarga en ese momento lo haria fallar.
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [compartible, setCompartible] = useState(false);
+  useEffect(() => {
+    if (!abierto || archivo || !puedeCompartirArchivos()) return;
+    setCompartible(true);
+    let vigente = true;
+    fetch(`/cotizaciones/${datos.id}/pdf/archivo`)
+      .then((r) => (r.ok ? r.blob() : Promise.reject()))
+      .then((b) => {
+        if (vigente) setArchivo(new File([b], `${datos.num}.pdf`, { type: "application/pdf" }));
+      })
+      .catch(() => {
+        if (vigente) setCompartible(false);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [abierto, archivo, datos.id, datos.num]);
 
   // Si la plantilla no trae {ENLACE}, el enlace se agrega al final: asi el
   // cliente siempre recibe como llegar al documento, sin tener que editar las
@@ -103,6 +136,34 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
     ? `https://wa.me/${fono}?text=${encodeURIComponent(mensajeWA)}`
     : `https://wa.me/?text=${encodeURIComponent(mensajeWA)}`;
 
+  async function enviarCorreo() {
+    setEnviando(true);
+    setAviso(null);
+    const r = await enviarCotizacionPorCorreo(datos.id, asunto, cuerpo);
+    setEnviando(false);
+    if ("error" in r) {
+      setAviso({ ok: false, texto: r.error });
+      return;
+    }
+    setAviso({ ok: true, texto: `Enviada a ${r.para} con el PDF adjunto.` });
+    marcarEnviada();
+  }
+
+  async function enviarWhatsApp() {
+    if (archivo) {
+      try {
+        await navigator.share({ files: [archivo], text: mensajeWA });
+        marcarEnviada();
+        return;
+      } catch (e) {
+        // Cerrar el menu sin elegir no es un error ni debe abrir otra cosa.
+        if ((e as Error).name === "AbortError") return;
+      }
+    }
+    window.open(wa, "_blank", "noopener,noreferrer");
+    marcarEnviada();
+  }
+
   async function copiar(texto: string) {
     try {
       await navigator.clipboard.writeText(texto);
@@ -132,14 +193,13 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
         <div className="px-4 pb-4 space-y-4 border-t border-gray-100 pt-3">
           <div className="bg-blue-50 border border-blue-200 text-blue-900 text-xs rounded p-3 space-y-1">
             <div>
-              El mensaje lleva un <strong>enlace a la cotizacion</strong>: el
-              cliente la abre y la descarga en PDF sin necesidad de cuenta.
+              <strong>Correo:</strong> sale desde su casilla con el PDF adjunto y
+              queda en sus Enviados.
             </div>
-            <div className="text-blue-800/80">
-              Va por enlace y no como archivo adjunto porque ni el correo ni
-              WhatsApp permiten adjuntar desde un boton web. Si necesita mandarlo
-              como archivo, use &quot;Abrir el PDF&quot;, guardelo y adjuntelo a
-              mano en la ventana que se abre.
+            <div>
+              <strong>WhatsApp:</strong> en el celular se abre el menu de
+              compartir con el PDF; elija WhatsApp y el contacto. En el
+              computador se abre WhatsApp con el enlace a la cotizacion.
             </div>
           </div>
 
@@ -166,27 +226,25 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            <a
-              href={mailto}
-              onClick={marcarEnviada}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={enviarCorreo}
+              disabled={!datos.emailCliente || enviando}
               className={`text-sm font-semibold px-3 py-1.5 rounded ${
                 datos.emailCliente
-                  ? "bg-verde text-white"
-                  : "bg-gray-200 text-gray-400 pointer-events-none"
+                  ? "bg-verde text-white disabled:opacity-60"
+                  : "bg-gray-200 text-gray-400"
               }`}
             >
-              Enviar por correo
-            </a>
-            <a
-              href={wa}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={marcarEnviada}
-              className="bg-[#25D366] text-white text-xs font-semibold px-2.5 py-1 rounded"
+              {enviando ? "Enviando..." : "Enviar por correo"}
+            </button>
+            <button
+              onClick={enviarWhatsApp}
+              disabled={compartible && !archivo}
+              className="bg-[#25D366] text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-60"
             >
-              Enviar por WhatsApp
-            </a>
+              {compartible && !archivo ? "Preparando PDF..." : "Enviar por WhatsApp"}
+            </button>
             <a
               href={`/cotizaciones/${datos.id}/pdf`}
               target="_blank"
@@ -196,11 +254,23 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               Abrir el PDF
             </a>
             {pendiente && (
-              <span className="text-xs text-gray-500 self-center">
-                actualizando estado...
-              </span>
+              <span className="text-xs text-gray-500">actualizando estado...</span>
             )}
           </div>
+
+          {aviso && (
+            <p className={`text-xs ${aviso.ok ? "text-green-700" : "text-red-700"}`}>
+              {aviso.texto}
+              {!aviso.ok && datos.emailCliente && (
+                <>
+                  {" "}
+                  <a href={mailto} onClick={marcarEnviada} className="underline">
+                    Abrir en mi programa de correo (sin adjunto)
+                  </a>
+                </>
+              )}
+            </p>
+          )}
 
           {!datos.emailCliente && (
             <p className="text-xs text-amber-700">
