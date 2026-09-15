@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 
 // Claves que el sistema necesita para funcionar: se pueden editar pero no
@@ -13,7 +13,7 @@ export async function guardarParametro(
   valorTexto: string | null
 ) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede cambiar los parametros." };
   }
 

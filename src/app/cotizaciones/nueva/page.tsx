@@ -1,6 +1,6 @@
 import Cabecera from "@/components/Cabecera";
 import EditorCotizacion from "@/components/EditorCotizacion";
-import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais, leerParametros, pNum, pTxt } from "@/lib/parametros";
 import { hoyISO } from "@/lib/formato";
@@ -91,9 +91,9 @@ export default async function Pagina() {
         }))}
         productos={productos ?? []}
         materias={materias ?? []}
-        puedeCrearPanel={v.puede_crear || v.rol === "Administrador"}
+        puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
-        puedeEditar={v.puede_crear || v.rol === "Administrador"}
+        puedeEditar={v.puede_crear || tienePerfilAdmin(v)}
         inicial={{
           id_cliente: null,
           id_vendedor: v.id,

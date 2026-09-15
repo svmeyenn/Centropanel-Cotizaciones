@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 
 export interface Combinacion {
@@ -188,7 +188,7 @@ export async function guardarPanel(
   idPais?: number | null
 ): Promise<{ ok?: true; id?: number; error?: string; aviso?: string }> {
   const v = await requerirVendedor();
-  if (!v.puede_crear && v.rol !== "Administrador") {
+  if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite crear productos." };
   }
   if (!c.id_eps || !c.id_placa_a) {

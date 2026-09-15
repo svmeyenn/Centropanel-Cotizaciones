@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorProveedores from "@/components/GestorProveedores";
-import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 // compra viven aqui, igual que en materias primas.
 export default async function Pagina() {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") redirect("/");
+  if (!tienePerfilAdmin(v)) redirect("/");
 
   const supabase = await createClient();
   const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);

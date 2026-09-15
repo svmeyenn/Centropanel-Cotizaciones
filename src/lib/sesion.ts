@@ -37,6 +37,16 @@ export const requerirVendedor = cache(async function requerirVendedor(): Promise
   return vendedor as Vendedor;
 });
 
+// Supervisor tiene todo lo del Administrador salvo administrar usuarios:
+// fichas, privilegios y claves quedan solo para el Administrador.
+export function tienePerfilAdmin(v: Pick<Vendedor, "rol">): boolean {
+  return v.rol === "Administrador" || v.rol === "Supervisor";
+}
+
+export function administraUsuarios(v: Pick<Vendedor, "rol">): boolean {
+  return v.rol === "Administrador";
+}
+
 // Cookie con el mercado elegido por quien trabaja los dos paises.
 export const COOKIE_MERCADO = "mercado";
 
@@ -55,7 +65,7 @@ export const contextoMercado = cache(async function contextoMercado(v: Vendedor)
     .order("orden");
 
   const todos = (data ?? []) as Pais[];
-  const esAdminGeneral = v.rol === "Administrador" && v.mercado === "Ambos";
+  const esAdminGeneral = tienePerfilAdmin(v) && v.mercado === "Ambos";
   const codigo = v.mercado === "Peru" ? "PE" : "CL";
 
   // Paises que la persona alcanza.

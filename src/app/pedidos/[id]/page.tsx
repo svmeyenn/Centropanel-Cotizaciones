@@ -8,7 +8,7 @@ import EditorPedido, {
 import type { FacturaVista } from "@/components/FacturaPedido";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import Link from "next/link";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -198,9 +198,9 @@ export default async function Pagina({
               } satisfies FacturaVista)
             : null
         }
-        puedeEditar={v.puede_editar || v.rol === "Administrador"}
-        puedeCrear={v.puede_crear || v.rol === "Administrador"}
-        esAdmin={v.rol === "Administrador"}
+        puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
+        puedeCrear={v.puede_crear || tienePerfilAdmin(v)}
+        esAdmin={tienePerfilAdmin(v)}
       />
     </div>
   );

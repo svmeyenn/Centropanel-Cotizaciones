@@ -2,14 +2,14 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { COOKIE_MERCADO, requerirVendedor } from "@/lib/sesion";
+import { COOKIE_MERCADO, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 
 // Cambia el mercado en que trabaja el administrador general. Se guarda en una
 // cookie para que se mantenga al pasar de una pantalla a otra y al volver al
 // dia siguiente. "todos" la borra y muestra los dos paises juntos.
 export async function elegirMercado(codigo: "CL" | "PE" | "todos") {
   const v = await requerirVendedor();
-  if (!(v.rol === "Administrador" && v.mercado === "Ambos")) {
+  if (!(tienePerfilAdmin(v) && v.mercado === "Ambos")) {
     return { error: "Su usuario trabaja un solo mercado." };
   }
 

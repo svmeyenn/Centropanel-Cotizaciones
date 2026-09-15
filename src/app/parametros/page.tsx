@@ -3,7 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorParametros from "@/components/GestorParametros";
 import PestanasPais from "@/components/PestanasPais";
-import { contextoMercado, paisAdministrado, requerirVendedor } from "@/lib/sesion";
+import { contextoMercado, paisAdministrado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Pagina({
@@ -13,7 +13,7 @@ export default async function Pagina({
 }) {
   const v = await requerirVendedor();
   // Incluye MargenObjetivo: solo administrador.
-  if (v.rol !== "Administrador") redirect("/");
+  if (!tienePerfilAdmin(v)) redirect("/");
 
   // Cada mercado tiene su empresa, su banco, su impuesto y su margen.
   const ctx = await contextoMercado(v);

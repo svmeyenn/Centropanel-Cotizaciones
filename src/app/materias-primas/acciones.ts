@@ -1,12 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 
 async function soloAdmin() {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") return "Solo el administrador puede hacer esto.";
+  if (!tienePerfilAdmin(v)) return "Solo el administrador puede hacer esto.";
   return null;
 }
 
@@ -246,7 +246,7 @@ export async function recalcularCatalogo(): Promise<number> {
 // borrarlo dejaria un documento hablando de algo que no existe.
 export async function eliminarMateria(id: number) {
   const v = await requerirVendedor();
-  if (v.rol !== "Administrador") {
+  if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede eliminar materias primas." };
   }
 
