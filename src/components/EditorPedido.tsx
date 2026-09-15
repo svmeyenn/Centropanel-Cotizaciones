@@ -58,6 +58,7 @@ export default function EditorPedido({
   cliente,
   clienteRut,
   etiquetaId = "RUT",
+  impuesto = "IVA",
   clienteContacto,
   clienteTelefono,
   clienteCiudad,
@@ -81,6 +82,8 @@ export default function EditorPedido({
   cliente: string;
   // RUT en Chile, RUC en Peru.
   etiquetaId?: string;
+  // IVA en Chile, IGV en Peru.
+  impuesto?: string;
   // Los mismos datos que muestra la cotizacion: quien firma, con quien se
   // habla y adonde llega la factura. Antes el pedido solo traia el nombre y
   // habia que volver a la cotizacion o a la ficha para lo demas.
@@ -366,6 +369,7 @@ export default function EditorPedido({
 
       <CuentaCorrientePedido
         idPedido={id}
+        impuesto={impuesto}
         formaPago={formaPago}
         medioPago={medioPago}
         cuenta={cuenta}

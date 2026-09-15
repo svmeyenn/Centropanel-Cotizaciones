@@ -2,6 +2,7 @@ import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
 import { pesos, porcentaje, fecha as fmtFecha } from "@/lib/formato";
 
@@ -27,7 +28,8 @@ export default async function Pagina({
   const v = await requerirVendedor();
   const { f: filtro = "" } = await searchParams;
   const supabase = await createClient();
-  const { idPaisActivo } = await contextoMercado(v);
+  const { idPaisActivo, accesibles } = await contextoMercado(v);
+  const impuesto = nombreImpuesto(accesibles, idPaisActivo);
 
   const { data: pedidos } = await conPais(
     supabase
@@ -292,7 +294,7 @@ export default async function Pagina({
         </div>
 
         <p className="text-xs text-gray-500">
-          El total incluye IVA y el recargo del medio de pago, que es lo que el
+          El total incluye {impuesto} y el recargo del medio de pago, que es lo que el
           cliente tiene que transferir. Facturado es lo que ya tiene factura
           emitida: un pedido pagado sigue pendiente de factura hasta que se
           registre. Un pedido con el pie pendiente no puede pedir insumos a los

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
 import { pesos, fecha as fmtFecha } from "@/lib/formato";
 
@@ -18,7 +19,8 @@ export default async function Pagina({
   const v = await requerirVendedor();
   const { q, desde, hasta } = await searchParams;
   const supabase = await createClient();
-  const { idPaisActivo } = await contextoMercado(v);
+  const { idPaisActivo, accesibles } = await contextoMercado(v);
+  const impuesto = nombreImpuesto(accesibles, idPaisActivo);
 
   // La factura no guarda pais: es el de su pedido. Con un mercado activo el
   // pedido se une en forma estricta para poder filtrar por el.
@@ -140,7 +142,7 @@ export default async function Pagina({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Tarjeta titulo="Facturas" valor={String(visibles.length)} />
           <Tarjeta titulo="Neto" valor={pesos(totalNeto)} />
-          <Tarjeta titulo="IVA" valor={pesos(totalIva)} />
+          <Tarjeta titulo={impuesto} valor={pesos(totalIva)} />
           <Tarjeta titulo="Total facturado" valor={pesos(total)} destacado />
         </div>
 
@@ -163,7 +165,7 @@ export default async function Pagina({
                   <th className="text-left px-3 py-2">Cliente</th>
                   <th className="text-left px-3 py-2 w-28">Pedido</th>
                   <th className="text-right px-3 py-2 w-28">Neto</th>
-                  <th className="text-right px-3 py-2 w-28">IVA</th>
+                  <th className="text-right px-3 py-2 w-28">{impuesto}</th>
                   <th className="text-right px-3 py-2 w-32">Total</th>
                   <th className="text-left px-3 py-2 w-24">Documento</th>
                 </tr>

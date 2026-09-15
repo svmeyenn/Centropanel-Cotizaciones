@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState, useTransition } from "react";
 import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
+import { nombreImpuesto } from "@/lib/impuesto";
 import {
   actualizarProducto,
   volverAPrecioAutomatico,
@@ -54,6 +55,10 @@ export default function TablaProductos({
   // Cada producto con el IVA de su mercado.
   const ivaDe = (idPais?: number | null) => ivaPorPais[idPais ?? 0] ?? 0;
   const iva = ivaDe(form?.id_pais);
+  // IVA en Chile, IGV en Peru: el del producto en edicion y, en la lista, el
+  // del mercado activo o los dos en la vista Todos.
+  const impuesto = nombreImpuesto(paises, form?.id_pais ?? null);
+  const impuestoLista = nombreImpuesto(paises, paises.length === 1 ? paises[0].id : null);
   // Composicion del panel en edicion. Un panel mal armado solo se podia
   // arreglar creando otro y desactivando el anterior.
   const [comp, setComp] = useState({ eps: "", a: "", b: "" });
@@ -397,7 +402,7 @@ export default function TablaProductos({
             </label>
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">
-                PVP (IVA {Math.round(iva * 100)}%)
+                PVP ({impuesto} {Math.round(iva * 100)}%)
               </span>
               <input
                 type="text"
@@ -548,7 +553,7 @@ export default function TablaProductos({
                 {esAdmin && <th className="text-right px-3 py-2">Espesor</th>}
                 {esAdmin && <th className="text-right px-3 py-2">Costo</th>}
                 <th className="text-right px-3 py-2">Precio neto</th>
-                <th className="text-right px-3 py-2">PVP c/IVA</th>
+                <th className="text-right px-3 py-2">PVP c/{impuestoLista}</th>
                 {esAdmin && <th className="text-right px-3 py-2">Margen</th>}
                 <th className="text-left px-3 py-2">Estado</th>
                 {esAdmin && <th className="px-3" />}

@@ -40,6 +40,7 @@ export default async function Pagina({
         <GestorFormasPago
           key={`f${pais.id}`}
           idPais={pais.id}
+          impuesto={pais.codigo === "PE" ? "IGV" : "IVA"}
           formas={formas ?? []}
           esAdmin={v.rol === "Administrador"}
         />
