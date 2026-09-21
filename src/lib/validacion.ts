@@ -1,3 +1,5 @@
+import { telefonoValido } from "@/lib/formato";
+
 // Reglas de "esto no puede ir en blanco", compartidas por el formulario y por
 // la accion del servidor. En un solo lugar para que la pantalla y el servidor
 // no puedan discrepar sobre que es obligatorio.
@@ -17,7 +19,11 @@ export function faltantesCliente(d: DatosObligatoriosCliente): string[] {
   const faltan: string[] = [];
   if (!d.razon_social.trim()) faltan.push("Razon social");
   if (!d.contacto.trim()) faltan.push("Contacto");
+  // El telefono va con codigo de pais (+56 / +51): sin el no sirve para
+  // llamar desde el otro mercado, y ya se cotiza en los dos.
   if (!d.telefono.trim()) faltan.push("Telefono");
+  else if (!telefonoValido(d.telefono))
+    faltan.push("Telefono con codigo de pais (+56 9 1234 5678)");
   if (!d.ciudad.trim()) faltan.push("Ciudad");
   return faltan;
 }
