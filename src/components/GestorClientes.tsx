@@ -11,6 +11,7 @@ import type { Cliente, Pais } from "@/types/database";
 import { faltantesCliente } from "@/lib/validacion";
 import { rut as fmtRut } from "@/lib/formato";
 import CampoTelefono from "@/components/CampoTelefono";
+import Ventana from "@/components/Ventana";
 import { useRouter } from "next/navigation";
 
 const vacio = (pais: number | null): DatosCliente => ({
@@ -131,14 +132,19 @@ export default function GestorClientes({
       )}
 
       {editando !== null && (
-        <div className="bg-white border border-dorado rounded p-4 space-y-3">
-          <div className="text-sm font-semibold text-verde">Modificar cliente</div>
+        <Ventana
+          titulo={puedeEditar ? "Modificar cliente" : "Ficha del cliente"}
+          subtitulo={form.razon_social}
+          onCerrar={() => setEditando(null)}
+        >
+        <div className="space-y-3">
           <div className="grid md:grid-cols-2 gap-3">
             <Campo
               label="Razon social *"
               value={form.razon_social}
               onChange={(v) => setForm({ ...form, razon_social: v })}
               cls={inputCls}
+              bloqueado={!puedeEditar}
             />
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">
@@ -146,6 +152,7 @@ export default function GestorClientes({
               </span>
               <input
                 className={inputCls}
+                disabled={!puedeEditar}
                 value={form.rut}
                 placeholder="12.345.678-9"
                 onChange={(e) => setForm({ ...form, rut: e.target.value })}
@@ -157,12 +164,14 @@ export default function GestorClientes({
               value={form.contacto}
               onChange={(v) => setForm({ ...form, contacto: v })}
               cls={inputCls}
+              bloqueado={!puedeEditar}
             />
             <Campo
               label="Correo"
               value={form.email}
               onChange={(v) => setForm({ ...form, email: v })}
               cls={inputCls}
+              bloqueado={!puedeEditar}
             />
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">
@@ -173,6 +182,7 @@ export default function GestorClientes({
                 onChange={(v) => setForm({ ...form, telefono: v })}
                 prefijo={prefijo}
                 className={inputCls}
+                disabled={!puedeEditar}
                 requerido
               />
             </label>
@@ -181,18 +191,21 @@ export default function GestorClientes({
               value={form.direccion}
               onChange={(v) => setForm({ ...form, direccion: v })}
               cls={inputCls}
+              bloqueado={!puedeEditar}
             />
             <Campo
               label="Comuna"
               value={form.comuna}
               onChange={(v) => setForm({ ...form, comuna: v })}
               cls={inputCls}
+              bloqueado={!puedeEditar}
             />
             <Campo
               label="Ciudad *"
               value={form.ciudad}
               onChange={(v) => setForm({ ...form, ciudad: v })}
               cls={inputCls}
+              bloqueado={!puedeEditar}
             />
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">
@@ -201,7 +214,7 @@ export default function GestorClientes({
               <select
                 className={inputCls}
                 value={form.id_pais ?? ""}
-                disabled={!esAdminGeneral}
+                disabled={!esAdminGeneral || !puedeEditar}
                 onChange={(e) =>
                   setForm({ ...form, id_pais: Number(e.target.value) || null })
                 }
@@ -226,6 +239,7 @@ export default function GestorClientes({
             </div>
           )}
           <div className="flex gap-2">
+            {puedeEditar && (
             <button
               onClick={guardar}
               disabled={pendiente || faltan.length > 0}
@@ -233,14 +247,16 @@ export default function GestorClientes({
             >
               {pendiente ? "Grabando..." : "Grabar"}
             </button>
+            )}
             <button
               onClick={() => setEditando(null)}
               className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
-              Cancelar
+              Cerrar
             </button>
           </div>
         </div>
+        </Ventana>
       )}
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
@@ -267,7 +283,15 @@ export default function GestorClientes({
               )}
               {filtrados.map((c) => (
                 <tr key={c.id} className="border-t border-gray-100 hover:bg-crema">
-                  <td className="px-3 py-2 font-semibold">{c.razon_social}</td>
+                  <td className="px-3 py-2 font-semibold">
+                    <button
+                      onClick={() => editar(c)}
+                      className="text-verde underline text-left"
+                      title="Ver la ficha completa"
+                    >
+                      {c.razon_social}
+                    </button>
+                  </td>
                   <td className="px-3 py-2">{c.rut}</td>
                   <td className="px-3 py-2">{c.contacto}</td>
                   <td className="px-3 py-2">{c.email}</td>
@@ -328,16 +352,23 @@ function Campo({
   value,
   onChange,
   cls,
+  bloqueado,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   cls: string;
+  bloqueado?: boolean;
 }) {
   return (
     <label className="text-sm">
       <span className="block text-dorado-osc font-semibold mb-1">{label}</span>
-      <input className={cls} value={value} onChange={(e) => onChange(e.target.value)} />
+      <input
+        className={cls}
+        disabled={bloqueado}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </label>
   );
 }

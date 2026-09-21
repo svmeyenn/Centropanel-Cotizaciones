@@ -9,6 +9,7 @@ import {
   type DatosProveedor,
 } from "@/app/proveedores/acciones";
 import type { Pais } from "@/types/database";
+import Ventana from "@/components/Ventana";
 import { faltantesProveedor } from "@/lib/validacion";
 import { rut as fmtRut } from "@/lib/formato";
 import CampoTelefono from "@/components/CampoTelefono";
@@ -76,6 +77,31 @@ export default function GestorProveedores({
     );
   }, [busca, soloActivos, proveedores]);
 
+  function abrirFicha(p: {
+    id: number;
+    razon_social: string;
+    rut: string | null;
+    contacto: string | null;
+    email: string | null;
+    telefono: string | null;
+    direccion: string | null;
+    id_pais: number | null;
+    activo: boolean;
+  }) {
+    setError(null);
+    setEditando(p.id);
+    setForm({
+      razon_social: p.razon_social,
+      rut: p.rut ?? "",
+      contacto: p.contacto ?? "",
+      email: p.email ?? "",
+      telefono: p.telefono ?? "",
+      direccion: p.direccion ?? "",
+      id_pais: p.id_pais,
+      activo: p.activo,
+    });
+  }
+
   function guardar() {
     setError(null);
     empezar(async () => {
@@ -132,9 +158,24 @@ export default function GestorProveedores({
       )}
 
       {editando != null && (
-        <div className="bg-white border border-dorado rounded p-4 space-y-3">
-          <div className="text-sm font-semibold text-verde">
-            {editando === "nuevo" ? "Nuevo proveedor" : "Modificar proveedor"}
+        <Ventana
+          titulo={editando === "nuevo" ? "Nuevo proveedor" : "Ficha del proveedor"}
+          subtitulo={form.razon_social}
+          onCerrar={() => { setEditando(null); setForm(vacio(paisPorDefecto)); }}
+        >
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-verde">
+              {editando === "nuevo" ? "Nuevo proveedor" : "Modificar proveedor"}
+            </div>
+            {editando !== "nuevo" && (
+              <Link
+                href={`/proveedores/${editando}`}
+                className="text-xs text-verde underline"
+              >
+                Abrir la ficha completa (items que provee)
+              </Link>
+            )}
           </div>
           <div className="grid md:grid-cols-3 gap-3">
             <Campo
@@ -231,6 +272,7 @@ export default function GestorProveedores({
             </button>
           </div>
         </div>
+        </Ventana>
       )}
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
@@ -258,12 +300,13 @@ export default function GestorProveedores({
               {filtrados.map((p) => (
                 <tr key={p.id} className="border-t border-gray-100 hover:bg-crema">
                   <td className="px-3 py-2">
-                    <Link
-                      href={`/proveedores/${p.id}`}
-                      className="text-verde font-semibold underline"
+                    <button
+                      onClick={() => abrirFicha(p)}
+                      className="text-verde font-semibold underline text-left"
+                      title="Ver la ficha del proveedor"
                     >
                       {p.razon_social}
-                    </Link>
+                    </button>
                   </td>
                   <td className="px-3 py-2 text-gray-600">{p.rut ?? ""}</td>
                   <td className="px-3 py-2 text-gray-600">{p.contacto ?? ""}</td>
@@ -289,20 +332,7 @@ export default function GestorProveedores({
                   </td>
                   <td className="px-2 py-2 text-right">
                     <button
-                      onClick={() => {
-                        setError(null);
-                        setEditando(p.id);
-                        setForm({
-                          razon_social: p.razon_social,
-                          rut: p.rut ?? "",
-                          contacto: p.contacto ?? "",
-                          email: p.email ?? "",
-                          telefono: p.telefono ?? "",
-                          direccion: p.direccion ?? "",
-                          id_pais: p.id_pais,
-                          activo: p.activo,
-                        });
-                      }}
+                      onClick={() => abrirFicha(p)}
                       className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                     >
                       editar
