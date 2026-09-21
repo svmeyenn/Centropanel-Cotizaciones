@@ -55,10 +55,8 @@ export default function MenuLateral({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={LOGO} alt="Centro Panel" className="h-14 w-auto shrink-0" />
-          <span className="text-[11px] font-bold leading-tight text-verde">
-            COTIZADOR
-            <br />
-            SIP
+          <span className="text-[11px] font-bold leading-tight text-verde whitespace-nowrap">
+            COTIZADOR SIP
           </span>
         </Link>
 
