@@ -133,7 +133,7 @@ export default async function Pagina({
         titulo="Estado de pago"
         subtitulo="Cuanto se cobro y cuanto falta en cada pedido"
       />
-      <div className="max-w-6xl mx-auto p-6 space-y-4">
+      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
         <BarraNavegacion>
           <Link
             href="/pedidos"
@@ -186,7 +186,7 @@ export default async function Pagina({
 
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-xs whitespace-nowrap">
+            <table className="w-full text-xs">
               <thead className="bg-verde text-white">
                 <tr>
                   <th className="text-left px-3 py-2">N pedido</th>

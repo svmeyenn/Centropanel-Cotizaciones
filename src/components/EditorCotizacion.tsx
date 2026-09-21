@@ -7,6 +7,7 @@ import BotonDuplicar from "@/components/BotonDuplicar";
 import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
+import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
 import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { MateriaVenta } from "@/components/Configurador";
 import type { MedioPago } from "@/components/GestorMediosPago";
@@ -91,6 +92,8 @@ export default function EditorCotizacion(p: Props) {
   // agregan a la lista sin recargar, que descartaria la cotizacion en curso.
   const [clientesExtra, setClientesExtra] = useState<Cliente[]>([]);
   const [modalCliente, setModalCliente] = useState(false);
+  // Ficha del cliente elegido, para completar sus datos sin salir.
+  const [fichaCliente, setFichaCliente] = useState(false);
 
   const listaClientes = useMemo(() => {
     const vistos = new Set(p.clientes.map((c) => c.id));
@@ -296,7 +299,7 @@ export default function EditorCotizacion(p: Props) {
     "border border-gray-300 rounded px-2 py-1 text-sm w-full disabled:bg-gray-100 disabled:text-gray-500";
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-4">
+    <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
       {/* barra de estado y acciones */}
       <div className="flex flex-wrap items-center justify-between gap-2 bg-white border border-gray-200 rounded p-3">
         <div className="text-sm">
@@ -419,6 +422,16 @@ export default function EditorCotizacion(p: Props) {
               p.paises.find((x) => x.id === clienteElegido?.id_pais)?.etiqueta_id ?? "RUT"
             }
           />
+          {clienteElegido && p.puedeEditar && (
+            <button
+              type="button"
+              onClick={() => setFichaCliente(true)}
+              className="mt-1 text-[11px] text-verde underline"
+              title="Completar o corregir los datos del cliente sin salir de aqui"
+            >
+              Editar datos del cliente
+            </button>
+          )}
         </label>
 
         <label className="text-xs md:col-span-2">
@@ -720,6 +733,19 @@ export default function EditorCotizacion(p: Props) {
           />
         </label>
       </div>
+
+      {fichaCliente && clienteElegido && (
+        <VentanaCliente
+          cliente={clienteElegido as unknown as FichaCliente}
+          etiquetaId={
+            p.paises.find((x) => x.id === clienteElegido.id_pais)?.etiqueta_id ?? "RUT"
+          }
+          prefijo={
+            p.paises.find((x) => x.id === clienteElegido.id_pais)?.prefijo_telefono ?? "+56"
+          }
+          onCerrar={() => setFichaCliente(false)}
+        />
+      )}
 
       {modalPanel && (
         <ModalNuevoPanel

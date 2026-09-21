@@ -70,16 +70,13 @@ export default async function Pagina() {
         )?.id ?? null)
       : null;
 
-  // Costo de hoy de cada producto, para el margen. Solo lo puede leer quien
-  // ve costos; el resto no muestra margen.
+  // Costo de hoy de cada producto del catalogo, para el margen. Va por
+  // costo_productos() porque el vendedor no puede leer la tabla de productos
+  // y el margen lo ven todos los perfiles.
   const costoPorProducto: Record<number, number> = {};
-  if (tienePerfilAdmin(v)) {
-    const { data: costos } = await supabase
-      .from("productos")
-      .select("id, costo_unitario");
-    for (const x of costos ?? []) {
-      costoPorProducto[Number(x.id)] = Number(x.costo_unitario ?? 0);
-    }
+  const { data: costos } = await supabase.rpc("costo_productos", { p_ids: null });
+  for (const x of (costos ?? []) as { id: number; costo: number }[]) {
+    costoPorProducto[Number(x.id)] = Number(x.costo ?? 0);
   }
 
   return (
@@ -106,7 +103,7 @@ export default async function Pagina() {
         puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
         puedeEditar={v.puede_crear || tienePerfilAdmin(v)}
-        verMargen={tienePerfilAdmin(v)}
+        verMargen
         costoPorProducto={costoPorProducto}
         inicial={{
           id_cliente: null,

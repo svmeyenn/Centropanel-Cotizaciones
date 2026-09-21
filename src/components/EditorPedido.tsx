@@ -11,6 +11,7 @@ import {
 } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
 import { ESTADOS_PEDIDO as ESTADOS } from "@/lib/estados";
+import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
 import CuentaCorrientePedido, {
   type Cuenta,
   type PagoVista,
@@ -77,6 +78,8 @@ export default function EditorPedido({
   costoPorLinea,
   verMargen,
   lineasSinCosto = 0,
+  fichaCliente = null,
+  prefijoTelefono = "+56",
 }: {
   id: number;
   num: string;
@@ -112,6 +115,9 @@ export default function EditorPedido({
   verMargen?: boolean;
   // Lineas sin costo conocido: el margen las cuenta como costo cero.
   lineasSinCosto?: number;
+  // Ficha completa del cliente, para editarla desde el pedido.
+  fichaCliente?: FichaCliente | null;
+  prefijoTelefono?: string;
 }) {
   const router = useRouter();
   const [editable, setEditable] = useState(false);
@@ -121,6 +127,7 @@ export default function EditorPedido({
   const [aviso, setAviso] = useState<string | null>(null);
   const [sinProveedor, setSinProveedor] = useState<string[]>([]);
   const [pendiente, empezar] = useTransition();
+  const [verFicha, setVerFicha] = useState(false);
 
   const soloLectura = !editable || !puedeEditar;
   const total = ls.reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
@@ -164,7 +171,7 @@ export default function EditorPedido({
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-4">
+    <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 bg-white border border-gray-200 rounded p-3">
         <div className="text-sm">
           <span className="text-gray-500">N de pedido:</span>{" "}
@@ -226,6 +233,16 @@ export default function EditorPedido({
             {clienteTelefono ? <span> {"·"} {fmtTelefono(clienteTelefono)}</span> : null}
             {clienteCiudad ? <span> {"·"} {clienteCiudad}</span> : null}
           </span>
+          {fichaCliente && puedeEditar && (
+            <button
+              type="button"
+              onClick={() => setVerFicha(true)}
+              className="mt-1 text-[11px] text-verde underline"
+              title="Completar o corregir los datos del cliente sin salir de aqui"
+            >
+              Editar datos del cliente
+            </button>
+          )}
         </div>
         <Dato titulo="Ejecutivo" valor={vendedor} />
         <label className="text-xs">
@@ -406,6 +423,15 @@ export default function EditorPedido({
           </table>
         </div>
       </div>
+
+      {verFicha && fichaCliente && (
+        <VentanaCliente
+          cliente={fichaCliente}
+          etiquetaId={etiquetaId}
+          prefijo={prefijoTelefono}
+          onCerrar={() => setVerFicha(false)}
+        />
+      )}
 
       <CuentaCorrientePedido
         idPedido={id}

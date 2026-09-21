@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais, leerParametros, pTxt } from "@/lib/parametros";
 import EnvioCotizacion from "@/components/EnvioCotizacion";
 import BotonGenerarPedido from "@/components/BotonGenerarPedido";
+import SelectorEstado from "@/components/SelectorEstado";
 import { sumarDias } from "@/lib/formato";
 
 // Ver / modificar una cotizacion existente. Abre en solo lectura (equivalente
@@ -91,16 +92,13 @@ export default async function Pagina({
 
   const { paises, esAdminGeneral } = await contextoMercado(v);
 
-  // Costo de hoy de cada producto, para el margen. Solo lo puede leer quien
-  // ve costos; el resto no muestra margen.
+  // Costo de hoy de cada producto del catalogo, para el margen. Va por
+  // costo_productos() porque el vendedor no puede leer la tabla de productos
+  // y el margen lo ven todos los perfiles.
   const costoPorProducto: Record<number, number> = {};
-  if (tienePerfilAdmin(v)) {
-    const { data: costos } = await supabase
-      .from("productos")
-      .select("id, costo_unitario");
-    for (const x of costos ?? []) {
-      costoPorProducto[Number(x.id)] = Number(x.costo_unitario ?? 0);
-    }
+  const { data: costos } = await supabase.rpc("costo_productos", { p_ids: null });
+  for (const x of (costos ?? []) as { id: number; costo: number }[]) {
+    costoPorProducto[Number(x.id)] = Number(x.costo ?? 0);
   }
 
   return (
@@ -130,7 +128,7 @@ export default async function Pagina({
         puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
         puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
-        verMargen={tienePerfilAdmin(v)}
+        verMargen
         costoPorProducto={costoPorProducto}
         inicial={{
           id_cliente: cot.id_cliente,
@@ -155,7 +153,22 @@ export default async function Pagina({
         }}
       />
 
-      <div className="max-w-5xl mx-auto px-6 pb-4">
+      <div className="max-w-screen-2xl mx-auto px-6 pb-4">
+        <div className="bg-white border border-gray-200 rounded px-4 py-2 flex items-center gap-3 text-sm">
+          <span className="font-semibold text-verde">Estado de la cotizacion</span>
+          <SelectorEstado
+            id={id}
+            estado={cot.estado}
+            puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
+          />
+          <span className="text-xs text-gray-500">
+            Pasa sola a Enviada al enviarla y a Aceptada al generar el pedido;
+            Rechazada se marca aqui.
+          </span>
+        </div>
+      </div>
+
+      <div className="max-w-screen-2xl mx-auto px-6 pb-4">
         <BotonGenerarPedido
           idCotizacion={id}
           numCotizacion={cot.num_cotizacion ?? ""}
@@ -168,7 +181,7 @@ export default async function Pagina({
         />
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 pb-6">
+      <div className="max-w-screen-2xl mx-auto px-6 pb-6">
         <EnvioCotizacion
           datos={{
             id,

@@ -21,7 +21,7 @@ export default async function Pagina() {
         titulo="Vendedores y accesos"
         subtitulo="Perfil de cada vendedor y lo que puede hacer"
       />
-      <div className="max-w-5xl mx-auto p-6 space-y-4">
+      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
         <BarraNavegacion />
         <GestorVendedores vendedores={vendedores ?? []} miId={v.id} />
       </div>

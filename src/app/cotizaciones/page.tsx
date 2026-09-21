@@ -3,6 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import FiltrosDocumentos, { type ValoresFiltro } from "@/components/FiltrosDocumentos";
 import BotonEliminarFila from "@/components/BotonEliminarFila";
+import SelectorEstado from "@/components/SelectorEstado";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { ESTADOS_COTIZACION } from "@/lib/estados";
 import Bandera from "@/components/Bandera";
@@ -38,6 +39,7 @@ export default async function Pagina({
   const etiquetaId =
     [...new Set(accesibles.map((p) => p.etiqueta_id ?? "RUT"))].join(" / ") || "RUT";
   const puedeBorrar = tienePerfilAdmin(v);
+  const puedeEditar = v.puede_editar || tienePerfilAdmin(v);
 
   // Los datos del cliente viven en su ficha: se buscan primero los que
   // coinciden y despues sus cotizaciones. Un or() sobre la tabla embebida
@@ -56,7 +58,7 @@ export default async function Pagina({
     supabase
       .from("cotizaciones")
       .select(
-        "id, num_cotizacion, fecha, estado, id_pais, clientes(razon_social, rut, contacto), vendedores(nombre)"
+        "id, num_cotizacion, fecha, estado, id_pais, clientes(razon_social, rut, contacto, comuna), vendedores(nombre)"
       ),
     idPaisActivo
   )
@@ -86,12 +88,12 @@ export default async function Pagina({
     (totales ?? []).map((t) => [t.id as number, Number(t.total)])
   );
 
-  const columnas = 7 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
+  const columnas = 8 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
 
   return (
     <div className="min-h-screen">
       <Cabecera titulo="Cotizaciones" subtitulo="Historial completo con busqueda" />
-      <div className="max-w-6xl mx-auto p-6 space-y-4">
+      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
         <BarraNavegacion>
           <Link
             href="/cotizaciones/nueva"
@@ -125,6 +127,7 @@ export default async function Pagina({
                   {verPais && <th className="text-left px-3 py-2 w-24">Pais</th>}
                   <th className="text-left px-3 py-2">Razon social</th>
                   <th className="text-left px-3 py-2">Contacto</th>
+                  <th className="text-left px-3 py-2">Comuna</th>
                   <th className="text-left px-3 py-2 w-28">Fecha</th>
                   <th className="text-left px-3 py-2">Ejecutivo</th>
                   <th className="text-left px-3 py-2 w-28">Estado</th>
@@ -169,9 +172,17 @@ export default async function Pagina({
                       )}
                       <td className="px-3 py-2">{cli?.razon_social ?? ""}</td>
                       <td className="px-3 py-2 text-gray-600">{cli?.contacto ?? ""}</td>
+                      <td className="px-3 py-2 text-gray-600">{cli?.comuna ?? ""}</td>
                       <td className="px-3 py-2">{fmtFecha(c.fecha as string)}</td>
                       <td className="px-3 py-2">{ven?.nombre ?? ""}</td>
-                      <td className="px-3 py-2">{c.estado}</td>
+                      <td className="px-3 py-2">
+                        <SelectorEstado
+                          id={Number(c.id)}
+                          estado={c.estado as string}
+                          puedeEditar={puedeEditar}
+                          compacto
+                        />
+                      </td>
                       <td className="px-3 py-2 text-right font-semibold">
                         {pesos(totalPorId.get(c.id as number) ?? 0)}
                       </td>
