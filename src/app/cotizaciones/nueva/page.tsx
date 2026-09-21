@@ -94,6 +94,7 @@ export default async function Pagina() {
         puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
         puedeEditar={v.puede_crear || tienePerfilAdmin(v)}
+        verMargen={tienePerfilAdmin(v)}
         inicial={{
           id_cliente: null,
           id_vendedor: v.id,

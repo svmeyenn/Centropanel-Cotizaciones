@@ -42,7 +42,7 @@ export default async function Pagina({
         .single(),
       supabase
         .from("pedido_detalle")
-        .select("id, sku, descripcion, unidades, valor_unitario")
+        .select("id, sku, descripcion, unidades, valor_unitario, id_producto")
         .eq("id_pedido", id)
         .order("orden"),
       supabase.rpc("necesidades_pedido", { p_pedido: id }),
@@ -85,6 +85,28 @@ export default async function Pagina({
 
   const uno = <T,>(x: unknown): T | null =>
     Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
+
+  // Costo de cada linea: el pedido no lo guarda, asi que se trae de la
+  // cotizacion que lo origino --el costo congelado al vender-- cruzando por
+  // producto y, si la linea se escribio a mano, por descripcion.
+  const { data: detCot } = ped.id_cotizacion
+    ? await supabase
+        .from("cotizacion_detalle")
+        .select("id_producto, descripcion, costo_unitario")
+        .eq("id_cotizacion", ped.id_cotizacion)
+    : { data: [] as { id_producto: number | null; descripcion: string; costo_unitario: number }[] };
+
+  const costoPorProducto = new Map<string, number>();
+  for (const x of detCot ?? []) {
+    const clave = x.id_producto != null ? `p${x.id_producto}` : `d${x.descripcion}`;
+    costoPorProducto.set(clave, Number(x.costo_unitario ?? 0));
+  }
+  const costoPorLinea: Record<number, number> = {};
+  for (const l of lineas ?? []) {
+    const clave =
+      l.id_producto != null ? `p${l.id_producto}` : `d${l.descripcion}`;
+    costoPorLinea[Number(l.id)] = costoPorProducto.get(clave) ?? 0;
+  }
 
   const cot = uno<{ id: number; num_cotizacion: string }>(ped.cotizaciones);
   const fp = uno<{ descripcion: string }>(ped.formas_pago);
@@ -201,6 +223,8 @@ export default async function Pagina({
         puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
         puedeCrear={v.puede_crear || tienePerfilAdmin(v)}
         esAdmin={tienePerfilAdmin(v)}
+        costoPorLinea={costoPorLinea}
+        verMargen={tienePerfilAdmin(v)}
       />
     </div>
   );

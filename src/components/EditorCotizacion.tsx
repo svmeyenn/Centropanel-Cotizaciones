@@ -57,6 +57,8 @@ interface Props {
   numCotizacion?: string | null;
   estado?: string;
   puedeEditar: boolean;
+  // El margen solo lo ve quien puede ver costos.
+  verMargen?: boolean;
 }
 
 export default function EditorCotizacion(p: Props) {
@@ -129,6 +131,15 @@ export default function EditorCotizacion(p: Props) {
   }, [d.descuento_tipo, d.descuento_pct, d.descuento_monto, subtotal]);
 
   const totalNeto = subtotal - descuento;
+
+  // Margen de la venta: lo que queda sobre el costo de lo cotizado. Se
+  // recalcula solo al cambiar lineas, cantidades, precios o descuento.
+  const costoTotal = d.items.reduce(
+    (s, it) => s + Number(it.unidades) * Number(it.costo_unitario ?? 0),
+    0
+  );
+  const margen = totalNeto - costoTotal;
+  const margenPct = totalNeto > 0 ? (margen / totalNeto) * 100 : 0;
   const iva = Math.round(totalNeto * tasaIva);
   const total = totalNeto + iva;
 
@@ -651,6 +662,16 @@ export default function EditorCotizacion(p: Props) {
             <span>TOTAL</span>
             <span>{pesos(total)}</span>
           </div>
+
+          {p.verMargen && (
+            <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
+              <Fila label="Costo de lo cotizado" valor={pesos(costoTotal)} />
+              <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
+                <span>MARGEN {porcentaje(margenPct)} %</span>
+                <span>{pesos(margen)}</span>
+              </div>
+            </div>
+          )}
 
           {comisionPct > 0 && (
             <>
