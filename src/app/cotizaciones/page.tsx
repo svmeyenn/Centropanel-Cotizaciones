@@ -1,39 +1,54 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
-import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import FiltrosDocumentos, { type ValoresFiltro } from "@/components/FiltrosDocumentos";
+import BotonEliminarFila from "@/components/BotonEliminarFila";
+import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
+import { ESTADOS_COTIZACION } from "@/lib/estados";
 import Bandera from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
 import { pesos, fecha as fmtFecha } from "@/lib/formato";
 
-// Listado de cotizaciones, equivalente a frmCotizaciones. La busqueda se
-// resuelve en el servidor (query string) y no filtrando en el navegador, para
+// Listado de cotizaciones, equivalente a frmCotizaciones. Los filtros se
+// resuelven en el servidor (query string) y no filtrando en el navegador, para
 // no traerse toda la tabla cuando el historial crezca.
 export default async function Pagina({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<ValoresFiltro>;
 }) {
   const v = await requerirVendedor();
-  const { q } = await searchParams;
-  const busca = (q ?? "").trim();
+  const f = await searchParams;
+  const limpio = (x?: string) => (x ?? "").trim();
+  const q = limpio(f.q);
+  const desde = limpio(f.desde);
+  const hasta = limpio(f.hasta);
+  const rut = limpio(f.rut);
+  const razon = limpio(f.razon);
+  const contacto = limpio(f.contacto);
+  const estado = limpio(f.estado);
+  const filtraCliente = Boolean(rut || razon || contacto);
+  const hayFiltro = Boolean(q || desde || hasta || estado || filtraCliente);
 
   const supabase = await createClient();
   const { accesibles, idPaisActivo } = await contextoMercado(v);
   // Viendo los dos mercados juntos hace falta saber de cual es cada fila.
   const verPais = idPaisActivo == null && accesibles.length > 1;
   const paisPorId = new Map(accesibles.map((p) => [p.id, p]));
+  const etiquetaId =
+    [...new Set(accesibles.map((p) => p.etiqueta_id ?? "RUT"))].join(" / ") || "RUT";
+  const puedeBorrar = tienePerfilAdmin(v);
 
-  // La busqueda tambien mira la razon social del cliente. Se resuelve buscando
-  // primero los clientes que coinciden y filtrando por sus id: un or() sobre una
-  // tabla embebida obligaria a join interno y dejaria fuera las cotizaciones sin
-  // cliente asignado.
+  // Los datos del cliente viven en su ficha: se buscan primero los que
+  // coinciden y despues sus cotizaciones. Un or() sobre la tabla embebida
+  // obligaria a join interno y dejaria fuera las cotizaciones sin cliente.
   let idsCliente: number[] = [];
-  if (busca) {
-    const { data: clis } = await conPais(
-      supabase.from("clientes").select("id"),
-      idPaisActivo
-    ).ilike("razon_social", `%${busca}%`);
+  if (filtraCliente) {
+    let cq = conPais(supabase.from("clientes").select("id"), idPaisActivo);
+    if (rut) cq = cq.ilike("rut", `%${rut}%`);
+    if (razon) cq = cq.ilike("razon_social", `%${razon}%`);
+    if (contacto) cq = cq.ilike("contacto", `%${contacto}%`);
+    const { data: clis } = await cq;
     idsCliente = (clis ?? []).map((c) => c.id as number);
   }
 
@@ -41,23 +56,24 @@ export default async function Pagina({
     supabase
       .from("cotizaciones")
       .select(
-        "id, num_cotizacion, fecha, estado, id_pais, clientes(razon_social), vendedores(nombre)"
+        "id, num_cotizacion, fecha, estado, id_pais, clientes(razon_social, rut, contacto), vendedores(nombre)"
       ),
     idPaisActivo
   )
     .order("id", { ascending: false })
     .limit(200);
 
-  if (busca) {
-    // En el filtro or() la coma, los parentesis y las comillas son sintaxis de
-    // PostgREST: una razon social como "Ltda., S.A." romperia la consulta. Se
-    // quitan solo para este filtro; la busqueda de clientes de arriba va por
-    // parametro y no los necesita.
-    const termino = busca.replace(/[,()"\\]/g, " ");
-    const filtros = [`num_cotizacion.ilike.%${termino}%`];
-    if (idsCliente.length) filtros.push(`id_cliente.in.(${idsCliente.join(",")})`);
-    consulta = consulta.or(filtros.join(","));
+  if (q) {
+    // En el filtro la coma, los parentesis y las comillas son sintaxis de
+    // PostgREST y romperian la consulta.
+    consulta = consulta.ilike("num_cotizacion", `%${q.replace(/[,()"\\]/g, " ")}%`);
   }
+  if (desde) consulta = consulta.gte("fecha", desde);
+  if (hasta) consulta = consulta.lte("fecha", hasta);
+  if (estado) consulta = consulta.eq("estado", estado);
+  // Sin clientes que coincidan no hay cotizaciones que mostrar; el in() vacio
+  // de PostgREST no filtra nada, asi que se fuerza el vacio.
+  if (filtraCliente) consulta = consulta.in("id_cliente", idsCliente.length ? idsCliente : [-1]);
 
   const { data: cots, error } = await consulta;
 
@@ -70,39 +86,29 @@ export default async function Pagina({
     (totales ?? []).map((t) => [t.id as number, Number(t.total)])
   );
 
+  const columnas = 7 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
+
   return (
     <div className="min-h-screen">
       <Cabecera titulo="Cotizaciones" subtitulo="Historial completo con busqueda" />
-      <div className="max-w-5xl mx-auto p-6 space-y-4">
-        <div className="flex flex-wrap gap-2 items-center justify-between">
-          <form className="flex gap-2">
-            <input
-              name="q"
-              defaultValue={busca}
-              placeholder="Buscar por folio o razon social"
-              className="border border-gray-300 rounded px-3 py-1.5 text-sm w-64"
-            />
-            <button className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded">
-              Buscar
-            </button>
-            {busca && (
-              <Link
-                href="/cotizaciones"
-                className="text-sm text-gray-600 underline self-center"
-              >
-                limpiar
-              </Link>
-            )}
-          </form>
-          <BarraNavegacion>
-            <Link
-              href="/cotizaciones/nueva"
-              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
-            >
-              Nueva cotizacion
-            </Link>
-          </BarraNavegacion>
-        </div>
+      <div className="max-w-6xl mx-auto p-6 space-y-4">
+        <BarraNavegacion>
+          <Link
+            href="/cotizaciones/nueva"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+          >
+            Nueva cotizacion
+          </Link>
+        </BarraNavegacion>
+
+        <FiltrosDocumentos
+          base="/cotizaciones"
+          etiquetaFolio="N cotizacion"
+          etiquetaId={etiquetaId}
+          estados={ESTADOS_COTIZACION}
+          valores={{ q, desde, hasta, rut, razon, contacto, estado }}
+          hayFiltro={hayFiltro}
+        />
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
@@ -118,18 +124,20 @@ export default async function Pagina({
                   <th className="text-left px-3 py-2">N cotizacion</th>
                   {verPais && <th className="text-left px-3 py-2 w-24">Pais</th>}
                   <th className="text-left px-3 py-2">Razon social</th>
+                  <th className="text-left px-3 py-2">Contacto</th>
                   <th className="text-left px-3 py-2 w-28">Fecha</th>
                   <th className="text-left px-3 py-2">Ejecutivo</th>
                   <th className="text-left px-3 py-2 w-28">Estado</th>
                   <th className="text-right px-3 py-2 w-32">Total</th>
+                  {puedeBorrar && <th className="px-3 py-2 w-20" />}
                 </tr>
               </thead>
               <tbody>
                 {(cots ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={verPais ? 7 : 6} className="text-center text-gray-400 py-8">
-                      {busca
-                        ? "Ninguna cotizacion coincide con la busqueda."
+                    <td colSpan={columnas} className="text-center text-gray-400 py-8">
+                      {hayFiltro
+                        ? "Ninguna cotizacion coincide con el filtro."
                         : "Todavia no hay cotizaciones."}
                     </td>
                   </tr>
@@ -160,12 +168,22 @@ export default async function Pagina({
                         </td>
                       )}
                       <td className="px-3 py-2">{cli?.razon_social ?? ""}</td>
+                      <td className="px-3 py-2 text-gray-600">{cli?.contacto ?? ""}</td>
                       <td className="px-3 py-2">{fmtFecha(c.fecha as string)}</td>
                       <td className="px-3 py-2">{ven?.nombre ?? ""}</td>
                       <td className="px-3 py-2">{c.estado}</td>
                       <td className="px-3 py-2 text-right font-semibold">
                         {pesos(totalPorId.get(c.id as number) ?? 0)}
                       </td>
+                      {puedeBorrar && (
+                        <td className="px-3 py-2 text-right">
+                          <BotonEliminarFila
+                            tipo="cotizacion"
+                            id={Number(c.id)}
+                            num={(c.num_cotizacion as string) ?? ""}
+                          />
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
