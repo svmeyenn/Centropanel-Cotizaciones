@@ -3,7 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { pesos, unidades as fmtUnid, telefono as fmtTelefono } from "@/lib/formato";
+import {
+  pesos,
+  porcentaje,
+  unidades as fmtUnid,
+  telefono as fmtTelefono,
+} from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
 import { ESTADOS_PEDIDO as ESTADOS } from "@/lib/estados";
 import CuentaCorrientePedido, {
@@ -69,6 +74,8 @@ export default function EditorPedido({
   puedeEditar,
   puedeCrear,
   esAdmin,
+  costoPorLinea,
+  verMargen,
 }: {
   id: number;
   num: string;
@@ -98,6 +105,10 @@ export default function EditorPedido({
   puedeEditar: boolean;
   puedeCrear: boolean;
   esAdmin: boolean;
+  // Costo unitario de cada linea, tomado de la cotizacion de origen: el
+  // pedido no lo guarda. Solo llega a quien puede ver costos.
+  costoPorLinea?: Record<number, number>;
+  verMargen?: boolean;
 }) {
   const router = useRouter();
   const [editable, setEditable] = useState(false);
@@ -110,6 +121,14 @@ export default function EditorPedido({
 
   const soloLectura = !editable || !puedeEditar;
   const total = ls.reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
+  // Margen del pedido: el neto menos el costo de lo que se va a entregar. El
+  // costo viene de la cotizacion de origen, congelado al vender.
+  const costoPedido = ls.reduce(
+    (s, l) => s + l.unidades * Number(costoPorLinea?.[l.id] ?? 0),
+    0
+  );
+  const margen = total - costoPedido;
+  const margenPct = total > 0 ? (margen / total) * 100 : 0;
   // Un solo alto y un solo tamano de letra para todos los campos de la
   // cabecera, editables o no: antes los de solo lectura eran bloques grises
   // con letra grande y los editables cajas chicas, y la fila quedaba despareja.
@@ -356,6 +375,24 @@ export default function EditorPedido({
                 <td className="px-3 py-2 text-right">{pesos(total)}</td>
                 {!soloLectura && <td />}
               </tr>
+              {verMargen && (
+                <>
+                  <tr className="border-t border-gray-200 text-gray-600">
+                    <td className="px-3 py-1.5" colSpan={4}>
+                      Costo de lo pedido
+                    </td>
+                    <td className="px-3 py-1.5 text-right">{pesos(costoPedido)}</td>
+                    {!soloLectura && <td />}
+                  </tr>
+                  <tr className="bg-crema text-dorado-osc font-bold">
+                    <td className="px-3 py-1.5" colSpan={4}>
+                      MARGEN {porcentaje(margenPct)} %
+                    </td>
+                    <td className="px-3 py-1.5 text-right">{pesos(margen)}</td>
+                    {!soloLectura && <td />}
+                  </tr>
+                </>
+              )}
             </tbody>
           </table>
         </div>
