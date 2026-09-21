@@ -5,6 +5,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 
 export async function updateSession(request: NextRequest) {
+  // La ruta viaja en una cabecera para que el layout sepa si toca mostrar el
+  // menu lateral: un layout de Next no recibe la direccion pedida.
+  request.headers.set("x-ruta", request.nextUrl.pathname);
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(
