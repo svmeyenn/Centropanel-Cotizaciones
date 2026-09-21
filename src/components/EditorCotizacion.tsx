@@ -26,6 +26,7 @@ import {
   type ItemBorrador,
 } from "@/app/cotizaciones/acciones";
 import type { Cliente, FormaPago, Pais, TipoDescuento } from "@/types/database";
+import SelectorEstado from "@/components/SelectorEstado";
 
 // Producto tal como lo ve el vendedor: sin costo_unitario, porque el catalogo
 // llega por v_catalogo_venta (el RLS impide a un Vendedor ver costos).
@@ -309,7 +310,12 @@ export default function EditorCotizacion(p: Props) {
           </span>
           {p.estado && (
             <span className="ml-3 text-gray-500">
-              Estado: <span className="font-semibold">{p.estado}</span>
+              Estado:{" "}
+              {p.id ? (
+                <SelectorEstado id={p.id} estado={p.estado} puedeEditar={p.puedeEditar} />
+              ) : (
+                <span className="font-semibold">{p.estado}</span>
+              )}
             </span>
           )}
         </div>
