@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0056-20260915**
+Version vigente: **v0057-20260920**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0057-20260920 | 20-09-2026 | Menu lateral permanente; filtros y borrado en los listados; fichas en ventana emergente; telefono con codigo de pais y recordatorio diario; margen de cotizacion y pedido | 46e1bb4 |
 | v0056-20260915 | 15-09-2026 | Perfil Supervisor (todo lo del Administrador salvo usuarios y claves); correo con el PDF adjunto desde la casilla del usuario y PDF compartible por WhatsApp | 9523544 |
 | v0055-20260915 | 15-09-2026 | IGV en las vistas de Perú; el vendedor ve el PVP con impuesto en el catálogo | 85b0d58 |
 | v0054-20260915 | 15-09-2026 | Parámetros, formas y medios de pago por país; RUC e IGV en los documentos de Perú; número de versión visible | e830658 |
