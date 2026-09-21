@@ -59,6 +59,9 @@ interface Props {
   puedeEditar: boolean;
   // El margen solo lo ve quien puede ver costos.
   verMargen?: boolean;
+  // Costo de hoy de cada producto del catalogo: vale cuando la linea se
+  // grabo sin costo.
+  costoPorProducto?: Record<number, number>;
 }
 
 export default function EditorCotizacion(p: Props) {
@@ -134,10 +137,14 @@ export default function EditorCotizacion(p: Props) {
 
   // Margen de la venta: lo que queda sobre el costo de lo cotizado. Se
   // recalcula solo al cambiar lineas, cantidades, precios o descuento.
+  const costoDe = (it: ItemBorrador) =>
+    Number(it.costo_unitario ?? 0) ||
+    (it.id_producto != null ? (p.costoPorProducto?.[it.id_producto] ?? 0) : 0);
   const costoTotal = d.items.reduce(
-    (s, it) => s + Number(it.unidades) * Number(it.costo_unitario ?? 0),
+    (s, it) => s + Number(it.unidades) * costoDe(it),
     0
   );
+  const itemsSinCosto = d.items.filter((it) => costoDe(it) === 0).length;
   const margen = totalNeto - costoTotal;
   const margenPct = totalNeto > 0 ? (margen / totalNeto) * 100 : 0;
   const iva = Math.round(totalNeto * tasaIva);
@@ -667,7 +674,15 @@ export default function EditorCotizacion(p: Props) {
             <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
               <Fila label="Costo de lo cotizado" valor={pesos(costoTotal)} />
               <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
-                <span>MARGEN {porcentaje(margenPct)} %</span>
+                <span>
+                  MARGEN {porcentaje(margenPct)} %
+                  {itemsSinCosto > 0 && (
+                    <span className="ml-2 font-normal text-[11px] text-amber-700">
+                      ({itemsSinCosto} linea{itemsSinCosto > 1 ? "s" : ""} sin costo
+                      cargado)
+                    </span>
+                  )}
+                </span>
                 <span>{pesos(margen)}</span>
               </div>
             </div>

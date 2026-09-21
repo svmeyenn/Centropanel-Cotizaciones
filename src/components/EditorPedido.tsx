@@ -76,6 +76,7 @@ export default function EditorPedido({
   esAdmin,
   costoPorLinea,
   verMargen,
+  lineasSinCosto = 0,
 }: {
   id: number;
   num: string;
@@ -109,6 +110,8 @@ export default function EditorPedido({
   // pedido no lo guarda. Solo llega a quien puede ver costos.
   costoPorLinea?: Record<number, number>;
   verMargen?: boolean;
+  // Lineas sin costo conocido: el margen las cuenta como costo cero.
+  lineasSinCosto?: number;
 }) {
   const router = useRouter();
   const [editable, setEditable] = useState(false);
@@ -387,6 +390,12 @@ export default function EditorPedido({
                   <tr className="bg-crema text-dorado-osc font-bold">
                     <td className="px-3 py-1.5" colSpan={4}>
                       MARGEN {porcentaje(margenPct)} %
+                      {lineasSinCosto > 0 && (
+                        <span className="ml-2 font-normal text-[11px] text-amber-700">
+                          ({lineasSinCosto} linea{lineasSinCosto > 1 ? "s" : ""} sin
+                          costo cargado)
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-1.5 text-right">{pesos(margen)}</td>
                     {!soloLectura && <td />}
