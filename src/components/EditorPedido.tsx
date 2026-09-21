@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { pesos, unidades as fmtUnid, telefono as fmtTelefono } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
+import { ESTADOS_PEDIDO as ESTADOS } from "@/lib/estados";
 import CuentaCorrientePedido, {
   type Cuenta,
   type PagoVista,
@@ -43,13 +44,6 @@ export interface SolicitudVista {
   lineas: number;
 }
 
-const ESTADOS = [
-  "Emitido",
-  "En preparacion",
-  "Despachado",
-  "Facturado",
-  "Anulado",
-];
 
 export default function EditorPedido({
   id,
