@@ -227,3 +227,27 @@ export async function duplicarCotizacion(id: number) {
   revalidatePath("/cotizaciones");
   return { ok: true, id: Number(data) };
 }
+
+// Borrar una cotizacion emitida: para la que se cargo por error o quedo
+// duplicada. La base la niega si ya genero un pedido, y el detalle se va con
+// ella. No hay papelera: lo borrado no vuelve.
+export async function eliminarCotizacion(id: number) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) {
+    return { error: "Solo el administrador puede eliminar cotizaciones." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("eliminar_cotizacion", { p_id: id });
+  if (error) return { error: error.message };
+
+  const r = (data ?? {}) as { en_uso?: boolean; pedido?: string; num?: string };
+  if (r.en_uso) {
+    return {
+      error: `No se puede eliminar: ya genero el pedido ${r.pedido}. Elimine primero el pedido.`,
+    };
+  }
+
+  revalidatePath("/cotizaciones");
+  return { ok: true, num: r.num ?? "" };
+}
