@@ -3,7 +3,6 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import FiltrosDocumentos, { type ValoresFiltro } from "@/components/FiltrosDocumentos";
 import BotonEliminarFila from "@/components/BotonEliminarFila";
-import SelectorEstado from "@/components/SelectorEstado";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { ESTADOS_COTIZACION } from "@/lib/estados";
 import Bandera from "@/components/Bandera";
@@ -39,7 +38,6 @@ export default async function Pagina({
   const etiquetaId =
     [...new Set(accesibles.map((p) => p.etiqueta_id ?? "RUT"))].join(" / ") || "RUT";
   const puedeBorrar = tienePerfilAdmin(v);
-  const puedeEditar = v.puede_editar || tienePerfilAdmin(v);
 
   // Los datos del cliente viven en su ficha: se buscan primero los que
   // coinciden y despues sus cotizaciones. Un or() sobre la tabla embebida
@@ -176,12 +174,7 @@ export default async function Pagina({
                       <td className="px-3 py-2">{fmtFecha(c.fecha as string)}</td>
                       <td className="px-3 py-2">{ven?.nombre ?? ""}</td>
                       <td className="px-3 py-2">
-                        <SelectorEstado
-                          id={Number(c.id)}
-                          estado={c.estado as string}
-                          puedeEditar={puedeEditar}
-                          compacto
-                        />
+                        {c.estado as string}
                       </td>
                       <td className="px-3 py-2 text-right font-semibold">
                         {pesos(totalPorId.get(c.id as number) ?? 0)}

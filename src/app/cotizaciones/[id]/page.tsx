@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais, leerParametros, pTxt } from "@/lib/parametros";
 import EnvioCotizacion from "@/components/EnvioCotizacion";
 import BotonGenerarPedido from "@/components/BotonGenerarPedido";
-import SelectorEstado from "@/components/SelectorEstado";
 import { sumarDias } from "@/lib/formato";
 
 // Ver / modificar una cotizacion existente. Abre en solo lectura (equivalente
@@ -152,21 +151,6 @@ export default async function Pagina({
           })),
         }}
       />
-
-      <div className="max-w-screen-2xl mx-auto px-6 pb-4">
-        <div className="bg-white border border-gray-200 rounded px-4 py-2 flex items-center gap-3 text-sm">
-          <span className="font-semibold text-verde">Estado de la cotizacion</span>
-          <SelectorEstado
-            id={id}
-            estado={cot.estado}
-            puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
-          />
-          <span className="text-xs text-gray-500">
-            Pasa sola a Enviada al enviarla y a Aceptada al generar el pedido;
-            Rechazada se marca aqui.
-          </span>
-        </div>
-      </div>
 
       <div className="max-w-screen-2xl mx-auto px-6 pb-4">
         <BotonGenerarPedido
