@@ -101,11 +101,35 @@ export default async function Pagina({
     const clave = x.id_producto != null ? `p${x.id_producto}` : `d${x.descripcion}`;
     costoPorProducto.set(clave, Number(x.costo_unitario ?? 0));
   }
+  // Si la cotizacion se grabo sin costo --se cotizo antes de costear--, vale
+  // el costo de hoy del catalogo: es mejor que mostrar margen 100%.
+  const idsProducto = [
+    ...new Set(
+      (lineas ?? [])
+        .map((l) => l.id_producto as number | null)
+        .filter((x): x is number => x != null)
+    ),
+  ];
+  const { data: prods } = idsProducto.length
+    ? await supabase
+        .from("productos")
+        .select("id, costo_unitario")
+        .in("id", idsProducto)
+    : { data: [] as { id: number; costo_unitario: number }[] };
+  const costoCatalogo = new Map(
+    (prods ?? []).map((x) => [Number(x.id), Number(x.costo_unitario ?? 0)])
+  );
+
   const costoPorLinea: Record<number, number> = {};
+  let sinCosto = 0;
   for (const l of lineas ?? []) {
     const clave =
       l.id_producto != null ? `p${l.id_producto}` : `d${l.descripcion}`;
-    costoPorLinea[Number(l.id)] = costoPorProducto.get(clave) ?? 0;
+    const costo =
+      costoPorProducto.get(clave) ||
+      (l.id_producto != null ? (costoCatalogo.get(Number(l.id_producto)) ?? 0) : 0);
+    if (!costo) sinCosto += 1;
+    costoPorLinea[Number(l.id)] = costo;
   }
 
   const cot = uno<{ id: number; num_cotizacion: string }>(ped.cotizaciones);
@@ -225,6 +249,7 @@ export default async function Pagina({
         esAdmin={tienePerfilAdmin(v)}
         costoPorLinea={costoPorLinea}
         verMargen={tienePerfilAdmin(v)}
+        lineasSinCosto={sinCosto}
       />
     </div>
   );

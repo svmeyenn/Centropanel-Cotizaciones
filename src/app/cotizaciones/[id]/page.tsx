@@ -91,6 +91,18 @@ export default async function Pagina({
 
   const { paises, esAdminGeneral } = await contextoMercado(v);
 
+  // Costo de hoy de cada producto, para el margen. Solo lo puede leer quien
+  // ve costos; el resto no muestra margen.
+  const costoPorProducto: Record<number, number> = {};
+  if (tienePerfilAdmin(v)) {
+    const { data: costos } = await supabase
+      .from("productos")
+      .select("id, costo_unitario");
+    for (const x of costos ?? []) {
+      costoPorProducto[Number(x.id)] = Number(x.costo_unitario ?? 0);
+    }
+  }
+
   return (
     <div className="min-h-screen">
       <Cabecera
@@ -119,6 +131,7 @@ export default async function Pagina({
         ivaPorPais={ivaPorPais}
         puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
         verMargen={tienePerfilAdmin(v)}
+        costoPorProducto={costoPorProducto}
         inicial={{
           id_cliente: cot.id_cliente,
           id_vendedor: cot.id_vendedor,
