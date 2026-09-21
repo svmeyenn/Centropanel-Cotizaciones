@@ -67,7 +67,9 @@ export default function SelectorEstado({
       </select>
       {propuesto && (
         <span className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 text-xs text-gray-700">
-          Cambiar de <b>{actual}</b> a <b>{propuesto}</b>?
+          <span>
+            Cambiar de <b>{actual}</b> a <b>{propuesto}</b>?
+          </span>
           <button
             onClick={confirmar}
             disabled={pendiente}
