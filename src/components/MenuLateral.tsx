@@ -54,7 +54,7 @@ export default function MenuLateral({
           className="flex items-center gap-2 bg-white px-3 py-2"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO} alt="Centro Panel" className="h-9 w-auto shrink-0" />
+          <img src={LOGO} alt="Centro Panel" className="h-14 w-auto shrink-0" />
           <span className="text-[11px] font-bold leading-tight text-verde">
             COTIZADOR
             <br />
