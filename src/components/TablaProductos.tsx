@@ -553,7 +553,7 @@ export default function TablaProductos({
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs whitespace-nowrap">
+          <table className="w-full text-xs">
             <thead className="bg-verde text-white">
               <tr>
                 <th className="text-left px-3 py-2 w-24">SKU</th>

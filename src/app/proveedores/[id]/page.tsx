@@ -94,7 +94,7 @@ export default async function Pagina({
         titulo={prov.razon_social as string}
         subtitulo="Maestra del proveedor: que vende y a que costo"
       />
-      <div className="max-w-6xl mx-auto p-6 space-y-4">
+      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
         <BarraNavegacion volverA="/proveedores">
           <Link
             href="/proveedores"

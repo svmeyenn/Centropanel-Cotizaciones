@@ -58,7 +58,7 @@ export default async function Pagina({
     supabase
       .from("pedidos")
       .select(
-        "id, num_pedido, fecha, estado, id_pais, id_cotizacion, cotizaciones(num_cotizacion), clientes(razon_social, rut, contacto), vendedores(nombre)"
+        "id, num_pedido, fecha, estado, id_pais, id_cotizacion, cotizaciones(num_cotizacion), clientes(razon_social, rut, contacto, comuna), vendedores(nombre)"
       ),
     idPaisActivo
   ).order("id", { ascending: false });
@@ -113,7 +113,7 @@ export default async function Pagina({
   const uno = <T,>(x: unknown): T | null =>
     Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
-  const columnas = 11 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
+  const columnas = 12 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
 
   return (
     <div className="min-h-screen">
@@ -121,7 +121,7 @@ export default async function Pagina({
         titulo="Pedidos"
         subtitulo="Cotizaciones aceptadas y sus solicitudes a proveedores"
       />
-      <div className="max-w-6xl mx-auto p-6 space-y-4">
+      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
         <BarraNavegacion>
           <Link
             href="/cobranza"
@@ -148,7 +148,7 @@ export default async function Pagina({
 
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-xs whitespace-nowrap">
+            <table className="w-full text-xs">
               <thead className="bg-verde text-white">
                 <tr>
                   <th className="text-left px-3 py-2">N pedido</th>
@@ -156,6 +156,7 @@ export default async function Pagina({
                   <th className="text-left px-3 py-2">Cotizacion</th>
                   <th className="text-left px-3 py-2">Razon social</th>
                   <th className="text-left px-3 py-2">Contacto</th>
+                  <th className="text-left px-3 py-2">Comuna</th>
                   <th className="text-left px-3 py-2">Fecha</th>
                   <th className="text-left px-3 py-2">Ejecutivo</th>
                   <th className="text-left px-3 py-2">Estado</th>
@@ -178,7 +179,7 @@ export default async function Pagina({
                 )}
                 {(pedidos ?? []).map((p) => {
                   const cot = uno<{ num_cotizacion: string }>(p.cotizaciones);
-                  const cli = uno<{ razon_social: string; contacto: string | null }>(
+                  const cli = uno<{ razon_social: string; contacto: string | null; comuna: string | null }>(
                     p.clientes
                   );
                   const ven = uno<{ nombre: string }>(p.vendedores);
@@ -211,6 +212,7 @@ export default async function Pagina({
                       </td>
                       <td className="px-3 py-2">{cli?.razon_social ?? ""}</td>
                       <td className="px-3 py-2 text-gray-600">{cli?.contacto ?? ""}</td>
+                      <td className="px-3 py-2 text-gray-600">{cli?.comuna ?? ""}</td>
                       <td className="px-3 py-2">{fmtFecha(p.fecha as string)}</td>
                       <td className="px-3 py-2">{ven?.nombre ?? ""}</td>
                       <td className="px-3 py-2">{p.estado}</td>

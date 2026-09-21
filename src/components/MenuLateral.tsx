@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Grupo } from "@/lib/menu";
+import LOGO from "@/lib/logo";
 
 // Menu siempre a la vista, a la izquierda. Antes habia que volver a la portada
 // para cambiar de pantalla; ahora se salta de cotizaciones a pedidos o al
@@ -49,10 +50,16 @@ export default function MenuLateral({
         <Link
           href="/"
           onClick={() => setAbierto(false)}
-          className="block px-4 py-4 border-b border-white/15"
+          title="Volver al menu principal"
+          className="flex items-center gap-2 bg-white px-3 py-2"
         >
-          <div className="text-sm font-bold tracking-wide">COTIZADOR SIP</div>
-          <div className="text-[11px] text-dorado">Centro Panel</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={LOGO} alt="Centro Panel" className="h-9 w-auto shrink-0" />
+          <span className="text-[11px] font-bold leading-tight text-verde">
+            COTIZADOR
+            <br />
+            SIP
+          </span>
         </Link>
 
         <div className="px-4 py-3 border-b border-white/15 text-[11px] text-white/80">

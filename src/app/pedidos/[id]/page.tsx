@@ -7,6 +7,7 @@ import EditorPedido, {
 } from "@/components/EditorPedido";
 import type { FacturaVista } from "@/components/FacturaPedido";
 import BarraNavegacion from "@/components/BarraNavegacion";
+import type { FichaCliente } from "@/components/VentanaCliente";
 import Link from "next/link";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +37,7 @@ export default async function Pagina({
       supabase
         .from("pedidos")
         .select(
-          "*, cotizaciones(id, num_cotizacion), clientes(razon_social, rut, contacto, telefono, ciudad), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre), paises(etiqueta_id, codigo)"
+          "*, cotizaciones(id, num_cotizacion), clientes(id, razon_social, rut, contacto, email, telefono, direccion, comuna, ciudad, id_pais), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre), paises(etiqueta_id, codigo, prefijo_telefono)"
         )
         .eq("id", id)
         .single(),
@@ -111,13 +112,13 @@ export default async function Pagina({
     ),
   ];
   const { data: prods } = idsProducto.length
-    ? await supabase
-        .from("productos")
-        .select("id, costo_unitario")
-        .in("id", idsProducto)
-    : { data: [] as { id: number; costo_unitario: number }[] };
+    ? await supabase.rpc("costo_productos", { p_ids: idsProducto })
+    : { data: [] as { id: number; costo: number }[] };
   const costoCatalogo = new Map(
-    (prods ?? []).map((x) => [Number(x.id), Number(x.costo_unitario ?? 0)])
+    ((prods ?? []) as { id: number; costo: number }[]).map((x) => [
+      Number(x.id),
+      Number(x.costo ?? 0),
+    ])
   );
 
   const costoPorLinea: Record<number, number> = {};
@@ -174,7 +175,7 @@ export default async function Pagina({
         titulo="Detalle del pedido"
         subtitulo="Items, abastecimiento y solicitudes a proveedores"
       />
-      <div className="max-w-5xl mx-auto px-6 pt-6">
+      <div className="max-w-screen-2xl mx-auto px-6 pt-6">
         <BarraNavegacion volverA="/pedidos">
           <Link
             href="/pedidos"
@@ -248,7 +249,9 @@ export default async function Pagina({
         puedeCrear={v.puede_crear || tienePerfilAdmin(v)}
         esAdmin={tienePerfilAdmin(v)}
         costoPorLinea={costoPorLinea}
-        verMargen={tienePerfilAdmin(v)}
+        fichaCliente={cli ? (cli as unknown as FichaCliente) : null}
+        prefijoTelefono={uno<{ prefijo_telefono: string }>(ped.paises)?.prefijo_telefono ?? "+56"}
+        verMargen
         lineasSinCosto={sinCosto}
       />
     </div>
