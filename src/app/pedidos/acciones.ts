@@ -410,3 +410,37 @@ export async function duplicarPedido(id: number) {
   revalidatePath("/cotizaciones");
   return { ok: true, id: Number(data) };
 }
+
+// Borrar un pedido: para el que se emitio por error. La base lo niega si hay
+// pagos o factura --eso se anula a mano, uno por uno-- y se lleva consigo las
+// lineas y las solicitudes a proveedores. La cotizacion queda Aceptada y sin
+// pedido, lista para volver a generarlo.
+export async function eliminarPedido(id: number) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) {
+    return { error: "Solo el administrador puede eliminar pedidos." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("eliminar_pedido", { p_id: id });
+  if (error) return { error: error.message };
+
+  const r = (data ?? {}) as {
+    en_uso?: boolean;
+    facturas?: number;
+    pagos?: number;
+    num?: string;
+  };
+  if (r.en_uso) {
+    const partes: string[] = [];
+    if (Number(r.facturas)) partes.push("tiene factura registrada");
+    if (Number(r.pagos)) partes.push(`tiene ${r.pagos} pago(s) registrados`);
+    return {
+      error: `No se puede eliminar: ${partes.join(" y ")}. Anule eso primero en la cuenta corriente del pedido.`,
+    };
+  }
+
+  revalidatePath("/pedidos");
+  revalidatePath("/cotizaciones");
+  return { ok: true, num: r.num ?? "" };
+}

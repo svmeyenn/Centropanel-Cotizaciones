@@ -7,6 +7,7 @@ import EditorPedido, {
 } from "@/components/EditorPedido";
 import type { FacturaVista } from "@/components/FacturaPedido";
 import BarraNavegacion from "@/components/BarraNavegacion";
+import BotonEliminarDocumento from "@/components/BotonEliminarDocumento";
 import Link from "next/link";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
@@ -202,6 +203,16 @@ export default async function Pagina({
         puedeCrear={v.puede_crear || tienePerfilAdmin(v)}
         esAdmin={tienePerfilAdmin(v)}
       />
+
+      {tienePerfilAdmin(v) && (
+        <div className="max-w-5xl mx-auto px-6 pb-6">
+          <BotonEliminarDocumento
+            tipo="pedido"
+            id={id}
+            num={ped.num_pedido as string}
+          />
+        </div>
+      )}
     </div>
   );
 }

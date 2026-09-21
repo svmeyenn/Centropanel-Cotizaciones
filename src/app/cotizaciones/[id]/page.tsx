@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais, leerParametros, pTxt } from "@/lib/parametros";
 import EnvioCotizacion from "@/components/EnvioCotizacion";
 import BotonGenerarPedido from "@/components/BotonGenerarPedido";
+import BotonEliminarDocumento from "@/components/BotonEliminarDocumento";
 import { sumarDias } from "@/lib/formato";
 
 // Ver / modificar una cotizacion existente. Abre en solo lectura (equivalente
@@ -153,6 +154,16 @@ export default async function Pagina({
           puede={v.puede_crear || tienePerfilAdmin(v)}
         />
       </div>
+
+      {tienePerfilAdmin(v) && (
+        <div className="max-w-5xl mx-auto px-6 pb-4">
+          <BotonEliminarDocumento
+            tipo="cotizacion"
+            id={id}
+            num={cot.num_cotizacion ?? ""}
+          />
+        </div>
+      )}
 
       <div className="max-w-5xl mx-auto px-6 pb-6">
         <EnvioCotizacion
