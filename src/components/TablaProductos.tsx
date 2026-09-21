@@ -13,6 +13,7 @@ import {
 } from "@/app/productos/acciones";
 import type { MateriaVenta } from "@/components/Configurador";
 import type { Pais } from "@/types/database";
+import Ventana from "@/components/Ventana";
 
 interface ProductoFila {
   id: number;
@@ -207,7 +208,13 @@ export default function TablaProductos({
       )}
 
       {form && enEdicion && (
-        <div className="bg-white border border-dorado rounded p-4 space-y-3">
+        <Ventana
+          titulo={"Ficha del producto"}
+          subtitulo={enEdicion?.descripcion ?? ""}
+          onCerrar={() => { setEditando(null); setForm(null); }}
+          ancho="max-w-4xl"
+        >
+        <div className="space-y-3">
           <div className="text-sm font-semibold text-verde">
             Modificar producto
           </div>
@@ -541,6 +548,7 @@ export default function TablaProductos({
             </button>
           </div>
         </div>
+        </Ventana>
       )}
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
@@ -607,7 +615,17 @@ export default function TablaProductos({
                             {p.sku ?? ""}
                           </td>
                           <td className="px-3 py-2">
-                            {p.descripcion}
+                            {esAdmin ? (
+                              <button
+                                onClick={() => editar(p)}
+                                className="text-verde underline text-left"
+                                title="Ver la ficha del producto"
+                              >
+                                {p.descripcion}
+                              </button>
+                            ) : (
+                              p.descripcion
+                            )}
                             {p.precio_manual && (
                               <span
                                 className="ml-2 text-[10px] bg-dorado text-white px-1.5 py-0.5 rounded"

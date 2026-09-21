@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
+import Ventana from "@/components/Ventana";
 import { pesos, unidades } from "@/lib/formato";
 import {
   actualizarMateria,
@@ -284,7 +285,12 @@ export default function GestorMateriasPrimas({
 
       {/* formulario de edicion */}
       {form && editando != null && (
-        <div className="bg-white border border-dorado rounded p-4 space-y-3">
+        <Ventana
+          titulo={"Ficha del insumo"}
+          subtitulo={form?.nombre ?? ""}
+          onCerrar={() => { setEditando(null); setForm(null); }}
+        >
+        <div className="space-y-3">
           <div className="text-sm font-semibold text-verde">Modificar insumo</div>
           <div className="grid md:grid-cols-3 gap-3">
             <Campo
@@ -388,6 +394,7 @@ export default function GestorMateriasPrimas({
             </span>
           </div>
         </div>
+        </Ventana>
       )}
 
       {/* tabla */}
@@ -409,7 +416,15 @@ export default function GestorMateriasPrimas({
             <tbody>
               {filtrados.map((m) => (
                 <tr key={m.id} className="border-t border-gray-100 hover:bg-crema">
-                  <td className="px-3 py-2">{m.nombre}</td>
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={() => editar(m)}
+                      className="text-verde underline text-left"
+                      title="Ver la ficha del insumo"
+                    >
+                      {m.nombre}
+                    </button>
+                  </td>
                   <td className="px-3 py-2 text-gray-500 font-mono text-[11px]">
                     {m.sku}
                   </td>
