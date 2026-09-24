@@ -137,7 +137,18 @@ export default function EditorCotizacion(p: Props) {
     return Math.min(Math.max(d.descuento_monto, 0), subtotal);
   }, [d.descuento_tipo, d.descuento_pct, d.descuento_monto, subtotal]);
 
-  const totalNeto = subtotal - descuento;
+  // Segundo descuento: se calcula igual y tambien sobre el subtotal, no sobre
+  // lo que queda del primero. Entre los dos no pueden pasarse del subtotal.
+  const descuento2 = useMemo(() => {
+    const tope = Math.max(subtotal - descuento, 0);
+    if (d.descuento2_tipo === "Porcentaje") {
+      const pct = Math.min(Math.max(d.descuento2_pct, 0), 100);
+      return Math.min(Math.round((subtotal * pct) / 100), tope);
+    }
+    return Math.min(Math.max(d.descuento2_monto, 0), tope);
+  }, [d.descuento2_tipo, d.descuento2_pct, d.descuento2_monto, subtotal, descuento]);
+
+  const totalNeto = subtotal - descuento - descuento2;
 
   // Margen de la venta: lo que queda sobre el costo de lo cotizado. Se
   // recalcula solo al cambiar lineas, cantidades, precios o descuento.
@@ -170,6 +181,13 @@ export default function EditorCotizacion(p: Props) {
       ? d.descuento_pct
       : subtotal > 0
         ? Math.round((descuento / subtotal) * 10000) / 100
+        : 0;
+
+  const pct2Mostrado =
+    d.descuento2_tipo === "Porcentaje"
+      ? d.descuento2_pct
+      : subtotal > 0
+        ? Math.round((descuento2 / subtotal) * 10000) / 100
         : 0;
 
   function set<K extends keyof DatosCotizacion>(k: K, v: DatosCotizacion[K]) {
@@ -257,6 +275,8 @@ export default function EditorCotizacion(p: Props) {
       ...d,
       descuento_monto: descuento,
       descuento_pct: pctMostrado,
+      descuento2_monto: descuento2,
+      descuento2_pct: pct2Mostrado,
     };
     empezar(async () => {
       const r =
@@ -675,8 +695,42 @@ export default function EditorCotizacion(p: Props) {
               title="Descuento en pesos"
             />
           </div>
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-gray-700 mr-auto">DESCUENTO 2</span>
+            <input
+              type="number"
+              className="border border-gray-300 rounded px-2 py-1 text-right w-24 disabled:bg-gray-100"
+              disabled={soloLectura}
+              value={d.descuento2_tipo === "Porcentaje" ? d.descuento2_pct : pct2Mostrado}
+              onChange={(e) =>
+                setD((x) => ({
+                  ...x,
+                  descuento2_tipo: "Porcentaje" as TipoDescuento,
+                  descuento2_pct: Number(e.target.value) || 0,
+                }))
+              }
+              title="Segundo descuento en % del subtotal"
+            />
+            <span className="text-gray-500">%</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              className="border border-gray-300 rounded px-2 py-1 text-right w-32 disabled:bg-gray-100"
+              disabled={soloLectura}
+              value={pesos(descuento2)}
+              onChange={(e) =>
+                setD((x) => ({
+                  ...x,
+                  descuento2_tipo: "Monto" as TipoDescuento,
+                  descuento2_monto: Number(e.target.value.replace(/\D/g, "")) || 0,
+                }))
+              }
+              title="Segundo descuento en pesos"
+            />
+          </div>
           <p className="text-xs text-gray-500 text-right">
-            Escriba el % o el monto: el otro se recalcula solo. En 0 no aparece en el PDF.
+            Escriba el % o el monto: el otro se recalcula solo. Los dos van sobre
+            el subtotal y en 0 no aparecen en el PDF.
           </p>
 
           <Fila label="TOTAL NETO" valor={pesos(totalNeto)} fuerte />

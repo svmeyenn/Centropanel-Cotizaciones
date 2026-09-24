@@ -10,6 +10,9 @@ import {
 } from "@/app/pedidos/acciones";
 
 export interface Cuenta {
+  subtotal: number;
+  descuento_monto: number;
+  descuento2_monto: number;
   total_neto: number;
   iva: number;
   total_sin_comision: number;

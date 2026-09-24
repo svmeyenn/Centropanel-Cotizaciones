@@ -142,6 +142,9 @@ export default async function Pagina({
           descuento_tipo: cot.descuento_tipo,
           descuento_pct: Number(cot.descuento_pct),
           descuento_monto: Number(cot.descuento_monto),
+          descuento2_tipo: cot.descuento2_tipo ?? "Monto",
+          descuento2_pct: Number(cot.descuento2_pct ?? 0),
+          descuento2_monto: Number(cot.descuento2_monto ?? 0),
           items: (items ?? []).map((it) => ({
             id_producto: it.id_producto,
             descripcion: it.descripcion,

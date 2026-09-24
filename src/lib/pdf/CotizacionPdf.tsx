@@ -180,7 +180,18 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
         {/* ---- totales ---- */}
         <View style={s.totales} wrap={false}>
           <Total rotulo="SUBTOTAL" valor={pesos(d.subtotal)} />
-          {d.descuento > 0 && <Total rotulo="DESCUENTO" valor={pesos(d.descuento)} />}
+          {d.descuento > 0 && (
+            <Total
+              rotulo={`DESCUENTO${d.descuento2 > 0 ? " 1" : ""}`}
+              valor={pesos(d.descuento)}
+            />
+          )}
+          {d.descuento2 > 0 && (
+            <Total
+              rotulo={`DESCUENTO${d.descuento > 0 ? " 2" : ""}`}
+              valor={pesos(d.descuento2)}
+            />
+          )}
           <Total rotulo="TOTAL NETO" valor={pesos(d.total_neto)} negrita />
           <Total
             rotulo={`${pTxt(p, "NombreImpuesto", "IVA")} ${Math.round(pNum(p, "IVA", 0.19) * 100)}%`}

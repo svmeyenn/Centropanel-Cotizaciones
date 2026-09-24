@@ -130,7 +130,15 @@ export default function EditorPedido({
   const [verFicha, setVerFicha] = useState(false);
 
   const soloLectura = !editable || !puedeEditar;
-  const total = ls.reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
+  const subtotal = ls.reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
+  // Los descuentos vienen de la cotizacion y quedan grabados en el pedido:
+  // aqui no se editan, pero el neto y el margen tienen que considerarlos.
+  const descuento = Math.min(Number(cuenta.descuento_monto ?? 0), subtotal);
+  const descuento2 = Math.min(
+    Number(cuenta.descuento2_monto ?? 0),
+    Math.max(subtotal - descuento, 0)
+  );
+  const total = subtotal - descuento - descuento2;
   // Margen del pedido: el neto menos el costo de lo que se va a entregar. El
   // costo viene de la cotizacion de origen, congelado al vender.
   const costoPedido = ls.reduce(
@@ -388,6 +396,35 @@ export default function EditorPedido({
                   )}
                 </tr>
               ))}
+              {descuento + descuento2 > 0 && (
+                <>
+                  <tr className="border-t-2 border-gray-300">
+                    <td className="px-3 py-2" colSpan={4}>
+                      SUBTOTAL
+                    </td>
+                    <td className="px-3 py-2 text-right">{pesos(subtotal)}</td>
+                    {!soloLectura && <td />}
+                  </tr>
+                  {descuento > 0 && (
+                    <tr className="text-gray-600">
+                      <td className="px-3 py-1.5" colSpan={4}>
+                        DESCUENTO{descuento2 > 0 ? " 1" : ""}
+                      </td>
+                      <td className="px-3 py-1.5 text-right">{pesos(descuento)}</td>
+                      {!soloLectura && <td />}
+                    </tr>
+                  )}
+                  {descuento2 > 0 && (
+                    <tr className="text-gray-600">
+                      <td className="px-3 py-1.5" colSpan={4}>
+                        DESCUENTO{descuento > 0 ? " 2" : ""}
+                      </td>
+                      <td className="px-3 py-1.5 text-right">{pesos(descuento2)}</td>
+                      {!soloLectura && <td />}
+                    </tr>
+                  )}
+                </>
+              )}
               <tr className="border-t-2 border-gray-300 font-bold">
                 <td className="px-3 py-2" colSpan={4}>
                   TOTAL NETO

@@ -27,6 +27,9 @@ export interface DatosCotizacion {
   descuento_tipo: TipoDescuento;
   descuento_pct: number;
   descuento_monto: number;
+  descuento2_tipo: TipoDescuento;
+  descuento2_pct: number;
+  descuento2_monto: number;
   items: ItemBorrador[];
 }
 
@@ -106,6 +109,9 @@ export async function crearCotizacion(d: DatosCotizacion) {
       descuento_tipo: d.descuento_tipo,
       descuento_pct: d.descuento_pct,
       descuento_monto: d.descuento_monto,
+      descuento2_tipo: d.descuento2_tipo,
+      descuento2_pct: d.descuento2_pct,
+      descuento2_monto: d.descuento2_monto,
     })
     .select("id, num_cotizacion")
     .single();
@@ -162,6 +168,9 @@ export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
       descuento_tipo: d.descuento_tipo,
       descuento_pct: d.descuento_pct,
       descuento_monto: d.descuento_monto,
+      descuento2_tipo: d.descuento2_tipo,
+      descuento2_pct: d.descuento2_pct,
+      descuento2_monto: d.descuento2_monto,
     })
     .eq("id", id);
 
