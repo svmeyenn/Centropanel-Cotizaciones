@@ -17,6 +17,7 @@ import { GRUPOS_DESCUENTO, GRUPO_PRODUCTOS } from "@/lib/descuentos";
 import type { MateriaVenta } from "@/components/Configurador";
 import type { Pais } from "@/types/database";
 import Ventana from "@/components/Ventana";
+import BotonExportar from "@/components/BotonExportar";
 
 interface ProductoFila {
   id: number;
@@ -58,6 +59,7 @@ export default function TablaProductos({
   gruposFamilia?: Record<string, string>;
 }) {
   const [busca, setBusca] = useState("");
+  const [familia, setFamilia] = useState("");
   // Familias y subfamilias plegadas. Se guarda lo cerrado y no lo abierto:
   // asi el catalogo sigue apareciendo entero y el que quiera lo va cerrando.
   const [cerradas, setCerradas] = useState<Set<string>>(new Set());
@@ -108,12 +110,13 @@ export default function TablaProductos({
     return productos.filter(
       (p) =>
         (!soloActivos || p.activo) &&
+        (!familia || (p.familia ?? "Otros") === familia) &&
         (!q ||
           p.descripcion.toLowerCase().includes(q) ||
           (p.familia ?? "").toLowerCase().includes(q) ||
           (p.subfamilia ?? "").toLowerCase().includes(q)),
     );
-  }, [busca, soloActivos, productos]);
+  }, [busca, soloActivos, familia, productos]);
 
   // El catalogo se lee en dos niveles: familia (Paneles SIP, Madera,
   // Tornillos...) y dentro de ella subfamilia (APA / Smart, Pino Bruta,
@@ -215,6 +218,40 @@ export default function TablaProductos({
           />
           Solo activos
         </label>
+        <select
+          className="border border-gray-300 rounded px-2 py-1 text-sm"
+          value={familia}
+          onChange={(e) => setFamilia(e.target.value)}
+        >
+          <option value="">Todas las familias</option>
+          {[...new Set(productos.map((p) => p.familia ?? "Otros"))]
+            .sort((a, b) => a.localeCompare(b, "es"))
+            .map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+        </select>
+        <BotonExportar
+          nombre="catalogo-productos"
+          columnas={[
+            { titulo: "SKU", valor: (p) => p.sku ?? "" },
+            { titulo: "Descripcion", valor: (p) => p.descripcion },
+            { titulo: "Tipo", valor: (p) => p.tipo },
+            { titulo: "Familia", valor: (p) => p.familia ?? "" },
+            { titulo: "Subfamilia", valor: (p) => p.subfamilia ?? "" },
+            { titulo: "Espesor", valor: (p) => p.espesor_total ?? "" },
+            { titulo: "Costo", valor: (p) => p.costo_unitario ?? "" },
+            { titulo: "Precio neto", valor: (p) => p.precio_venta },
+            {
+              titulo: "Descuento",
+              valor: (p) =>
+                p.grupo_descuento ?? gruposFamilia[p.familia ?? ""] ?? GRUPO_PRODUCTOS,
+            },
+            { titulo: "Estado", valor: (p) => (p.activo ? "Activo" : "Inactivo") },
+          ]}
+          filas={filtrados}
+        />
         <button
           onClick={() =>
             setCerradas((x) =>

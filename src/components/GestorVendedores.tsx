@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   actualizarVendedor,
   crearVendedor,
@@ -9,6 +9,7 @@ import {
 } from "@/app/vendedores/acciones";
 import type { Rol, Vendedor } from "@/types/database";
 import CampoTelefono from "@/components/CampoTelefono";
+import BotonExportar from "@/components/BotonExportar";
 
 // Perfiles predefinidos, los mismos tres de Access. Vive en el cliente porque
 // es logica pura: en un archivo "use server" toda exportacion debe ser async.
@@ -35,6 +36,9 @@ export default function GestorVendedores({
 }) {
   // "crear" cuando se esta dando de alta a alguien nuevo; el id cuando se
   // modifica a alguien existente.
+  const [busca, setBusca] = useState("");
+  const [rolFiltro, setRolFiltro] = useState("");
+  const [soloActivos, setSoloActivos] = useState(false);
   const [editando, setEditando] = useState<number | "crear" | null>(null);
   const [clave, setClave] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
@@ -46,6 +50,18 @@ export default function GestorVendedores({
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   const [pendiente, empezar] = useTransition();
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return vendedores.filter(
+      (v) =>
+        (!rolFiltro || v.rol === rolFiltro) &&
+        (!soloActivos || v.activo) &&
+        (!q ||
+          v.nombre.toLowerCase().includes(q) ||
+          (v.email ?? "").toLowerCase().includes(q))
+    );
+  }, [vendedores, busca, rolFiltro, soloActivos]);
 
   function editar(v: Vendedor) {
     setEditando(v.id);
@@ -376,6 +392,52 @@ export default function GestorVendedores({
         </div>
       )}
 
+      <div className="flex flex-wrap gap-3 items-center">
+        <input
+          className="border border-gray-300 rounded px-3 py-1.5 text-sm w-64"
+          placeholder="Buscar por nombre o correo"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+        <select
+          className="border border-gray-300 rounded px-2 py-1 text-sm"
+          value={rolFiltro}
+          onChange={(e) => setRolFiltro(e.target.value)}
+        >
+          <option value="">Todos los perfiles</option>
+          {[...new Set(vendedores.map((v) => v.rol))].map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <label className="text-sm text-gray-600 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={soloActivos}
+            onChange={(e) => setSoloActivos(e.target.checked)}
+          />
+          Solo activos
+        </label>
+        <BotonExportar
+          nombre="vendedores"
+          columnas={[
+            { titulo: "Nombre", valor: (v) => v.nombre },
+            { titulo: "Cargo", valor: (v) => v.cargo },
+            { titulo: "Correo", valor: (v) => v.email },
+            { titulo: "Telefono", valor: (v) => v.telefono },
+            { titulo: "Perfil", valor: (v) => v.rol },
+            { titulo: "Mercado", valor: (v) => v.mercado },
+            { titulo: "Estado", valor: (v) => (v.activo ? "Activo" : "Inactivo") },
+          ]}
+          filas={filtrados}
+          className="ml-auto"
+        />
+        <span className="text-sm text-gray-500">
+          {filtrados.length} de {vendedores.length}
+        </span>
+      </div>
+
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
@@ -392,7 +454,7 @@ export default function GestorVendedores({
               </tr>
             </thead>
             <tbody>
-              {vendedores.map((v) => (
+              {filtrados.map((v) => (
                 <tr key={v.id} className="border-t border-gray-100 hover:bg-crema">
                   <td className="px-3 py-2 font-semibold">
                     {v.nombre}

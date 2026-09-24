@@ -1,5 +1,7 @@
 "use client";
 
+import BotonExportar from "@/components/BotonExportar";
+
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
@@ -136,7 +138,20 @@ export default function GestorProveedores({
           />
           Solo activos
         </label>
-        <span className="text-sm text-gray-500 ml-auto">
+        <BotonExportar
+          nombre="proveedores"
+          columnas={[
+            { titulo: "Razon social", valor: (p) => p.razon_social },
+            { titulo: "RUT", valor: (p) => p.rut },
+            { titulo: "Contacto", valor: (p) => p.contacto },
+            { titulo: "Correo", valor: (p) => p.email },
+            { titulo: "Items en maestra", valor: (p) => p.items },
+            { titulo: "Estado", valor: (p) => (p.activo ? "Activo" : "Inactivo") },
+          ]}
+          filas={filtrados}
+          className="ml-auto"
+        />
+        <span className="text-sm text-gray-500">
           {filtrados.length} de {proveedores.length}
         </span>
         <button
