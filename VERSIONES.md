@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0059-20260921**
+Version vigente: **v0060-20260924**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0060-20260924 | 24-09-2026 | Tres descuentos por base (productos, flete, instalaciones) configurables por familia y por producto; panel de familias y subfamilias; parametros de materias primas; filtros y descarga a Excel en los listados | 7109ab2 |
 | v0059-20260921 | 21-09-2026 | "COTIZADOR SIP" en una linea; estado de la cotizacion solo dentro de la cotizacion y con confirmacion | 04543ff |
 | v0058-20260921 | 21-09-2026 | Franja delgada y logo a la izquierda; pais como en Finanzas; margen para todos los perfiles; estado de cotizacion editable; ficha del cliente desde cotizacion y pedido; comuna en listados | a85b9f1 |
 | v0057-20260920 | 20-09-2026 | Menu lateral permanente; filtros y borrado en los listados; fichas en ventana emergente; telefono con codigo de pais y recordatorio diario; margen de cotizacion y pedido | 46e1bb4 |
