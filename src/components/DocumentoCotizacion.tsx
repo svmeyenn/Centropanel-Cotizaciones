@@ -1,3 +1,4 @@
+import { ROTULO_DESCUENTO_1, ROTULO_DESCUENTO_2 } from "@/lib/descuentos";
 import { pesos, porcentaje, unidades as fmtUnid, fecha as fmtFecha, sumarDias } from "@/lib/formato";
 import { pTxt, pNum, type Parametros } from "@/lib/parametros";
 import { LOGO_PDF } from "@/lib/logo";
@@ -147,21 +148,17 @@ export default function DocumentoCotizacion({
               <td className="text-right py-0.5 w-32">{pesos(d.subtotal)}</td>
             </tr>
             {/* Las lineas de descuento no se imprimen cuando son cero, igual
-                que el IIf(Nz([DescuentoMonto],0)=0,Null,...) del informe. Se
-                numeran solo si van los dos. */}
+                que el IIf(Nz([DescuentoMonto],0)=0,Null,...) del informe. Cada
+                una dice sobre que se aplico. */}
             {d.descuento > 0 && (
               <tr>
-                <td className="text-right pr-6 py-0.5">
-                  DESCUENTO{d.descuento2 > 0 ? " 1" : ""}
-                </td>
+                <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_1}</td>
                 <td className="text-right py-0.5">{pesos(d.descuento)}</td>
               </tr>
             )}
             {d.descuento2 > 0 && (
               <tr>
-                <td className="text-right pr-6 py-0.5">
-                  DESCUENTO{d.descuento > 0 ? " 2" : ""}
-                </td>
+                <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_2}</td>
                 <td className="text-right py-0.5">{pesos(d.descuento2)}</td>
               </tr>
             )}

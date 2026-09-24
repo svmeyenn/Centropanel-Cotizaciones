@@ -26,6 +26,11 @@ import {
   type ItemBorrador,
 } from "@/app/cotizaciones/acciones";
 import type { Cliente, FormaPago, Pais, TipoDescuento } from "@/types/database";
+import {
+  esFleteOMano,
+  ROTULO_DESCUENTO_1,
+  ROTULO_DESCUENTO_2,
+} from "@/lib/descuentos";
 import SelectorEstado from "@/components/SelectorEstado";
 
 // Producto tal como lo ve el vendedor: sin costo_unitario, porque el catalogo
@@ -127,26 +132,41 @@ export default function EditorCotizacion(p: Props) {
     [d.items]
   );
 
+  // Cada descuento va sobre su propia base: el primero sobre los productos y
+  // el segundo sobre el flete y la mano de obra. Misma regla que
+  // fn_sincronizar_descuento en la base.
+  const descripcionDe = (it: ItemBorrador) =>
+    (it.id_producto != null
+      ? p.productos.find((x) => x.id === it.id_producto)?.descripcion
+      : null) ?? it.descripcion;
+
+  const baseFlete = useMemo(
+    () =>
+      d.items
+        .filter((it) => esFleteOMano(descripcionDe(it)))
+        .reduce((s, it) => s + it.unidades * it.valor_unitario, 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [d.items, p.productos]
+  );
+  const baseProductos = subtotal - baseFlete;
+
   // El descuento se mantiene coherente en los dos sentidos: se escribe el % o
   // el monto y el otro se recalcula. Misma regla que SincronizarDescuento.
   const descuento = useMemo(() => {
     if (d.descuento_tipo === "Porcentaje") {
       const pct = Math.min(Math.max(d.descuento_pct, 0), 100);
-      return Math.round((subtotal * pct) / 100);
+      return Math.round((baseProductos * pct) / 100);
     }
-    return Math.min(Math.max(d.descuento_monto, 0), subtotal);
-  }, [d.descuento_tipo, d.descuento_pct, d.descuento_monto, subtotal]);
+    return Math.min(Math.max(d.descuento_monto, 0), baseProductos);
+  }, [d.descuento_tipo, d.descuento_pct, d.descuento_monto, baseProductos]);
 
-  // Segundo descuento: se calcula igual y tambien sobre el subtotal, no sobre
-  // lo que queda del primero. Entre los dos no pueden pasarse del subtotal.
   const descuento2 = useMemo(() => {
-    const tope = Math.max(subtotal - descuento, 0);
     if (d.descuento2_tipo === "Porcentaje") {
       const pct = Math.min(Math.max(d.descuento2_pct, 0), 100);
-      return Math.min(Math.round((subtotal * pct) / 100), tope);
+      return Math.round((baseFlete * pct) / 100);
     }
-    return Math.min(Math.max(d.descuento2_monto, 0), tope);
-  }, [d.descuento2_tipo, d.descuento2_pct, d.descuento2_monto, subtotal, descuento]);
+    return Math.min(Math.max(d.descuento2_monto, 0), baseFlete);
+  }, [d.descuento2_tipo, d.descuento2_pct, d.descuento2_monto, baseFlete]);
 
   const totalNeto = subtotal - descuento - descuento2;
 
@@ -179,15 +199,15 @@ export default function EditorCotizacion(p: Props) {
   const pctMostrado =
     d.descuento_tipo === "Porcentaje"
       ? d.descuento_pct
-      : subtotal > 0
-        ? Math.round((descuento / subtotal) * 10000) / 100
+      : baseProductos > 0
+        ? Math.round((descuento / baseProductos) * 10000) / 100
         : 0;
 
   const pct2Mostrado =
     d.descuento2_tipo === "Porcentaje"
       ? d.descuento2_pct
-      : subtotal > 0
-        ? Math.round((descuento2 / subtotal) * 10000) / 100
+      : baseFlete > 0
+        ? Math.round((descuento2 / baseFlete) * 10000) / 100
         : 0;
 
   function set<K extends keyof DatosCotizacion>(k: K, v: DatosCotizacion[K]) {
@@ -663,7 +683,7 @@ export default function EditorCotizacion(p: Props) {
           <Fila label="SUBTOTAL" valor={pesos(subtotal)} />
 
           <div className="flex items-center justify-end gap-2">
-            <span className="text-gray-700 mr-auto">DESCUENTO</span>
+            <span className="text-gray-700 mr-auto">{ROTULO_DESCUENTO_1}</span>
             <input
               type="number"
               className="border border-gray-300 rounded px-2 py-1 text-right w-24 disabled:bg-gray-100"
@@ -676,7 +696,7 @@ export default function EditorCotizacion(p: Props) {
                   descuento_pct: Number(e.target.value) || 0,
                 }))
               }
-              title="Descuento en % del subtotal"
+              title="Descuento en % de los productos"
             />
             <span className="text-gray-500">%</span>
             <input
@@ -692,11 +712,11 @@ export default function EditorCotizacion(p: Props) {
                   descuento_monto: Number(e.target.value.replace(/\D/g, "")) || 0,
                 }))
               }
-              title="Descuento en pesos"
+              title="Descuento en pesos sobre los productos"
             />
           </div>
           <div className="flex items-center justify-end gap-2">
-            <span className="text-gray-700 mr-auto">DESCUENTO 2</span>
+            <span className="text-gray-700 mr-auto">{ROTULO_DESCUENTO_2}</span>
             <input
               type="number"
               className="border border-gray-300 rounded px-2 py-1 text-right w-24 disabled:bg-gray-100"
@@ -709,7 +729,7 @@ export default function EditorCotizacion(p: Props) {
                   descuento2_pct: Number(e.target.value) || 0,
                 }))
               }
-              title="Segundo descuento en % del subtotal"
+              title="Descuento en % del flete y la mano de obra"
             />
             <span className="text-gray-500">%</span>
             <input
@@ -725,12 +745,14 @@ export default function EditorCotizacion(p: Props) {
                   descuento2_monto: Number(e.target.value.replace(/\D/g, "")) || 0,
                 }))
               }
-              title="Segundo descuento en pesos"
+              title="Descuento en pesos sobre el flete y la mano de obra"
             />
           </div>
           <p className="text-xs text-gray-500 text-right">
-            Escriba el % o el monto: el otro se recalcula solo. Los dos van sobre
-            el subtotal y en 0 no aparecen en el PDF.
+            Escriba el % o el monto: el otro se recalcula solo. El primero va
+            sobre los productos ({pesos(baseProductos)}) y el segundo sobre el
+            flete y la mano de obra ({pesos(baseFlete)}). En 0 no aparecen en el
+            PDF.
           </p>
 
           <Fila label="TOTAL NETO" valor={pesos(totalNeto)} fuerte />
