@@ -51,6 +51,7 @@ export const GRUPOS: Grupo[] = [
     opciones: [
       { texto: "Configurar panel SIP", href: "/configurador" },
       { texto: "Catalogo de productos", href: "/productos" },
+      { texto: "Familias y subfamilias", href: "/familias", soloAdmin: true },
       { texto: "Materias primas", href: "/materias-primas", soloAdmin: true },
     ],
   },

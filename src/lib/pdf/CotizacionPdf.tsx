@@ -19,7 +19,11 @@ import {
   unidades as fmtUnid,
 } from "@/lib/formato";
 import { LOGO_PDF } from "@/lib/logo";
-import { ROTULO_DESCUENTO_1, ROTULO_DESCUENTO_2 } from "@/lib/descuentos";
+import {
+  ROTULO_DESCUENTO_1,
+  ROTULO_DESCUENTO_2,
+  ROTULO_DESCUENTO_3,
+} from "@/lib/descuentos";
 
 // La cotizacion como archivo PDF, para adjuntarla al correo y compartirla por
 // WhatsApp. Replica DocumentoCotizacion --la version en pantalla-- con las
@@ -186,6 +190,9 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
           )}
           {d.descuento2 > 0 && (
             <Total rotulo={ROTULO_DESCUENTO_2} valor={pesos(d.descuento2)} />
+          )}
+          {d.descuento3 > 0 && (
+            <Total rotulo={ROTULO_DESCUENTO_3} valor={pesos(d.descuento3)} />
           )}
           <Total rotulo="TOTAL NETO" valor={pesos(d.total_neto)} negrita />
           <Total

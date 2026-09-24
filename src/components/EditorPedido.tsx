@@ -10,7 +10,11 @@ import {
   telefono as fmtTelefono,
 } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
-import { ROTULO_DESCUENTO_1, ROTULO_DESCUENTO_2 } from "@/lib/descuentos";
+import {
+  ROTULO_DESCUENTO_1,
+  ROTULO_DESCUENTO_2,
+  ROTULO_DESCUENTO_3,
+} from "@/lib/descuentos";
 import { ESTADOS_PEDIDO as ESTADOS } from "@/lib/estados";
 import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
 import CuentaCorrientePedido, {
@@ -138,7 +142,13 @@ export default function EditorPedido({
   // mano de obra el segundo).
   const descuento = Number(cuenta.descuento_monto ?? 0);
   const descuento2 = Number(cuenta.descuento2_monto ?? 0);
-  const total = subtotal - descuento - descuento2;
+  const descuento3 = Number(cuenta.descuento3_monto ?? 0);
+  const descuentos = [
+    { rotulo: ROTULO_DESCUENTO_1, monto: descuento },
+    { rotulo: ROTULO_DESCUENTO_2, monto: descuento2 },
+    { rotulo: ROTULO_DESCUENTO_3, monto: descuento3 },
+  ].filter((x) => x.monto > 0);
+  const total = subtotal - descuento - descuento2 - descuento3;
   // Margen del pedido: el neto menos el costo de lo que se va a entregar. El
   // costo viene de la cotizacion de origen, congelado al vender.
   const costoPedido = ls.reduce(
@@ -396,7 +406,7 @@ export default function EditorPedido({
                   )}
                 </tr>
               ))}
-              {descuento + descuento2 > 0 && (
+              {descuentos.length > 0 && (
                 <>
                   <tr className="border-t-2 border-gray-300">
                     <td className="px-3 py-2" colSpan={4}>
@@ -405,24 +415,15 @@ export default function EditorPedido({
                     <td className="px-3 py-2 text-right">{pesos(subtotal)}</td>
                     {!soloLectura && <td />}
                   </tr>
-                  {descuento > 0 && (
-                    <tr className="text-gray-600">
+                  {descuentos.map((x) => (
+                    <tr key={x.rotulo} className="text-gray-600">
                       <td className="px-3 py-1.5" colSpan={4}>
-                        {ROTULO_DESCUENTO_1}
+                        {x.rotulo}
                       </td>
-                      <td className="px-3 py-1.5 text-right">{pesos(descuento)}</td>
+                      <td className="px-3 py-1.5 text-right">{pesos(x.monto)}</td>
                       {!soloLectura && <td />}
                     </tr>
-                  )}
-                  {descuento2 > 0 && (
-                    <tr className="text-gray-600">
-                      <td className="px-3 py-1.5" colSpan={4}>
-                        {ROTULO_DESCUENTO_2}
-                      </td>
-                      <td className="px-3 py-1.5 text-right">{pesos(descuento2)}</td>
-                      {!soloLectura && <td />}
-                    </tr>
-                  )}
+                  ))}
                 </>
               )}
               <tr className="border-t-2 border-gray-300 font-bold">

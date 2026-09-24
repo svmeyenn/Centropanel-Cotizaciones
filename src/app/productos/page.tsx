@@ -21,7 +21,7 @@ export default async function Pagina() {
         supabase
           .from("productos")
           .select(
-            "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais",
+            "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais, grupo_descuento",
           ),
         idPaisActivo,
       )
@@ -39,12 +39,14 @@ export default async function Pagina() {
         .order("familia")
         .order("descripcion");
 
-  // Familias que van al descuento de flete y mano de obra.
-  const { data: famFlete } = await supabase
-    .from("familias_descuento")
-    .select("familia")
-    .eq("grupo", "Flete y mano de obra");
-  const familiasFlete = (famFlete ?? []).map((f) => f.familia as string);
+  // Grupo de descuento de cada familia del catalogo.
+  const { data: familiasCat } = await supabase
+    .from("familias")
+    .select("nombre, grupo");
+  const gruposFamilia: Record<string, string> = {};
+  for (const f of familiasCat ?? []) {
+    gruposFamilia[f.nombre as string] = f.grupo as string;
+  }
 
   // El PVP de cada producto lleva el IVA de su mercado.
   const ivaPorPais = await leerIvaPorPais();
@@ -109,7 +111,7 @@ export default async function Pagina() {
           materias={(materias ?? []) as MateriaVenta[]}
           paises={paises}
           esAdminGeneral={esAdminGeneral}
-          familiasFlete={familiasFlete}
+          gruposFamilia={gruposFamilia}
         />
       </div>
     </div>

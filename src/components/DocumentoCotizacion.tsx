@@ -1,4 +1,8 @@
-import { ROTULO_DESCUENTO_1, ROTULO_DESCUENTO_2 } from "@/lib/descuentos";
+import {
+  ROTULO_DESCUENTO_1,
+  ROTULO_DESCUENTO_2,
+  ROTULO_DESCUENTO_3,
+} from "@/lib/descuentos";
 import { pesos, porcentaje, unidades as fmtUnid, fecha as fmtFecha, sumarDias } from "@/lib/formato";
 import { pTxt, pNum, type Parametros } from "@/lib/parametros";
 import { LOGO_PDF } from "@/lib/logo";
@@ -44,6 +48,7 @@ export interface CotizacionDoc {
   subtotal: number;
   descuento: number;
   descuento2: number;
+  descuento3: number;
   total_neto: number;
   iva: number;
   total: number;
@@ -160,6 +165,12 @@ export default function DocumentoCotizacion({
               <tr>
                 <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_2}</td>
                 <td className="text-right py-0.5">{pesos(d.descuento2)}</td>
+              </tr>
+            )}
+            {d.descuento3 > 0 && (
+              <tr>
+                <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_3}</td>
+                <td className="text-right py-0.5">{pesos(d.descuento3)}</td>
               </tr>
             )}
             <tr className="font-bold">

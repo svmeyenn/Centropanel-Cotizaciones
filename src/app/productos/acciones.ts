@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
+import { GRUPOS_DESCUENTO } from "@/lib/descuentos";
 
 export interface DatosProducto {
   descripcion: string;
@@ -277,38 +278,55 @@ export async function eliminarProducto(id: number) {
   return { ok: true };
 }
 
-// A que descuento pertenece una familia del catalogo: al de productos o al de
-// flete y mano de obra. Se guarda por mercado, porque cada pais tiene su
-// catalogo. La familia que no este anotada va al descuento de productos.
+// A que descuento pertenece una familia del catalogo: productos, flete o
+// instalaciones. Se guarda por mercado, porque cada pais tiene su catalogo.
 export async function asignarGrupoFamilia(familia: string, grupo: string) {
   const v = await requerirVendedor();
   if (!tienePerfilAdmin(v)) {
     return { error: "Solo el administrador puede configurar el catalogo." };
   }
-  if (grupo !== "Productos" && grupo !== "Flete y mano de obra") {
+  if (!(GRUPOS_DESCUENTO as readonly string[]).includes(grupo)) {
     return { error: "Grupo de descuento no valido." };
   }
 
   const supabase = await createClient();
-
-  // Los mercados donde existe esa familia, entre los que el usuario puede ver.
-  const { data: productos, error: eLee } = await supabase
-    .from("productos")
+  const { data: filas, error: eLee } = await supabase
+    .from("familias")
     .select("id_pais")
-    .eq("familia", familia);
+    .eq("nombre", familia);
   if (eLee) return { error: eLee.message };
-
-  const paises = [
-    ...new Set((productos ?? []).map((p) => Number(p.id_pais)).filter(Boolean)),
-  ];
-  if (!paises.length) return { error: "La familia no tiene productos." };
+  if (!filas?.length) return { error: "La familia no existe." };
 
   const { error } = await supabase
-    .from("familias_descuento")
+    .from("familias")
     .upsert(
-      paises.map((id_pais) => ({ id_pais, familia, grupo })),
-      { onConflict: "id_pais,familia" }
+      filas.map((x) => ({ id_pais: Number(x.id_pais), nombre: familia, grupo })),
+      { onConflict: "id_pais,nombre" }
     );
+  if (error) return { error: error.message };
+
+  revalidatePath("/productos");
+  revalidatePath("/familias");
+  revalidatePath("/cotizaciones");
+  return {};
+}
+
+// Excepcion de un producto: lo saca del grupo de su familia. Vacio vuelve a
+// heredarlo.
+export async function asignarGrupoProducto(id: number, grupo: string | null) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) {
+    return { error: "Solo el administrador puede configurar el catalogo." };
+  }
+  if (grupo !== null && !(GRUPOS_DESCUENTO as readonly string[]).includes(grupo)) {
+    return { error: "Grupo de descuento no valido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("productos")
+    .update({ grupo_descuento: grupo })
+    .eq("id", id);
   if (error) return { error: error.message };
 
   revalidatePath("/productos");

@@ -27,9 +27,13 @@ import {
 } from "@/app/cotizaciones/acciones";
 import type { Cliente, FormaPago, Pais, TipoDescuento } from "@/types/database";
 import {
-  esFamiliaFlete,
+  grupoDe,
+  GRUPO_FLETE,
+  GRUPO_INSTALACIONES,
+  GRUPO_PRODUCTOS,
   ROTULO_DESCUENTO_1,
   ROTULO_DESCUENTO_2,
+  ROTULO_DESCUENTO_3,
 } from "@/lib/descuentos";
 import SelectorEstado from "@/components/SelectorEstado";
 
@@ -56,9 +60,9 @@ interface Props {
   formasPago: FormaPago[];
   mediosPago: MedioPago[];
   productos: ProductoVenta[];
-  // Familias del catalogo que van al segundo descuento, configuradas en el
-  // catalogo de productos.
-  familiasFlete?: string[];
+  // Grupo de descuento de cada producto del catalogo (Productos, Flete o
+  // Instalaciones), configurado en el catalogo.
+  grupoPorProducto?: Record<number, string>;
   // Insumos para el panel emergente que crea un panel sin salir del cotizador.
   materias: MateriaVenta[];
   puedeCrearPanel: boolean;
@@ -135,23 +139,23 @@ export default function EditorCotizacion(p: Props) {
     [d.items]
   );
 
-  // Cada descuento va sobre su propia base: el primero sobre los productos y
-  // el segundo sobre el flete y la mano de obra. Misma regla que
-  // fn_sincronizar_descuento en la base.
-  const familiaDe = (it: ItemBorrador) =>
-    it.id_producto != null
-      ? (p.productos.find((x) => x.id === it.id_producto)?.familia ?? null)
-      : null;
-
-  const baseFlete = useMemo(
-    () =>
-      d.items
-        .filter((it) => esFamiliaFlete(p.familiasFlete ?? [], familiaDe(it)))
-        .reduce((s, it) => s + it.unidades * it.valor_unitario, 0),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [d.items, p.productos, p.familiasFlete]
-  );
-  const baseProductos = subtotal - baseFlete;
+  // Cada descuento va sobre su propia base: productos, flete e instalaciones.
+  // Misma regla que fn_sincronizar_descuento en la base.
+  const bases = useMemo(() => {
+    const b: Record<string, number> = {
+      [GRUPO_PRODUCTOS]: 0,
+      [GRUPO_FLETE]: 0,
+      [GRUPO_INSTALACIONES]: 0,
+    };
+    for (const it of d.items) {
+      b[grupoDe(p.grupoPorProducto, it.id_producto)] +=
+        it.unidades * it.valor_unitario;
+    }
+    return b;
+  }, [d.items, p.grupoPorProducto]);
+  const baseProductos = bases[GRUPO_PRODUCTOS];
+  const baseFlete = bases[GRUPO_FLETE];
+  const baseInstalaciones = bases[GRUPO_INSTALACIONES];
 
   // El descuento se mantiene coherente en los dos sentidos: se escribe el % o
   // el monto y el otro se recalcula. Misma regla que SincronizarDescuento.
@@ -171,7 +175,15 @@ export default function EditorCotizacion(p: Props) {
     return Math.min(Math.max(d.descuento2_monto, 0), baseFlete);
   }, [d.descuento2_tipo, d.descuento2_pct, d.descuento2_monto, baseFlete]);
 
-  const totalNeto = subtotal - descuento - descuento2;
+  const descuento3 = useMemo(() => {
+    if (d.descuento3_tipo === "Porcentaje") {
+      const pct = Math.min(Math.max(d.descuento3_pct, 0), 100);
+      return Math.round((baseInstalaciones * pct) / 100);
+    }
+    return Math.min(Math.max(d.descuento3_monto, 0), baseInstalaciones);
+  }, [d.descuento3_tipo, d.descuento3_pct, d.descuento3_monto, baseInstalaciones]);
+
+  const totalNeto = subtotal - descuento - descuento2 - descuento3;
 
   // Margen de la venta: lo que queda sobre el costo de lo cotizado. Se
   // recalcula solo al cambiar lineas, cantidades, precios o descuento.
@@ -211,6 +223,13 @@ export default function EditorCotizacion(p: Props) {
       ? d.descuento2_pct
       : baseFlete > 0
         ? Math.round((descuento2 / baseFlete) * 10000) / 100
+        : 0;
+
+  const pct3Mostrado =
+    d.descuento3_tipo === "Porcentaje"
+      ? d.descuento3_pct
+      : baseInstalaciones > 0
+        ? Math.round((descuento3 / baseInstalaciones) * 10000) / 100
         : 0;
 
   function set<K extends keyof DatosCotizacion>(k: K, v: DatosCotizacion[K]) {
@@ -300,6 +319,8 @@ export default function EditorCotizacion(p: Props) {
       descuento_pct: pctMostrado,
       descuento2_monto: descuento2,
       descuento2_pct: pct2Mostrado,
+      descuento3_monto: descuento3,
+      descuento3_pct: pct3Mostrado,
     };
     empezar(async () => {
       const r =
@@ -685,77 +706,80 @@ export default function EditorCotizacion(p: Props) {
         <div className="max-w-md ml-auto space-y-1 text-sm">
           <Fila label="SUBTOTAL" valor={pesos(subtotal)} />
 
-          <div className="flex items-center justify-end gap-2">
-            <span className="text-gray-700 mr-auto">{ROTULO_DESCUENTO_1}</span>
-            <input
-              type="number"
-              className="border border-gray-300 rounded px-2 py-1 text-right w-24 disabled:bg-gray-100"
-              disabled={soloLectura}
-              value={d.descuento_tipo === "Porcentaje" ? d.descuento_pct : pctMostrado}
-              onChange={(e) =>
-                setD((x) => ({
-                  ...x,
-                  descuento_tipo: "Porcentaje" as TipoDescuento,
-                  descuento_pct: Number(e.target.value) || 0,
-                }))
-              }
-              title="Descuento en % de los productos"
-            />
-            <span className="text-gray-500">%</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              className="border border-gray-300 rounded px-2 py-1 text-right w-32 disabled:bg-gray-100"
-              disabled={soloLectura}
-              value={pesos(descuento)}
-              onChange={(e) =>
-                setD((x) => ({
-                  ...x,
-                  descuento_tipo: "Monto" as TipoDescuento,
-                  descuento_monto: Number(e.target.value.replace(/\D/g, "")) || 0,
-                }))
-              }
-              title="Descuento en pesos sobre los productos"
-            />
-          </div>
-          <div className="flex items-center justify-end gap-2">
-            <span className="text-gray-700 mr-auto">{ROTULO_DESCUENTO_2}</span>
-            <input
-              type="number"
-              className="border border-gray-300 rounded px-2 py-1 text-right w-24 disabled:bg-gray-100"
-              disabled={soloLectura}
-              value={d.descuento2_tipo === "Porcentaje" ? d.descuento2_pct : pct2Mostrado}
-              onChange={(e) =>
-                setD((x) => ({
-                  ...x,
-                  descuento2_tipo: "Porcentaje" as TipoDescuento,
-                  descuento2_pct: Number(e.target.value) || 0,
-                }))
-              }
-              title="Descuento en % del flete y la mano de obra"
-            />
-            <span className="text-gray-500">%</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              className="border border-gray-300 rounded px-2 py-1 text-right w-32 disabled:bg-gray-100"
-              disabled={soloLectura}
-              value={pesos(descuento2)}
-              onChange={(e) =>
-                setD((x) => ({
-                  ...x,
-                  descuento2_tipo: "Monto" as TipoDescuento,
-                  descuento2_monto: Number(e.target.value.replace(/\D/g, "")) || 0,
-                }))
-              }
-              title="Descuento en pesos sobre el flete y la mano de obra"
-            />
-          </div>
+          {(
+            [
+              {
+                rotulo: ROTULO_DESCUENTO_1,
+                base: baseProductos,
+                monto: descuento,
+                pct: d.descuento_tipo === "Porcentaje" ? d.descuento_pct : pctMostrado,
+                sobre: "los productos",
+                porPct: (v: number) =>
+                  ({ descuento_tipo: "Porcentaje" as TipoDescuento, descuento_pct: v }),
+                porMonto: (v: number) =>
+                  ({ descuento_tipo: "Monto" as TipoDescuento, descuento_monto: v }),
+              },
+              {
+                rotulo: ROTULO_DESCUENTO_2,
+                base: baseFlete,
+                monto: descuento2,
+                pct: d.descuento2_tipo === "Porcentaje" ? d.descuento2_pct : pct2Mostrado,
+                sobre: "el flete",
+                porPct: (v: number) =>
+                  ({ descuento2_tipo: "Porcentaje" as TipoDescuento, descuento2_pct: v }),
+                porMonto: (v: number) =>
+                  ({ descuento2_tipo: "Monto" as TipoDescuento, descuento2_monto: v }),
+              },
+              {
+                rotulo: ROTULO_DESCUENTO_3,
+                base: baseInstalaciones,
+                monto: descuento3,
+                pct: d.descuento3_tipo === "Porcentaje" ? d.descuento3_pct : pct3Mostrado,
+                sobre: "las instalaciones",
+                porPct: (v: number) =>
+                  ({ descuento3_tipo: "Porcentaje" as TipoDescuento, descuento3_pct: v }),
+                porMonto: (v: number) =>
+                  ({ descuento3_tipo: "Monto" as TipoDescuento, descuento3_monto: v }),
+              },
+            ] as const
+          ).map((f) => (
+            <div key={f.rotulo} className="flex items-center justify-end gap-2">
+              <span className="text-gray-700 mr-auto">
+                {f.rotulo}
+                <span className="block text-[11px] text-gray-400">
+                  sobre {f.sobre}: {pesos(f.base)}
+                </span>
+              </span>
+              <input
+                type="number"
+                className="border border-gray-300 rounded px-2 py-1 text-right w-24 disabled:bg-gray-100"
+                disabled={soloLectura}
+                value={f.pct}
+                onChange={(e) =>
+                  setD((x) => ({ ...x, ...f.porPct(Number(e.target.value) || 0) }))
+                }
+                title={`Descuento en % sobre ${f.sobre}`}
+              />
+              <span className="text-gray-500">%</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                className="border border-gray-300 rounded px-2 py-1 text-right w-32 disabled:bg-gray-100"
+                disabled={soloLectura}
+                value={pesos(f.monto)}
+                onChange={(e) =>
+                  setD((x) => ({
+                    ...x,
+                    ...f.porMonto(Number(e.target.value.replace(/\D/g, "")) || 0),
+                  }))
+                }
+                title={`Descuento en pesos sobre ${f.sobre}`}
+              />
+            </div>
+          ))}
           <p className="text-xs text-gray-500 text-right">
-            Escriba el % o el monto: el otro se recalcula solo. El primero va
-            sobre los productos ({pesos(baseProductos)}) y el segundo sobre el
-            flete y la mano de obra ({pesos(baseFlete)}). En 0 no aparecen en el
-            PDF.
+            Escriba el % o el monto: el otro se recalcula solo. Cada descuento
+            va sobre su propia base y en 0 no aparece en el PDF.
           </p>
 
           <Fila label="TOTAL NETO" valor={pesos(totalNeto)} fuerte />
