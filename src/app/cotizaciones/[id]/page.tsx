@@ -49,7 +49,7 @@ export default async function Pagina({
     supabase.from("medios_pago").select("*").eq("activo", true).order("orden"),
     supabase
       .from("v_catalogo_venta")
-      .select("id, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
+      .select("id, sku, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
       .eq("activo", true)
       .order("familia")
         .order("subfamilia")
@@ -161,6 +161,7 @@ export default async function Pagina({
           descuento3_monto: Number(cot.descuento3_monto ?? 0),
           items: (items ?? []).map((it) => ({
             id_producto: it.id_producto,
+            sku: (it.sku as string | null) ?? null,
             descripcion: it.descripcion,
             unidades: Number(it.unidades),
             valor_unitario: Number(it.valor_unitario),
