@@ -41,7 +41,7 @@ export default async function Pagina() {
       conPais(
         supabase
           .from("v_catalogo_venta")
-          .select("id, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
+          .select("id, sku, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
           .eq("activo", true),
         idPaisActivo
       )

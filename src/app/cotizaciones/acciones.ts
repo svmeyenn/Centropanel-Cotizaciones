@@ -8,6 +8,9 @@ import type { TipoDescuento } from "@/types/database";
 
 export interface ItemBorrador {
   id_producto: number | null;
+  // Codigo del producto (PLU). Lo pone el catalogo; si la linea no viene de
+  // el, queda vacio.
+  sku?: string | null;
   descripcion: string;
   unidades: number;
   valor_unitario: number;
@@ -128,6 +131,7 @@ export async function crearCotizacion(d: DatosCotizacion) {
     id_cotizacion: cot.id,
     orden: i + 1,
     id_producto: it.id_producto,
+    sku: it.sku ?? null,
     descripcion: it.descripcion,
     unidades: it.unidades,
     valor_unitario: it.valor_unitario,
@@ -196,6 +200,7 @@ export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
     id_cotizacion: id,
     orden: i + 1,
     id_producto: it.id_producto,
+    sku: it.sku ?? null,
     descripcion: it.descripcion,
     unidades: it.unidades,
     valor_unitario: it.valor_unitario,

@@ -35,12 +35,13 @@ export default function BuscadorProducto({
   const mostrado = abierto ? texto : (elegido?.descripcion ?? "");
 
   // Se parte la busqueda en palabras: "panel 100" encuentra "Panel SIP 100,2"
-  // sin obligar a escribirlo en el mismo orden ni seguido.
+  // sin obligar a escribirlo en el mismo orden ni seguido. Tambien busca por
+  // el codigo del producto, que es como llega en muchos pedidos.
   const filtrados = useMemo(() => {
     const partes = texto.trim().toLowerCase().split(/\s+/).filter(Boolean);
     if (!abierto || partes.length === 0) return productos;
     return productos.filter((x) => {
-      const d = x.descripcion.toLowerCase();
+      const d = `${x.sku ?? ""} ${x.descripcion}`.toLowerCase();
       return partes.every((t) => d.includes(t));
     });
   }, [texto, productos, abierto]);
@@ -185,6 +186,15 @@ export default function BuscadorProducto({
                         activo ? "bg-verde text-white" : "hover:bg-crema"
                       }`}
                     >
+                      {x.sku && (
+                        <span
+                          className={`font-mono mr-2 ${
+                            activo ? "text-white/80" : "text-gray-500"
+                          }`}
+                        >
+                          {x.sku}
+                        </span>
+                      )}
                       {x.descripcion}
                       {sinPrecio && (
                         <span

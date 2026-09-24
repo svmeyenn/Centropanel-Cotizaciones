@@ -41,6 +41,8 @@ import SelectorEstado from "@/components/SelectorEstado";
 // llega por v_catalogo_venta (el RLS impide a un Vendedor ver costos).
 export interface ProductoVenta {
   id: number;
+  // Codigo del producto (PLU).
+  sku?: string | null;
   descripcion: string;
   tipo: string;
   familia: string | null;
@@ -260,6 +262,14 @@ export default function EditorCotizacion(p: Props) {
     });
   }
 
+  // El codigo de la linea: el que quedo grabado, o el del catalogo si la
+  // linea es de una cotizacion vieja que todavia no lo traia.
+  const skuDe = (it: ItemBorrador) =>
+    it.sku ??
+    (it.id_producto != null
+      ? (p.productos.find((x) => x.id === it.id_producto)?.sku ?? "")
+      : "");
+
   function agregarItem() {
     setError(null);
     const idProd = Number(prodSel);
@@ -281,6 +291,7 @@ export default function EditorCotizacion(p: Props) {
     }
     const item: ItemBorrador = {
       id_producto: prod.id,
+      sku: prod.sku ?? null,
       descripcion: prod.descripcion,
       unidades: unid,
       valor_unitario: valor,
@@ -660,6 +671,7 @@ export default function EditorCotizacion(p: Props) {
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 <th className="text-left px-3 py-2 w-10">N</th>
+                <th className="text-left px-3 py-2 w-24">Codigo</th>
                 <th className="text-left px-3 py-2">Descripcion</th>
                 <th className="text-right px-3 py-2 w-24">Unid.</th>
                 <th className="text-right px-3 py-2 w-32">V. unit. neto</th>
@@ -670,7 +682,7 @@ export default function EditorCotizacion(p: Props) {
             <tbody>
               {d.items.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center text-gray-400 py-6">
+                  <td colSpan={7} className="text-center text-gray-400 py-6">
                     Sin items todavia.
                   </td>
                 </tr>
@@ -678,6 +690,9 @@ export default function EditorCotizacion(p: Props) {
               {d.items.map((it, i) => (
                 <tr key={i} className="border-t border-gray-100">
                   <td className="px-3 py-2 text-gray-500">{i + 1}</td>
+                  <td className="px-3 py-2 text-gray-500 font-mono text-[11px]">
+                    {skuDe(it)}
+                  </td>
                   <td className="px-3 py-2">{it.descripcion}</td>
                   <td className="px-3 py-2 text-right">{fmtUnid(it.unidades)}</td>
                   <td className="px-3 py-2 text-right">{pesos(it.valor_unitario)}</td>
