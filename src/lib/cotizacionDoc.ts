@@ -68,6 +68,7 @@ export async function leerCotizacionDoc(id: number): Promise<{
     })),
     subtotal: Number(tot?.subtotal ?? 0),
     descuento: Number(tot?.descuento_monto ?? 0),
+    descuento2: Number(tot?.descuento2_monto ?? 0),
     total_neto: Number(tot?.total_neto ?? 0),
     iva: Number(tot?.iva ?? 0),
     total: Number(tot?.total ?? 0),

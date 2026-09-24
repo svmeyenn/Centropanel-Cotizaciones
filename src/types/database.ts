@@ -137,6 +137,9 @@ export interface Cotizacion {
   descuento_tipo: TipoDescuento;
   descuento_pct: number;
   descuento_monto: number;
+  descuento2_tipo: TipoDescuento;
+  descuento2_pct: number;
+  descuento2_monto: number;
   direccion_despacho: string;
   estado: EstadoCotizacion;
   validez_dias: number;
@@ -161,6 +164,8 @@ export interface CotizacionTotales {
   num_cotizacion: string | null;
   subtotal: number;
   descuento_monto: number;
+  descuento2_monto: number;
+  descuento_total: number;
   total_neto: number;
   iva: number;
   total: number;

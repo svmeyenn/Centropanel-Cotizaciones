@@ -118,6 +118,9 @@ export default async function Pagina() {
           descuento_tipo: "Monto",
           descuento_pct: 0,
           descuento_monto: 0,
+          descuento2_tipo: "Monto",
+          descuento2_pct: 0,
+          descuento2_monto: 0,
           items: [],
         }}
       />

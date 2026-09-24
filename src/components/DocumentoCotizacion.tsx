@@ -42,6 +42,7 @@ export interface CotizacionDoc {
   items: ItemDoc[];
   subtotal: number;
   descuento: number;
+  descuento2: number;
   total_neto: number;
   iva: number;
   total: number;
@@ -145,12 +146,23 @@ export default function DocumentoCotizacion({
               <td className="text-right pr-6 py-0.5">SUBTOTAL</td>
               <td className="text-right py-0.5 w-32">{pesos(d.subtotal)}</td>
             </tr>
-            {/* La linea de descuento no se imprime cuando es cero, igual que
-                el IIf(Nz([DescuentoMonto],0)=0,Null,...) del informe. */}
+            {/* Las lineas de descuento no se imprimen cuando son cero, igual
+                que el IIf(Nz([DescuentoMonto],0)=0,Null,...) del informe. Se
+                numeran solo si van los dos. */}
             {d.descuento > 0 && (
               <tr>
-                <td className="text-right pr-6 py-0.5">DESCUENTO</td>
+                <td className="text-right pr-6 py-0.5">
+                  DESCUENTO{d.descuento2 > 0 ? " 1" : ""}
+                </td>
                 <td className="text-right py-0.5">{pesos(d.descuento)}</td>
+              </tr>
+            )}
+            {d.descuento2 > 0 && (
+              <tr>
+                <td className="text-right pr-6 py-0.5">
+                  DESCUENTO{d.descuento > 0 ? " 2" : ""}
+                </td>
+                <td className="text-right py-0.5">{pesos(d.descuento2)}</td>
               </tr>
             )}
             <tr className="font-bold">

@@ -78,6 +78,7 @@ export default async function Pagina({
     })),
     subtotal: Number(t.subtotal ?? 0),
     descuento: Number(t.descuento_monto ?? 0),
+    descuento2: Number(t.descuento2_monto ?? 0),
     total_neto: Number(t.total_neto ?? 0),
     iva: Number(t.iva ?? 0),
     total: Number(t.total ?? 0),
