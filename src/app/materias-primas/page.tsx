@@ -30,6 +30,18 @@ export default async function Pagina() {
     ),
   ].sort();
 
+  // Listas configurables del mercado activo. Si se mira "Todos" se juntan las
+  // de los mercados visibles.
+  const { data: listas } = await conPais(
+    supabase.from("parametros_materia").select("clase, nombre"),
+    idPaisActivo
+  ).order("nombre");
+  const de = (clase: string) => [
+    ...new Set(
+      (listas ?? []).filter((x) => x.clase === clase).map((x) => x.nombre as string)
+    ),
+  ].sort();
+
   const { data: tipos } = await supabase
     .from("tipos_materia")
     .select("id, nombre, es_nucleo, es_cara, orden, activo")
@@ -46,7 +58,9 @@ export default async function Pagina() {
         <BarraNavegacion />
         <GestorMateriasPrimas
           materias={materias ?? []}
-          etiquetas={etiquetas}
+          etiquetas={de("Etiqueta").length ? de("Etiqueta") : etiquetas}
+          familias={de("Familia")}
+          unidades={de("Unidad")}
           tipos={tipos ?? []}
           paises={paises}
           esAdminGeneral={esAdminGeneral}

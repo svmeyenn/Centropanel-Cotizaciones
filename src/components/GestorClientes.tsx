@@ -12,6 +12,7 @@ import { faltantesCliente } from "@/lib/validacion";
 import { rut as fmtRut } from "@/lib/formato";
 import CampoTelefono from "@/components/CampoTelefono";
 import Ventana from "@/components/Ventana";
+import BotonExportar from "@/components/BotonExportar";
 import { useRouter } from "next/navigation";
 
 const vacio = (pais: number | null): DatosCliente => ({
@@ -114,6 +115,20 @@ export default function GestorClientes({
           placeholder={`Buscar por razon social, ${etiquetaLista} o contacto`}
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
+        />
+        <BotonExportar
+          nombre="clientes"
+          columnas={[
+            { titulo: "Razon social", valor: (c) => c.razon_social },
+            { titulo: etiquetaLista, valor: (c) => c.rut },
+            { titulo: "Contacto", valor: (c) => c.contacto },
+            { titulo: "Correo", valor: (c) => c.email },
+            { titulo: "Telefono", valor: (c) => c.telefono },
+            { titulo: "Direccion", valor: (c) => c.direccion },
+            { titulo: "Comuna", valor: (c) => c.comuna },
+            { titulo: "Ciudad", valor: (c) => c.ciudad },
+          ]}
+          filas={filtrados}
         />
         {puedeEditar && (
           <button

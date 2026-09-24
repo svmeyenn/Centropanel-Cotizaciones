@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import Ventana from "@/components/Ventana";
 import { pesos, unidades } from "@/lib/formato";
+import BotonExportar from "@/components/BotonExportar";
 import {
   actualizarMateria,
   cambiarActivoMateria,
@@ -26,18 +27,24 @@ interface Resumen {
 export default function GestorMateriasPrimas({
   materias,
   etiquetas,
+  familias,
+  unidades: unidadesLista,
   tipos,
   paises,
   esAdminGeneral,
 }: {
   materias: MateriaPrima[];
+  // Listas configurables en Parametros de materias primas.
   etiquetas: string[];
+  familias: string[];
+  unidades: string[];
   tipos: TipoMateria[];
   paises: Pais[];
   esAdminGeneral: boolean;
 }) {
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("");
+  const [familiaFiltro, setFamiliaFiltro] = useState("");
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosMateria | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,11 +58,12 @@ export default function GestorMateriasPrimas({
     return materias.filter(
       (m) =>
         (!tipo || m.tipo === tipo) &&
+        (!familiaFiltro || (m.familia ?? "") === familiaFiltro) &&
         (!q ||
           m.nombre.toLowerCase().includes(q) ||
           (m.etiqueta ?? "").toLowerCase().includes(q))
     );
-  }, [busca, tipo, materias]);
+  }, [busca, tipo, familiaFiltro, materias]);
 
   function editar(m: MateriaPrima) {
     setEditando(m.id);
@@ -278,7 +286,39 @@ export default function GestorMateriasPrimas({
             </option>
           ))}
         </select>
-        <span className="text-sm text-gray-500 ml-auto">
+        <select
+          className="border border-gray-300 rounded px-2 py-1.5 text-sm"
+          value={familiaFiltro}
+          onChange={(e) => setFamiliaFiltro(e.target.value)}
+        >
+          <option value="">Todas las familias</option>
+          {[...new Set(materias.map((m) => m.familia ?? "").filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, "es"))
+            .map((x) => (
+              <option key={x} value={x}>
+                {x}
+              </option>
+            ))}
+        </select>
+        <BotonExportar
+          nombre="materias-primas"
+          columnas={[
+            { titulo: "SKU", valor: (m) => m.sku ?? "" },
+            { titulo: "Nombre", valor: (m) => m.nombre },
+            { titulo: "Tipo", valor: (m) => m.tipo },
+            { titulo: "Etiqueta", valor: (m) => m.etiqueta ?? "" },
+            { titulo: "Familia", valor: (m) => m.familia ?? "" },
+            { titulo: "Espesor mm", valor: (m) => m.espesor_mm ?? "" },
+            { titulo: "Ancho mm", valor: (m) => m.ancho_mm ?? "" },
+            { titulo: "Largo mm", valor: (m) => m.largo_mm ?? "" },
+            { titulo: "Costo", valor: (m) => m.costo },
+            { titulo: "Unidad", valor: (m) => m.unidad ?? "" },
+            { titulo: "Estado", valor: (m) => (m.activo ? "Activo" : "Inactivo") },
+          ]}
+          filas={filtrados}
+          className="ml-auto"
+        />
+        <span className="text-sm text-gray-500">
           {filtrados.length} de {materias.length}
         </span>
       </div>
@@ -319,15 +359,17 @@ export default function GestorMateriasPrimas({
                 El EPS es el nucleo del panel y la Placa sus caras.
               </span>
             </label>
-            <Campo
+            <Lista
               label="Etiqueta"
               value={form.etiqueta}
+              opciones={etiquetas}
               onChange={(v) => setForm({ ...form, etiqueta: v })}
               cls={input}
             />
-            <Campo
+            <Lista
               label="Familia"
               value={form.familia}
+              opciones={familias}
               onChange={(v) => setForm({ ...form, familia: v })}
               cls={input}
             />
@@ -364,9 +406,10 @@ export default function GestorMateriasPrimas({
                 onChange={(e) => setForm({ ...form, costo: Number(e.target.value) })}
               />
             </label>
-            <Campo
+            <Lista
               label="Unidad"
               value={form.unidad}
+              opciones={unidadesLista}
               onChange={(v) => setForm({ ...form, unidad: v })}
               cls={input}
             />
@@ -522,6 +565,41 @@ function Campo({
     <label className="text-sm">
       <span className="block text-dorado-osc font-semibold mb-1">{label}</span>
       <input className={cls} value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  );
+}
+
+// Valor tomado de una lista configurable. Si el insumo trae un valor que ya no
+// esta en la lista se ofrece igual, para no cambiarlo sin querer al abrir el
+// desplegable.
+function Lista({
+  label,
+  value,
+  opciones,
+  onChange,
+  cls,
+}: {
+  label: string;
+  value: string;
+  opciones: string[];
+  onChange: (v: string) => void;
+  cls: string;
+}) {
+  const lista = value && !opciones.includes(value) ? [value, ...opciones] : opciones;
+  return (
+    <label className="text-sm">
+      <span className="block text-dorado-osc font-semibold mb-1">{label}</span>
+      <select className={cls} value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">-- elija --</option>
+        {lista.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+      <span className="text-xs text-gray-500">
+        Se configura en Parametros de materias primas.
+      </span>
     </label>
   );
 }

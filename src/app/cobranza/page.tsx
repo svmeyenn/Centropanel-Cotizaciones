@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
+import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
@@ -179,7 +180,41 @@ export default async function Pagina({
               {x.texto}
             </Link>
           ))}
-          <span className="text-xs text-gray-500 ml-auto">
+          <BotonExportarFilas
+            nombre="estado-de-pago"
+            titulos={[
+              "Pedido",
+              "Fecha",
+              "Cliente",
+              "Vendedor",
+              "Forma de pago",
+              "Medio de pago",
+              "Total",
+              "Pie",
+              "Abonado",
+              "Saldo",
+              "Estado",
+              "Ultimo pago",
+              "Factura",
+            ]}
+            filas={visibles.map((r) => [
+              r.num,
+              r.fecha,
+              r.cliente,
+              r.vendedor,
+              r.forma,
+              r.medio,
+              r.total,
+              r.pie,
+              r.abonado,
+              r.saldo,
+              r.estado,
+              r.ultimo,
+              r.factura?.numero ?? "",
+            ])}
+            className="ml-auto"
+          />
+          <span className="text-xs text-gray-500">
             {visibles.length} de {filas.length}
           </span>
         </div>

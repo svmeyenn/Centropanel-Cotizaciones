@@ -3,6 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import FiltrosDocumentos, { type ValoresFiltro } from "@/components/FiltrosDocumentos";
 import BotonEliminarFila from "@/components/BotonEliminarFila";
+import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { ESTADOS_PEDIDO } from "@/lib/estados";
 import { nombreImpuesto } from "@/lib/impuesto";
@@ -113,6 +114,34 @@ export default async function Pagina({
   const uno = <T,>(x: unknown): T | null =>
     Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
+  // Lo mismo que muestra la tabla, para bajarlo a una planilla.
+  const filasExcel = (pedidos ?? []).map((p) => {
+    const cot = uno<{ num_cotizacion: string }>(p.cotizaciones);
+    const cli = uno<{
+      razon_social: string;
+      rut: string | null;
+      contacto: string | null;
+      comuna: string | null;
+    }>(p.clientes);
+    const ven = uno<{ nombre: string }>(p.vendedores);
+    const c = cuentaPorPedido.get(Number(p.id));
+    return [
+      p.num_pedido as string,
+      cot?.num_cotizacion ?? "",
+      p.fecha as string,
+      cli?.razon_social ?? "",
+      cli?.rut ?? "",
+      cli?.contacto ?? "",
+      cli?.comuna ?? "",
+      ven?.nombre ?? "",
+      p.estado as string,
+      solPorPedido.get(Number(p.id)) ?? 0,
+      c?.total ?? 0,
+      c?.saldo ?? 0,
+      facturaDe.get(Number(p.id)) ?? "",
+    ] as (string | number | null)[];
+  });
+
   const columnas = 12 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
 
   return (
@@ -144,6 +173,27 @@ export default async function Pagina({
           estados={ESTADOS_PEDIDO}
           valores={{ q, desde, hasta, rut, razon, contacto, estado }}
           hayFiltro={hayFiltro}
+          extra={
+            <BotonExportarFilas
+              nombre="pedidos"
+              titulos={[
+                "N pedido",
+                "N cotizacion",
+                "Fecha",
+                "Cliente",
+                etiquetaId,
+                "Contacto",
+                "Comuna",
+                "Vendedor",
+                "Estado",
+                "Solicitudes",
+                "Total",
+                "Saldo",
+                "Factura",
+              ]}
+              filas={filasExcel}
+            />
+          }
         />
 
         <div className="bg-white border border-gray-200 rounded overflow-hidden">

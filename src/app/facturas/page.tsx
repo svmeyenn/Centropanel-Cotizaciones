@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
+import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
@@ -137,6 +138,30 @@ export default async function Pagina({
           >
             Limpiar
           </Link>
+          <BotonExportarFilas
+            nombre="facturas"
+            titulos={[
+              "N factura",
+              "Fecha",
+              "Pedido",
+              "Cliente",
+              "Neto",
+              impuesto,
+              "Total",
+              "Documento",
+            ]}
+            filas={visibles.map((f) => [
+              f.numero,
+              f.fecha,
+              f.numPedido,
+              f.cliente,
+              f.neto,
+              f.iva,
+              f.total,
+              f.tieneArchivo ? "Si" : "No",
+            ])}
+            className="ml-auto"
+          />
         </form>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

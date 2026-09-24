@@ -53,6 +53,11 @@ export const GRUPOS: Grupo[] = [
       { texto: "Catalogo de productos", href: "/productos" },
       { texto: "Familias y subfamilias", href: "/familias", soloAdmin: true },
       { texto: "Materias primas", href: "/materias-primas", soloAdmin: true },
+      {
+        texto: "Parametros de materias primas",
+        href: "/parametros-materias",
+        soloAdmin: true,
+      },
     ],
   },
   {

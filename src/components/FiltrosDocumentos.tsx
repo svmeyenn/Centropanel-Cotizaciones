@@ -20,6 +20,7 @@ export default function FiltrosDocumentos({
   estados,
   valores,
   hayFiltro,
+  extra,
 }: {
   base: string;
   etiquetaFolio: string;
@@ -28,6 +29,8 @@ export default function FiltrosDocumentos({
   estados: string[];
   valores: ValoresFiltro;
   hayFiltro: boolean;
+  // Acciones que acompanan a los filtros, como bajar a Excel lo filtrado.
+  extra?: React.ReactNode;
 }) {
   const campo =
     "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
@@ -95,6 +98,7 @@ export default function FiltrosDocumentos({
             limpiar
           </Link>
         )}
+        {extra}
       </div>
     </form>
   );

@@ -3,6 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import FiltrosDocumentos, { type ValoresFiltro } from "@/components/FiltrosDocumentos";
 import BotonEliminarFila from "@/components/BotonEliminarFila";
+import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { ESTADOS_COTIZACION } from "@/lib/estados";
 import Bandera from "@/components/Bandera";
@@ -88,6 +89,31 @@ export default async function Pagina({
 
   const columnas = 8 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
 
+  // Lo mismo que muestra la tabla, para bajarlo a una planilla.
+  const uno2 = <T,>(x: unknown): T | null =>
+    Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
+  type CliFila = {
+    razon_social: string;
+    rut: string | null;
+    contacto: string | null;
+    comuna: string | null;
+  };
+  const filasExcel = (cots ?? []).map((c) => {
+    const cli = uno2<CliFila>(c.clientes);
+    const ven = uno2<{ nombre: string }>(c.vendedores);
+    return [
+      c.num_cotizacion as string,
+      c.fecha as string,
+      cli?.razon_social ?? "",
+      cli?.rut ?? "",
+      cli?.contacto ?? "",
+      cli?.comuna ?? "",
+      ven?.nombre ?? "",
+      c.estado as string,
+      totalPorId.get(c.id as number) ?? 0,
+    ] as (string | number | null)[];
+  });
+
   return (
     <div className="min-h-screen">
       <Cabecera titulo="Cotizaciones" subtitulo="Historial completo con busqueda" />
@@ -108,6 +134,23 @@ export default async function Pagina({
           estados={ESTADOS_COTIZACION}
           valores={{ q, desde, hasta, rut, razon, contacto, estado }}
           hayFiltro={hayFiltro}
+          extra={
+            <BotonExportarFilas
+              nombre="cotizaciones"
+              titulos={[
+                "N cotizacion",
+                "Fecha",
+                "Cliente",
+                etiquetaId,
+                "Contacto",
+                "Comuna",
+                "Vendedor",
+                "Estado",
+                "Total",
+              ]}
+              filas={filasExcel}
+            />
+          }
         />
 
         {error && (

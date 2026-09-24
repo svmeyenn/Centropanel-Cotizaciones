@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useTransition } from "react";
+import { Fragment, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   crearFamilia,
@@ -13,6 +13,7 @@ import {
 } from "@/app/familias/acciones";
 import { asignarGrupoFamilia } from "@/app/productos/acciones";
 import { GRUPOS_DESCUENTO, GRUPO_PRODUCTOS } from "@/lib/descuentos";
+import BotonExportar from "@/components/BotonExportar";
 
 export interface FamiliaVista {
   nombre: string;
@@ -39,6 +40,19 @@ export default function GestorFamilias({
   const [nuevaFamilia, setNuevaFamilia] = useState("");
   const [nuevoGrupo, setNuevoGrupo] = useState<string>(GRUPO_PRODUCTOS);
   const [nuevaSub, setNuevaSub] = useState("");
+  const [busca, setBusca] = useState("");
+  const [grupoFiltro, setGrupoFiltro] = useState("");
+
+  const visibles = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return familias.filter(
+      (f) =>
+        (!grupoFiltro || f.grupo === grupoFiltro) &&
+        (!q ||
+          f.nombre.toLowerCase().includes(q) ||
+          f.subfamilias.some((s) => s.toLowerCase().includes(q)))
+    );
+  }, [familias, busca, grupoFiltro]);
 
   const input = "border border-gray-300 rounded px-2 py-1 text-sm";
   const boton = "bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded";
@@ -111,31 +125,74 @@ export default function GestorFamilias({
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          className={`${input} w-64`}
+          placeholder="Buscar familia o subfamilia"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+        <select
+          className={input}
+          value={grupoFiltro}
+          onChange={(e) => setGrupoFiltro(e.target.value)}
+        >
+          <option value="">Todos los descuentos</option>
+          {GRUPOS_DESCUENTO.map((x) => (
+            <option key={x} value={x}>
+              {x}
+            </option>
+          ))}
+        </select>
+        <BotonExportar
+          nombre="familias-catalogo"
+          columnas={[
+            { titulo: "Familia", valor: (f: FamiliaVista) => f.nombre },
+            { titulo: "Descuento", valor: (f: FamiliaVista) => f.grupo },
+            {
+              titulo: "Subfamilias",
+              valor: (f: FamiliaVista) => f.subfamilias.join(" | "),
+            },
+            { titulo: "Productos", valor: (f: FamiliaVista) => f.productos.length },
+          ]}
+          filas={visibles}
+          className="ml-auto"
+        />
+        <span className="text-sm text-gray-500">
+          {visibles.length} de {familias.length}
+        </span>
+      </div>
+
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs table-fixed">
           <thead className="bg-verde text-white">
             <tr>
               <th className="text-left px-3 py-2">Familia</th>
-              <th className="text-left px-3 py-2 w-48">Descuento</th>
+              <th className="text-left px-3 py-2 w-44">Descuento</th>
               <th className="text-right px-3 py-2 w-24">Productos</th>
-              <th className="px-3 py-2 w-56" />
+              <th className="px-3 py-2 w-72" />
             </tr>
           </thead>
           <tbody>
-            {familias.length === 0 && (
+            {visibles.length === 0 && (
               <tr>
                 <td colSpan={4} className="text-center text-gray-400 py-8">
                   Todavia no hay familias en este mercado.
                 </td>
               </tr>
             )}
-            {familias.map((f) => (
+            {visibles.map((f) => (
               <Fragment key={f.nombre}>
                 <tr className="border-t border-gray-100">
-                  <td className="px-3 py-2 font-semibold text-verde">{f.nombre}</td>
+                  <td
+                    className="px-3 py-2 font-semibold text-verde truncate"
+                    title={f.nombre}
+                  >
+                    {f.nombre}
+                  </td>
                   <td className="px-3 py-2">
                     <select
-                      className="border border-gray-300 rounded bg-white text-[11px] px-1 py-0.5"
+                      className="border border-gray-300 rounded bg-white text-[11px] px-1 py-0.5 w-full"
                       value={f.grupo}
                       disabled={pendiente}
                       onChange={(e) =>
@@ -150,7 +207,7 @@ export default function GestorFamilias({
                     </select>
                   </td>
                   <td className="px-3 py-2 text-right">{f.productos.length}</td>
-                  <td className="px-3 py-2 text-right space-x-2">
+                  <td className="px-3 py-2 text-right space-x-1 whitespace-nowrap">
                     <button
                       className={botonClaro}
                       onClick={() =>
@@ -257,18 +314,20 @@ export default function GestorFamilias({
                       )}
 
                       {f.productos.length > 0 && (
-                        <table className="w-full text-[11px] bg-white border border-gray-200 rounded">
+                        <table className="w-full text-[11px] bg-white border border-gray-200 rounded table-fixed">
                           <thead className="text-gray-500">
                             <tr>
                               <th className="text-left px-2 py-1">Producto</th>
-                              <th className="text-left px-2 py-1 w-56">Familia</th>
-                              <th className="text-left px-2 py-1 w-56">Subfamilia</th>
+                              <th className="text-left px-2 py-1 w-52">Familia</th>
+                              <th className="text-left px-2 py-1 w-52">Subfamilia</th>
                             </tr>
                           </thead>
                           <tbody>
                             {f.productos.map((pr) => (
                               <tr key={pr.id} className="border-t border-gray-100">
-                                <td className="px-2 py-1">{pr.descripcion}</td>
+                                <td className="px-2 py-1 truncate" title={pr.descripcion}>
+                                  {pr.descripcion}
+                                </td>
                                 <td className="px-2 py-1">
                                   <select
                                     className="border border-gray-300 rounded px-1 py-0.5 w-full"
