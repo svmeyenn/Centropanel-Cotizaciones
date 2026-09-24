@@ -9,8 +9,10 @@ import {
   cambiarActivoProducto,
   editarComposicionPanel,
   eliminarProducto,
+  asignarGrupoFamilia,
   type DatosProducto,
 } from "@/app/productos/acciones";
+import { GRUPO_FLETE, GRUPO_PRODUCTOS } from "@/lib/descuentos";
 import type { MateriaVenta } from "@/components/Configurador";
 import type { Pais } from "@/types/database";
 import Ventana from "@/components/Ventana";
@@ -41,6 +43,7 @@ export default function TablaProductos({
   materias = [],
   paises = [],
   esAdminGeneral = false,
+  familiasFlete = [],
 }: {
   productos: ProductoFila[];
   esAdmin: boolean;
@@ -48,6 +51,8 @@ export default function TablaProductos({
   ivaPorPais: Record<number, number>;
   paises?: Pais[];
   esAdminGeneral?: boolean;
+  // Familias que hoy van al descuento de flete y mano de obra.
+  familiasFlete?: string[];
 }) {
   const [busca, setBusca] = useState("");
   const [soloActivos, setSoloActivos] = useState(true);
@@ -589,6 +594,16 @@ export default function TablaProductos({
                       <span className="ml-2 font-normal normal-case text-gray-500">
                         {g.total}
                       </span>
+                      {esAdmin && (
+                        <SelectorGrupoDescuento
+                          familia={g.familia}
+                          grupo={
+                            familiasFlete.includes(g.familia)
+                              ? GRUPO_FLETE
+                              : GRUPO_PRODUCTOS
+                          }
+                        />
+                      )}
                     </td>
                   </tr>
                   {g.subgrupos.map((sg) => (
@@ -735,5 +750,48 @@ export default function TablaProductos({
         </div>
       </div>
     </div>
+  );
+}
+
+// A que descuento pertenece la familia. Es lo que decide si un 10% escrito en
+// la cotizacion toca o no al flete.
+function SelectorGrupoDescuento({
+  familia,
+  grupo,
+}: {
+  familia: string;
+  grupo: string;
+}) {
+  const [valor, setValor] = useState(grupo);
+  const [error, setError] = useState<string | null>(null);
+  const [pendiente, empezar] = useTransition();
+
+  return (
+    <span className="ml-3 font-normal normal-case">
+      <span className="text-gray-500">Descuento: </span>
+      <select
+        value={valor}
+        disabled={pendiente}
+        onChange={(e) => {
+          const nuevo = e.target.value;
+          const antes = valor;
+          setValor(nuevo);
+          setError(null);
+          empezar(async () => {
+            const r = await asignarGrupoFamilia(familia, nuevo);
+            if (r?.error) {
+              setValor(antes);
+              setError(r.error);
+            }
+          });
+        }}
+        className="border border-gray-300 rounded bg-white text-[11px] px-1 py-0.5"
+        title="Descuento de la cotizacion al que se aplica esta familia"
+      >
+        <option value={GRUPO_PRODUCTOS}>{GRUPO_PRODUCTOS}</option>
+        <option value={GRUPO_FLETE}>{GRUPO_FLETE}</option>
+      </select>
+      {error && <span className="ml-2 text-red-700">{error}</span>}
+    </span>
   );
 }

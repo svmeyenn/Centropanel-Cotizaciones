@@ -79,6 +79,15 @@ export default async function Pagina() {
     costoPorProducto[Number(x.id)] = Number(x.costo ?? 0);
   }
 
+
+  // Familias que van al segundo descuento (flete y mano de obra), segun lo
+  // configurado en el catalogo de productos.
+  const { data: famFlete } = await supabase
+    .from("familias_descuento")
+    .select("familia")
+    .eq("grupo", "Flete y mano de obra");
+  const familiasFlete = (famFlete ?? []).map((f) => f.familia as string);
+
   return (
     <div className="min-h-screen">
       <Cabecera
@@ -99,6 +108,7 @@ export default async function Pagina() {
           id_pais: Number(m.id_pais),
         }))}
         productos={productos ?? []}
+        familiasFlete={familiasFlete}
         materias={materias ?? []}
         puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
