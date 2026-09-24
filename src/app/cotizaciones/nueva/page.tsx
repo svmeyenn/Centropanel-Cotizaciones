@@ -80,13 +80,14 @@ export default async function Pagina() {
   }
 
 
-  // Familias que van al segundo descuento (flete y mano de obra), segun lo
-  // configurado en el catalogo de productos.
-  const { data: famFlete } = await supabase
-    .from("familias_descuento")
-    .select("familia")
-    .eq("grupo", "Flete y mano de obra");
-  const familiasFlete = (famFlete ?? []).map((f) => f.familia as string);
+  // Grupo de descuento de cada producto (Productos, Flete o Instalaciones),
+  // configurado en el catalogo. Va por funcion porque el vendedor no puede
+  // leer la tabla de productos.
+  const grupoPorProducto: Record<number, string> = {};
+  const { data: grupos } = await supabase.rpc("grupos_productos");
+  for (const g of (grupos ?? []) as { id: number; grupo: string }[]) {
+    grupoPorProducto[Number(g.id)] = g.grupo;
+  }
 
   return (
     <div className="min-h-screen">
@@ -108,7 +109,7 @@ export default async function Pagina() {
           id_pais: Number(m.id_pais),
         }))}
         productos={productos ?? []}
-        familiasFlete={familiasFlete}
+        grupoPorProducto={grupoPorProducto}
         materias={materias ?? []}
         puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
@@ -131,6 +132,9 @@ export default async function Pagina() {
           descuento2_tipo: "Monto",
           descuento2_pct: 0,
           descuento2_monto: 0,
+          descuento3_tipo: "Monto",
+          descuento3_pct: 0,
+          descuento3_monto: 0,
           items: [],
         }}
       />

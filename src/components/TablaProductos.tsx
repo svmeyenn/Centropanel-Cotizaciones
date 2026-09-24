@@ -10,9 +10,10 @@ import {
   editarComposicionPanel,
   eliminarProducto,
   asignarGrupoFamilia,
+  asignarGrupoProducto,
   type DatosProducto,
 } from "@/app/productos/acciones";
-import { GRUPO_FLETE, GRUPO_PRODUCTOS } from "@/lib/descuentos";
+import { GRUPOS_DESCUENTO, GRUPO_PRODUCTOS } from "@/lib/descuentos";
 import type { MateriaVenta } from "@/components/Configurador";
 import type { Pais } from "@/types/database";
 import Ventana from "@/components/Ventana";
@@ -34,6 +35,8 @@ interface ProductoFila {
   margen_aplicado?: number | null;
   precio_manual?: boolean | null;
   id_pais?: number | null;
+  // Excepcion de descuento del producto; null hereda el de su familia.
+  grupo_descuento?: string | null;
 }
 
 export default function TablaProductos({
@@ -43,7 +46,7 @@ export default function TablaProductos({
   materias = [],
   paises = [],
   esAdminGeneral = false,
-  familiasFlete = [],
+  gruposFamilia = {},
 }: {
   productos: ProductoFila[];
   esAdmin: boolean;
@@ -51,8 +54,8 @@ export default function TablaProductos({
   ivaPorPais: Record<number, number>;
   paises?: Pais[];
   esAdminGeneral?: boolean;
-  // Familias que hoy van al descuento de flete y mano de obra.
-  familiasFlete?: string[];
+  // Grupo de descuento de cada familia del catalogo.
+  gruposFamilia?: Record<string, string>;
 }) {
   const [busca, setBusca] = useState("");
   const [soloActivos, setSoloActivos] = useState(true);
@@ -323,6 +326,18 @@ export default function TablaProductos({
           )}
 
           <div className="grid md:grid-cols-4 gap-3">
+            <div className="text-sm md:col-span-4">
+              <span className="block text-dorado-osc font-semibold mb-1">
+                Descuento al que pertenece
+              </span>
+              <GrupoDelProducto
+                id={enEdicion?.id ?? 0}
+                grupo={enEdicion?.grupo_descuento ?? null}
+                deFamilia={
+                  gruposFamilia[enEdicion?.familia ?? ""] ?? GRUPO_PRODUCTOS
+                }
+              />
+            </div>
             <label className="text-sm md:col-span-4">
               <span className="block text-dorado-osc font-semibold mb-1">
                 Mercado
@@ -597,11 +612,7 @@ export default function TablaProductos({
                       {esAdmin && (
                         <SelectorGrupoDescuento
                           familia={g.familia}
-                          grupo={
-                            familiasFlete.includes(g.familia)
-                              ? GRUPO_FLETE
-                              : GRUPO_PRODUCTOS
-                          }
+                          grupo={gruposFamilia[g.familia] ?? GRUPO_PRODUCTOS}
                         />
                       )}
                     </td>
@@ -788,10 +799,65 @@ function SelectorGrupoDescuento({
         className="border border-gray-300 rounded bg-white text-[11px] px-1 py-0.5"
         title="Descuento de la cotizacion al que se aplica esta familia"
       >
-        <option value={GRUPO_PRODUCTOS}>{GRUPO_PRODUCTOS}</option>
-        <option value={GRUPO_FLETE}>{GRUPO_FLETE}</option>
+        {GRUPOS_DESCUENTO.map((x) => (
+          <option key={x} value={x}>
+            {x}
+          </option>
+        ))}
       </select>
       {error && <span className="ml-2 text-red-700">{error}</span>}
     </span>
+  );
+}
+
+// Excepcion de un producto suelto: por defecto hereda el grupo de su familia,
+// que es lo normal; esto es para el caso raro (un flete dentro de una familia
+// de productos, por ejemplo).
+function GrupoDelProducto({
+  id,
+  grupo,
+  deFamilia,
+}: {
+  id: number;
+  grupo: string | null;
+  deFamilia: string;
+}) {
+  const [valor, setValor] = useState(grupo ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [pendiente, empezar] = useTransition();
+
+  return (
+    <div className="space-y-1">
+      <select
+        value={valor}
+        disabled={pendiente}
+        onChange={(e) => {
+          const nuevo = e.target.value;
+          const antes = valor;
+          setValor(nuevo);
+          setError(null);
+          empezar(async () => {
+            const r = await asignarGrupoProducto(id, nuevo === "" ? null : nuevo);
+            if (r?.error) {
+              setValor(antes);
+              setError(r.error);
+            }
+          });
+        }}
+        className="border border-gray-300 rounded px-2 py-1 text-sm md:w-64"
+      >
+        <option value="">Como su familia ({deFamilia})</option>
+        {GRUPOS_DESCUENTO.map((x) => (
+          <option key={x} value={x}>
+            {x}
+          </option>
+        ))}
+      </select>
+      <p className="text-[11px] text-gray-500">
+        Decide a cual de los tres descuentos de la cotizacion se le aplica este
+        producto. Se graba al elegirlo.
+      </p>
+      {error && <p className="text-[11px] text-red-700">{error}</p>}
+    </div>
   );
 }
