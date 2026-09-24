@@ -10,11 +10,7 @@ import {
   telefono as fmtTelefono,
 } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
-import {
-  esFleteOMano,
-  ROTULO_DESCUENTO_1,
-  ROTULO_DESCUENTO_2,
-} from "@/lib/descuentos";
+import { ROTULO_DESCUENTO_1, ROTULO_DESCUENTO_2 } from "@/lib/descuentos";
 import { ESTADOS_PEDIDO as ESTADOS } from "@/lib/estados";
 import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
 import CuentaCorrientePedido, {
@@ -137,16 +133,11 @@ export default function EditorPedido({
   const soloLectura = !editable || !puedeEditar;
   const subtotal = ls.reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
   // Los descuentos vienen de la cotizacion y quedan grabados en el pedido:
-  // aqui no se editan, pero el neto y el margen tienen que considerarlos. Cada
-  // uno tiene su base: productos el primero, flete y mano de obra el segundo.
-  const baseFlete = ls
-    .filter((l) => esFleteOMano(l.descripcion))
-    .reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
-  const descuento = Math.min(
-    Number(cuenta.descuento_monto ?? 0),
-    Math.max(subtotal - baseFlete, 0)
-  );
-  const descuento2 = Math.min(Number(cuenta.descuento2_monto ?? 0), baseFlete);
+  // aqui no se editan, pero el neto y el margen tienen que considerarlos. La
+  // cuenta ya los trae recortados a su base (productos el primero, flete y
+  // mano de obra el segundo).
+  const descuento = Number(cuenta.descuento_monto ?? 0);
+  const descuento2 = Number(cuenta.descuento2_monto ?? 0);
   const total = subtotal - descuento - descuento2;
   // Margen del pedido: el neto menos el costo de lo que se va a entregar. El
   // costo viene de la cotizacion de origen, congelado al vender.

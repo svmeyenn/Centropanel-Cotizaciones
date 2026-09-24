@@ -39,6 +39,13 @@ export default async function Pagina() {
         .order("familia")
         .order("descripcion");
 
+  // Familias que van al descuento de flete y mano de obra.
+  const { data: famFlete } = await supabase
+    .from("familias_descuento")
+    .select("familia")
+    .eq("grupo", "Flete y mano de obra");
+  const familiasFlete = (famFlete ?? []).map((f) => f.familia as string);
+
   // El PVP de cada producto lleva el IVA de su mercado.
   const ivaPorPais = await leerIvaPorPais();
 
@@ -102,6 +109,7 @@ export default async function Pagina() {
           materias={(materias ?? []) as MateriaVenta[]}
           paises={paises}
           esAdminGeneral={esAdminGeneral}
+          familiasFlete={familiasFlete}
         />
       </div>
     </div>

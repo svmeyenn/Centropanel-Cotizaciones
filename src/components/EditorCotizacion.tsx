@@ -27,7 +27,7 @@ import {
 } from "@/app/cotizaciones/acciones";
 import type { Cliente, FormaPago, Pais, TipoDescuento } from "@/types/database";
 import {
-  esFleteOMano,
+  esFamiliaFlete,
   ROTULO_DESCUENTO_1,
   ROTULO_DESCUENTO_2,
 } from "@/lib/descuentos";
@@ -56,6 +56,9 @@ interface Props {
   formasPago: FormaPago[];
   mediosPago: MedioPago[];
   productos: ProductoVenta[];
+  // Familias del catalogo que van al segundo descuento, configuradas en el
+  // catalogo de productos.
+  familiasFlete?: string[];
   // Insumos para el panel emergente que crea un panel sin salir del cotizador.
   materias: MateriaVenta[];
   puedeCrearPanel: boolean;
@@ -135,18 +138,18 @@ export default function EditorCotizacion(p: Props) {
   // Cada descuento va sobre su propia base: el primero sobre los productos y
   // el segundo sobre el flete y la mano de obra. Misma regla que
   // fn_sincronizar_descuento en la base.
-  const descripcionDe = (it: ItemBorrador) =>
-    (it.id_producto != null
-      ? p.productos.find((x) => x.id === it.id_producto)?.descripcion
-      : null) ?? it.descripcion;
+  const familiaDe = (it: ItemBorrador) =>
+    it.id_producto != null
+      ? (p.productos.find((x) => x.id === it.id_producto)?.familia ?? null)
+      : null;
 
   const baseFlete = useMemo(
     () =>
       d.items
-        .filter((it) => esFleteOMano(descripcionDe(it)))
+        .filter((it) => esFamiliaFlete(p.familiasFlete ?? [], familiaDe(it)))
         .reduce((s, it) => s + it.unidades * it.valor_unitario, 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [d.items, p.productos]
+    [d.items, p.productos, p.familiasFlete]
   );
   const baseProductos = subtotal - baseFlete;
 

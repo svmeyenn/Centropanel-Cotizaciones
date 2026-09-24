@@ -276,3 +276,42 @@ export async function eliminarProducto(id: number) {
   revalidatePath("/productos");
   return { ok: true };
 }
+
+// A que descuento pertenece una familia del catalogo: al de productos o al de
+// flete y mano de obra. Se guarda por mercado, porque cada pais tiene su
+// catalogo. La familia que no este anotada va al descuento de productos.
+export async function asignarGrupoFamilia(familia: string, grupo: string) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) {
+    return { error: "Solo el administrador puede configurar el catalogo." };
+  }
+  if (grupo !== "Productos" && grupo !== "Flete y mano de obra") {
+    return { error: "Grupo de descuento no valido." };
+  }
+
+  const supabase = await createClient();
+
+  // Los mercados donde existe esa familia, entre los que el usuario puede ver.
+  const { data: productos, error: eLee } = await supabase
+    .from("productos")
+    .select("id_pais")
+    .eq("familia", familia);
+  if (eLee) return { error: eLee.message };
+
+  const paises = [
+    ...new Set((productos ?? []).map((p) => Number(p.id_pais)).filter(Boolean)),
+  ];
+  if (!paises.length) return { error: "La familia no tiene productos." };
+
+  const { error } = await supabase
+    .from("familias_descuento")
+    .upsert(
+      paises.map((id_pais) => ({ id_pais, familia, grupo })),
+      { onConflict: "id_pais,familia" }
+    );
+  if (error) return { error: error.message };
+
+  revalidatePath("/productos");
+  revalidatePath("/cotizaciones");
+  return {};
+}
