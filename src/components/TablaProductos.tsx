@@ -58,6 +58,17 @@ export default function TablaProductos({
   gruposFamilia?: Record<string, string>;
 }) {
   const [busca, setBusca] = useState("");
+  // Familias y subfamilias plegadas. Se guarda lo cerrado y no lo abierto:
+  // asi el catalogo sigue apareciendo entero y el que quiera lo va cerrando.
+  const [cerradas, setCerradas] = useState<Set<string>>(new Set());
+  const plegado = (clave: string) => cerradas.has(clave);
+  const plegar = (clave: string) =>
+    setCerradas((x) => {
+      const n = new Set(x);
+      if (n.has(clave)) n.delete(clave);
+      else n.add(clave);
+      return n;
+    });
   const [soloActivos, setSoloActivos] = useState(true);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosProducto | null>(null);
@@ -204,6 +215,16 @@ export default function TablaProductos({
           />
           Solo activos
         </label>
+        <button
+          onClick={() =>
+            setCerradas((x) =>
+              x.size > 0 ? new Set() : new Set(grupos.map((g) => g.familia))
+            )
+          }
+          className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-1 rounded bg-white"
+        >
+          {cerradas.size > 0 ? "Abrir todas" : "Cerrar todas"}
+        </button>
         <span className="text-sm text-gray-500 ml-auto">
           {filtrados.length} de {productos.length}
         </span>
@@ -605,6 +626,13 @@ export default function TablaProductos({
                       colSpan={esAdmin ? 9 : 5}
                       className="px-3 py-1.5 text-[11px] font-semibold text-verde uppercase tracking-wide"
                     >
+                      <button
+                        onClick={() => plegar(g.familia)}
+                        className="mr-2 text-gray-500 w-4 text-center"
+                        title={plegado(g.familia) ? "Abrir familia" : "Cerrar familia"}
+                      >
+                        {plegado(g.familia) ? "+" : "−"}
+                      </button>
                       {g.familia}
                       <span className="ml-2 font-normal normal-case text-gray-500">
                         {g.total}
@@ -617,7 +645,8 @@ export default function TablaProductos({
                       )}
                     </td>
                   </tr>
-                  {g.subgrupos.map((sg) => (
+                  {!plegado(g.familia) &&
+                    g.subgrupos.map((sg) => (
                     <Fragment key={sg.subfamilia}>
                       {sg.subfamilia && (
                         <tr className="border-t border-gray-100">
@@ -625,6 +654,17 @@ export default function TablaProductos({
                             colSpan={esAdmin ? 9 : 5}
                             className="px-3 pt-2 pb-1 pl-6 text-[11px] font-semibold text-dorado-osc"
                           >
+                            <button
+                              onClick={() => plegar(`${g.familia}/${sg.subfamilia}`)}
+                              className="mr-2 text-gray-500 w-4 text-center"
+                              title={
+                                plegado(`${g.familia}/${sg.subfamilia}`)
+                                  ? "Abrir subfamilia"
+                                  : "Cerrar subfamilia"
+                              }
+                            >
+                              {plegado(`${g.familia}/${sg.subfamilia}`) ? "+" : "−"}
+                            </button>
                             {sg.subfamilia}
                             <span className="ml-2 font-normal text-gray-400">
                               {sg.lista.length}
@@ -632,7 +672,8 @@ export default function TablaProductos({
                           </td>
                         </tr>
                       )}
-                      {sg.lista.map((p) => (
+                      {!plegado(`${g.familia}/${sg.subfamilia}`) &&
+                        sg.lista.map((p) => (
                         <tr
                           key={p.id}
                           className="border-t border-gray-100 hover:bg-crema"

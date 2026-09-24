@@ -14,10 +14,12 @@ export const GRUPOS_DESCUENTO = [
 
 export type GrupoDescuento = (typeof GRUPOS_DESCUENTO)[number];
 
+// Se numeran porque asi se nombran en la cotizacion; entre parentesis va
+// sobre que se aplica cada uno.
 export const ROTULO_DESCUENTO: Record<GrupoDescuento, string> = {
-  [GRUPO_PRODUCTOS]: "DESCUENTO PRODUCTOS",
-  [GRUPO_FLETE]: "DESCUENTO FLETE",
-  [GRUPO_INSTALACIONES]: "DESCUENTO INSTALACIONES",
+  [GRUPO_PRODUCTOS]: "DESCUENTO 1 (PRODUCTOS)",
+  [GRUPO_FLETE]: "DESCUENTO 2 (FLETE)",
+  [GRUPO_INSTALACIONES]: "DESCUENTO 3 (INSTALACIONES)",
 };
 
 export const ROTULO_DESCUENTO_1 = ROTULO_DESCUENTO[GRUPO_PRODUCTOS];
