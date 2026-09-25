@@ -36,3 +36,92 @@ body {
   size: letter portrait;
   margin: 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Controles del modulo de finanzas.
+   Vienen del sistema de Ingresos y Egresos, que se unio a este cotizador. Se
+   traen tal cual para que sus pantallas no haya que reescribirlas: el boton
+   celeste con borde azul es el mismo del sistema Access.
+   .btn va en @layer components para que las utilidades de Tailwind (text-xs,
+   px-2) puedan pisarlo; en cascada plana ganaba siempre .btn por ir despues.
+--------------------------------------------------------------------------- */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: #C9E4F6;
+    border: 1px solid #3C8DC5;
+    color: #1A1A1A;
+    padding: 0.45rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: filter 0.12s;
+  }
+  .btn:hover:not(:disabled) {
+    filter: brightness(0.94);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-sec {
+    background: #FFFFFF;
+    border-color: #E5E2DA;
+  }
+}
+
+.campo {
+  border: 1px solid #E5E2DA;
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  background: #FFFFFF;
+  color: #1A1A1A;
+  width: 100%;
+}
+.campo:focus {
+  outline: 2px solid #3C8DC5;
+  outline-offset: -1px;
+}
+
+.etiqueta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #666666;
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+table.datos {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+table.datos thead th {
+  background: #1D4E4A;
+  color: #FFFFFF;
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+table.datos tbody td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid #E5E2DA;
+  vertical-align: top;
+}
+table.datos tbody tr:nth-child(even) {
+  background: #F8F6F0;
+}
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
