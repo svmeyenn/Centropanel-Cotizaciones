@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import type { Grupo } from "@/lib/menu";
+import type { GrupoVisible } from "@/lib/menu";
 import LOGO from "@/lib/logo";
 
 // Menu siempre a la vista, a la izquierda. Antes habia que volver a la portada
@@ -18,7 +18,7 @@ export default function MenuLateral({
   version,
   sandbox,
 }: {
-  grupos: Grupo[];
+  grupos: GrupoVisible[];
   nombre: string;
   rol: string;
   version: string;
