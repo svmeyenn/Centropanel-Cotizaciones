@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0061-20260924**
+Version vigente: **v0062-20260924**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0062-20260924 | 24-09-2026 | Tablero de desempeno en la portada: venta, conversion, margen, cobranza, equipo y clientes, con mes seleccionable y cada tasa con su magnitud | 49ef41d |
 | v0061-20260924 | 24-09-2026 | Codigo del producto (PLU) en los items de la cotizacion y busqueda por codigo al agregar productos | 7927c2a |
 | v0060-20260924 | 24-09-2026 | Tres descuentos por base (productos, flete, instalaciones) configurables por familia y por producto; panel de familias y subfamilias; parametros de materias primas; filtros y descarga a Excel en los listados | 7109ab2 |
 | v0059-20260921 | 21-09-2026 | "COTIZADOR SIP" en una linea; estado de la cotizacion solo dentro de la cotizacion y con confirmacion | 04543ff |
