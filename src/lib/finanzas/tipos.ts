@@ -245,3 +245,26 @@ export type Adjunto = {
   id_vendedor: number | null;
   subido_en: string;
 };
+
+// Cuenta bancaria de un interlocutor: el RUT es de la persona, el correo es de
+// cada cuenta. Solo hace falta para pagarle por transferencia.
+export type CuentaInterlocutor = {
+  id_int_cuenta: number;
+  id_interlocutor: number;
+  banco: string;
+  tipo_cuenta: string;
+  numero_cuenta: string;
+  email: string;
+};
+
+// Tope de gasto por categoria. La de categoria nula es la regla general, que
+// se aplica a las categorias que no tienen la suya. `bloquea` decide si el
+// gasto no se puede cargar o si solo queda marcado para quien revisa.
+export type PoliticaGasto = {
+  id_politica: number;
+  id_pais: number;
+  id_categoria: number | null;
+  tope: number;
+  bloquea: boolean;
+  activa: boolean;
+};

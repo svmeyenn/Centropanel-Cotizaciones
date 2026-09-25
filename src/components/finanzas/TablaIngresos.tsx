@@ -84,7 +84,7 @@ export default function TablaIngresos({
   const columnas = 7 + (puedeEditar ? 1 : 0);
 
   const fila = (m: Movimiento) => (
-    <tr key={m.id_mov} className="border-t border-gray-100 hover:bg-crema">
+    <tr key={m.id_mov} className="group border-t border-gray-100 hover:bg-crema">
       <td className="px-3 py-2 whitespace-nowrap">{fechaCorta(m.fecha)}</td>
       <td className="px-3 py-2">{etiquetaContraparte(m)}</td>
       <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
@@ -103,14 +103,10 @@ export default function TablaIngresos({
         {m.comentario}
       </td>
       {puedeEditar && (
-        <td className="px-3 py-2 whitespace-nowrap">
+        // Anclada a la derecha, igual que en egresos: con la tabla ancha, la
+        // columna con la que se trabaja no puede quedar fuera de la pantalla.
+        <td className="px-3 py-2 whitespace-nowrap sticky right-0 bg-white group-hover:bg-crema border-l border-gray-100">
           <div className="flex gap-1.5 justify-end">
-            <button
-              className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
-              onClick={() => setEditando(m)}
-            >
-              Editar
-            </button>
             {m.estado_pago === "Pendiente" && (
               <button
                 className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded"
@@ -119,6 +115,12 @@ export default function TablaIngresos({
                 Confirmar
               </button>
             )}
+            <button
+              className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
+              onClick={() => setEditando(m)}
+            >
+              Editar
+            </button>
           </div>
         </td>
       )}
@@ -209,7 +211,7 @@ export default function TablaIngresos({
                 <th className="text-left px-3 py-2 hidden lg:table-cell">
                   Comentario
                 </th>
-                {puedeEditar && <th className="px-3 py-2 w-36" />}
+                {puedeEditar && <th className="px-3 py-2 w-36 sticky right-0 bg-verde" />}
               </tr>
             </thead>
             <tbody>

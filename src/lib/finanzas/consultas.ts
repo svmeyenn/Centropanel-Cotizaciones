@@ -9,6 +9,8 @@ import {
   type Movimiento,
   type Proyecto,
   type Tipo,
+  type CuentaInterlocutor,
+  type PoliticaGasto,
 } from "@/lib/finanzas/tipos";
 
 export type Filtro = {
@@ -124,4 +126,26 @@ export async function cargarEnlacesRespaldo(
   const enlaces: Record<number, string> = {};
   for (const [idMov, url] of firmadas) if (url) enlaces[idMov] = url;
   return enlaces;
+}
+
+export async function cargarCuentasInterlocutores() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("interlocutor_cuentas")
+    .select("*")
+    .order("id_int_cuenta");
+  return (data ?? []) as CuentaInterlocutor[];
+}
+
+export async function cargarPoliticas(idPais: number | null) {
+  const supabase = await createClient();
+  const { data } = await conPais(
+    supabase
+      .from("politicas_gasto")
+      .select("id_politica, id_pais, id_categoria, tope, bloquea, activa")
+      .eq("activa", true)
+      .order("id_categoria", { nullsFirst: true }),
+    idPais
+  );
+  return (data ?? []) as PoliticaGasto[];
 }
