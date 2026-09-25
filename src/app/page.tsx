@@ -1,23 +1,27 @@
-import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import PanelDesempeno, { type Desempeno } from "@/components/PanelDesempeno";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { menuDe } from "@/lib/menu";
 import { VERSION } from "@/lib/version";
 import { ES_SANDBOX } from "@/lib/supabase/esquema";
 
-// Portada. Arriba, como va el mes; abajo, los mismos accesos del menu lateral
-// con la nota de cada grupo. El tablero lo calcula entero panel_desempeno()
-// en la base, filtrado por el mercado activo.
-export default async function Home() {
+// Portada: como va el mes. Los accesos ya estan en el menu lateral, que esta
+// siempre a la vista, asi que aqui no se repiten. El tablero lo calcula entero
+// panel_desempeno() en la base, para el mercado activo y el mes elegido.
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ mes?: string }>;
+}) {
   const v = await requerirVendedor();
-  const grupos = menuDe(v);
+  const { mes } = await searchParams;
 
   const { idPaisActivo } = await contextoMercado(v);
   const supabase = await createClient();
   const { data: panel } = await supabase.rpc("panel_desempeno", {
     p_pais: idPaisActivo,
+    // Llega como AAAA-MM desde el selector; la base espera una fecha.
+    p_mes: /^\d{4}-\d{2}$/.test(mes ?? "") ? `${mes}-01` : null,
   });
   const desempeno = panel as Desempeno | null;
 
@@ -27,42 +31,22 @@ export default async function Home() {
         titulo="COTIZADOR SIP"
         subtitulo="Costeo y cotizacion de paneles estructurales"
       />
-      <div className="max-w-screen-2xl mx-auto p-6">
-        <p className="text-sm text-gray-600 mb-5">
+      <div className="max-w-screen-2xl mx-auto p-4 space-y-3">
+        <p className="text-[11px] text-gray-600">
           Sesion: <span className="font-semibold">{v.nombre}</span> ({v.rol})
         </p>
 
-        {desempeno && (
-          <div className="mb-8">
-            <PanelDesempeno d={desempeno} />
-          </div>
+        {desempeno ? (
+          <PanelDesempeno d={desempeno} />
+        ) : (
+          <p className="text-sm text-gray-500">
+            No se pudo cargar el tablero. Use el menu de la izquierda.
+          </p>
         )}
-
-        <div className="space-y-5">
-          {grupos.map((g) => (
-            <section key={g.titulo}>
-              <div className="flex items-baseline gap-2 mb-2">
-                <h2 className="text-sm font-semibold text-verde">{g.titulo}</h2>
-                <span className="text-xs text-gray-500">{g.nota}</span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {g.opciones.map((o) => (
-                  <Link
-                    key={o.href}
-                    href={o.href}
-                    className="bg-white border border-gray-200 rounded px-4 py-3 text-sm font-semibold text-verde hover:border-verde transition-colors"
-                  >
-                    {o.texto}
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
 
         {/* Version vigente: sube con cada entrega a produccion (VERSIONES.md).
             En pruebas se aclara que hay cambios que aun no estan en ella. */}
-        <p className="mt-8 text-[11px] text-gray-500">
+        <p className="text-[10px] text-gray-500">
           Version {VERSION}
           {ES_SANDBOX ? " · con cambios en prueba aun no publicados" : ""}
         </p>
