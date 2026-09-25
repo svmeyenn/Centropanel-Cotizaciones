@@ -26,6 +26,21 @@ export interface Vendedor {
   puede_admin: boolean;
   debe_cambiar_password: boolean;
   activo: boolean;
+  // Permisos del modulo de finanzas. Van por persona y no por rol: se puede
+  // ser Administrador del cotizador y no tener nada que hacer en la plata.
+  fin_ver_ingresos: boolean;
+  fin_ver_egresos: boolean;
+  fin_ver_cartola: boolean;
+  fin_ver_informes: boolean;
+  fin_editar: boolean;
+  fin_mantenedores: boolean;
+  fin_solicitar_gastos: boolean;
+  fin_pagar_gastos: boolean;
+  fin_rendir_gastos: boolean;
+  // Sin esto solo ve los movimientos que cargo esta persona.
+  fin_ver_todo: boolean;
+  // A quien se le paga cuando esta persona rinde gastos.
+  id_interlocutor: number | null;
 }
 
 export interface Pais {

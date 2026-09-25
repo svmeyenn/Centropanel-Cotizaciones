@@ -3,14 +3,18 @@ import { administraUsuarios, tienePerfilAdmin } from "@/lib/sesion";
 
 // El menu del sistema, en un solo lugar: lo usan la barra lateral --siempre a
 // la vista-- y la portada. Van por concepto, siguiendo el recorrido real de una
-// venta: se cotiza, se produce, se cobra, y aparte estan las maestras y la
-// configuracion.
+// venta: se cotiza, se produce, se cobra, se lleva la plata, y aparte estan las
+// maestras y la configuracion.
 export interface Opcion {
   texto: string;
   href: string;
   soloAdmin?: boolean;
   // Solo el Administrador: el Supervisor no administra usuarios ni claves.
   soloUsuarios?: boolean;
+  // Permiso propio de la opcion. Las de finanzas no cuelgan del rol sino de
+  // las casillas de la ficha: se puede ser Administrador del cotizador y no
+  // tener nada que hacer en la plata.
+  ve?: (v: Vendedor) => boolean;
 }
 
 export interface Grupo {
@@ -46,6 +50,26 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
+    titulo: "Finanzas",
+    nota: "La plata que entra, la que sale y lo que se rinde",
+    opciones: [
+      { texto: "Ingresos", href: "/ingresos", ve: (v) => v.fin_ver_ingresos },
+      { texto: "Egresos", href: "/egresos", ve: (v) => v.fin_ver_egresos },
+      {
+        texto: "Rendiciones de gastos",
+        href: "/rendiciones",
+        ve: (v) => v.fin_rendir_gastos || v.fin_pagar_gastos,
+      },
+      { texto: "Cartola consolidada", href: "/cartola", ve: (v) => v.fin_ver_cartola },
+      { texto: "Conciliacion bancaria", href: "/conciliacion", ve: (v) => v.fin_ver_cartola },
+      {
+        texto: "Resumen por proyecto",
+        href: "/resumen-proyecto",
+        ve: (v) => v.fin_ver_informes,
+      },
+    ],
+  },
+  {
     titulo: "Catalogo",
     nota: "Que vendemos y con que esta hecho",
     opciones: [
@@ -67,19 +91,28 @@ export const GRUPOS: Grupo[] = [
       { texto: "Formas de pago", href: "/formas-pago" },
       { texto: "Vendedores y accesos", href: "/vendedores", soloUsuarios: true },
       { texto: "Parametros", href: "/parametros", soloAdmin: true },
+      {
+        texto: "Cuentas, proyectos y categorias",
+        href: "/mantenedores",
+        ve: (v) => v.fin_mantenedores,
+      },
+      { texto: "Topes de gasto", href: "/topes", ve: (v) => v.fin_mantenedores },
     ],
   },
 ];
 
 // Lo que ve cada perfil. Igual que MenuAbrirAdmin en Access: lo que no se
-// puede abrir no se muestra.
-export function menuDe(v: Pick<Vendedor, "rol">): Grupo[] {
+// puede abrir no se muestra, y un grupo sin opciones no aparece.
+export function menuDe(v: Vendedor): Grupo[] {
   const esAdmin = tienePerfilAdmin(v);
   const veUsuarios = administraUsuarios(v);
   return GRUPOS.map((g) => ({
     ...g,
     opciones: g.opciones.filter(
-      (o) => (!o.soloAdmin || esAdmin) && (!o.soloUsuarios || veUsuarios)
+      (o) =>
+        (!o.soloAdmin || esAdmin) &&
+        (!o.soloUsuarios || veUsuarios) &&
+        (!o.ve || o.ve(v))
     ),
   })).filter((g) => g.opciones.length > 0);
 }
