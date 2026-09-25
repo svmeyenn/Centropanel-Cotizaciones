@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { buscarInterlocutores, type Interlocutor } from "@/lib/finanzas/tipos";
+import FormularioInterlocutor from "./FormularioInterlocutor";
 
 const MAX_SUGERENCIAS = 8;
 
@@ -9,8 +11,8 @@ const MAX_SUGERENCIAS = 8;
 // se va acotando con lo tecleado. Lo que viaja al servidor es el id, nunca el
 // texto: el nombre lo resuelve el servidor desde la base.
 //
-// Crear uno nuevo todavia no se puede desde aqui; eso llega con la pantalla de
-// cuentas, proyectos y categorias.
+// Si no esta en la lista se crea aqui mismo, sin perder lo que se llevaba
+// escrito del movimiento.
 export default function SelectorInterlocutor({
   interlocutores,
   valorInicial,
@@ -33,11 +35,13 @@ export default function SelectorInterlocutor({
   const inicial =
     disponibles.find((i) => i.id_interlocutor === valorInicial) ?? null;
 
+  const [nuevos, setNuevos] = useState<Interlocutor[]>([]);
   const [elegido, setElegido] = useState<number | null>(
     inicial?.id_interlocutor ?? null
   );
   const [texto, setTexto] = useState(inicial?.nombre_referencia ?? "");
   const [abierto, setAbierto] = useState(false);
+  const [creando, setCreando] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,13 +53,14 @@ export default function SelectorInterlocutor({
     return () => document.removeEventListener("mousedown", fuera);
   }, []);
 
+  const todos = useMemo(() => [...nuevos, ...disponibles], [nuevos, disponibles]);
+
   const filtrados = useMemo(
-    () => buscarInterlocutores(disponibles, texto),
-    [disponibles, texto]
+    () => buscarInterlocutores(todos, texto),
+    [todos, texto]
   );
 
-  const seleccionado =
-    disponibles.find((i) => i.id_interlocutor === elegido) ?? null;
+  const seleccionado = todos.find((i) => i.id_interlocutor === elegido) ?? null;
   // Si se toco el texto despues de elegir, la seleccion ya no corresponde.
   const valido =
     seleccionado !== null && seleccionado.nombre_referencia === texto;
@@ -121,8 +126,60 @@ export default function SelectorInterlocutor({
               Ninguno coincide con «{texto}».
             </p>
           )}
+
+          <button
+            type="button"
+            className="block w-full text-left px-2 py-1.5 text-xs font-semibold text-verde border-t border-gray-200 hover:bg-crema"
+            onClick={() => {
+              setAbierto(false);
+              setCreando(true);
+            }}
+          >
+            + Crear{texto.trim() ? ` «${texto.trim()}»` : " uno nuevo"}
+          </button>
         </div>
       )}
+
+      {/* La ficha sale por un portal: este campo vive dentro del formulario
+          del movimiento, y un formulario dentro de otro no es HTML valido. */}
+      {creando &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[60] bg-black/40 flex items-start justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded shadow-lg w-full max-w-3xl my-6">
+              <div className="bg-verde text-white px-4 py-3 rounded-t">
+                <div className="text-sm font-semibold">Nuevo interlocutor</div>
+                <div className="text-[11px] text-white/80">
+                  Queda disponible de inmediato para este movimiento
+                </div>
+              </div>
+              <div className="p-4">
+                <FormularioInterlocutor
+                  interlocutor={null}
+                  cuentas={[]}
+                  nombreSugerido={texto.trim()}
+                  alCancelar={() => setCreando(false)}
+                  alGuardar={(id, nombre) => {
+                    const creado: Interlocutor = {
+                      id_interlocutor: id,
+                      id_pais: 0,
+                      razon_social: nombre,
+                      nombre_referencia: nombre,
+                      rut: null,
+                      con_transferencia: false,
+                      borrado: false,
+                    };
+                    setNuevos((n) => [creado, ...n]);
+                    setElegido(id);
+                    setTexto(nombre);
+                    setCreando(false);
+                  }}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

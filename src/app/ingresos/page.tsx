@@ -71,7 +71,7 @@ export default async function Pagina({
     <div className="min-h-screen">
       <Cabecera titulo="Ingresos" subtitulo="La plata que entra y en que cuenta queda" />
 
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="p-6 space-y-4">
         <BarraNavegacion />
 
         <FiltrosMovimientos

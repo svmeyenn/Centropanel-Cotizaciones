@@ -79,7 +79,7 @@ export default async function Pagina({
         subtitulo="Lo que se paga y lo que esta pendiente de pago"
       />
 
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="p-6 space-y-4">
         <BarraNavegacion />
 
         <FiltrosMovimientos

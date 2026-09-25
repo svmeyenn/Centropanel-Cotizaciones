@@ -93,7 +93,7 @@ export default function TablaEgresos({
   const columnas = 9 + (puedeEditar || puedePagar ? 1 : 0);
 
   const fila = (m: Movimiento) => (
-    <tr key={m.id_mov} className="border-t border-gray-100 hover:bg-crema">
+    <tr key={m.id_mov} className="group border-t border-gray-100 hover:bg-crema">
       <td className="px-3 py-2 whitespace-nowrap">
         {m.fecha ? (
           fechaCorta(m.fecha)
@@ -135,22 +135,25 @@ export default function TablaEgresos({
         {quienSolicito(m.id_vendedor)}
       </td>
       {(puedeEditar || puedePagar) && (
-        <td className="px-3 py-2 whitespace-nowrap">
+        // Anclada a la derecha: es la columna con la que se trabaja, y con
+        // diez columnas la tabla puede tener que desplazarse. Antes quedaba
+        // fuera de la pantalla y el boton de pagar no se veia.
+        <td className="px-3 py-2 whitespace-nowrap sticky right-0 bg-white group-hover:bg-crema border-l border-gray-100">
           <div className="flex gap-1.5 justify-end">
-            {puedeEditar && (
-              <button
-                className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
-                onClick={() => setEditando(m)}
-              >
-                Editar
-              </button>
-            )}
             {puedePagar && m.estado_pago === "Pendiente" && (
               <button
                 className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded"
                 onClick={() => setPagando(m)}
               >
                 Pagar
+              </button>
+            )}
+            {puedeEditar && (
+              <button
+                className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
+                onClick={() => setEditando(m)}
+              >
+                Editar
               </button>
             )}
           </div>
@@ -250,7 +253,7 @@ export default function TablaEgresos({
                   Solicito
                 </th>
                 {(puedeEditar || puedePagar) && (
-                  <th className="px-3 py-2 w-32" />
+                  <th className="px-3 py-2 w-36 sticky right-0 bg-verde" />
                 )}
               </tr>
             </thead>
