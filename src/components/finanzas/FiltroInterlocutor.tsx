@@ -18,9 +18,6 @@ import {
 // No se pueden unificar. Si al elegir "Sodimac" se guardara su texto, el
 // filtro traeria tambien a "Sodimex", que se le parece lo suficiente como para
 // coincidir. Elegir uno tiene que significar exactamente ese.
-//
-// Va aparte del formulario de filtros y se aplica solo: es el que mas se usa y
-// no tiene por que arrastrar a los demas.
 export default function FiltroInterlocutor({
   interlocutores,
   valorId,
@@ -45,7 +42,7 @@ export default function FiltroInterlocutor({
       : valorTexto
   );
   const [abierto, setAbierto] = useState(false);
-  const caja = useRef<HTMLDivElement>(null);
+  const caja = useRef<HTMLLabelElement>(null);
 
   const router = useRouter();
   const ruta = usePathname();
@@ -103,14 +100,16 @@ export default function FiltroInterlocutor({
   }
 
   return (
-    <div ref={caja} className="relative">
-      <label className="etiqueta">Origen / Destino</label>
+    <label className="text-xs relative" ref={caja}>
+      <span className="block text-dorado-osc font-semibold mb-0.5">
+        Origen / Destino
+      </span>
 
       <div className="relative">
         <input
-          className="campo pr-7"
+          className="border border-gray-300 rounded px-2 py-1 pr-6 text-xs w-full bg-white"
           value={texto}
-          placeholder="(todos) — escriba y presione Enter"
+          placeholder="Todos"
           autoComplete="off"
           onChange={(e) => {
             setTexto(e.target.value);
@@ -129,7 +128,7 @@ export default function FiltroInterlocutor({
           <button
             type="button"
             aria-label="Quitar el filtro de origen o destino"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gris text-sm leading-none"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-500 leading-none"
             onClick={limpiar}
           >
             ×
@@ -138,28 +137,28 @@ export default function FiltroInterlocutor({
       </div>
 
       {valorTexto && !abierto && (
-        <p className="text-xs text-gris mt-1">
-          Mostrando todos los que coinciden con «{valorTexto}».
-        </p>
+        <span className="block text-[10px] text-gray-500 mt-0.5">
+          Todos los que coinciden con «{valorTexto}».
+        </span>
       )}
 
       {abierto && (
-        <div className="absolute z-40 left-0 right-0 mt-1 bg-white border border-gris-suave rounded-lg shadow-lg max-h-72 overflow-y-auto">
+        <div className="absolute z-40 left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-72 overflow-y-auto">
           <button
             type="button"
-            className="block w-full text-left px-3 py-2 text-sm text-gris hover:bg-crema border-b border-gris-suave"
+            className="block w-full text-left px-2 py-1.5 text-xs text-gray-600 hover:bg-crema border-b border-gray-100"
             onClick={() => {
               limpiar();
               setAbierto(false);
             }}
           >
-            (todos)
+            Todos
           </button>
 
           {consulta !== "" && filtrados.length > 0 && (
             <button
               type="button"
-              className="block w-full text-left px-3 py-2 text-sm font-medium text-celeste-borde hover:bg-crema border-b border-gris-suave"
+              className="block w-full text-left px-2 py-1.5 text-xs font-semibold text-verde hover:bg-crema border-b border-gray-100"
               onClick={verTodosLosQueCoinciden}
             >
               Todos los que coincidan con «{consulta}» ({filtrados.length})
@@ -172,7 +171,7 @@ export default function FiltroInterlocutor({
             <button
               key={i.id_interlocutor}
               type="button"
-              className="block w-full text-left px-3 py-2 text-sm hover:bg-crema border-b border-gris-suave last:border-0"
+              className="block w-full text-left px-2 py-1.5 text-xs hover:bg-crema border-b border-gray-100 last:border-0"
               onClick={() => elegirUno(i)}
             >
               {etiquetaInterlocutor(i.razon_social, i.nombre_referencia)}
@@ -180,12 +179,12 @@ export default function FiltroInterlocutor({
           ))}
 
           {filtrados.length === 0 && (
-            <p className="px-3 py-2 text-xs text-gris">
+            <span className="block px-2 py-1.5 text-xs text-gray-500">
               Ninguno coincide con «{texto}».
-            </p>
+            </span>
           )}
         </div>
       )}
-    </div>
+    </label>
   );
 }

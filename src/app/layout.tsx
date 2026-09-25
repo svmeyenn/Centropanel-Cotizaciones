@@ -4,7 +4,7 @@ import Estructura from "@/components/Estructura";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Centro Panel - Cotizador",
+  title: "Centro Panel - Sistema de Gestion",
   description: "Costeo y cotizacion de paneles estructurales SIP",
 };
 

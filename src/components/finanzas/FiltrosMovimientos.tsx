@@ -1,146 +1,151 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { Cuenta, Interlocutor, Proyecto } from "@/lib/finanzas/tipos";
 import FiltroInterlocutor from "./FiltroInterlocutor";
 
+// Filtros de los listados de finanzas, con la misma forma que los de
+// cotizaciones y pedidos: un formulario que navega con querystring --sin
+// javascript-- para que el filtro quede en la direccion y se pueda compartir.
+//
+// El origen/destino es la excepcion: se elige de una lista que busca mientras
+// se escribe, asi que va aparte y se aplica solo.
 export default function FiltrosMovimientos({
+  base,
   cuentas,
   proyectos,
   interlocutores,
-  mostrarEstado = true,
+  etiquetaEstados,
+  extra,
 }: {
+  base: string;
   cuentas: Cuenta[];
   proyectos: Proyecto[];
   // Sin esta lista no se dibuja el filtro de origen/destino: la cartola no la
   // pasa, y ahi el filtro no aparece.
   interlocutores?: Interlocutor[];
-  mostrarEstado?: boolean;
+  // "Recibido / Proyectado" en ingresos, "Pagado / Pendiente" en egresos.
+  etiquetaEstados: { pagado: string; pendiente: string };
+  extra?: React.ReactNode;
 }) {
-  const proyectosActivos = proyectos.filter((p) => p.activo && !p.borrado);
-  const router = useRouter();
-  const ruta = usePathname();
   const params = useSearchParams();
+  const proyectosActivos = proyectos.filter((p) => p.activo && !p.borrado);
+  const campo =
+    "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 
-  function aplicar(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const datos = new FormData(e.currentTarget);
-    const nuevo = new URLSearchParams();
-    datos.forEach((v, k) => {
-      const s = v.toString().trim();
-      if (s) nuevo.set(k, s);
-    });
-    // El filtro de origen/destino vive fuera de este formulario y es
-    // independiente: ni aplicar ni limpiar lo tocan.
-    for (const clave of ["interlocutor", "destino"]) {
-      const v = params.get(clave);
-      if (v) nuevo.set(clave, v);
-    }
-    router.push(`${ruta}?${nuevo.toString()}`);
-  }
-
-  function limpiar() {
-    const conservados = new URLSearchParams();
-    for (const clave of ["interlocutor", "destino"]) {
-      const v = params.get(clave);
-      if (v) conservados.set(clave, v);
-    }
-    const cola = conservados.toString();
-    router.push(cola ? `${ruta}?${cola}` : ruta);
-  }
+  // Lo que elige el campo de origen/destino no esta en este formulario: viaja
+  // escondido para que filtrar por fecha no lo pierda.
+  const interlocutor = params.get("interlocutor") ?? "";
+  const destino = params.get("destino") ?? "";
+  const hayFiltro = [...params.keys()].length > 0;
 
   return (
-    <>
+    <div className="space-y-2">
       <form
-        onSubmit={aplicar}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end mb-3 p-3 bg-crema border border-gris-suave rounded-lg"
+        className="bg-white border border-gray-200 rounded p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
+        action={base}
       >
-        <div>
-          <label className="etiqueta">Desde</label>
+        {interlocutor && (
+          <input type="hidden" name="interlocutor" value={interlocutor} />
+        )}
+        {destino && <input type="hidden" name="destino" value={destino} />}
+
+        <Campo rotulo="Desde">
           <input
             type="date"
             name="desde"
-            className="campo"
             defaultValue={params.get("desde") ?? ""}
+            className={campo}
           />
-        </div>
-        <div>
-          <label className="etiqueta">Hasta</label>
+        </Campo>
+        <Campo rotulo="Hasta">
           <input
             type="date"
             name="hasta"
-            className="campo"
             defaultValue={params.get("hasta") ?? ""}
+            className={campo}
           />
-        </div>
-        <div>
-          <label className="etiqueta">Cuenta</label>
+        </Campo>
+        <Campo rotulo="Cuenta">
           <select
             name="cuenta"
-            className="campo"
             defaultValue={params.get("cuenta") ?? ""}
+            className={campo}
           >
-            <option value="">(todas)</option>
+            <option value="">Todas</option>
             {cuentas.map((c) => (
               <option key={c.id_cuenta} value={c.id_cuenta}>
                 {c.alias ?? c.banco}
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="etiqueta">Proyecto</label>
+        </Campo>
+        <Campo rotulo="Proyecto">
           <select
             name="proyecto"
-            className="campo"
             defaultValue={params.get("proyecto") ?? ""}
+            className={campo}
           >
-            <option value="">(todos)</option>
+            <option value="">Todos</option>
             {proyectosActivos.map((p) => (
               <option key={p.id_proyecto} value={p.id_proyecto}>
                 {p.nombre}
-                {p.cliente ? ` — ${p.cliente}` : ""}
+                {p.cliente ? ` - ${p.cliente}` : ""}
               </option>
             ))}
           </select>
-        </div>
-        {mostrarEstado && (
-          <div>
-            <label className="etiqueta">Estado</label>
-            <select
-              name="estado"
-              className="campo"
-              defaultValue={params.get("estado") ?? ""}
-            >
-              <option value="">(todos)</option>
-              <option value="Pagado">Recibido</option>
-              <option value="Pendiente">Proyectado</option>
-            </select>
-          </div>
+        </Campo>
+        <Campo rotulo="Estado">
+          <select
+            name="estado"
+            defaultValue={params.get("estado") ?? ""}
+            className={campo}
+          >
+            <option value="">Todos</option>
+            <option value="Pagado">{etiquetaEstados.pagado}</option>
+            <option value="Pendiente">{etiquetaEstados.pendiente}</option>
+          </select>
+        </Campo>
+
+        {interlocutores && (
+          <FiltroInterlocutor
+            interlocutores={interlocutores}
+            valorId={interlocutor}
+            valorTexto={destino}
+          />
         )}
-        <div className="flex gap-2">
-          <button type="submit" className="btn flex-1">
-            APLICAR
+
+        <div className="flex items-end gap-2">
+          <button className="bg-verde text-white text-xs font-semibold px-3 py-1.5 rounded">
+            Filtrar
           </button>
-          <button type="button" onClick={limpiar} className="btn btn-sec">
-            LIMPIAR
-          </button>
+          {hayFiltro && (
+            <Link
+              href={base}
+              className="text-xs text-gray-600 underline self-center pb-1.5"
+            >
+              limpiar
+            </Link>
+          )}
+          {extra}
         </div>
       </form>
+    </div>
+  );
+}
 
-      {interlocutores && (
-        <div className="mb-4 p-3 bg-crema border border-gris-suave rounded-lg grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {/* La clave ata el control a la direccion: si el parametro cambia por
-              fuera --el boton atras, por ejemplo-- se remonta y vuelve a
-              reflejar lo que dice la direccion. */}
-          <FiltroInterlocutor
-            key={`${params.get("interlocutor") ?? ""}|${params.get("destino") ?? ""}`}
-            interlocutores={interlocutores}
-            valorId={params.get("interlocutor") ?? ""}
-            valorTexto={params.get("destino") ?? ""}
-          />
-        </div>
-      )}
-    </>
+function Campo({
+  rotulo,
+  children,
+}: {
+  rotulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="text-xs">
+      <span className="block text-dorado-osc font-semibold mb-0.5">{rotulo}</span>
+      {children}
+    </label>
   );
 }

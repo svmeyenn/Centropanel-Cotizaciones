@@ -28,8 +28,8 @@ export default async function Home({
   return (
     <div className="min-h-screen">
       <Cabecera
-        titulo="COTIZADOR SIP"
-        subtitulo="Costeo y cotizacion de paneles estructurales"
+        titulo="SISTEMA DE GESTION"
+        subtitulo="Ventas, produccion, cobranza y finanzas"
       />
       <div className="max-w-screen-2xl mx-auto p-4 space-y-3">
         <p className="text-[11px] text-gray-600">

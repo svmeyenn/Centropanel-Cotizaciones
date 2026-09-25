@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { pesos } from "@/lib/formato";
 import {
   agruparPorMes,
-  etiquetaEstado,
   etiquetaInterlocutor,
   fechaCorta,
   type Categoria,
@@ -29,6 +28,7 @@ export default function TablaIngresos({
   categorias,
   interlocutores,
   puedeEditar,
+  hayFiltro,
 }: {
   movimientos: Movimiento[];
   cuentas: Cuenta[];
@@ -36,6 +36,7 @@ export default function TablaIngresos({
   categorias: Categoria[];
   interlocutores: Interlocutor[];
   puedeEditar: boolean;
+  hayFiltro: boolean;
 }) {
   const router = useRouter();
   const [editando, setEditando] = useState<Movimiento | null>(null);
@@ -58,7 +59,7 @@ export default function TablaIngresos({
   const nombreProyecto = (id: number | null) => {
     const p = proyectos.find((x) => x.id_proyecto === id);
     if (!p) return "";
-    return p.cliente ? `${p.nombre} — ${p.cliente}` : p.nombre;
+    return p.cliente ? `${p.nombre} - ${p.cliente}` : p.nombre;
   };
   const nombreCategoria = (id: number | null) =>
     categorias.find((c) => c.id_categoria === id)?.nombre ?? "";
@@ -80,43 +81,39 @@ export default function TablaIngresos({
   const recibidos = movimientos.filter((m) => m.estado_pago === "Pagado");
   const totalProyectado = proyectados.reduce((t, m) => t + Number(m.monto), 0);
   const grupos = agruparPorMes(recibidos);
-  // Excede a proposito el numero real de columnas: en un colSpan, un valor
-  // mayor simplemente se recorta al ancho de la tabla, y asi la fila divisoria
-  // cubre todo el ancho sin recalcular cuantas columnas oculta el responsive.
-  const columnas = 12;
+  const columnas = 7 + (puedeEditar ? 1 : 0);
 
   const fila = (m: Movimiento) => (
-    <tr key={m.id_mov}>
-      <td className="whitespace-nowrap">{fechaCorta(m.fecha)}</td>
-      <td className="truncate">{etiquetaContraparte(m)}</td>
-      <td className="num">{pesos(m.monto)}</td>
-      <td className="hidden md:table-cell">{nombreCuenta(m.id_cuenta)}</td>
-      <td className="hidden md:table-cell">{nombreProyecto(m.id_proyecto)}</td>
-      <td className="hidden md:table-cell">{nombreCategoria(m.id_categoria)}</td>
-      <td>
-        <span
-          className={
-            m.estado_pago === "Pagado"
-              ? "text-verde font-semibold"
-              : "text-dorado-oscuro font-semibold"
-          }
-        >
-          {etiquetaEstado("Ingreso", m.estado_pago)}
-        </span>
+    <tr key={m.id_mov} className="border-t border-gray-100 hover:bg-crema">
+      <td className="px-3 py-2 whitespace-nowrap">{fechaCorta(m.fecha)}</td>
+      <td className="px-3 py-2">{etiquetaContraparte(m)}</td>
+      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
+        {pesos(m.monto)}
       </td>
-      <td className="hidden md:table-cell max-w-xs truncate">{m.comentario}</td>
+      <td className="px-3 py-2 hidden md:table-cell text-gray-600">
+        {nombreCuenta(m.id_cuenta)}
+      </td>
+      <td className="px-3 py-2 hidden md:table-cell text-gray-600">
+        {nombreProyecto(m.id_proyecto)}
+      </td>
+      <td className="px-3 py-2 hidden lg:table-cell text-gray-600">
+        {nombreCategoria(m.id_categoria)}
+      </td>
+      <td className="px-3 py-2 hidden lg:table-cell text-gray-600 max-w-xs truncate">
+        {m.comentario}
+      </td>
       {puedeEditar && (
-        <td className="whitespace-nowrap">
-          <div className="flex flex-col gap-1 items-start">
+        <td className="px-3 py-2 whitespace-nowrap">
+          <div className="flex gap-1.5 justify-end">
             <button
-              className="btn btn-sec text-xs px-2 py-1"
+              className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
               onClick={() => setEditando(m)}
             >
               Editar
             </button>
             {m.estado_pago === "Pendiente" && (
               <button
-                className="btn text-xs px-2 py-1 whitespace-nowrap"
+                className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded"
                 onClick={() => setConfirmando(m)}
               >
                 Confirmar
@@ -128,102 +125,133 @@ export default function TablaIngresos({
     </tr>
   );
 
+  const cabeceraGrupo = (
+    clave: string,
+    titulo: string,
+    monto: number,
+    tono: "verde" | "dorado"
+  ) => (
+    <tr>
+      <td
+        colSpan={columnas}
+        className={`p-0 ${tono === "verde" ? "bg-crema" : "bg-dorado/15"}`}
+      >
+        <button
+          type="button"
+          className={`w-full flex items-center justify-between gap-3 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide ${
+            tono === "verde" ? "text-verde" : "text-dorado-osc"
+          }`}
+          onClick={() => alternar(clave)}
+        >
+          <span>
+            {colapsados.has(clave) ? "▸" : "▾"} {titulo}
+          </span>
+          <span className="normal-case tabular-nums font-normal">
+            {pesos(monto)}
+          </span>
+        </button>
+      </td>
+    </tr>
+  );
+
   return (
     <>
-      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-        <div className="flex gap-4 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-4 text-xs text-gray-600">
           <span>
-            <strong>{movimientos.length}</strong> movimientos
+            <strong className="text-negro">{movimientos.length}</strong>{" "}
+            movimientos
           </span>
           <span>
-            Total: <strong className="tabular-nums">{pesos(total)}</strong>
+            Total:{" "}
+            <strong className="text-negro tabular-nums">{pesos(total)}</strong>
           </span>
           <span>
             Proyectado:{" "}
-            <strong className="tabular-nums">{pesos(totalProyectado)}</strong>
+            <strong className="text-negro tabular-nums">
+              {pesos(totalProyectado)}
+            </strong>
           </span>
         </div>
         {puedeEditar && (
-          <button className="btn" onClick={() => setCreando(true)}>
-            NUEVO INGRESO
+          <button
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+            onClick={() => setCreando(true)}
+          >
+            Nuevo ingreso
           </button>
         )}
       </div>
 
       {aviso && (
-        <p className="text-sm mb-3 px-3 py-2 bg-crema border border-gris-suave rounded">
+        <p className="bg-white border border-gray-200 rounded px-3 py-2 text-xs text-gray-700">
           {aviso}
         </p>
       )}
 
-      <div className="border border-gris-suave rounded-lg overflow-hidden">
-        <table className="datos w-full table-fixed text-xs sm:text-sm">
-          <thead>
-            <tr>
-              <th className="w-[18%] sm:w-[12%]">Fecha</th>
-              <th className="w-[30%] sm:w-[20%]">Origen</th>
-              <th className="num w-[20%] sm:w-[13%]">Monto</th>
-              <th className="hidden md:table-cell md:w-[13%]">Cuenta</th>
-              <th className="hidden md:table-cell md:w-[15%]">
-                Proyecto / Cliente
-              </th>
-              <th className="hidden md:table-cell md:w-[12%]">Categoria</th>
-              <th className="w-[18%] sm:w-[10%]">Estado</th>
-              <th className="hidden md:table-cell md:w-[15%]">Comentario</th>
-              {puedeEditar && <th className="w-[14%] sm:w-[10%]"></th>}
-            </tr>
-          </thead>
-          <tbody>
-            {proyectados.length > 0 && (
-              <>
-                <tr>
-                  <td colSpan={columnas} className="p-0 bg-dorado-oscuro/10">
-                    <button
-                      type="button"
-                      className="w-full flex items-center gap-2 text-dorado-oscuro font-semibold text-xs uppercase tracking-wide py-1.5 px-3"
-                      onClick={() => alternar("__proyectados")}
-                    >
-                      <span>
-                        {colapsados.has("__proyectados") ? "▸" : "▾"} Proyectados
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-                {!colapsados.has("__proyectados") && proyectados.map(fila)}
-              </>
-            )}
-            {grupos.map((g) => (
-              <Fragment key={g.mes}>
-                <tr>
-                  <td colSpan={columnas} className="p-0 bg-verde/10">
-                    <button
-                      type="button"
-                      className="w-full flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-verde font-semibold text-xs uppercase tracking-wide py-1.5 px-3"
-                      onClick={() => alternar(g.mes)}
-                    >
-                      <span>
-                        {colapsados.has(g.mes) ? "▸" : "▾"} {g.mes}
-                      </span>
-                      <span className="normal-case font-normal tabular-nums">
-                        {pesos(
-                          g.filas.reduce((t, m) => t + Number(m.monto), 0)
-                        )}
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-                {!colapsados.has(g.mes) && g.filas.map(fila)}
-              </Fragment>
-            ))}
-            {movimientos.length === 0 && (
+      <div className="bg-white border border-gray-200 rounded overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-verde text-white">
               <tr>
-                <td colSpan={columnas} className="text-gris py-6 text-center">
-                  No hay movimientos que cumplan el filtro.
-                </td>
+                <th className="text-left px-3 py-2 w-28">Fecha</th>
+                <th className="text-left px-3 py-2">Origen</th>
+                <th className="text-right px-3 py-2 w-32">Monto</th>
+                <th className="text-left px-3 py-2 hidden md:table-cell w-32">
+                  Cuenta
+                </th>
+                <th className="text-left px-3 py-2 hidden md:table-cell">
+                  Proyecto / Cliente
+                </th>
+                <th className="text-left px-3 py-2 hidden lg:table-cell w-36">
+                  Categoria
+                </th>
+                <th className="text-left px-3 py-2 hidden lg:table-cell">
+                  Comentario
+                </th>
+                {puedeEditar && <th className="px-3 py-2 w-36" />}
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {movimientos.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={columnas}
+                    className="text-center text-gray-400 py-8"
+                  >
+                    {hayFiltro
+                      ? "Ningun ingreso coincide con el filtro."
+                      : "Todavia no hay ingresos."}
+                  </td>
+                </tr>
+              )}
+
+              {proyectados.length > 0 && (
+                <>
+                  {cabeceraGrupo(
+                    "__proyectados",
+                    "Proyectados",
+                    totalProyectado,
+                    "dorado"
+                  )}
+                  {!colapsados.has("__proyectados") && proyectados.map(fila)}
+                </>
+              )}
+
+              {grupos.map((g) => (
+                <Fragment key={g.mes}>
+                  {cabeceraGrupo(
+                    g.mes,
+                    g.mes,
+                    g.filas.reduce((t, m) => t + Number(m.monto), 0),
+                    "verde"
+                  )}
+                  {!colapsados.has(g.mes) && g.filas.map(fila)}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {(creando || editando) && (
