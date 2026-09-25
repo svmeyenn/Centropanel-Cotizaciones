@@ -101,18 +101,27 @@ export const GRUPOS: Grupo[] = [
   },
 ];
 
+// Quien puede abrir una opcion. En un solo lugar, porque la usan dos: el menu
+// --para no mostrar lo que no se puede abrir-- y cada pantalla, que vuelve a
+// preguntarlo en el servidor. Asi nadie entra escribiendo la direccion a mano.
+function alcanza(v: Vendedor, o: Opcion): boolean {
+  if (o.soloAdmin && !tienePerfilAdmin(v)) return false;
+  if (o.soloUsuarios && !administraUsuarios(v)) return false;
+  return !o.ve || o.ve(v);
+}
+
+// Permiso de una ruta concreta. Una ruta que no esta en el menu --el detalle de
+// una cotizacion, por ejemplo-- no la decide esta regla y se deja pasar.
+export function puedeVerRuta(v: Vendedor, href: string): boolean {
+  const o = GRUPOS.flatMap((g) => g.opciones).find((x) => x.href === href);
+  return o ? alcanza(v, o) : true;
+}
+
 // Lo que ve cada perfil. Igual que MenuAbrirAdmin en Access: lo que no se
 // puede abrir no se muestra, y un grupo sin opciones no aparece.
 export function menuDe(v: Vendedor): Grupo[] {
-  const esAdmin = tienePerfilAdmin(v);
-  const veUsuarios = administraUsuarios(v);
   return GRUPOS.map((g) => ({
     ...g,
-    opciones: g.opciones.filter(
-      (o) =>
-        (!o.soloAdmin || esAdmin) &&
-        (!o.soloUsuarios || veUsuarios) &&
-        (!o.ve || o.ve(v))
-    ),
+    opciones: g.opciones.filter((o) => alcanza(v, o)),
   })).filter((g) => g.opciones.length > 0);
 }
