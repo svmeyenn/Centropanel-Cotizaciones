@@ -37,7 +37,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-full max-w-sm bg-white rounded-lg shadow-sm overflow-hidden">
         <Cabecera
-          titulo="COTIZADOR SIP"
+          titulo="SISTEMA DE GESTION"
           subtitulo="Ingrese con su correo y contrasena"
           enlazarLogo={false}
         />

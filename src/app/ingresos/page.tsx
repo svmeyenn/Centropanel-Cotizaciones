@@ -1,10 +1,19 @@
 import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
+import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonExportarFilas from "@/components/BotonExportarFilas";
 import FiltrosMovimientos from "@/components/finanzas/FiltrosMovimientos";
 import TablaIngresos from "@/components/finanzas/TablaIngresos";
-import { cargarMaestros, cargarMovimientos, type Filtro } from "@/lib/finanzas/consultas";
-import { etiquetaEstado, etiquetaInterlocutor, fechaCorta } from "@/lib/finanzas/tipos";
+import {
+  cargarMaestros,
+  cargarMovimientos,
+  type Filtro,
+} from "@/lib/finanzas/consultas";
+import {
+  etiquetaEstado,
+  etiquetaInterlocutor,
+  fechaCorta,
+} from "@/lib/finanzas/tipos";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 
@@ -22,6 +31,7 @@ export default async function Pagina({
   if (!puedeVerRuta(v, "/ingresos")) redirect("/");
 
   const filtro = await searchParams;
+  const hayFiltro = Object.values(filtro).some((x) => x);
   const { idPaisActivo } = await contextoMercado(v);
 
   const { cuentas, proyectos, categorias, interlocutores } =
@@ -33,7 +43,8 @@ export default async function Pagina({
     interlocutores
   );
 
-  const filas = movimientos.map((m) => {
+  // Lo mismo que muestra la tabla, para bajarlo a una planilla.
+  const filasExcel = movimientos.map((m) => {
     const inter = interlocutores.find(
       (x) => x.id_interlocutor === m.id_interlocutor
     );
@@ -53,36 +64,39 @@ export default async function Pagina({
       categorias.find((c) => c.id_categoria === m.id_categoria)?.nombre ?? "",
       etiquetaEstado("Ingreso", m.estado_pago),
       m.comentario ?? "",
-    ];
+    ] as (string | number | null)[];
   });
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo="INGRESOS" subtitulo="La plata que entra y en que cuenta queda" />
+      <Cabecera titulo="Ingresos" subtitulo="La plata que entra y en que cuenta queda" />
 
-      <main className="max-w-screen-2xl mx-auto px-4 py-4">
+      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+        <BarraNavegacion />
+
         <FiltrosMovimientos
+          base="/ingresos"
           cuentas={cuentas}
           proyectos={proyectos}
           interlocutores={interlocutores}
+          etiquetaEstados={{ pagado: "Recibido", pendiente: "Proyectado" }}
+          extra={
+            <BotonExportarFilas
+              nombre="ingresos"
+              titulos={[
+                "Fecha",
+                "Origen",
+                "Monto",
+                "Cuenta",
+                "Proyecto / Cliente",
+                "Categoria",
+                "Estado",
+                "Comentario",
+              ]}
+              filas={filasExcel}
+            />
+          }
         />
-
-        <div className="flex justify-end mb-3">
-          <BotonExportarFilas
-            nombre="ingresos"
-            titulos={[
-              "Fecha",
-              "Origen",
-              "Monto",
-              "Cuenta",
-              "Proyecto / Cliente",
-              "Categoria",
-              "Estado",
-              "Comentario",
-            ]}
-            filas={filas}
-          />
-        </div>
 
         <TablaIngresos
           movimientos={movimientos}
@@ -91,8 +105,9 @@ export default async function Pagina({
           categorias={categorias}
           interlocutores={interlocutores}
           puedeEditar={v.fin_editar}
+          hayFiltro={hayFiltro}
         />
-      </main>
+      </div>
     </div>
   );
 }

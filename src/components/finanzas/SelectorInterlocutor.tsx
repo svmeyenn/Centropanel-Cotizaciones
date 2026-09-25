@@ -68,14 +68,16 @@ export default function SelectorInterlocutor({
 
   return (
     <div ref={caja} className="relative">
-      <label className="etiqueta">{etiqueta} *</label>
+      <label className="block text-xs font-semibold text-dorado-osc mb-0.5">
+        {etiqueta} *
+      </label>
 
       <input type="hidden" name="id_interlocutor" value={valido ? elegido! : ""} />
 
       <input
-        className="campo"
+        className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white"
         value={texto}
-        placeholder="Escriba para buscar..."
+        placeholder="Escriba para buscar"
         autoComplete="off"
         onChange={(e) => {
           setTexto(e.target.value);
@@ -86,36 +88,36 @@ export default function SelectorInterlocutor({
       />
 
       {!valido && texto.trim() !== "" && !abierto && (
-        <p className="text-xs text-red-700 mt-1">
+        <p className="text-[11px] text-red-700 mt-0.5">
           Elija uno de la lista: no basta con escribir el nombre.
         </p>
       )}
 
       {abierto && (
-        <div className="absolute z-40 left-0 right-0 mt-1 bg-white border border-gris-suave rounded-lg shadow-lg max-h-72 overflow-y-auto">
+        <div className="absolute z-40 left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-64 overflow-y-auto">
           {filtrados.slice(0, MAX_SUGERENCIAS).map((i) => (
             <button
               key={i.id_interlocutor}
               type="button"
-              className="block w-full text-left px-3 py-2 text-sm hover:bg-crema border-b border-gris-suave last:border-0"
+              className="block w-full text-left px-2 py-1.5 text-xs hover:bg-crema border-b border-gray-100 last:border-0"
               onClick={() => elegir(i)}
             >
-              <span className="font-medium">{i.nombre_referencia}</span>
+              <span className="font-semibold">{i.nombre_referencia}</span>
               {i.razon_social !== i.nombre_referencia && (
-                <span className="text-gris text-xs"> — {i.razon_social}</span>
+                <span className="text-gray-500"> - {i.razon_social}</span>
               )}
             </button>
           ))}
 
           {filtrados.length > MAX_SUGERENCIAS && (
-            <p className="px-3 py-1 text-xs text-gris">
+            <p className="px-2 py-1 text-[11px] text-gray-500">
               y {filtrados.length - MAX_SUGERENCIAS} mas: siga escribiendo para
               acotar
             </p>
           )}
 
           {filtrados.length === 0 && (
-            <p className="px-3 py-2 text-xs text-gris">
+            <p className="px-2 py-1.5 text-[11px] text-gray-500">
               Ninguno coincide con «{texto}».
             </p>
           )}

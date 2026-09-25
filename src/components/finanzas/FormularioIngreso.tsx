@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import Ventana from "@/components/Ventana";
 import {
   borrarIngreso,
   guardarIngreso,
@@ -17,6 +18,8 @@ import type {
 import SelectorInterlocutor from "./SelectorInterlocutor";
 
 const hoy = () => new Date().toISOString().slice(0, 10);
+const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
+const ROTULO = "block text-xs font-semibold text-dorado-osc mb-0.5";
 
 export default function FormularioIngreso({
   movimiento,
@@ -42,7 +45,7 @@ export default function FormularioIngreso({
     movimiento?.estado_pago ?? "Pendiente"
   );
   const sinFecha = fecha === "";
-  const pagado = !sinFecha && estadoPago === "Pagado";
+  const recibido = !sinFecha && estadoPago === "Pagado";
 
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
   const [borrando, setBorrando] = useState(false);
@@ -90,206 +93,208 @@ export default function FormularioIngreso({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-start sm:items-center justify-center p-4 overflow-y-auto z-50">
-      <div className="bg-white rounded-lg w-full max-w-2xl my-4">
-        <div className="bg-verde px-4 py-3 rounded-t-lg">
-          <h2 className="text-white font-semibold">
-            {movimiento ? "EDITAR" : "NUEVO"} INGRESO
-          </h2>
+    <Ventana
+      titulo={movimiento ? "Editar ingreso" : "Nuevo ingreso"}
+      subtitulo={
+        sinFecha
+          ? "Sin fecha queda proyectado y no entra en la cartola"
+          : "Con fecha y recibido entra en la cartola y mueve el saldo"
+      }
+      onCerrar={() => alCerrar()}
+      ancho="max-w-2xl"
+    >
+      <form action={enviar} className="grid gap-3 sm:grid-cols-2">
+        {movimiento && (
+          <input type="hidden" name="id_mov" value={movimiento.id_mov} />
+        )}
+
+        <div>
+          <label className={ROTULO}>Fecha</label>
+          <input
+            type="date"
+            name="fecha"
+            className={CAMPO}
+            value={fecha}
+            onChange={(e) => cambiarFecha(e.target.value)}
+          />
         </div>
 
-        <form action={enviar} className="p-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className={ROTULO}>Monto</label>
+          <input
+            name="monto"
+            inputMode="decimal"
+            className={CAMPO}
+            defaultValue={movimiento ? String(movimiento.monto) : ""}
+            placeholder="0"
+            required
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <SelectorInterlocutor
+            etiqueta="Origen"
+            interlocutores={interlocutores}
+            valorInicial={movimiento?.id_interlocutor ?? null}
+          />
+        </div>
+
+        <div>
+          <label className={ROTULO}>Cuenta</label>
+          <select
+            name="id_cuenta"
+            className={CAMPO}
+            defaultValue={movimiento?.id_cuenta ?? ""}
+          >
+            <option value="">Sin cuenta</option>
+            {cuentas.map((c) => (
+              <option key={c.id_cuenta} value={c.id_cuenta}>
+                {c.alias ?? c.banco}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={ROTULO}>Proyecto / Cliente</label>
+          <select
+            name="id_proyecto"
+            className={CAMPO}
+            defaultValue={movimiento?.id_proyecto ?? ""}
+          >
+            <option value="">Sin proyecto</option>
+            {proyectosDisponibles.map((p) => (
+              <option key={p.id_proyecto} value={p.id_proyecto}>
+                {p.nombre}
+                {p.cliente ? ` - ${p.cliente}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={ROTULO}>Categoria</label>
+          <select
+            name="id_categoria"
+            className={CAMPO}
+            defaultValue={movimiento?.id_categoria ?? ""}
+          >
+            <option value="">Sin categoria</option>
+            {propias.map((c) => (
+              <option key={c.id_categoria} value={c.id_categoria}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={ROTULO}>Estado</label>
+          <select
+            name="estado_pago"
+            className={CAMPO}
+            value={estadoPago}
+            onChange={(e) =>
+              cambiarEstado(e.target.value as "Pendiente" | "Pagado")
+            }
+          >
+            <option value="Pendiente">Proyectado</option>
+            <option value="Pagado">Recibido</option>
+          </select>
+        </div>
+
+        <div>
+          <label className={ROTULO}>Fecha en que se recibio</label>
+          <input
+            type="date"
+            name="fecha_pago"
+            className={`${CAMPO} disabled:bg-gray-50 disabled:text-gray-400`}
+            defaultValue={movimiento?.fecha_pago?.slice(0, 10) ?? ""}
+            disabled={!recibido}
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={ROTULO}>Comentario</label>
+          <textarea
+            name="comentario"
+            className={CAMPO}
+            rows={2}
+            defaultValue={movimiento?.comentario ?? ""}
+          />
+        </div>
+
+        {estado && !estado.ok && (
+          <p className="sm:col-span-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2">
+            {estado.mensaje}
+          </p>
+        )}
+
+        {errorBorrado && (
+          <p className="sm:col-span-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2">
+            {errorBorrado}
+          </p>
+        )}
+
+        <div className="sm:col-span-2 flex gap-2 justify-end pt-1">
           {movimiento && (
-            <input type="hidden" name="id_mov" value={movimiento.id_mov} />
-          )}
-
-          <div>
-            <label className="etiqueta">Fecha</label>
-            <input
-              type="date"
-              name="fecha"
-              className="campo"
-              value={fecha}
-              onChange={(e) => cambiarFecha(e.target.value)}
-            />
-            <p className="text-xs text-gris mt-1">
-              {sinFecha
-                ? "Sin fecha queda proyectado y no entra en la cartola."
-                : "Para dejarlo proyectado, elija ese estado y la fecha se limpia sola."}
-            </p>
-          </div>
-
-          <div>
-            <label className="etiqueta">Monto</label>
-            <input
-              name="monto"
-              inputMode="decimal"
-              className="campo"
-              defaultValue={movimiento ? String(movimiento.monto) : ""}
-              placeholder="0"
-              required
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <SelectorInterlocutor
-              etiqueta="Origen"
-              interlocutores={interlocutores}
-              valorInicial={movimiento?.id_interlocutor ?? null}
-            />
-          </div>
-
-          <div>
-            <label className="etiqueta">Cuenta</label>
-            <select
-              name="id_cuenta"
-              className="campo"
-              defaultValue={movimiento?.id_cuenta ?? ""}
-            >
-              <option value="">(sin cuenta)</option>
-              {cuentas.map((c) => (
-                <option key={c.id_cuenta} value={c.id_cuenta}>
-                  {c.alias ?? c.banco}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="etiqueta">Proyecto / Cliente</label>
-            <select
-              name="id_proyecto"
-              className="campo"
-              defaultValue={movimiento?.id_proyecto ?? ""}
-            >
-              <option value="">(sin proyecto)</option>
-              {proyectosDisponibles.map((p) => (
-                <option key={p.id_proyecto} value={p.id_proyecto}>
-                  {p.nombre}
-                  {p.cliente ? ` — ${p.cliente}` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="etiqueta">Categoria</label>
-            <select
-              name="id_categoria"
-              className="campo"
-              defaultValue={movimiento?.id_categoria ?? ""}
-            >
-              <option value="">(sin categoria)</option>
-              {propias.map((c) => (
-                <option key={c.id_categoria} value={c.id_categoria}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="etiqueta">Estado</label>
-            <select
-              name="estado_pago"
-              className="campo"
-              value={estadoPago}
-              onChange={(e) =>
-                cambiarEstado(e.target.value as "Pendiente" | "Pagado")
-              }
-            >
-              <option value="Pendiente">Proyectado</option>
-              <option value="Pagado">Recibido</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="etiqueta">Fecha en que se recibio</label>
-            <input
-              type="date"
-              name="fecha_pago"
-              className="campo"
-              defaultValue={movimiento?.fecha_pago?.slice(0, 10) ?? ""}
-              disabled={!pagado}
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="etiqueta">Comentario</label>
-            <textarea
-              name="comentario"
-              className="campo"
-              rows={2}
-              defaultValue={movimiento?.comentario ?? ""}
-            />
-          </div>
-
-          {estado && !estado.ok && (
-            <p className="sm:col-span-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
-              {estado.mensaje}
-            </p>
-          )}
-
-          {errorBorrado && (
-            <p className="sm:col-span-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
-              {errorBorrado}
-            </p>
-          )}
-
-          <div className="sm:col-span-2 flex gap-2 justify-end pt-2">
-            {movimiento && (
-              <button
-                type="button"
-                className="btn btn-sec text-red-700"
-                onClick={() => setConfirmandoBorrado(true)}
-                disabled={pendiente}
-              >
-                BORRAR
-              </button>
-            )}
             <button
               type="button"
-              className="btn btn-sec"
-              onClick={() => alCerrar()}
+              className="border border-red-300 text-red-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
+              onClick={() => setConfirmandoBorrado(true)}
               disabled={pendiente}
             >
-              CANCELAR
+              Eliminar
             </button>
-            <button type="submit" className="btn" disabled={pendiente}>
-              {pendiente ? "GUARDANDO..." : "GUARDAR"}
-            </button>
-          </div>
-        </form>
-      </div>
+          )}
+          <button
+            type="button"
+            className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
+            onClick={() => alCerrar()}
+            disabled={pendiente}
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+            disabled={pendiente}
+          >
+            {pendiente ? "Guardando..." : "Guardar"}
+          </button>
+        </div>
+      </form>
 
       {confirmandoBorrado && movimiento && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-lg w-full max-w-sm p-4">
-            <p className="text-sm mb-4">
-              Eliminar este ingreso por{" "}
-              <strong>{pesos(movimiento.monto)}</strong>? No se puede deshacer.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                className="btn btn-sec"
-                onClick={() => setConfirmandoBorrado(false)}
-                disabled={borrando}
-              >
-                CANCELAR
-              </button>
-              <button
-                type="button"
-                className="btn text-red-700"
-                onClick={borrar}
-                disabled={borrando}
-              >
-                {borrando ? "ELIMINANDO..." : "ELIMINAR"}
-              </button>
-            </div>
+        <Ventana
+          titulo="Eliminar ingreso"
+          onCerrar={() => setConfirmandoBorrado(false)}
+          ancho="max-w-sm"
+        >
+          <p className="text-xs text-gray-700 mb-4">
+            Se eliminara el ingreso de{" "}
+            <strong>{pesos(movimiento.monto)}</strong>. No se puede deshacer.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
+              onClick={() => setConfirmandoBorrado(false)}
+              disabled={borrando}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="bg-red-700 text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+              onClick={borrar}
+              disabled={borrando}
+            >
+              {borrando ? "Eliminando..." : "Eliminar"}
+            </button>
           </div>
-        </div>
+        </Ventana>
       )}
-    </div>
+    </Ventana>
   );
 }
