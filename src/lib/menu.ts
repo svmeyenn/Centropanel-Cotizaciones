@@ -23,6 +23,21 @@ export interface Grupo {
   opciones: Opcion[];
 }
 
+// El menu ya resuelto para una persona. Va aparte de `Grupo` porque lo recibe
+// la barra lateral, que es un componente de cliente: ahi solo pueden viajar
+// datos, y `Opcion` trae la funcion que decide el permiso. Pasarla tal cual
+// deja la aplicacion entera con error de servidor.
+export interface OpcionVisible {
+  texto: string;
+  href: string;
+}
+
+export interface GrupoVisible {
+  titulo: string;
+  nota: string;
+  opciones: OpcionVisible[];
+}
+
 export const GRUPOS: Grupo[] = [
   {
     titulo: "Vender",
@@ -119,9 +134,14 @@ export function puedeVerRuta(v: Vendedor, href: string): boolean {
 
 // Lo que ve cada perfil. Igual que MenuAbrirAdmin en Access: lo que no se
 // puede abrir no se muestra, y un grupo sin opciones no aparece.
-export function menuDe(v: Vendedor): Grupo[] {
+export function menuDe(v: Vendedor): GrupoVisible[] {
   return GRUPOS.map((g) => ({
-    ...g,
-    opciones: g.opciones.filter((o) => alcanza(v, o)),
+    titulo: g.titulo,
+    nota: g.nota,
+    // Solo el texto y la direccion: lo que decide el permiso se queda en el
+    // servidor.
+    opciones: g.opciones
+      .filter((o) => alcanza(v, o))
+      .map(({ texto, href }) => ({ texto, href })),
   })).filter((g) => g.opciones.length > 0);
 }
