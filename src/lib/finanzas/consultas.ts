@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { conPais } from "@/lib/sesion";
+import { BUCKET_ADJUNTOS } from "@/lib/finanzas/almacen";
 import {
   buscarInterlocutores,
   type Categoria,
@@ -88,4 +89,39 @@ export async function cargarMovimientos(
     .order("id_mov", { ascending: false });
 
   return (data ?? []) as Movimiento[];
+}
+
+// Un enlace por movimiento --el primer respaldo cargado-- resuelto de una vez
+// en el servidor, para que la tabla dibuje un enlace de verdad en vez de
+// pedirlo al hacer clic: eso rompia el gesto y el navegador bloqueaba la
+// ventana emergente.
+export async function cargarEnlacesRespaldo(
+  idsMov: number[]
+): Promise<Record<number, string>> {
+  if (idsMov.length === 0) return {};
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("adjuntos")
+    .select("id_mov, ruta, subido_en")
+    .in("id_mov", idsMov)
+    .order("subido_en", { ascending: true });
+
+  const primeraRuta = new Map<number, string>();
+  for (const fila of data ?? []) {
+    if (!primeraRuta.has(fila.id_mov)) primeraRuta.set(fila.id_mov, fila.ruta);
+  }
+
+  const firmadas = await Promise.all(
+    [...primeraRuta.entries()].map(async ([idMov, ruta]) => {
+      const { data: firmada } = await supabase.storage
+        .from(BUCKET_ADJUNTOS)
+        .createSignedUrl(ruta, 60 * 10);
+      return [idMov, firmada?.signedUrl ?? null] as const;
+    })
+  );
+
+  const enlaces: Record<number, string> = {};
+  for (const [idMov, url] of firmadas) if (url) enlaces[idMov] = url;
+  return enlaces;
 }

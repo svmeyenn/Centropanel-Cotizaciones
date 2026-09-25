@@ -232,3 +232,16 @@ export function buscarInterlocutores<
     )
     .map((p) => p.fila);
 }
+
+// Respaldo de un egreso: la cotizacion o la factura que lo justifica. El
+// archivo vive en el deposito privado; aqui solo queda su ruta.
+export type Adjunto = {
+  id_adjunto: number;
+  id_mov: number;
+  nombre: string;
+  ruta: string;
+  tipo_mime: string | null;
+  tamano: number | null;
+  id_vendedor: number | null;
+  subido_en: string;
+};
