@@ -189,12 +189,13 @@ export default function PanelConciliacion({
               type="file"
               name="archivo"
               className={CAMPO}
-              accept=".csv,.txt,.xls,.xlsx"
+              accept=".csv,.txt,.xlsx"
               required
             />
             <p className="text-[11px] text-gray-600 mt-0.5">
-              El archivo tal como lo entrega el banco, en Excel o CSV. Cargar
-              dos veces la misma cartola no duplica nada.
+              El archivo tal como lo entrega el banco: .xlsx o .csv, con las
+              columnas donde vengan. Cargar dos veces la misma cartola no
+              duplica nada.
             </p>
           </div>
           <button
