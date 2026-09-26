@@ -86,20 +86,28 @@ export default function TablaIngresos({
   const fila = (m: Movimiento) => (
     <tr key={m.id_mov} className="group border-t border-gray-100 hover:bg-crema">
       <td className="px-3 py-2 whitespace-nowrap">{fechaCorta(m.fecha)}</td>
-      <td className="px-3 py-2">{etiquetaContraparte(m)}</td>
+      <td className="px-3 py-2 truncate" title={etiquetaContraparte(m)}>
+        {etiquetaContraparte(m)}
+      </td>
       <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
         {pesos(m.monto)}
       </td>
-      <td className="px-3 py-2 hidden md:table-cell text-gray-600">
+      <td className="px-3 py-2 hidden md:table-cell text-gray-600 truncate">
         {nombreCuenta(m.id_cuenta)}
       </td>
-      <td className="px-3 py-2 hidden md:table-cell text-gray-600">
+      <td
+        className="px-3 py-2 hidden md:table-cell text-gray-600 truncate"
+        title={nombreProyecto(m.id_proyecto)}
+      >
         {nombreProyecto(m.id_proyecto)}
       </td>
-      <td className="px-3 py-2 hidden lg:table-cell text-gray-600">
+      <td className="px-3 py-2 hidden lg:table-cell text-gray-600 truncate">
         {nombreCategoria(m.id_categoria)}
       </td>
-      <td className="px-3 py-2 hidden lg:table-cell text-gray-600 max-w-xs truncate">
+      <td
+        className="px-3 py-2 hidden xl:table-cell text-gray-600 truncate"
+        title={m.comentario ?? ""}
+      >
         {m.comentario}
       </td>
       {puedeEditar && (
@@ -193,25 +201,27 @@ export default function TablaIngresos({
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full table-fixed text-xs">
             <thead className="bg-verde text-white">
               <tr>
-                <th className="text-left px-3 py-2 w-28">Fecha</th>
-                <th className="text-left px-3 py-2">Origen</th>
-                <th className="text-right px-3 py-2 w-32">Monto</th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-32">
+                <th className="text-left px-3 py-2 w-[12%]">Fecha</th>
+                <th className="text-left px-3 py-2 w-[22%]">Origen</th>
+                <th className="text-right px-3 py-2 w-[12%]">Monto</th>
+                <th className="text-left px-3 py-2 hidden md:table-cell w-[11%]">
                   Cuenta
                 </th>
-                <th className="text-left px-3 py-2 hidden md:table-cell">
+                <th className="text-left px-3 py-2 hidden md:table-cell w-[15%]">
                   Proyecto / Cliente
                 </th>
-                <th className="text-left px-3 py-2 hidden lg:table-cell w-36">
+                <th className="text-left px-3 py-2 hidden lg:table-cell w-[12%]">
                   Categoria
                 </th>
-                <th className="text-left px-3 py-2 hidden lg:table-cell">
+                <th className="text-left px-3 py-2 hidden xl:table-cell w-[14%]">
                   Comentario
                 </th>
-                {puedeEditar && <th className="px-3 py-2 w-36 sticky right-0 bg-verde" />}
+                {puedeEditar && (
+                  <th className="px-3 py-2 w-[12%] min-w-[7.5rem] sticky right-0 bg-verde" />
+                )}
               </tr>
             </thead>
             <tbody>

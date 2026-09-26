@@ -318,3 +318,112 @@ export type PoliticaGasto = {
   bloquea: boolean;
   activa: boolean;
 };
+
+// --- rendiciones de gastos -------------------------------------------------
+//
+// Una rendicion es un sobre: junta las boletas que alguien pago de su bolsillo
+// --o con un anticipo que se le entrego-- en un periodo, y termina en un
+// reintegro o en una diferencia que esa persona sigue debiendo.
+
+export type EstadoRendicion =
+  | "Borrador"
+  | "Enviada"
+  | "Aprobada"
+  | "Pagada"
+  | "Incompleta"
+  | "Rechazada";
+
+export type EstadoBoleta = "Pendiente" | "Aceptado" | "Rechazado";
+
+export type Rendicion = {
+  id_rendicion: number;
+  id_pais: number;
+  id_interlocutor: number;
+  razon_social: string;
+  nombre_referencia: string;
+  periodo_desde: string;
+  periodo_hasta: string;
+  estado: EstadoRendicion;
+  motivo_rechazo: string | null;
+  id_mov_reintegro: number | null;
+  id_vendedor: number | null;
+  vendedor_nombre: string | null;
+  id_aprobador: number | null;
+  aprobador_nombre: string | null;
+  aprobada_en: string | null;
+  fecha_registro: string;
+  total_rendido: number;
+  total_rechazado: number;
+  boletas_aceptadas: number;
+  boletas_rechazadas: number;
+  total_anticipos: number;
+  // Lo aceptado menos lo adelantado. Positivo: se le debe. Negativo: debe.
+  saldo: number;
+  cargada_por_tercero: boolean;
+  reintegro_estado: string | null;
+};
+
+export type BoletaRendicion = {
+  id_gasto: number;
+  id_rendicion: number;
+  fecha: string;
+  monto: number;
+  comercio: string;
+  id_categoria: number | null;
+  id_proyecto: number | null;
+  comentario: string | null;
+  documento: string | null;
+  estado: EstadoBoleta;
+  motivo_rechazo: string | null;
+  id_vendedor: number | null;
+  vendedor_nombre: string | null;
+  fecha_registro: string;
+  fuera_politica: boolean;
+  politica_motivo: string | null;
+};
+
+export type RespaldoBoleta = {
+  id_rend_adjunto: number;
+  id_gasto: number;
+  nombre: string;
+  ruta: string;
+  tipo_mime: string | null;
+  tamano: number | null;
+  id_vendedor: number | null;
+  subido_en: string;
+};
+
+export type AnticipoAplicado = {
+  id_rendicion: number;
+  id_mov: number;
+  monto_aplicado: number;
+};
+
+export type CuentaRendidor = {
+  id_interlocutor: number;
+  id_pais: number;
+  razon_social: string;
+  nombre_referencia: string;
+  anticipos_entregados: number;
+  reintegros_pagados: number;
+  rendido_aprobado: number;
+  rendiciones_abiertas: number;
+  saldo: number;
+};
+
+// Como termina una rendicion, dicho en castellano. El signo por si solo no se
+// entiende: lo que para la empresa es un saldo a favor, para quien rindio es
+// plata que le deben.
+export function desenlaceRendicion(
+  saldo: number,
+  estado: EstadoRendicion
+): { texto: string; retiene: boolean } {
+  if (estado === "Rechazada") return { texto: "Rechazada", retiene: false };
+  if (saldo > 0) return { texto: "Se le debe", retiene: false };
+  if (saldo < 0) return { texto: "Tiene saldo sin rendir", retiene: true };
+  return { texto: "Calza justo", retiene: false };
+}
+
+// El proyecto al que va lo que no tiene obra: con el, el comentario deja de
+// ser opcional, para que no se convierta en un basurero.
+export const PROYECTO_GENERICO = "Otros";

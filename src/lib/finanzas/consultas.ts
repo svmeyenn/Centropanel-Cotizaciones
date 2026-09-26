@@ -1,12 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { conPais } from "@/lib/sesion";
-import { BUCKET_ADJUNTOS } from "@/lib/finanzas/almacen";
+import { BUCKET_ADJUNTOS, BUCKET_BOLETAS } from "@/lib/finanzas/almacen";
 import {
   buscarInterlocutores,
   type Categoria,
   type Cuenta,
   type FilaCartola,
   type FilaResumenProyecto,
+  type Rendicion,
+  type BoletaRendicion,
+  type AnticipoAplicado,
+  type CuentaRendidor,
   type Interlocutor,
   type Movimiento,
   type Proyecto,
@@ -185,4 +189,146 @@ export async function cargarPoliticas(idPais: number | null) {
     idPais
   );
   return (data ?? []) as PoliticaGasto[];
+}
+
+// --- rendiciones -----------------------------------------------------------
+
+export type FiltroRendicion = { estado?: string; interlocutor?: string };
+
+export async function cargarRendiciones(
+  filtro: FiltroRendicion,
+  idPais: number | null
+) {
+  const supabase = await createClient();
+
+  let q = conPais(supabase.from("v_rendiciones").select("*"), idPais);
+  if (filtro.estado) q = q.eq("estado", filtro.estado);
+  if (filtro.interlocutor)
+    q = q.eq("id_interlocutor", Number(filtro.interlocutor));
+
+  // Las que esperan algo de alguien primero; el resto, de la mas nueva a la
+  // mas vieja. RLS ya dejo fuera las que esta persona no puede ver.
+  const { data } = await q
+    .order("periodo_hasta", { ascending: false })
+    .order("id_rendicion", { ascending: false });
+
+  return (data ?? []) as Rendicion[];
+}
+
+export async function cargarRendicion(id: number) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("v_rendiciones")
+    .select("*")
+    .eq("id_rendicion", id)
+    .maybeSingle();
+  return (data ?? null) as Rendicion | null;
+}
+
+export async function cargarBoletas(idRendicion: number) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("v_rendicion_gastos")
+    .select("*")
+    .eq("id_rendicion", idRendicion)
+    .order("fecha")
+    .order("id_gasto");
+  return (data ?? []) as BoletaRendicion[];
+}
+
+// Los anticipos ya aplicados a esta rendicion, con el movimiento del que
+// salieron: la fecha y el monto entregado se leen de ahi.
+export async function cargarAnticiposDeRendicion(idRendicion: number) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("rendicion_anticipos")
+    .select("id_rendicion, id_mov, monto_aplicado")
+    .eq("id_rendicion", idRendicion);
+  return (data ?? []) as AnticipoAplicado[];
+}
+
+// Anticipos pagados a una persona que todavia tienen saldo sin aplicar: los
+// que se pueden asociar a una rendicion.
+export async function cargarAnticiposDisponibles(idInterlocutor: number) {
+  const supabase = await createClient();
+
+  const { data: movs } = await supabase
+    .from("movimientos")
+    .select("id_mov, fecha, monto, comentario")
+    .eq("id_interlocutor", idInterlocutor)
+    .eq("es_anticipo", true)
+    .eq("estado_pago", "Pagado")
+    .order("fecha", { ascending: false });
+
+  const anticipos = (movs ?? []) as {
+    id_mov: number;
+    fecha: string | null;
+    monto: number;
+    comentario: string | null;
+  }[];
+  if (anticipos.length === 0) return [];
+
+  const { data: aplicados } = await supabase
+    .from("rendicion_anticipos")
+    .select("id_mov, monto_aplicado")
+    .in(
+      "id_mov",
+      anticipos.map((a) => a.id_mov)
+    );
+
+  const yaAplicado = new Map<number, number>();
+  for (const a of aplicados ?? [])
+    yaAplicado.set(
+      a.id_mov,
+      (yaAplicado.get(a.id_mov) ?? 0) + Number(a.monto_aplicado)
+    );
+
+  return anticipos
+    .map((a) => ({
+      ...a,
+      disponible: Number(a.monto) - (yaAplicado.get(a.id_mov) ?? 0),
+    }))
+    .filter((a) => a.disponible > 0);
+}
+
+export async function cargarCuentaRendidores(idPais: number | null) {
+  const supabase = await createClient();
+  const { data } = await conPais(
+    supabase.from("v_cuenta_rendidor").select("*").order("nombre_referencia"),
+    idPais
+  );
+  return (data ?? []) as CuentaRendidor[];
+}
+
+// Un enlace por boleta --el primer respaldo-- firmado en el servidor, igual
+// que en egresos: asi la tabla dibuja un enlace de verdad y el navegador no
+// bloquea la ventana.
+export async function cargarEnlacesBoletas(
+  idsGasto: number[]
+): Promise<Record<number, string>> {
+  if (idsGasto.length === 0) return {};
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("rendicion_adjuntos")
+    .select("id_gasto, ruta, subido_en")
+    .in("id_gasto", idsGasto)
+    .order("subido_en", { ascending: true });
+
+  const primera = new Map<number, string>();
+  for (const fila of data ?? [])
+    if (!primera.has(fila.id_gasto)) primera.set(fila.id_gasto, fila.ruta);
+
+  const firmadas = await Promise.all(
+    [...primera.entries()].map(async ([idGasto, ruta]) => {
+      const { data: firmada } = await supabase.storage
+        .from(BUCKET_BOLETAS)
+        .createSignedUrl(ruta, 60 * 10);
+      return [idGasto, firmada?.signedUrl ?? null] as const;
+    })
+  );
+
+  const enlaces: Record<number, string> = {};
+  for (const [id, url] of firmadas) if (url) enlaces[id] = url;
+  return enlaces;
 }

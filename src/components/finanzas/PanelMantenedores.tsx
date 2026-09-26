@@ -48,6 +48,7 @@ export default function PanelMantenedores({
   interlocutores,
   cuentasInterlocutores,
   moneda,
+  mercados,
 }: {
   cuentas: Cuenta[];
   proyectos: Proyecto[];
@@ -55,8 +56,20 @@ export default function PanelMantenedores({
   interlocutores: Interlocutor[];
   cuentasInterlocutores: CuentaInterlocutor[];
   moneda: string;
+  // Quien trabaja los dos paises ve las listas de ambos: sin decir de cual es
+  // cada fila, las doce categorias de Chile y las doce de Peru parecen doce
+  // duplicadas.
+  mercados: { id: number; codigo: string }[];
 }) {
   const router = useRouter();
+  const variosMercados = mercados.length > 1;
+  const codigoPais = (id: number) =>
+    mercados.find((m) => m.id === id)?.codigo ?? "";
+  const celdaMercado = (id: number) =>
+    variosMercados ? (
+      <td className="px-3 py-2 text-gray-500">{codigoPais(id)}</td>
+    ) : null;
+
   const [pestana, setPestana] = useState<Pestana>("Cuentas");
   const [busca, setBusca] = useState("");
   const [aviso, setAviso] = useState("");
@@ -215,6 +228,9 @@ export default function PanelMantenedores({
               <tr>
                 {pestana === "Cuentas" && (
                   <>
+                    {variosMercados && (
+                      <th className="text-left px-3 py-2 w-20">Mercado</th>
+                    )}
                     <th className="text-left px-3 py-2">Banco</th>
                     <th className="text-left px-3 py-2">Alias</th>
                     <th className="text-left px-3 py-2">Numero</th>
@@ -226,6 +242,9 @@ export default function PanelMantenedores({
                 )}
                 {pestana === "Proyectos" && (
                   <>
+                    {variosMercados && (
+                      <th className="text-left px-3 py-2 w-20">Mercado</th>
+                    )}
                     <th className="text-left px-3 py-2">Proyecto</th>
                     <th className="text-left px-3 py-2">Cliente</th>
                     <th className="text-left px-3 py-2 w-24">Estado</th>
@@ -233,12 +252,18 @@ export default function PanelMantenedores({
                 )}
                 {pestana === "Categorias" && (
                   <>
+                    {variosMercados && (
+                      <th className="text-left px-3 py-2 w-20">Mercado</th>
+                    )}
                     <th className="text-left px-3 py-2">Categoria</th>
                     <th className="text-left px-3 py-2 w-32">Tipo</th>
                   </>
                 )}
                 {pestana === "Interlocutores" && (
                   <>
+                    {variosMercados && (
+                      <th className="text-left px-3 py-2 w-20">Mercado</th>
+                    )}
                     <th className="text-left px-3 py-2">Razon social</th>
                     <th className="text-left px-3 py-2">Nombre de referencia</th>
                     <th className="text-left px-3 py-2 w-32">RUT</th>
@@ -252,6 +277,7 @@ export default function PanelMantenedores({
               {pestana === "Cuentas" &&
                 cuentasFiltradas.map((c) => (
                   <tr key={c.id_cuenta} className="border-t border-gray-100 hover:bg-crema">
+                    {celdaMercado(c.id_pais)}
                     <td className="px-3 py-2">{c.banco}</td>
                     <td className="px-3 py-2">{c.alias}</td>
                     <td className="px-3 py-2 text-gray-600">{c.numero_cuenta}</td>
@@ -278,6 +304,7 @@ export default function PanelMantenedores({
               {pestana === "Proyectos" &&
                 proyectosFiltrados.map((p) => (
                   <tr key={p.id_proyecto} className="border-t border-gray-100 hover:bg-crema">
+                    {celdaMercado(p.id_pais)}
                     <td className="px-3 py-2">{p.nombre}</td>
                     <td className="px-3 py-2 text-gray-600">{p.cliente}</td>
                     <td className="px-3 py-2">
@@ -311,6 +338,7 @@ export default function PanelMantenedores({
               {pestana === "Categorias" &&
                 categoriasFiltradas.map((c) => (
                   <tr key={c.id_categoria} className="border-t border-gray-100 hover:bg-crema">
+                    {celdaMercado(c.id_pais)}
                     <td className="px-3 py-2">{c.nombre}</td>
                     <td className="px-3 py-2 text-gray-600">{c.tipo}</td>
                     <td className="px-3 py-2">
@@ -340,6 +368,7 @@ export default function PanelMantenedores({
                     key={i.id_interlocutor}
                     className="border-t border-gray-100 hover:bg-crema"
                   >
+                    {celdaMercado(i.id_pais)}
                     <td className="px-3 py-2">{i.razon_social}</td>
                     <td className="px-3 py-2">{i.nombre_referencia}</td>
                     <td className="px-3 py-2 text-gray-600">{i.rut}</td>
@@ -374,7 +403,7 @@ export default function PanelMantenedores({
                 (pestana === "Categorias" && categoriasFiltradas.length === 0) ||
                 (pestana === "Interlocutores" && interFiltrados.length === 0)) && (
                 <tr>
-                  <td colSpan={8} className="text-center text-gray-400 py-8">
+                  <td colSpan={9} className="text-center text-gray-400 py-8">
                     {busca
                       ? "Nada coincide con la busqueda."
                       : "Todavia no hay nada en esta lista."}
