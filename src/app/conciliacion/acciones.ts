@@ -35,6 +35,48 @@ export async function importarCartola(
 
   const supabase = await createClient();
 
+  // El archivo no dice a que cuenta pertenece: eso lo elige la persona. Pero
+  // el banco casi siempre escribe el numero de cuenta encima de la tabla, y
+  // con eso se puede avisar antes de mezclar la cartola de una cuenta con los
+  // movimientos de otra --un error que despues hay que deshacer linea a
+  // linea.
+  const { data: cuentas } = await supabase
+    .from("cuentas")
+    .select("id_cuenta, alias, banco, numero_cuenta");
+
+  const soloDigitos = (x: string | null) => (x ?? "").replace(/\D/g, "");
+  const elegida = (cuentas ?? []).find(
+    (c: { id_cuenta: number }) => c.id_cuenta === idCuenta
+  );
+  const numeroElegido = soloDigitos(elegida?.numero_cuenta ?? null);
+
+  if (numeroElegido && leido.cuentasEnElArchivo.length > 0) {
+    const calza = leido.cuentasEnElArchivo.some(
+      (n) => n === numeroElegido || n.endsWith(numeroElegido) || numeroElegido.endsWith(n)
+    );
+
+    if (!calza) {
+      // Si el numero del archivo es el de otra cuenta nuestra, se puede decir
+      // cual: es el error tipico y asi se arregla de una.
+      const otra = (cuentas ?? []).find((c: { numero_cuenta: string | null }) => {
+        const n = soloDigitos(c.numero_cuenta);
+        return (
+          n.length >= 6 &&
+          leido.cuentasEnElArchivo.some(
+            (x) => x === n || x.endsWith(n) || n.endsWith(x)
+          )
+        );
+      }) as { alias: string | null; banco: string } | undefined;
+
+      return {
+        ok: false,
+        mensaje: otra
+          ? `Este archivo es de la cuenta "${otra.alias ?? otra.banco}", y arriba esta elegida "${elegida?.alias ?? elegida?.banco}". Cambie la cuenta y vuelva a cargarlo.`
+          : `El archivo no menciona el numero de la cuenta "${elegida?.alias ?? elegida?.banco}" (${elegida?.numero_cuenta}). Revise que sea la cartola de esa cuenta.`,
+      };
+    }
+  }
+
   // `ignoreDuplicates` es lo que permite volver a cargar la misma cartola sin
   // duplicarla: las lineas que ya estaban se saltan por su huella.
   const { data, error } = await supabase
