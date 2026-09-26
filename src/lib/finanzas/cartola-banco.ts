@@ -9,6 +9,14 @@ import { createHash } from "crypto";
 // fila. En vez de exigir un formato, se busca la fila que parece encabezado y
 // se reconocen las columnas por sus nombres habituales.
 
+// Los numeros de cuenta que el banco escribe en la cabecera del archivo,
+// antes de la tabla. Sirven para avisar cuando la cartola no es de la cuenta
+// que se eligio en pantalla.
+export type CartolaLeida = {
+  filas: FilaBanco[];
+  cuentasEnElArchivo: string[];
+};
+
 export type FilaBanco = {
   fecha: string;
   descripcion: string | null;
@@ -165,9 +173,34 @@ async function celdas(archivo: File): Promise<unknown[][]> {
   return filas;
 }
 
+// Solo digitos: "Cta. Cte. N° 72.767.419" y "72767419" tienen que compararse
+// igual, porque cada banco la escribe a su manera.
+const soloDigitos = (v: string) => v.replace(/\D/g, "");
+
+// Lo que el banco pone encima de la tabla --titular, cuenta, periodo-- se
+// descarta para leer los movimientos, pero ahi esta el numero de cuenta. Se
+// recogen las secuencias largas de digitos, que es lo unico que puede serlo.
+function cuentasDeLaCabecera(bruto: unknown[][], hastaFila: number): string[] {
+  const encontradas = new Set<string>();
+
+  for (const fila of bruto.slice(0, Math.max(hastaFila, 0))) {
+    for (const celda of fila) {
+      const texto = (celda ?? "").toString();
+      // Una fecha tambien es una tira de digitos: se saltan.
+      if (/\d{1,2}[-/]\d{1,2}[-/]\d{2,4}/.test(texto)) continue;
+      for (const trozo of texto.split(/[^0-9.\-]+/)) {
+        const digitos = soloDigitos(trozo);
+        if (digitos.length >= 6 && digitos.length <= 20) encontradas.add(digitos);
+      }
+    }
+  }
+
+  return [...encontradas];
+}
+
 export async function leerArchivoCartola(
   archivo: File
-): Promise<{ ok: true; filas: FilaBanco[] } | { ok: false; mensaje: string }> {
+): Promise<({ ok: true } & CartolaLeida) | { ok: false; mensaje: string }> {
   let bruto: unknown[][];
   try {
     bruto = await celdas(archivo);
@@ -256,5 +289,9 @@ export async function leerArchivoCartola(
       mensaje: "No encontre movimientos con fecha y monto en el archivo.",
     };
 
-  return { ok: true, filas };
+  return {
+    ok: true,
+    filas,
+    cuentasEnElArchivo: cuentasDeLaCabecera(bruto, iEncabezado),
+  };
 }
