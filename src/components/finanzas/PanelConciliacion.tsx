@@ -17,6 +17,8 @@ import {
   type LineaBanco,
   type Movimiento,
 } from "@/lib/finanzas/tipos";
+import type { FormatoCartola as Formato } from "@/lib/finanzas/cartola-banco";
+import FormatoCartola from "./FormatoCartola";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 const ROTULO = "block text-xs font-semibold text-dorado-osc mb-0.5";
@@ -43,6 +45,7 @@ export default function PanelConciliacion({
   movimientos,
   sinLinea,
   puedeConciliar,
+  formato,
 }: {
   cuentas: Cuenta[];
   idCuenta: number;
@@ -52,11 +55,14 @@ export default function PanelConciliacion({
   movimientos: Movimiento[];
   sinLinea: Movimiento[];
   puedeConciliar: boolean;
+  // Como se lee la cartola de esta cuenta, si se configuro a mano.
+  formato: Formato | null;
 }) {
   const router = useRouter();
   const [enCurso, comenzar] = useTransition();
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
   const [elegido, setElegido] = useState<Record<number, string>>({});
+  const [configurando, setConfigurando] = useState(false);
 
   const [estadoImportar, importar, importando] = useActionState<
     Resultado | null,
@@ -197,6 +203,31 @@ export default function PanelConciliacion({
               columnas donde vengan. Cargar dos veces la misma cartola no
               duplica nada.
             </p>
+            <p className="text-[11px] mt-1">
+              {formato ? (
+                <>
+                  <span className="text-verde font-semibold">
+                    Formato configurado
+                  </span>
+                  <span className="text-gray-600">
+                    {" "}
+                    para esta cuenta: la fecha se lee de &laquo;{formato.col_fecha}
+                    &raquo;.{" "}
+                  </span>
+                </>
+              ) : (
+                <span className="text-gray-600">
+                  Las columnas se reconocen por su nombre.{" "}
+                </span>
+              )}
+              <button
+                type="button"
+                className="text-verde font-semibold underline"
+                onClick={() => setConfigurando(true)}
+              >
+                {formato ? "Cambiar el formato" : "Configurar el formato"}
+              </button>
+            </p>
           </div>
           <button
             type="submit"
@@ -206,6 +237,25 @@ export default function PanelConciliacion({
             {importando ? "Cargando..." : "Cargar cartola"}
           </button>
         </form>
+      )}
+
+      {configurando && (
+        <FormatoCartola
+          idCuenta={idCuenta}
+          nombreCuenta={
+            cuentas.find((c) => c.id_cuenta === idCuenta)?.alias ??
+            cuentas.find((c) => c.id_cuenta === idCuenta)?.banco ??
+            "la cuenta"
+          }
+          formato={formato}
+          alCerrar={(mensaje) => {
+            setConfigurando(false);
+            if (mensaje) {
+              setAviso({ ok: true, texto: mensaje });
+              router.refresh();
+            }
+          }}
+        />
       )}
 
       {/* --- lo que esta solo en el banco --- */}

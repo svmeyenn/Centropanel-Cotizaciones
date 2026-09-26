@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import PanelConciliacion from "@/components/finanzas/PanelConciliacion";
-import { cargarConciliacion, cargarMaestros } from "@/lib/finanzas/consultas";
+import {
+  cargarConciliacion,
+  cargarFormatoCartola,
+  cargarMaestros,
+} from "@/lib/finanzas/consultas";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 
@@ -43,6 +47,8 @@ export default async function Pagina({
     ? await cargarConciliacion(idCuenta, desde, hasta)
     : { lineas: [], movimientos: [], sinLinea: [] };
 
+  const formato = idCuenta ? await cargarFormatoCartola(idCuenta) : null;
+
   return (
     <div className="min-h-screen">
       <Cabecera
@@ -62,6 +68,7 @@ export default async function Pagina({
           movimientos={datos.movimientos}
           sinLinea={datos.sinLinea}
           puedeConciliar={v.fin_pagar_gastos}
+          formato={formato}
         />
       </div>
     </div>

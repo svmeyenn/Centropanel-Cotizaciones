@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { conPais } from "@/lib/sesion";
 import { BUCKET_ADJUNTOS, BUCKET_BOLETAS } from "@/lib/finanzas/almacen";
+import type { FormatoCartola } from "@/lib/finanzas/cartola-banco";
 import {
   buscarInterlocutores,
   type Categoria,
@@ -411,4 +412,15 @@ export async function cargarConciliacion(
       (m) => !usados.has(m.id_mov) && m.fecha! >= desde && m.fecha! <= hasta
     ),
   };
+}
+
+// Como se lee la cartola de esta cuenta, cuando se configuro a mano.
+export async function cargarFormatoCartola(idCuenta: number) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("cartola_formato")
+    .select("*")
+    .eq("id_cuenta", idCuenta)
+    .maybeSingle();
+  return (data ?? null) as FormatoCartola | null;
 }
