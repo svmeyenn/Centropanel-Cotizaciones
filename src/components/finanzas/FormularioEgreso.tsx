@@ -174,7 +174,7 @@ export default function FormularioEgreso({
             <option value="">Elija una categoria</option>
             {propias.map((c) => (
               <option key={c.id_categoria} value={c.id_categoria}>
-                {c.nombre}
+                {c.etiqueta}
               </option>
             ))}
           </select>

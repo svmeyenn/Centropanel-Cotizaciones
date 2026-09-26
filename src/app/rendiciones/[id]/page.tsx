@@ -11,6 +11,7 @@ import {
   cargarMaestros,
   cargarRendicion,
 } from "@/lib/finanzas/consultas";
+import { LECTURA_CONFIGURADA } from "@/lib/finanzas/lectura-boleta";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 
@@ -74,6 +75,7 @@ export default async function Pagina({
           cuentas={cuentas}
           puedePagar={v.fin_pagar_gastos}
           enlaces={enlaces}
+          lecturaDisponible={LECTURA_CONFIGURADA}
         />
       </div>
     </div>

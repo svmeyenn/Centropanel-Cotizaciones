@@ -32,6 +32,17 @@ export type Filtro = {
   destino?: string;
 };
 
+// Codigo de cada mercado --CL, PE-- para poder decir de cual es una fila
+// cuando se ven los dos juntos.
+async function codigosDePais(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<Map<number, string>> {
+  const { data } = await supabase.from("paises").select("id, codigo");
+  return new Map(
+    ((data ?? []) as { id: number; codigo: string }[]).map((p) => [p.id, p.codigo])
+  );
+}
+
 // Las listas con que se clasifica un movimiento. Se traen tambien las filas
 // marcadas como borradas: un movimiento antiguo que apunte a una de ellas
 // tiene que seguir mostrando su nombre. El filtrado por `borrado` se hace
@@ -49,10 +60,23 @@ export async function cargarMaestros(idPais: number | null) {
     ),
   ]);
 
+  // Con un mercado activo ya viene filtrado y la etiqueta es el nombre tal
+  // cual. En la vista de los dos mercados, en cambio, hay que decir de cual es
+  // cada fila: si no, "Arriendos" aparece dos veces y parece un duplicado.
+  const filas = (categorias.data ?? []) as Categoria[];
+  const paises = idPais === null ? await codigosDePais(supabase) : new Map();
+  const conEtiqueta = filas.map((c) => ({
+    ...c,
+    etiqueta:
+      idPais === null && paises.size > 1
+        ? `${c.nombre} - ${paises.get(c.id_pais) ?? ""}`.trim()
+        : c.nombre,
+  }));
+
   return {
     cuentas: (cuentas.data ?? []) as Cuenta[],
     proyectos: (proyectos.data ?? []) as Proyecto[],
-    categorias: (categorias.data ?? []) as Categoria[],
+    categorias: conEtiqueta,
     interlocutores: (interlocutores.data ?? []) as Interlocutor[],
   };
 }

@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import Ventana from "@/components/Ventana";
 import {
   borrarBoleta,
@@ -39,6 +45,7 @@ export default function FormularioBoleta({
   boleta,
   categorias,
   proyectos,
+  lecturaDisponible,
   alCerrar,
 }: {
   idRendicion: number;
@@ -47,6 +54,8 @@ export default function FormularioBoleta({
   boleta: BoletaRendicion | null;
   categorias: Categoria[];
   proyectos: Proyecto[];
+  // Sin clave del modelo configurada el boton de leer no aparece.
+  lecturaDisponible: boolean;
   alCerrar: (mensaje?: string) => void;
 }) {
   const [estado, enviar, pendiente] = useActionState<Resultado | null, FormData>(
@@ -59,6 +68,71 @@ export default function FormularioBoleta({
     (RespaldoBoleta & { url: string | null })[]
   >([]);
   const [borrando, setBorrando] = useState(false);
+
+  // --- lectura automatica de la foto ---
+  //
+  // Lo que devuelve el modelo llena el formulario y nada mas: la persona
+  // confirma antes de guardar.
+  const formulario = useRef<HTMLFormElement>(null);
+  const [foto, setFoto] = useState<File | null>(null);
+  const [leyendo, setLeyendo] = useState(false);
+  const [avisoLectura, setAvisoLectura] = useState("");
+
+  async function leerFoto() {
+    if (!foto || !formulario.current) return;
+    setLeyendo(true);
+    setAvisoLectura("");
+
+    try {
+      const cuerpo = new FormData();
+      cuerpo.append("foto", foto);
+      const respuesta = await fetch("/api/leer-boleta", {
+        method: "POST",
+        body: cuerpo,
+      });
+      const r = await respuesta.json();
+
+      if (!r.ok) {
+        setAvisoLectura(r.mensaje ?? "No se pudo leer la boleta.");
+        return;
+      }
+
+      const campos = formulario.current.elements as typeof formulario.current.elements & {
+        fecha: HTMLInputElement;
+        monto: HTMLInputElement;
+        comercio: HTMLInputElement;
+        documento: HTMLInputElement;
+      };
+
+      const leidos: string[] = [];
+      if (r.boleta.fecha) {
+        campos.fecha.value = r.boleta.fecha;
+        leidos.push("fecha");
+      }
+      if (r.boleta.monto !== null) {
+        campos.monto.value = String(r.boleta.monto);
+        leidos.push("monto");
+      }
+      if (r.boleta.comercio) {
+        campos.comercio.value = r.boleta.comercio;
+        leidos.push("comercio");
+      }
+      if (r.boleta.documento) {
+        campos.documento.value = r.boleta.documento;
+        leidos.push("numero");
+      }
+
+      setAvisoLectura(
+        leidos.length
+          ? `Lei ${leidos.join(", ")}. Revise antes de guardar: falta elegir categoria y proyecto.`
+          : "No se distinguio ningun dato. Escribalos a mano."
+      );
+    } catch {
+      setAvisoLectura("No se pudo leer la boleta. Escriba los datos a mano.");
+    } finally {
+      setLeyendo(false);
+    }
+  }
 
   useEffect(() => {
     if (estado?.ok) alCerrar(estado.mensaje);
@@ -122,7 +196,7 @@ export default function FormularioBoleta({
       onCerrar={() => alCerrar()}
       ancho="max-w-3xl"
     >
-      <form action={enviar} className="grid gap-3 sm:grid-cols-3">
+      <form ref={formulario} action={enviar} className="grid gap-3 sm:grid-cols-3">
         <input type="hidden" name="id_rendicion" value={idRendicion} />
         {boleta && (
           <input type="hidden" name="id_gasto" value={boleta.id_gasto} />
@@ -185,7 +259,7 @@ export default function FormularioBoleta({
             <option value="">Elija</option>
             {propias.map((c) => (
               <option key={c.id_categoria} value={c.id_categoria}>
-                {c.nombre}
+                {c.etiqueta}
               </option>
             ))}
           </select>
@@ -233,19 +307,45 @@ export default function FormularioBoleta({
           <label className={ROTULO}>
             Foto o archivo de la boleta {boleta ? "" : "*"}
           </label>
-          <input
-            type="file"
-            name="fotos"
-            className={CAMPO}
-            multiple
-            accept="image/*,application/pdf"
-            capture="environment"
-          />
+          <div className="flex flex-wrap gap-2 items-center">
+            <input
+              type="file"
+              name="fotos"
+              className={`${CAMPO} flex-1`}
+              multiple
+              accept="image/*,application/pdf"
+              capture="environment"
+              onChange={(e) =>
+                setFoto(
+                  Array.from(e.target.files ?? []).find((f) =>
+                    f.type.startsWith("image/")
+                  ) ?? null
+                )
+              }
+            />
+            {lecturaDisponible && foto && (
+              <button
+                type="button"
+                className={BOTON_CLARO}
+                onClick={leerFoto}
+                disabled={leyendo}
+              >
+                {leyendo ? "Leyendo..." : "Leer la foto"}
+              </button>
+            )}
+          </div>
           <p className="text-[11px] text-gray-600 mt-0.5">
             {boleta
               ? "Lo que suba se agrega a los respaldos que ya tiene."
               : "Puede sacarle la foto ahi mismo, en terreno."}
+            {lecturaDisponible &&
+              " Con la foto cargada, «Leer la foto» completa fecha, monto, comercio y numero."}
           </p>
+          {avisoLectura && (
+            <p className="text-[11px] bg-crema border border-gray-200 rounded px-2 py-1 mt-1">
+              {avisoLectura}
+            </p>
+          )}
         </div>
 
         {respaldos.length > 0 && (
