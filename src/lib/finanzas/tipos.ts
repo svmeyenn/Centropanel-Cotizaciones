@@ -78,6 +78,28 @@ export type Movimiento = {
   fecha_registro: string;
 };
 
+// Una linea de la cartola: el movimiento visto desde la cuenta, con el saldo
+// que deja. No se arma en el navegador ni se lee de una vista: lo calcula la
+// base, para que el saldo sea el mismo para todos --ver `fin_cartola`.
+export type FilaCartola = {
+  id_mov: number;
+  fecha: string;
+  tipo: Tipo;
+  origen_destino: string | null;
+  comentario: string | null;
+  documento: string | null;
+  id_cuenta: number | null;
+  cuenta: string | null;
+  banco: string | null;
+  id_proyecto: number | null;
+  proyecto: string | null;
+  cliente: string | null;
+  categoria: string | null;
+  abono: number;
+  cargo: number;
+  saldo: number;
+};
+
 // --- como se lee un movimiento en pantalla ---------------------------------
 
 // "Razon Social - Nombre de Referencia", o uno solo cuando son iguales, que es
@@ -95,6 +117,21 @@ export const fechaCorta = (f: string | null) => {
   if (!f) return "";
   const [a, m, d] = f.slice(0, 10).split("-");
   return `${d}-${m}-${a}`;
+};
+
+// La fecha de registro se guarda con hora y en UTC, asi que no se puede
+// cortar el texto como la fecha de pago: a las nueve de la noche de Chile ya
+// es el dia siguiente en UTC, y la solicitud se veria hecha mañana.
+export const fechaDeRegistro = (f: string | null) => {
+  if (!f) return "";
+  const d = new Date(f.includes("T") ? f : f.replace(" ", "T"));
+  if (Number.isNaN(d.getTime())) return fechaCorta(f);
+  return new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(d);
 };
 
 // Los ingresos no se "pagan", se proyectan: mismo valor en la base

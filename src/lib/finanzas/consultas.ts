@@ -5,6 +5,7 @@ import {
   buscarInterlocutores,
   type Categoria,
   type Cuenta,
+  type FilaCartola,
   type Interlocutor,
   type Movimiento,
   type Proyecto,
@@ -91,6 +92,23 @@ export async function cargarMovimientos(
     .order("id_mov", { ascending: false });
 
   return (data ?? []) as Movimiento[];
+}
+
+// La cartola se pide a la base entera, no se arma aqui: el saldo es un
+// acumulado y tiene que salir de todas las filas del mercado, no de las que
+// alcance a ver quien mira. La funcion ya exige el permiso de ver cartola.
+export async function cargarCartola(filtro: Filtro, idPais: number | null) {
+  const supabase = await createClient();
+
+  const { data } = await supabase.rpc("fin_cartola", {
+    p_desde: filtro.desde || null,
+    p_hasta: filtro.hasta || null,
+    p_cuenta: filtro.cuenta ? Number(filtro.cuenta) : null,
+    p_proyecto: filtro.proyecto ? Number(filtro.proyecto) : null,
+    p_pais: idPais,
+  });
+
+  return (data ?? []) as FilaCartola[];
 }
 
 // Un enlace por movimiento --el primer respaldo cargado-- resuelto de una vez
