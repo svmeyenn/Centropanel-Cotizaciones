@@ -17,11 +17,14 @@ export default function FiltrosMovimientos({
   proyectos,
   interlocutores,
   etiquetaEstados,
+  mostrarEstado = true,
   extra,
 }: {
   base: string;
   cuentas: Cuenta[];
   proyectos: Proyecto[];
+  // La cartola no lo usa: alli solo entra lo pagado.
+  mostrarEstado?: boolean;
   // Sin esta lista no se dibuja el filtro de origen/destino: la cartola no la
   // pasa, y ahi el filtro no aparece.
   interlocutores?: Interlocutor[];
@@ -96,17 +99,19 @@ export default function FiltrosMovimientos({
             ))}
           </select>
         </Campo>
-        <Campo rotulo="Estado">
-          <select
-            name="estado"
-            defaultValue={params.get("estado") ?? ""}
-            className={campo}
-          >
-            <option value="">Todos</option>
-            <option value="Pagado">{etiquetaEstados.pagado}</option>
-            <option value="Pendiente">{etiquetaEstados.pendiente}</option>
-          </select>
-        </Campo>
+        {mostrarEstado && (
+          <Campo rotulo="Estado">
+            <select
+              name="estado"
+              defaultValue={params.get("estado") ?? ""}
+              className={campo}
+            >
+              <option value="">Todos</option>
+              <option value="Pagado">{etiquetaEstados.pagado}</option>
+              <option value="Pendiente">{etiquetaEstados.pendiente}</option>
+            </select>
+          </Campo>
+        )}
 
         {interlocutores && (
           <FiltroInterlocutor

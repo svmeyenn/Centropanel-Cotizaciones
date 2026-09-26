@@ -10,7 +10,11 @@ import {
   cargarMovimientos,
   type Filtro,
 } from "@/lib/finanzas/consultas";
-import { etiquetaInterlocutor, fechaCorta } from "@/lib/finanzas/tipos";
+import {
+  etiquetaInterlocutor,
+  fechaCorta,
+  fechaDeRegistro,
+} from "@/lib/finanzas/tipos";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
@@ -54,6 +58,7 @@ export default async function Pagina({
     const proyecto = proyectos.find((p) => p.id_proyecto === m.id_proyecto);
     return [
       m.fecha ? fechaCorta(m.fecha) : "Pendiente",
+      fechaDeRegistro(m.fecha_registro),
       inter
         ? etiquetaInterlocutor(inter.razon_social, inter.nombre_referencia)
         : (m.origen_destino ?? ""),
@@ -93,6 +98,7 @@ export default async function Pagina({
               nombre="egresos"
               titulos={[
                 "Fecha de pago",
+                "Pedido el",
                 "Destino",
                 "Monto",
                 "Cuenta",

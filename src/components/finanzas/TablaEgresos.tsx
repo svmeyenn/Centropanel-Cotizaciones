@@ -7,6 +7,7 @@ import {
   agruparPorMes,
   etiquetaInterlocutor,
   fechaCorta,
+  fechaDeRegistro,
   type Categoria,
   type Cuenta,
   type Interlocutor,
@@ -90,7 +91,7 @@ export default function TablaEgresos({
   const pagados = movimientos.filter((m) => m.estado_pago === "Pagado");
   const totalPendiente = pendientes.reduce((t, m) => t + Number(m.monto), 0);
   const grupos = agruparPorMes(pagados);
-  const columnas = 9 + (puedeEditar || puedePagar ? 1 : 0);
+  const columnas = 10 + (puedeEditar || puedePagar ? 1 : 0);
 
   const fila = (m: Movimiento) => (
     <tr key={m.id_mov} className="group border-t border-gray-100 hover:bg-crema">
@@ -98,7 +99,14 @@ export default function TablaEgresos({
         {m.fecha ? (
           fechaCorta(m.fecha)
         ) : (
-          <span className="text-dorado-osc font-semibold">Pendiente</span>
+          // Mientras no se paga, lo que importa es cuanto lleva esperando: la
+          // fecha de pago no existe todavia, la de solicitud si.
+          <>
+            <span className="text-dorado-osc font-semibold">Pendiente</span>
+            <span className="block text-[11px] text-gray-500">
+              pedido el {fechaDeRegistro(m.fecha_registro)}
+            </span>
+          </>
         )}
       </td>
       <td className="px-3 py-2">{etiquetaContraparte(m)}</td>
@@ -116,6 +124,9 @@ export default function TablaEgresos({
       </td>
       <td className="px-3 py-2 hidden lg:table-cell text-gray-600 max-w-xs truncate">
         {m.comentario}
+      </td>
+      <td className="px-3 py-2 hidden md:table-cell tabular-nums whitespace-nowrap">
+        {m.documento ?? <span className="text-gray-400">—</span>}
       </td>
       <td className="px-3 py-2 hidden md:table-cell">
         {enlaces[m.id_mov] ? (
@@ -245,6 +256,9 @@ export default function TablaEgresos({
                 </th>
                 <th className="text-left px-3 py-2 hidden lg:table-cell">
                   Comentario
+                </th>
+                <th className="text-left px-3 py-2 hidden md:table-cell w-28">
+                  Documento
                 </th>
                 <th className="text-left px-3 py-2 hidden md:table-cell w-20">
                   Respaldo
