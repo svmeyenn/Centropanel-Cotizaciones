@@ -100,6 +100,19 @@ export type FilaCartola = {
   saldo: number;
 };
 
+// Lo que entro y salio en un proyecto. Igual que la cartola, lo suma la base
+// --ver `fin_resumen_proyecto`-- y no el navegador.
+export type FilaResumenProyecto = {
+  id_proyecto: number;
+  proyecto: string;
+  cliente: string | null;
+  ingresos: number;
+  egresos: number;
+  resultado: number;
+  pendiente: number;
+  movimientos: number;
+};
+
 // --- como se lee un movimiento en pantalla ---------------------------------
 
 // "Razon Social - Nombre de Referencia", o uno solo cuando son iguales, que es

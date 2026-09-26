@@ -6,6 +6,7 @@ import {
   type Categoria,
   type Cuenta,
   type FilaCartola,
+  type FilaResumenProyecto,
   type Interlocutor,
   type Movimiento,
   type Proyecto,
@@ -109,6 +110,24 @@ export async function cargarCartola(filtro: Filtro, idPais: number | null) {
   });
 
   return (data ?? []) as FilaCartola[];
+}
+
+// Lo que entro y salio en cada proyecto, en el periodo que se pida. La suma la
+// hace la base por la misma razon que la cartola.
+export async function cargarResumenProyecto(
+  desde: string | null,
+  hasta: string | null,
+  idPais: number | null
+) {
+  const supabase = await createClient();
+
+  const { data } = await supabase.rpc("fin_resumen_proyecto", {
+    p_desde: desde || null,
+    p_hasta: hasta || null,
+    p_pais: idPais,
+  });
+
+  return (data ?? []) as FilaResumenProyecto[];
 }
 
 // Un enlace por movimiento --el primer respaldo cargado-- resuelto de una vez
