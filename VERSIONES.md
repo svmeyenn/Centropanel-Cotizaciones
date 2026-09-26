@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0063-20260925**
+Version vigente: **v0064-20260926**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0064-20260926 | 26-09-2026 | Finanzas completa: cartola consolidada, resumen por proyecto, rendiciones de gastos, conciliacion bancaria y topes; el saldo y los informes se calculan en la base, iguales para todo perfil; categorias con su mercado y listas que no se mezclan entre paises | 168821d |
 | v0063-20260925 | 25-09-2026 | Sistema de Gestion: la herramienta cambia de nombre y suma la seccion de Finanzas con Ingresos, Egresos y Mantenedores; calculos iguales para todo perfil y enlace publico con sus totales | bf6f228 |
 | v0062-20260924 | 24-09-2026 | Tablero de desempeno en la portada: venta, conversion, margen, cobranza, equipo y clientes, con mes seleccionable y cada tasa con su magnitud | 49ef41d |
 | v0061-20260924 | 24-09-2026 | Codigo del producto (PLU) en los items de la cotizacion y busqueda por codigo al agregar productos | 7927c2a |
