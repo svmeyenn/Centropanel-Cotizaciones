@@ -182,7 +182,7 @@ export default function FormularioIngreso({
             <option value="">Sin categoria</option>
             {propias.map((c) => (
               <option key={c.id_categoria} value={c.id_categoria}>
-                {c.nombre}
+                {c.etiqueta}
               </option>
             ))}
           </select>

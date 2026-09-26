@@ -51,6 +51,7 @@ export default function DetalleRendicion({
   cuentas,
   puedePagar,
   enlaces,
+  lecturaDisponible,
 }: {
   rendicion: Rendicion;
   boletas: BoletaRendicion[];
@@ -61,6 +62,7 @@ export default function DetalleRendicion({
   cuentas: Cuenta[];
   puedePagar: boolean;
   enlaces: Record<number, string>;
+  lecturaDisponible: boolean;
 }) {
   const router = useRouter();
   const [enCurso, comenzar] = useTransition();
@@ -89,7 +91,7 @@ export default function DetalleRendicion({
     return p ? (p.cliente ? `${p.nombre} - ${p.cliente}` : p.nombre) : "";
   };
   const nombreCategoria = (id: number | null) =>
-    categorias.find((c) => c.id_categoria === id)?.nombre ?? "";
+    categorias.find((c) => c.id_categoria === id)?.etiqueta ?? "";
 
   function correr(accion: () => Promise<Resultado>) {
     comenzar(async () => {
@@ -491,6 +493,7 @@ export default function DetalleRendicion({
           boleta={editando === "nueva" ? null : editando}
           categorias={categorias}
           proyectos={proyectos}
+          lecturaDisponible={lecturaDisponible}
           alCerrar={cerrarDialogo}
         />
       )}

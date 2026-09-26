@@ -62,7 +62,7 @@ export default function TablaIngresos({
     return p.cliente ? `${p.nombre} - ${p.cliente}` : p.nombre;
   };
   const nombreCategoria = (id: number | null) =>
-    categorias.find((c) => c.id_categoria === id)?.nombre ?? "";
+    categorias.find((c) => c.id_categoria === id)?.etiqueta ?? "";
 
   // Se compone desde interlocutores en vez de leer el texto copiado en
   // origen_destino, para que renombrar a alguien se vea de inmediato en todo su

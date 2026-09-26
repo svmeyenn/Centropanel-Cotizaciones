@@ -34,7 +34,7 @@ export default function PanelTopes({
   const nombreCategoria = (id: number | null) =>
     id === null
       ? "Todas las categorias"
-      : (categorias.find((c) => c.id_categoria === id)?.nombre ?? "");
+      : (categorias.find((c) => c.id_categoria === id)?.etiqueta ?? "");
 
   // Las de gasto: no tiene sentido ponerle tope a una boleta de venta.
   const deEgreso = categorias.filter((c) => c.tipo === "Egreso" && !c.borrado);
@@ -65,7 +65,7 @@ export default function PanelTopes({
               <option value="">Todas las categorias</option>
               {deEgreso.map((c) => (
                 <option key={c.id_categoria} value={c.id_categoria}>
-                  {c.nombre}
+                  {c.etiqueta}
                   {conTope.has(c.id_categoria) ? " (ya tiene tope)" : ""}
                 </option>
               ))}

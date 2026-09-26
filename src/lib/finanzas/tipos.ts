@@ -39,6 +39,11 @@ export type Categoria = {
   nombre: string;
   tipo: Tipo;
   borrado: boolean;
+  // Como se muestra en pantalla. Con un solo mercado a la vista es el nombre
+  // tal cual; con los dos, lleva el pais detras --"Arriendos - CL"-- porque si
+  // no las doce categorias de Chile y las doce de Peru se ven repetidas. No
+  // esta en la base: se arma al leer, en `cargarMaestros`.
+  etiqueta: string;
 };
 
 // Las personas u organizaciones que nos depositan o a las que pagamos.
