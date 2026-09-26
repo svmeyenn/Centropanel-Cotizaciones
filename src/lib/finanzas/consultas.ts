@@ -11,6 +11,7 @@ import {
   type BoletaRendicion,
   type AnticipoAplicado,
   type CuentaRendidor,
+  type LineaBanco,
   type Interlocutor,
   type Movimiento,
   type Proyecto,
@@ -331,4 +332,59 @@ export async function cargarEnlacesBoletas(
   const enlaces: Record<number, string> = {};
   for (const [id, url] of firmadas) if (url) enlaces[id] = url;
   return enlaces;
+}
+
+// --- conciliacion ----------------------------------------------------------
+
+export async function cargarConciliacion(
+  idCuenta: number,
+  desde: string,
+  hasta: string
+) {
+  const supabase = await createClient();
+
+  const dias = (f: string, n: number) => {
+    const d = new Date(f + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const [lineas, enlazados, movimientos] = await Promise.all([
+    supabase
+      .from("cartola_banco")
+      .select("*")
+      .eq("id_cuenta", idCuenta)
+      .gte("fecha", desde)
+      .lte("fecha", hasta)
+      .order("fecha"),
+    supabase
+      .from("cartola_banco")
+      .select("id_mov")
+      .eq("id_cuenta", idCuenta)
+      .not("id_mov", "is", null),
+    // Una semana de margen a cada lado: el banco puede registrar el
+    // movimiento un dia distinto del que se anoto aqui.
+    supabase
+      .from("movimientos")
+      .select("*")
+      .eq("id_cuenta", idCuenta)
+      .eq("estado_pago", "Pagado")
+      .gte("fecha", dias(desde, -7))
+      .lte("fecha", dias(hasta, 7))
+      .order("fecha"),
+  ]);
+
+  const usados = new Set(
+    (enlazados.data ?? []).map((e: { id_mov: number }) => e.id_mov)
+  );
+  const movs = (movimientos.data ?? []) as Movimiento[];
+
+  return {
+    lineas: (lineas.data ?? []) as LineaBanco[],
+    movimientos: movs,
+    // Solo se muestran como "sin respaldo en el banco" los del rango pedido.
+    sinLinea: movs.filter(
+      (m) => !usados.has(m.id_mov) && m.fecha! >= desde && m.fecha! <= hasta
+    ),
+  };
 }

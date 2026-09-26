@@ -427,3 +427,21 @@ export function desenlaceRendicion(
 // El proyecto al que va lo que no tiene obra: con el, el comentario deja de
 // ser opcional, para que no se convierta en un basurero.
 export const PROYECTO_GENERICO = "Otros";
+
+// --- conciliacion bancaria -------------------------------------------------
+
+// Una linea de la cartola del banco, tal como el banco la entrego. Conciliar
+// es enlazarla con el movimiento que la explica; nada de esto modifica los
+// movimientos.
+export type LineaBanco = {
+  id_linea: number;
+  id_cuenta: number;
+  fecha: string;
+  descripcion: string | null;
+  documento: string | null;
+  cargo: number;
+  abono: number;
+  id_mov: number | null;
+  conciliado_en: string | null;
+  id_conciliador: number | null;
+};
