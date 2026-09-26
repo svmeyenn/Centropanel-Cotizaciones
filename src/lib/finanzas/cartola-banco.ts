@@ -17,6 +17,28 @@ export type CartolaLeida = {
   cuentasEnElArchivo: string[];
 };
 
+// Como se lee la cartola de una cuenta, cuando se configuro a mano. Los
+// titulos van tal cual los escribe el banco; la comparacion es sin tildes ni
+// mayusculas.
+export type FormatoCartola = {
+  col_fecha: string;
+  col_descripcion: string | null;
+  col_documento: string | null;
+  col_cargo: string | null;
+  col_abono: string | null;
+  col_monto: string | null;
+  monto_invertido: boolean;
+};
+
+// Lo que hace falta para configurar el formato: los titulos que trae el
+// archivo y unas filas de muestra para reconocerlos.
+export type InspeccionCartola = {
+  titulos: string[];
+  muestra: string[][];
+  // Lo que la deteccion automatica reconocio, para proponerlo ya marcado.
+  propuesta: Partial<Record<keyof typeof SINONIMOS, string>>;
+};
+
 export type FilaBanco = {
   fecha: string;
   descripcion: string | null;
@@ -226,8 +248,80 @@ function cuentasDeLaCabecera(bruto: unknown[][], hastaFila: number): string[] {
   return [...encontradas];
 }
 
-export async function leerArchivoCartola(
+// La fila de titulos. Con formato configurado, la que contenga su columna de
+// fecha; sin formato, la primera que nombre una fecha y algun monto.
+function buscarEncabezado(
+  bruto: unknown[][],
+  formato: FormatoCartola | null
+): number {
+  if (formato) {
+    const buscada = normalizar(formato.col_fecha);
+    return bruto.findIndex((fila) => fila.map(normalizar).includes(buscada));
+  }
+
+  return bruto.findIndex((fila) => {
+    const n = fila.map(normalizar);
+    return (
+      n.some((c) => SINONIMOS.fecha.includes(c)) &&
+      n.some((c) =>
+        [...SINONIMOS.cargo, ...SINONIMOS.abono, ...SINONIMOS.monto].includes(c)
+      )
+    );
+  });
+}
+
+// Para la pantalla de configuracion: los titulos que trae el archivo, tres
+// filas de muestra y lo que la deteccion automatica reconocio, de modo que
+// configurar sea corregir una propuesta y no llenar todo de cero.
+export async function inspeccionarCartola(
   archivo: File
+): Promise<{ ok: true; inspeccion: InspeccionCartola } | { ok: false; mensaje: string }> {
+  let bruto: unknown[][];
+  try {
+    bruto = await celdas(archivo);
+  } catch {
+    return {
+      ok: false,
+      mensaje: "No se pudo abrir el archivo. Tiene que ser .xlsx, .csv o .txt.",
+    };
+  }
+
+  if (bruto.length === 0) return { ok: false, mensaje: "El archivo esta vacio." };
+
+  // Sin encabezado reconocible se toma la primera fila con varias celdas: es
+  // la que la persona va a tener que mapear a mano, y para eso sirve igual.
+  let i = buscarEncabezado(bruto, null);
+  if (i < 0) i = bruto.findIndex((f) => f.filter((c) => c !== null && c !== "").length >= 3);
+  if (i < 0) i = 0;
+
+  const titulos = bruto[i].map((c) => (c ?? "").toString().trim());
+  const normalizados = titulos.map(normalizar);
+
+  const propuesta: Partial<Record<keyof typeof SINONIMOS, string>> = {};
+  for (const campo of Object.keys(SINONIMOS) as (keyof typeof SINONIMOS)[]) {
+    const j = columna(normalizados, SINONIMOS[campo]);
+    if (j !== null && titulos[j]) propuesta[campo] = titulos[j];
+  }
+
+  const muestra = bruto
+    .slice(i + 1)
+    .filter((f) => f.some((c) => c !== null && c !== ""))
+    .slice(0, 3)
+    .map((f) =>
+      titulos.map((_, j) => {
+        const v = f[j];
+        if (v instanceof Date) return v.toISOString().slice(0, 10);
+        return (v ?? "").toString().slice(0, 40);
+      })
+    );
+
+  return { ok: true, inspeccion: { titulos, muestra, propuesta } };
+}
+
+export async function leerArchivoCartola(
+  archivo: File,
+  // Sin formato configurado se reconocen los nombres habituales de columna.
+  formato: FormatoCartola | null = null
 ): Promise<({ ok: true } & CartolaLeida) | { ok: false; mensaje: string }> {
   // El .xls antiguo es otro formato por dentro y el lector no lo entiende:
   // vale la pena decirlo aqui y no dejar que falle con un error opaco.
@@ -250,31 +344,35 @@ export async function leerArchivoCartola(
 
   if (bruto.length === 0) return { ok: false, mensaje: "El archivo esta vacio." };
 
-  // El encabezado es la primera fila que nombra una fecha y algun monto.
-  const iEncabezado = bruto.findIndex((fila) => {
-    const n = fila.map(normalizar);
-    return (
-      n.some((c) => SINONIMOS.fecha.includes(c)) &&
-      n.some((c) =>
-        [...SINONIMOS.cargo, ...SINONIMOS.abono, ...SINONIMOS.monto].includes(c)
-      )
-    );
-  });
+  const iEncabezado = buscarEncabezado(bruto, formato);
 
   if (iEncabezado < 0)
     return {
       ok: false,
-      mensaje:
-        "No encontre las columnas. El archivo tiene que traer una fila con Fecha y con Cargo/Abono o Monto.",
+      mensaje: formato
+        ? `No encontre la columna "${formato.col_fecha}" que tiene configurada esta cuenta. Si el banco cambio el formato del archivo, vuelva a configurarlo.`
+        : "No encontre las columnas. Configure el formato de la cartola de esta cuenta, o revise que el archivo traiga una fila con Fecha y con Cargo/Abono o Monto.",
     };
 
   const encabezado = bruto[iEncabezado].map(normalizar);
-  const iFecha = columna(encabezado, SINONIMOS.fecha)!;
-  const iDescripcion = columna(encabezado, SINONIMOS.descripcion);
-  const iDocumento = columna(encabezado, SINONIMOS.documento);
-  const iCargo = columna(encabezado, SINONIMOS.cargo);
-  const iAbono = columna(encabezado, SINONIMOS.abono);
-  const iMonto = columna(encabezado, SINONIMOS.monto);
+
+  // Con formato configurado manda lo que dice el formato, y nada se adivina.
+  const uno = (titulo: string | null) =>
+    titulo ? columna(encabezado, [normalizar(titulo)]) : null;
+
+  const iFecha = formato
+    ? uno(formato.col_fecha)!
+    : columna(encabezado, SINONIMOS.fecha)!;
+  const iDescripcion = formato
+    ? uno(formato.col_descripcion)
+    : columna(encabezado, SINONIMOS.descripcion);
+  const iDocumento = formato
+    ? uno(formato.col_documento)
+    : columna(encabezado, SINONIMOS.documento);
+  const iCargo = formato ? uno(formato.col_cargo) : columna(encabezado, SINONIMOS.cargo);
+  const iAbono = formato ? uno(formato.col_abono) : columna(encabezado, SINONIMOS.abono);
+  const iMonto = formato ? uno(formato.col_monto) : columna(encabezado, SINONIMOS.monto);
+  const invertido = formato?.monto_invertido ?? false;
 
   const filas: FilaBanco[] = [];
   const vistas = new Map<string, number>();
@@ -290,7 +388,9 @@ export async function leerArchivoCartola(
       cargo = Math.abs(iCargo === null ? 0 : comoMonto(fila[iCargo]));
       abono = Math.abs(iAbono === null ? 0 : comoMonto(fila[iAbono]));
     } else if (iMonto !== null) {
-      const monto = comoMonto(fila[iMonto]);
+      // Con una sola columna, el signo dice de que lado va. Hay bancos que
+      // escriben los egresos en positivo: para esos se invierte.
+      const monto = invertido ? -comoMonto(fila[iMonto]) : comoMonto(fila[iMonto]);
       if (monto < 0) cargo = Math.abs(monto);
       else abono = monto;
     }

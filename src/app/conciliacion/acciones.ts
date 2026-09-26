@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
-import { leerArchivoCartola } from "@/lib/finanzas/cartola-banco";
+import {
+  inspeccionarCartola,
+  leerArchivoCartola,
+  type InspeccionCartola,
+} from "@/lib/finanzas/cartola-banco";
 
 export type Resultado = { ok: boolean; mensaje?: string };
 
@@ -30,7 +34,15 @@ export async function importarCartola(
   if (!(archivo instanceof File) || archivo.size === 0)
     return { ok: false, mensaje: "Falta el archivo de la cartola." };
 
-  const leido = await leerArchivoCartola(archivo);
+  // Si la cuenta tiene su formato configurado, se lee con ese y no se adivina.
+  const clienteFormato = await createClient();
+  const { data: formato } = await clienteFormato
+    .from("cartola_formato")
+    .select("*")
+    .eq("id_cuenta", idCuenta)
+    .maybeSingle();
+
+  const leido = await leerArchivoCartola(archivo, formato ?? null);
   if (!leido.ok) return { ok: false, mensaje: leido.mensaje };
 
   const supabase = await createClient();
@@ -226,4 +238,112 @@ export async function borrarLinea(idLinea: number): Promise<Resultado> {
 
   revalidatePath("/conciliacion");
   return { ok: true, mensaje: "Linea eliminada." };
+}
+
+// ---------------------------------------------------------------------------
+// El formato de la cartola de cada cuenta
+// ---------------------------------------------------------------------------
+//
+// Adivinar los nombres de columna funciona la mayoria de las veces. Cuando no,
+// esto permite decirselo una vez y no volver a pensarlo: queda guardado en la
+// cuenta hasta que se cambie.
+
+export async function inspeccionarArchivo(
+  d: FormData
+): Promise<
+  { ok: true; inspeccion: InspeccionCartola } | { ok: false; mensaje: string }
+> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos) return { ok: false, mensaje: "Sin permiso." };
+
+  const archivo = d.get("archivo");
+  if (!(archivo instanceof File) || archivo.size === 0)
+    return { ok: false, mensaje: "Falta el archivo de muestra." };
+
+  return inspeccionarCartola(archivo);
+}
+
+export async function guardarFormatoCartola(
+  _p: Resultado | null,
+  d: FormData
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos)
+    return { ok: false, mensaje: "Solo quien paga puede configurar el formato." };
+
+  const idCuenta = Number(d.get("id_cuenta"));
+  if (!Number.isInteger(idCuenta) || idCuenta <= 0)
+    return { ok: false, mensaje: "Falta la cuenta." };
+
+  const texto = (k: string) => {
+    const s = (d.get(k) ?? "").toString().trim();
+    return s === "" ? null : s;
+  };
+
+  const col_fecha = texto("col_fecha");
+  const col_cargo = texto("col_cargo");
+  const col_abono = texto("col_abono");
+  const col_monto = texto("col_monto");
+
+  if (!col_fecha) return { ok: false, mensaje: "Diga cual columna trae la fecha." };
+
+  // O cargos y abonos separados, o una sola columna con signo. Las dos formas a
+  // la vez no se pueden leer.
+  const separadas = Boolean(col_cargo || col_abono);
+  if (separadas && col_monto)
+    return {
+      ok: false,
+      mensaje:
+        "Elija una sola forma: o las columnas de cargo y abono, o una columna de monto con signo.",
+    };
+  if (!separadas && !col_monto)
+    return {
+      ok: false,
+      mensaje: "Diga donde viene la plata: cargo y abono, o una columna de monto.",
+    };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("cartola_formato").upsert(
+    {
+      id_cuenta: idCuenta,
+      col_fecha,
+      col_descripcion: texto("col_descripcion"),
+      col_documento: texto("col_documento"),
+      col_cargo,
+      col_abono,
+      col_monto,
+      monto_invertido: d.get("monto_invertido") === "on",
+      id_vendedor: v.id,
+      actualizado_en: new Date().toISOString(),
+    },
+    { onConflict: "id_cuenta" }
+  );
+
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath("/conciliacion");
+  return {
+    ok: true,
+    mensaje: "Formato guardado. Las proximas cartolas de esta cuenta se leen asi.",
+  };
+}
+
+export async function olvidarFormatoCartola(idCuenta: number): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos)
+    return { ok: false, mensaje: "Solo quien paga puede cambiar el formato." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("cartola_formato")
+    .delete()
+    .eq("id_cuenta", idCuenta);
+
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath("/conciliacion");
+  return {
+    ok: true,
+    mensaje: "Formato borrado. Se vuelve a reconocer las columnas por su nombre.",
+  };
 }
