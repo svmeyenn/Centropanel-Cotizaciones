@@ -45,6 +45,7 @@ export default async function Pagina() {
           interlocutores={interlocutores}
           cuentasInterlocutores={cuentasInterlocutores}
           moneda={moneda}
+          mercados={accesibles.map((p) => ({ id: p.id, codigo: p.codigo }))}
         />
       </div>
     </div>

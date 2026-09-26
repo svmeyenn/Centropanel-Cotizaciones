@@ -109,24 +109,32 @@ export default function TablaEgresos({
           </>
         )}
       </td>
-      <td className="px-3 py-2">{etiquetaContraparte(m)}</td>
+      <td className="px-3 py-2 truncate" title={etiquetaContraparte(m)}>
+        {etiquetaContraparte(m)}
+      </td>
+      <td className="px-3 py-2 tabular-nums truncate" title={m.documento ?? ""}>
+        {m.documento ?? <span className="text-gray-400">—</span>}
+      </td>
       <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
         {pesos(m.monto)}
       </td>
-      <td className="px-3 py-2 hidden md:table-cell text-gray-600">
+      <td className="px-3 py-2 hidden md:table-cell text-gray-600 truncate">
         {nombreCuenta(m.id_cuenta)}
       </td>
-      <td className="px-3 py-2 hidden md:table-cell text-gray-600">
+      <td
+        className="px-3 py-2 hidden md:table-cell text-gray-600 truncate"
+        title={nombreProyecto(m.id_proyecto)}
+      >
         {nombreProyecto(m.id_proyecto)}
       </td>
-      <td className="px-3 py-2 hidden lg:table-cell text-gray-600">
+      <td className="px-3 py-2 hidden lg:table-cell text-gray-600 truncate">
         {nombreCategoria(m.id_categoria)}
       </td>
-      <td className="px-3 py-2 hidden lg:table-cell text-gray-600 max-w-xs truncate">
+      <td
+        className="px-3 py-2 hidden xl:table-cell text-gray-600 truncate"
+        title={m.comentario ?? ""}
+      >
         {m.comentario}
-      </td>
-      <td className="px-3 py-2 hidden md:table-cell tabular-nums whitespace-nowrap">
-        {m.documento ?? <span className="text-gray-400">—</span>}
       </td>
       <td className="px-3 py-2 hidden md:table-cell">
         {enlaces[m.id_mov] ? (
@@ -142,7 +150,7 @@ export default function TablaEgresos({
           <span className="text-gray-400">—</span>
         )}
       </td>
-      <td className="px-3 py-2 hidden lg:table-cell text-gray-600">
+      <td className="px-3 py-2 hidden xl:table-cell text-gray-600 truncate">
         {quienSolicito(m.id_vendedor)}
       </td>
       {(puedeEditar || puedePagar) && (
@@ -239,35 +247,33 @@ export default function TablaEgresos({
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full table-fixed text-xs">
             <thead className="bg-verde text-white">
               <tr>
-                <th className="text-left px-3 py-2 w-28">Fecha de pago</th>
-                <th className="text-left px-3 py-2">Destino</th>
-                <th className="text-right px-3 py-2 w-32">Monto</th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-32">
+                <th className="text-left px-3 py-2 w-[12%]">Fecha de pago</th>
+                <th className="text-left px-3 py-2 w-[19%]">Destino</th>
+                <th className="text-left px-3 py-2 w-[9%]">Documento</th>
+                <th className="text-right px-3 py-2 w-[11%]">Monto</th>
+                <th className="text-left px-3 py-2 hidden md:table-cell w-[9%]">
                   Cuenta
                 </th>
-                <th className="text-left px-3 py-2 hidden md:table-cell">
+                <th className="text-left px-3 py-2 hidden md:table-cell w-[14%]">
                   Proyecto / Cliente
                 </th>
-                <th className="text-left px-3 py-2 hidden lg:table-cell w-36">
+                <th className="text-left px-3 py-2 hidden lg:table-cell w-[11%]">
                   Categoria
                 </th>
-                <th className="text-left px-3 py-2 hidden lg:table-cell">
+                <th className="text-left px-3 py-2 hidden xl:table-cell w-[12%]">
                   Comentario
                 </th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-28">
-                  Documento
-                </th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-20">
+                <th className="text-left px-3 py-2 hidden md:table-cell w-[7%]">
                   Respaldo
                 </th>
-                <th className="text-left px-3 py-2 hidden lg:table-cell w-32">
+                <th className="text-left px-3 py-2 hidden xl:table-cell w-[10%]">
                   Solicito
                 </th>
                 {(puedeEditar || puedePagar) && (
-                  <th className="px-3 py-2 w-36 sticky right-0 bg-verde" />
+                  <th className="px-3 py-2 w-[10%] min-w-[7.5rem] sticky right-0 bg-verde" />
                 )}
               </tr>
             </thead>
