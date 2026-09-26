@@ -51,8 +51,35 @@ const SINONIMOS = {
     "referencia",
     "n operacion",
   ],
-  cargo: ["cargo", "cargos", "debito", "debitos", "giro", "giros", "cheques o cargos"],
-  abono: ["abono", "abonos", "credito", "creditos", "deposito", "depositos"],
+  cargo: [
+    "cargo",
+    "cargos",
+    "debito",
+    "debitos",
+    "giro",
+    "giros",
+    "cheques o cargos",
+    // La BCI titula las columnas por lo que le pasa a la plata, no por su
+    // nombre contable: "Egreso (-)" e "Ingreso (+)".
+    "egreso",
+    "egresos",
+    "salida",
+    "salidas",
+    "pago",
+    "pagos",
+  ],
+  abono: [
+    "abono",
+    "abonos",
+    "credito",
+    "creditos",
+    "deposito",
+    "depositos",
+    "ingreso",
+    "ingresos",
+    "entrada",
+    "entradas",
+  ],
   monto: ["monto", "importe", "valor"],
 };
 
@@ -76,14 +103,15 @@ function columna(encabezado: string[], nombres: string[]) {
 // Fechas de banco: 31/12/2026, 31-12-2026, 2026-12-31, o una fecha de verdad
 // cuando el archivo es Excel.
 function comoFecha(valor: unknown): string | null {
-  if (valor instanceof Date && !isNaN(valor.getTime())) {
-    const u = new Date(
-      Date.UTC(valor.getFullYear(), valor.getMonth(), valor.getDate())
-    );
-    return u.toISOString().slice(0, 10);
-  }
+  // Excel guarda la fecha como un instante en UTC. Leerla con getDate() la
+  // pasa a la hora de Chile, que va tres horas atras: el 26 a las 00:00 UTC
+  // es todavia el 25 aca, y toda la cartola quedaba corrida un dia.
+  if (valor instanceof Date && !isNaN(valor.getTime()))
+    return valor.toISOString().slice(0, 10);
 
-  const s = (valor ?? "").toString().trim();
+  // Algunos bancos guardan la fecha como texto y con comillas adentro de la
+  // celda: "2026-09-26T00:00:00.000Z".
+  const s = (valor ?? "").toString().trim().replace(/^["']|["']$/g, "").trim();
   if (!s) return null;
 
   const iso = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);

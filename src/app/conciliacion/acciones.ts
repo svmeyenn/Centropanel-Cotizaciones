@@ -50,8 +50,19 @@ export async function importarCartola(
   );
   const numeroElegido = soloDigitos(elegida?.numero_cuenta ?? null);
 
-  if (numeroElegido && leido.cuentasEnElArchivo.length > 0) {
-    const calza = leido.cuentasEnElArchivo.some(
+  // Muchas cartolas no traen membrete --la tabla empieza en la primera fila--
+  // pero el banco pone la cuenta en el nombre del archivo, aunque sea con los
+  // ultimos digitos: "Movimientos_Cuenta_7419".
+  const delNombre = archivo.name
+    .split(/[^0-9]+/)
+    .filter((t) => t.length >= 4 && t.length <= 20);
+
+  const candidatos = [...leido.cuentasEnElArchivo, ...delNombre];
+
+  // Sin ninguna pista no se bloquea nada: hay bancos que no dicen la cuenta en
+  // ninguna parte del archivo, y eso no es motivo para no dejar trabajar.
+  if (numeroElegido && candidatos.length > 0) {
+    const calza = candidatos.some(
       (n) => n === numeroElegido || n.endsWith(numeroElegido) || numeroElegido.endsWith(n)
     );
 
@@ -62,9 +73,7 @@ export async function importarCartola(
         const n = soloDigitos(c.numero_cuenta);
         return (
           n.length >= 6 &&
-          leido.cuentasEnElArchivo.some(
-            (x) => x === n || x.endsWith(n) || n.endsWith(x)
-          )
+          candidatos.some((x) => x === n || x.endsWith(n) || n.endsWith(x))
         );
       }) as { alias: string | null; banco: string } | undefined;
 
@@ -72,7 +81,7 @@ export async function importarCartola(
         ok: false,
         mensaje: otra
           ? `Este archivo es de la cuenta "${otra.alias ?? otra.banco}", y arriba esta elegida "${elegida?.alias ?? elegida?.banco}". Cambie la cuenta y vuelva a cargarlo.`
-          : `El archivo no menciona el numero de la cuenta "${elegida?.alias ?? elegida?.banco}" (${elegida?.numero_cuenta}). Revise que sea la cartola de esa cuenta.`,
+          : `El archivo no menciona la cuenta "${elegida?.alias ?? elegida?.banco}" (${elegida?.numero_cuenta}) en ninguna parte. Revise que sea la cartola de esa cuenta.`,
       };
     }
   }
