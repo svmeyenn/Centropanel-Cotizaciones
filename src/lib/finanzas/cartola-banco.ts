@@ -201,11 +201,23 @@ function cuentasDeLaCabecera(bruto: unknown[][], hastaFila: number): string[] {
 export async function leerArchivoCartola(
   archivo: File
 ): Promise<({ ok: true } & CartolaLeida) | { ok: false; mensaje: string }> {
+  // El .xls antiguo es otro formato por dentro y el lector no lo entiende:
+  // vale la pena decirlo aqui y no dejar que falle con un error opaco.
+  if (archivo.name.toLowerCase().endsWith(".xls"))
+    return {
+      ok: false,
+      mensaje:
+        "El archivo .xls es del formato antiguo. Abralo en Excel y guardelo como .xlsx o como CSV.",
+    };
+
   let bruto: unknown[][];
   try {
     bruto = await celdas(archivo);
   } catch {
-    return { ok: false, mensaje: "No se pudo abrir el archivo. Debe ser CSV o Excel." };
+    return {
+      ok: false,
+      mensaje: "No se pudo abrir el archivo. Tiene que ser .xlsx, .csv o .txt.",
+    };
   }
 
   if (bruto.length === 0) return { ok: false, mensaje: "El archivo esta vacio." };
