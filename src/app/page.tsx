@@ -1,5 +1,7 @@
+import BandaDivisas from "@/components/BandaDivisas";
 import Cabecera from "@/components/Cabecera";
 import PanelDesempeno, { type Desempeno } from "@/components/PanelDesempeno";
+import { cargarParidades } from "@/lib/divisas";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { VERSION } from "@/lib/version";
@@ -16,7 +18,13 @@ export default async function Home({
   const v = await requerirVendedor();
   const { mes } = await searchParams;
 
-  const { idPaisActivo } = await contextoMercado(v);
+  const { idPaisActivo, activo, accesibles } = await contextoMercado(v);
+
+  // Las paridades que se miran son las del mercado en que se trabaja: desde
+  // Chile importa el dolar y la UF; desde Peru, cuanto vale su sol.
+  const paridades = await cargarParidades(
+    (activo ?? accesibles[0])?.codigo ?? "CL"
+  );
   const supabase = await createClient();
   const { data: panel } = await supabase.rpc("panel_desempeno", {
     p_pais: idPaisActivo,
@@ -32,6 +40,8 @@ export default async function Home({
         subtitulo="Ventas, produccion, cobranza y finanzas"
       />
       <div className="max-w-screen-2xl mx-auto p-4 space-y-3">
+        <BandaDivisas paridades={paridades} />
+
         <p className="text-[11px] text-gray-600">
           Sesion: <span className="font-semibold">{v.nombre}</span> ({v.rol})
         </p>
