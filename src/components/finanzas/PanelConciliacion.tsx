@@ -3,22 +3,30 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { pesos } from "@/lib/formato";
+import Ventana from "@/components/Ventana";
 import {
   borrarLinea,
   cuadrarAutomatico,
   desenlazarLinea,
+  devolverMarcaDeBanco,
   enlazarLinea,
   importarCartola,
+  marcarSinBanco,
+  volverAPendiente,
   type Resultado,
 } from "@/app/conciliacion/acciones";
 import {
   fechaCorta,
+  type Categoria,
   type Cuenta,
+  type Interlocutor,
   type LineaBanco,
   type Movimiento,
+  type Proyecto,
 } from "@/lib/finanzas/tipos";
 import type { FormatoCartola as Formato } from "@/lib/finanzas/cartola-banco";
 import FormatoCartola from "./FormatoCartola";
+import PasarLineaAlSistema from "./PasarLineaAlSistema";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 const ROTULO = "block text-xs font-semibold text-dorado-osc mb-0.5";
@@ -44,6 +52,11 @@ export default function PanelConciliacion({
   lineas,
   movimientos,
   sinLinea,
+  sinBanco,
+  saldoSistema,
+  categorias,
+  proyectos,
+  interlocutores,
   puedeConciliar,
   formato,
 }: {
@@ -54,6 +67,14 @@ export default function PanelConciliacion({
   lineas: LineaBanco[];
   movimientos: Movimiento[];
   sinLinea: Movimiento[];
+  // Los que alguien declaro que no pasan por el banco: quedan aparte, no
+  // desaparecen.
+  sinBanco: Movimiento[];
+  // Lo que el sistema cree que tiene la cuenta hoy.
+  saldoSistema: number;
+  categorias: Categoria[];
+  proyectos: Proyecto[];
+  interlocutores: Interlocutor[];
   puedeConciliar: boolean;
   // Como se lee la cartola de esta cuenta, si se configuro a mano.
   formato: Formato | null;
@@ -63,6 +84,9 @@ export default function PanelConciliacion({
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
   const [elegido, setElegido] = useState<Record<number, string>>({});
   const [configurando, setConfigurando] = useState(false);
+  const [pasando, setPasando] = useState<LineaBanco | null>(null);
+  const [marcando, setMarcando] = useState<Movimiento | null>(null);
+  const [motivo, setMotivo] = useState("");
 
   const [estadoImportar, importar, importando] = useActionState<
     Resultado | null,
@@ -99,6 +123,23 @@ export default function PanelConciliacion({
     0
   );
   const totalSistema = sinLinea.reduce((t, m) => t + Number(m.monto), 0);
+
+  // El efecto en el saldo de lo que todavia no calza, con su signo: un abono
+  // del banco que el sistema no tiene lo va a subir; un egreso registrado que
+  // el banco nunca cobro lo va a devolver.
+  const netoBanco = pendientes.reduce(
+    (t, l) => t + Number(l.abono) - Number(l.cargo),
+    0
+  );
+  const netoSistema = sinLinea.reduce(
+    (t, m) => t + (m.tipo === "Ingreso" ? Number(m.monto) : -Number(m.monto)),
+    0
+  );
+
+  // Si se pasa al sistema todo lo que el banco ya cobro, el saldo queda aqui.
+  // Es la cifra que importa: es el saldo que va a tener la cuenta cuando el
+  // cuadre termine.
+  const saldoProyectado = saldoSistema + netoBanco;
 
   // Candidatos de una linea: los movimientos sin cuadrar del tipo que
   // corresponde, ordenados por lo cerca que estan en monto y en fecha.
@@ -239,6 +280,67 @@ export default function PanelConciliacion({
         </form>
       )}
 
+      {pasando && (
+        <PasarLineaAlSistema
+          linea={pasando}
+          categorias={categorias}
+          proyectos={proyectos}
+          interlocutores={interlocutores}
+          alCerrar={(mensaje) => {
+            setPasando(null);
+            if (mensaje) {
+              setAviso({ ok: true, texto: mensaje });
+              router.refresh();
+            }
+          }}
+        />
+      )}
+
+      {marcando && (
+        <Ventana
+          titulo="No pasa por el banco"
+          subtitulo={marcando.origen_destino ?? ""}
+          onCerrar={() => setMarcando(null)}
+          ancho="max-w-lg"
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-gray-700">
+              Queda fuera del cuadre de esta cuenta, pero sigue contando en la
+              cartola y en el resumen por proyecto. Diga por que: en un mes nadie
+              se acuerda.
+            </p>
+            <label className={ROTULO}>Motivo *</label>
+            <input
+              className={CAMPO}
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Pagado en efectivo, con caja chica, con la tarjeta de Felipe..."
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                className={BOTON_CLARO}
+                onClick={() => setMarcando(null)}
+                disabled={enCurso}
+              >
+                Cancelar
+              </button>
+              <button
+                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+                disabled={enCurso || motivo.trim() === ""}
+                onClick={() => {
+                  const m = marcando;
+                  setMarcando(null);
+                  correr(() => marcarSinBanco(m.id_mov, motivo));
+                }}
+              >
+                Marcar
+              </button>
+            </div>
+          </div>
+        </Ventana>
+      )}
+
       {configurando && (
         <FormatoCartola
           idCuenta={idCuenta}
@@ -257,6 +359,33 @@ export default function PanelConciliacion({
           }}
         />
       )}
+
+      <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <Cifra
+          rotulo="Saldo en el sistema"
+          valor={pesos(saldoSistema)}
+          nota="Con lo que hay cargado hoy"
+          rojo={saldoSistema < 0}
+        />
+        <Cifra
+          rotulo="Falta pasar del banco"
+          valor={`${netoBanco >= 0 ? "+" : "-"}${pesos(Math.abs(netoBanco))}`}
+          nota={`${pendientes.length} linea${pendientes.length === 1 ? "" : "s"} del banco sin movimiento`}
+        />
+        <Cifra
+          rotulo="Saldo proyectado"
+          valor={pesos(saldoProyectado)}
+          nota="Cuando se cuadre todo lo del banco"
+          rojo={saldoProyectado < 0}
+          destacado
+        />
+        <Cifra
+          rotulo="En duda en el sistema"
+          valor={`${netoSistema >= 0 ? "+" : "-"}${pesos(Math.abs(netoSistema))}`}
+          nota={`${sinLinea.length} movimiento${sinLinea.length === 1 ? "" : "s"} que el banco no muestra`}
+          rojo={sinLinea.length > 0}
+        />
+      </section>
 
       {/* --- lo que esta solo en el banco --- */}
       <section className="space-y-2">
@@ -355,6 +484,14 @@ export default function PanelConciliacion({
                               Cuadrar
                             </button>
                             <button
+                              className={BOTON_CLARO}
+                              disabled={enCurso}
+                              title="Crear el movimiento que falta, con los datos del banco"
+                              onClick={() => setPasando(l)}
+                            >
+                              Pasar al sistema
+                            </button>
+                            <button
                               className={`${BOTON_CLARO} text-red-700`}
                               disabled={enCurso}
                               title="La linea se cargo por error"
@@ -393,12 +530,16 @@ export default function PanelConciliacion({
                   <th className="text-left px-3 py-2 w-[14%]">Tipo</th>
                   <th className="text-right px-3 py-2 w-[18%]">Monto</th>
                   <th className="text-left px-3 py-2 w-[18%]">Documento</th>
+                  {puedeConciliar && <th className="px-3 py-2 w-[22%]" />}
                 </tr>
               </thead>
               <tbody>
                 {sinLinea.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-400 py-8">
+                    <td
+                      colSpan={puedeConciliar ? 6 : 5}
+                      className="text-center text-gray-400 py-8"
+                    >
                       Todo lo registrado aparece en la cartola del banco.
                     </td>
                   </tr>
@@ -420,6 +561,31 @@ export default function PanelConciliacion({
                     <td className="px-3 py-2 text-gray-600 truncate">
                       {m.documento}
                     </td>
+                    {puedeConciliar && (
+                      <td className="px-3 py-2">
+                        <div className="flex flex-wrap gap-1.5 justify-end">
+                          <button
+                            className={BOTON_CLARO}
+                            disabled={enCurso}
+                            title="Se pago por fuera del banco: efectivo, caja chica, otra tarjeta"
+                            onClick={() => {
+                              setMotivo("");
+                              setMarcando(m);
+                            }}
+                          >
+                            No pasa por el banco
+                          </button>
+                          <button
+                            className={`${BOTON_CLARO} text-red-700`}
+                            disabled={enCurso}
+                            title="El pago no ocurrio: vuelve a quedar pendiente"
+                            onClick={() => correr(() => volverAPendiente(m.id_mov))}
+                          >
+                            No se pago
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -427,6 +593,64 @@ export default function PanelConciliacion({
           </div>
         </div>
       </section>
+
+      {sinBanco.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-dorado-osc">
+            No pasan por el banco ({sinBanco.length})
+          </h2>
+
+          <div className="bg-white border border-gray-200 rounded overflow-hidden">
+            <table className="w-full table-fixed text-xs">
+              <thead className="bg-verde text-white">
+                <tr>
+                  <th className="text-left px-3 py-2 w-[12%]">Fecha</th>
+                  <th className="text-left px-3 py-2 w-[28%]">Origen / Destino</th>
+                  <th className="text-right px-3 py-2 w-[14%]">Monto</th>
+                  <th className="text-left px-3 py-2 w-[32%]">Por que</th>
+                  {puedeConciliar && <th className="px-3 py-2 w-[14%]" />}
+                </tr>
+              </thead>
+              <tbody>
+                {sinBanco.map((m) => (
+                  <tr key={m.id_mov} className="border-t border-gray-100">
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      {m.fecha ? fechaCorta(m.fecha) : ""}
+                    </td>
+                    <td className="px-3 py-2 truncate">{m.origen_destino}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {pesos(m.monto)}
+                    </td>
+                    <td
+                      className="px-3 py-2 text-gray-600 truncate"
+                      title={m.sin_banco_motivo ?? ""}
+                    >
+                      {m.sin_banco_motivo}
+                    </td>
+                    {puedeConciliar && (
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          className={BOTON_CLARO}
+                          disabled={enCurso}
+                          onClick={() => correr(() => devolverMarcaDeBanco(m.id_mov))}
+                        >
+                          Deshacer
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-[11px] text-gray-500">
+            Se pagaron por fuera de esta cuenta, asi que no se esperan en la
+            cartola. Siguen sumando en la cartola del sistema y en el resumen por
+            proyecto.
+          </p>
+        </section>
+      )}
 
       {/* --- lo que ya calzo --- */}
       {cuadradas.length > 0 && (
@@ -502,5 +726,41 @@ export default function PanelConciliacion({
         </section>
       )}
     </>
+  );
+}
+
+// Una cifra del cuadre, con lo que significa debajo: el numero solo no dice
+// nada.
+function Cifra({
+  rotulo,
+  valor,
+  nota,
+  rojo,
+  destacado,
+}: {
+  rotulo: string;
+  valor: string;
+  nota: string;
+  rojo?: boolean;
+  destacado?: boolean;
+}) {
+  return (
+    <div
+      className={`bg-white border rounded px-3 py-2 ${
+        destacado ? "border-verde" : "border-gray-200"
+      }`}
+    >
+      <div className="text-[11px] uppercase tracking-wide text-dorado-osc font-semibold">
+        {rotulo}
+      </div>
+      <div
+        className={`text-sm font-semibold tabular-nums ${
+          rojo ? "text-red-700" : destacado ? "text-verde" : "text-negro"
+        }`}
+      >
+        {valor}
+      </div>
+      <div className="text-[11px] text-gray-500">{nota}</div>
+    </div>
   );
 }

@@ -33,7 +33,8 @@ export default async function Pagina({
 
   const filtro = await searchParams;
   const { idPaisActivo } = await contextoMercado(v);
-  const { cuentas } = await cargarMaestros(idPaisActivo);
+  const { cuentas, categorias, proyectos, interlocutores } =
+    await cargarMaestros(idPaisActivo);
   const elegibles = cuentas.filter((c) => c.activa);
 
   const idCuenta =
@@ -45,7 +46,13 @@ export default async function Pagina({
 
   const datos = idCuenta
     ? await cargarConciliacion(idCuenta, desde, hasta)
-    : { lineas: [], movimientos: [], sinLinea: [] };
+    : {
+        lineas: [],
+        movimientos: [],
+        sinLinea: [],
+        sinBanco: [],
+        saldoSistema: 0,
+      };
 
   const formato = idCuenta ? await cargarFormatoCartola(idCuenta) : null;
 
@@ -67,6 +74,11 @@ export default async function Pagina({
           lineas={datos.lineas}
           movimientos={datos.movimientos}
           sinLinea={datos.sinLinea}
+          sinBanco={datos.sinBanco}
+          saldoSistema={datos.saldoSistema}
+          categorias={categorias}
+          proyectos={proyectos}
+          interlocutores={interlocutores}
           puedeConciliar={v.fin_pagar_gastos}
           formato={formato}
         />
