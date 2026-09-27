@@ -81,6 +81,11 @@ export type Movimiento = {
   fecha_pago: string | null;
   id_vendedor: number | null;
   fecha_registro: string;
+  // Movimiento que no pasa por la cuenta bancaria --efectivo, caja chica, otra
+  // tarjeta-- y por eso no se busca en la cartola. Con su motivo, porque es
+  // una excepcion al cuadre.
+  sin_banco: boolean;
+  sin_banco_motivo: string | null;
 };
 
 // Una linea de la cartola: el movimiento visto desde la cuenta, con el saldo

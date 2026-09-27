@@ -404,13 +404,25 @@ export async function cargarConciliacion(
   );
   const movs = (movimientos.data ?? []) as Movimiento[];
 
+  // Solo se esperan en el banco los del rango pedido y los que no estan ya
+  // cuadrados.
+  const huerfanos = movs.filter(
+    (m) => !usados.has(m.id_mov) && m.fecha! >= desde && m.fecha! <= hasta
+  );
+
+  // El saldo que el sistema cree que tiene la cuenta hoy. Sale de la misma
+  // formula que la cartola --la primera fila es la mas reciente-- para que las
+  // dos pantallas no puedan discrepar.
+  const cartola = await cargarCartola({ cuenta: String(idCuenta) }, null);
+
   return {
     lineas: (lineas.data ?? []) as LineaBanco[],
     movimientos: movs,
-    // Solo se muestran como "sin respaldo en el banco" los del rango pedido.
-    sinLinea: movs.filter(
-      (m) => !usados.has(m.id_mov) && m.fecha! >= desde && m.fecha! <= hasta
-    ),
+    // Los que si se esperan en la cartola.
+    sinLinea: huerfanos.filter((m) => !m.sin_banco),
+    // Y los que alguien declaro que no pasan por el banco, con su motivo.
+    sinBanco: huerfanos.filter((m) => m.sin_banco),
+    saldoSistema: Number(cartola[0]?.saldo ?? 0),
   };
 }
 

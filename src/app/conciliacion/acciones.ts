@@ -11,6 +11,9 @@ import {
 
 export type Resultado = { ok: boolean; mensaje?: string };
 
+const pesos = (n: number) =>
+  n.toLocaleString("es-CL", { maximumFractionDigits: 0 });
+
 // Conciliar es enlazar cada linea de la cartola del banco con el movimiento
 // que la explica. Nada de esto toca los movimientos: la cartola es del banco y
 // se guarda como viene.
@@ -345,5 +348,207 @@ export async function olvidarFormatoCartola(idCuenta: number): Promise<Resultado
   return {
     ok: true,
     mensaje: "Formato borrado. Se vuelve a reconocer las columnas por su nombre.",
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Las dos salidas de cada descuadre
+// ---------------------------------------------------------------------------
+
+// Esta en el banco y no en el sistema: la plata se movio de verdad, asi que el
+// movimiento hay que crearlo. Nace ya pagado --el banco es la prueba-- con la
+// fecha y el monto de la linea, y queda enlazado con ella de una vez.
+export async function pasarLineaAlSistema(
+  _p: Resultado | null,
+  d: FormData
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos)
+    return { ok: false, mensaje: "Solo quien paga puede crear el movimiento." };
+
+  const idLinea = Number(d.get("id_linea"));
+  if (!Number.isInteger(idLinea) || idLinea <= 0)
+    return { ok: false, mensaje: "Falta la linea del banco." };
+
+  const supabase = await createClient();
+
+  const { data: linea } = await supabase
+    .from("cartola_banco")
+    .select("*")
+    .eq("id_linea", idLinea)
+    .maybeSingle();
+
+  if (!linea) return { ok: false, mensaje: "Esa linea ya no esta." };
+  if (linea.id_mov)
+    return { ok: false, mensaje: "Esa linea ya esta cuadrada con un movimiento." };
+
+  // La cuenta manda el mercado: la linea es de una cuenta y una cuenta es de
+  // un pais.
+  const { data: cuenta } = await supabase
+    .from("cuentas")
+    .select("id_pais")
+    .eq("id_cuenta", linea.id_cuenta)
+    .maybeSingle();
+
+  if (!cuenta) return { ok: false, mensaje: "No encontre la cuenta de esa linea." };
+
+  const cargo = Number(linea.cargo);
+  const monto = cargo > 0 ? cargo : Number(linea.abono);
+  const tipo = cargo > 0 ? "Egreso" : "Ingreso";
+
+  const idCategoria = Number(d.get("id_categoria")) || null;
+  const idProyecto = Number(d.get("id_proyecto")) || null;
+  const idInterlocutor = Number(d.get("id_interlocutor")) || null;
+
+  const { data: creado, error } = await supabase
+    .from("movimientos")
+    .insert({
+      id_pais: cuenta.id_pais,
+      tipo,
+      fecha: linea.fecha,
+      // El texto del banco es lo unico que se sabe de la contraparte cuando no
+      // se elige una ficha.
+      origen_destino: linea.descripcion,
+      monto,
+      comentario: `Creado desde la cartola del banco el ${new Date().toISOString().slice(0, 10)}`,
+      id_cuenta: linea.id_cuenta,
+      id_proyecto: idProyecto,
+      id_categoria: idCategoria,
+      id_interlocutor: idInterlocutor,
+      documento: linea.documento,
+      estado_pago: "Pagado",
+      fecha_pago: linea.fecha,
+      es_anticipo: false,
+      id_vendedor: v.id,
+    })
+    .select("id_mov")
+    .single();
+
+  if (error) return { ok: false, mensaje: error.message };
+
+  // Y queda cuadrada: para eso se creo.
+  const { error: errorEnlace } = await supabase
+    .from("cartola_banco")
+    .update({
+      id_mov: creado.id_mov,
+      conciliado_en: new Date().toISOString(),
+      id_conciliador: v.id,
+    })
+    .eq("id_linea", idLinea);
+
+  if (errorEnlace)
+    return {
+      ok: true,
+      mensaje: `Cree el ${tipo.toLowerCase()}, pero no pude cuadrarlo con la linea: ${errorEnlace.message}`,
+    };
+
+  revalidatePath("/conciliacion");
+  revalidatePath(tipo === "Egreso" ? "/egresos" : "/ingresos");
+  revalidatePath("/cartola");
+
+  return {
+    ok: true,
+    mensaje: `${tipo} de ${pesos(monto)} creado y cuadrado con la linea del banco.`,
+  };
+}
+
+// Esta en el sistema y no en el banco. Tres salidas, y ninguna es borrar a
+// ciegas: se marca que no pasa por el banco, se devuelve a pendiente porque el
+// pago no ocurrio, o se elimina si fue un error de carga.
+export async function marcarSinBanco(
+  idMov: number,
+  motivo: string
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos)
+    return { ok: false, mensaje: "Solo quien paga puede marcar movimientos." };
+
+  if (!motivo.trim())
+    return { ok: false, mensaje: "Explique por que este movimiento no pasa por el banco." };
+
+  const supabase = await createClient();
+  const { error, data } = await supabase
+    .from("movimientos")
+    .update({
+      sin_banco: true,
+      sin_banco_motivo: motivo.trim(),
+      sin_banco_por: v.id,
+      sin_banco_en: new Date().toISOString(),
+    })
+    .eq("id_mov", idMov)
+    .select("id_mov");
+
+  if (error) return { ok: false, mensaje: error.message };
+  if (!data?.length) return { ok: false, mensaje: "No puede marcar este movimiento." };
+
+  revalidatePath("/conciliacion");
+  return {
+    ok: true,
+    mensaje: "Marcado: no se busca mas en la cartola. Queda anotado con su motivo.",
+  };
+}
+
+export async function devolverMarcaDeBanco(idMov: number): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos)
+    return { ok: false, mensaje: "Solo quien paga puede cambiar la marca." };
+
+  const supabase = await createClient();
+  const { error, data } = await supabase
+    .from("movimientos")
+    .update({
+      sin_banco: false,
+      sin_banco_motivo: null,
+      sin_banco_por: null,
+      sin_banco_en: null,
+    })
+    .eq("id_mov", idMov)
+    .select("id_mov");
+
+  if (error) return { ok: false, mensaje: error.message };
+  if (!data?.length) return { ok: false, mensaje: "No puede cambiar este movimiento." };
+
+  revalidatePath("/conciliacion");
+  return { ok: true, mensaje: "Vuelve a esperarse en la cartola." };
+}
+
+// El pago no ocurrio: el movimiento vuelve a pendiente y sale del cuadre por
+// la puerta correcta, sin perder lo cargado.
+export async function volverAPendiente(idMov: number): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos)
+    return { ok: false, mensaje: "Solo quien paga puede revertir un pago." };
+
+  const supabase = await createClient();
+
+  // Si ya estaba cuadrado con una linea, revertir el pago sin deshacer el
+  // cuadre dejaria la cartola apuntando a un movimiento que ya no ocurrio.
+  const { count } = await supabase
+    .from("cartola_banco")
+    .select("id_linea", { count: "exact", head: true })
+    .eq("id_mov", idMov);
+
+  if (count)
+    return {
+      ok: false,
+      mensaje: "Este movimiento esta cuadrado con una linea del banco: deshaga el cuadre primero.",
+    };
+
+  const { error, data } = await supabase
+    .from("movimientos")
+    .update({ estado_pago: "Pendiente", fecha: null, fecha_pago: null })
+    .eq("id_mov", idMov)
+    .select("id_mov");
+
+  if (error) return { ok: false, mensaje: error.message };
+  if (!data?.length) return { ok: false, mensaje: "No puede revertir este movimiento." };
+
+  revalidatePath("/conciliacion");
+  revalidatePath("/egresos");
+  revalidatePath("/ingresos");
+  revalidatePath("/cartola");
+  return {
+    ok: true,
+    mensaje: "Volvio a pendiente: sale del cuadre y queda esperando su pago.",
   };
 }
