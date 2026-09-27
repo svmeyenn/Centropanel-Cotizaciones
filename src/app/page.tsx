@@ -21,9 +21,15 @@ export default async function Home({
   const { idPaisActivo, activo, accesibles } = await contextoMercado(v);
 
   // Las paridades que se miran son las del mercado en que se trabaja: desde
-  // Chile importa el dolar y la UF; desde Peru, cuanto vale su sol.
-  const paridades = await cargarParidades(
-    (activo ?? accesibles[0])?.codigo ?? "CL"
+  // Chile importa el dolar y la UF; desde Peru, cuanto vale su sol. Con los dos
+  // mercados a la vista se muestra una banda por pais.
+  const mercadosEnBanda = activo ? [activo] : accesibles;
+  const bandas = await Promise.all(
+    mercadosEnBanda.map(async (p) => ({
+      codigo: p.codigo,
+      nombre: p.nombre,
+      paridades: await cargarParidades(p.codigo),
+    }))
   );
   const supabase = await createClient();
   const { data: panel } = await supabase.rpc("panel_desempeno", {
@@ -40,7 +46,7 @@ export default async function Home({
         subtitulo="Ventas, produccion, cobranza y finanzas"
       />
       <div className="max-w-screen-2xl mx-auto p-4 space-y-3">
-        <BandaDivisas paridades={paridades} />
+        <BandaDivisas bandas={bandas} />
 
         <p className="text-[11px] text-gray-600">
           Sesion: <span className="font-semibold">{v.nombre}</span> ({v.rol})
