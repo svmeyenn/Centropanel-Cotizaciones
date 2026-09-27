@@ -371,14 +371,16 @@ export default function EditorCotizacion(p: Props) {
     setConfirmarNueva(false);
   }
 
+  // Los campos van apretados: una cotizacion con diez items tiene que caber en
+  // la pantalla sin desplazarse.
   const inputCls =
-    "border border-gray-300 rounded px-2 py-1 text-sm w-full disabled:bg-gray-100 disabled:text-gray-500";
+    "border border-gray-300 rounded px-2 py-0.5 text-xs w-full disabled:bg-gray-100 disabled:text-gray-500";
 
   return (
-    <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+    <div className="max-w-screen-2xl mx-auto p-4 space-y-2">
       {/* barra de estado y acciones */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-white border border-gray-200 rounded p-3">
-        <div className="text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-white border border-gray-200 rounded px-3 py-2">
+        <div className="text-xs">
           <span className="text-gray-500">N de cotizacion:</span>{" "}
           <span className="font-bold text-verde">
             {p.numCotizacion ?? "(sin folio hasta grabar)"}
@@ -457,18 +459,18 @@ export default function EditorCotizacion(p: Props) {
       <BarraNavegacion volverA="/cotizaciones" />
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
+        <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2">
           {error}
         </div>
       )}
       {aviso && (
-        <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">
+        <div className="bg-green-50 border border-green-200 text-green-800 text-xs rounded px-3 py-2">
           {aviso}
         </div>
       )}
 
       {/* cabecera */}
-      <div className="bg-white border border-gray-200 rounded p-3 grid md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-2">
+      <div className="bg-white border border-gray-200 rounded px-3 py-2 grid md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-1.5">
         <label className="text-xs md:col-span-3 lg:col-span-2">
           <span className="flex items-center justify-between mb-0.5">
             <span className="text-dorado-osc font-semibold">Cliente *</span>
@@ -608,9 +610,9 @@ export default function EditorCotizacion(p: Props) {
 
       {/* agregar item */}
       {!soloLectura && (
-        <div className="bg-crema border border-dorado rounded p-4 space-y-2">
+        <div className="bg-crema border border-dorado rounded px-3 py-2 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-sm font-semibold text-verde">Agregar producto</div>
+            <div className="text-xs font-semibold text-verde">Agregar producto</div>
             {p.puedeCrearPanel && (
               <button
                 onClick={() => setModalPanel(true)}
@@ -663,19 +665,19 @@ export default function EditorCotizacion(p: Props) {
 
       {/* items */}
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
-        <div className="bg-verde text-white text-xs font-semibold px-3 py-2">
+        <div className="bg-verde text-white text-[11px] font-semibold px-3 py-1">
           ITEMS DE LA COTIZACION
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
-                <th className="text-left px-3 py-2 w-10">N</th>
-                <th className="text-left px-3 py-2 w-24">Codigo</th>
-                <th className="text-left px-3 py-2">Descripcion</th>
-                <th className="text-right px-3 py-2 w-24">Unid.</th>
-                <th className="text-right px-3 py-2 w-32">V. unit. neto</th>
-                <th className="text-right px-3 py-2 w-32">Subtotal</th>
+                <th className="text-left px-3 py-1 w-10">N</th>
+                <th className="text-left px-3 py-1 w-24">Codigo</th>
+                <th className="text-left px-3 py-1">Descripcion</th>
+                <th className="text-right px-3 py-1 w-24">Unid.</th>
+                <th className="text-right px-3 py-1 w-32">V. unit. neto</th>
+                <th className="text-right px-3 py-1 w-32">Subtotal</th>
                 {!soloLectura && <th className="w-16" />}
               </tr>
             </thead>
@@ -689,14 +691,14 @@ export default function EditorCotizacion(p: Props) {
               )}
               {d.items.map((it, i) => (
                 <tr key={i} className="border-t border-gray-100">
-                  <td className="px-3 py-2 text-gray-500">{i + 1}</td>
-                  <td className="px-3 py-2 text-gray-500 font-mono text-[11px]">
+                  <td className="px-3 py-1 text-gray-500">{i + 1}</td>
+                  <td className="px-3 py-1 text-gray-500 font-mono text-[11px]">
                     {skuDe(it)}
                   </td>
-                  <td className="px-3 py-2">{it.descripcion}</td>
-                  <td className="px-3 py-2 text-right">{fmtUnid(it.unidades)}</td>
-                  <td className="px-3 py-2 text-right">{pesos(it.valor_unitario)}</td>
-                  <td className="px-3 py-2 text-right font-semibold">
+                  <td className="px-3 py-1">{it.descripcion}</td>
+                  <td className="px-3 py-1 text-right">{fmtUnid(it.unidades)}</td>
+                  <td className="px-3 py-1 text-right">{pesos(it.valor_unitario)}</td>
+                  <td className="px-3 py-1 text-right font-semibold">
                     {pesos(it.unidades * it.valor_unitario)}
                   </td>
                   {!soloLectura && (
@@ -717,8 +719,8 @@ export default function EditorCotizacion(p: Props) {
       </div>
 
       {/* totales */}
-      <div className="bg-white border border-gray-200 rounded p-4">
-        <div className="max-w-md ml-auto space-y-1 text-sm">
+      <div className="bg-white border border-gray-200 rounded px-3 py-2">
+        <div className="max-w-md ml-auto space-y-0.5 text-xs">
           <Fila label="SUBTOTAL" valor={pesos(subtotal)} />
 
           {(
@@ -802,7 +804,7 @@ export default function EditorCotizacion(p: Props) {
             label={`${nombreImpuesto} ${Math.round(tasaIva * 100)}%`}
             valor={pesos(iva)}
           />
-          <div className="flex justify-between bg-verde text-white px-3 py-2 rounded font-bold">
+          <div className="flex justify-between bg-verde text-white px-3 py-1 rounded font-bold">
             <span>TOTAL</span>
             <span>{pesos(total)}</span>
           </div>
@@ -831,7 +833,7 @@ export default function EditorCotizacion(p: Props) {
                 label={`Recargo ${porcentaje(comisionPct)} % por ${medioNombre}`}
                 valor={pesos(totalConComision - total)}
               />
-              <div className="flex justify-between bg-dorado-osc text-white px-3 py-2 rounded font-bold">
+              <div className="flex justify-between bg-dorado-osc text-white px-3 py-1 rounded font-bold">
                 <span>TOTAL A PAGAR</span>
                 <span>{pesos(totalConComision)}</span>
               </div>
@@ -845,9 +847,9 @@ export default function EditorCotizacion(p: Props) {
       </div>
 
       {/* notas */}
-      <div className="bg-white border border-gray-200 rounded p-4">
-        <label className="text-sm block">
-          <span className="block text-dorado-osc font-semibold mb-1">Notas internas</span>
+      <div className="bg-white border border-gray-200 rounded px-3 py-2">
+        <label className="text-xs block">
+          <span className="block text-dorado-osc font-semibold mb-0.5">Notas internas</span>
           <textarea
             className={inputCls}
             rows={2}

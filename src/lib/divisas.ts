@@ -89,8 +89,8 @@ export async function cargarParidades(codigoPais: string): Promise<Paridad[]> {
 
   const lista: Paridad[] = [];
 
+  // Desde Peru la moneda de casa es el sol, asi que todo se expresa en soles.
   if (esPeru) {
-    // Lo que se mira desde Peru es cuanto vale su sol.
     if (sol?.clp)
       lista.push({
         nombre: "Sol en pesos",
@@ -99,50 +99,44 @@ export async function cargarParidades(codigoPais: string): Promise<Paridad[]> {
       });
     if (sol?.usd)
       lista.push({
-        nombre: "Sol en dolares",
-        valor: `US$ ${numero(sol.usd, 4)}`,
+        nombre: "Dolar en soles",
+        valor: `S/ ${numero(1 / sol.usd, 4)}`,
         fecha: dia(sol.fecha),
       });
     if (sol?.eur)
       lista.push({
-        nombre: "Sol en euros",
-        valor: `€ ${numero(sol.eur, 4)}`,
+        nombre: "Euro en soles",
+        valor: `S/ ${numero(1 / sol.eur, 4)}`,
         fecha: dia(sol.fecha),
       });
     return lista;
   }
 
+  // Y desde Chile, todo en pesos.
   if (chile?.dolar)
     lista.push({
-      nombre: "Dolar",
+      nombre: "Dolar en pesos",
       valor: `$${numero(chile.dolar.valor, 2)}`,
       fecha: dia(chile.dolar.fecha),
     });
 
   if (chile?.euro)
     lista.push({
-      nombre: "Euro",
+      nombre: "Euro en pesos",
       valor: `$${numero(chile.euro.valor, 2)}`,
       fecha: dia(chile.euro.fecha),
     });
 
-  if (sol?.clp) {
+  if (sol?.clp)
     lista.push({
-      nombre: "Sol peruano",
+      nombre: "Sol en pesos",
       valor: `$${numero(sol.clp, 2)}`,
       fecha: dia(sol.fecha),
     });
-    // Y al reves, que es como se cotiza hacia Peru: cuantos soles da un peso.
-    lista.push({
-      nombre: "Peso en soles",
-      valor: `S/ ${numero(1 / sol.clp, 4)}`,
-      fecha: dia(sol.fecha),
-    });
-  }
 
   if (chile?.uf)
     lista.push({
-      nombre: "UF",
+      nombre: "UF en pesos",
       valor: `$${numero(chile.uf.valor, 2)}`,
       fecha: dia(chile.uf.fecha),
     });
