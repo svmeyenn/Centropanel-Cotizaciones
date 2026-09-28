@@ -5,6 +5,9 @@ import { contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesio
 import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais, leerParametros, pTxt } from "@/lib/parametros";
 import EnvioCotizacion from "@/components/EnvioCotizacion";
+import BitacoraCotizacion, {
+  type Actividad,
+} from "@/components/BitacoraCotizacion";
 import BotonGenerarPedido from "@/components/BotonGenerarPedido";
 import { sumarDias } from "@/lib/formato";
 
@@ -21,6 +24,12 @@ export default async function Pagina({
   if (!Number.isFinite(id)) notFound();
 
   const supabase = await createClient();
+
+  const { data: bitacora } = await supabase
+    .from("v_cotizacion_actividad")
+    .select("*")
+    .eq("id_cotizacion", id)
+    .order("fecha_registro", { ascending: false });
 
   const [
     { data: cot },
@@ -169,6 +178,14 @@ export default async function Pagina({
           })),
         }}
       />
+
+      <div className="max-w-screen-2xl mx-auto px-4 pb-2">
+        <BitacoraCotizacion
+          idCotizacion={id}
+          actividad={(bitacora ?? []) as Actividad[]}
+          puedeEscribir={v.puede_editar}
+        />
+      </div>
 
       <div className="max-w-screen-2xl mx-auto px-6 pb-4">
         <BotonGenerarPedido
