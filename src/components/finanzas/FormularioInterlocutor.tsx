@@ -39,12 +39,19 @@ export default function FormularioInterlocutor({
   interlocutor,
   cuentas,
   nombreSugerido,
+  mercados = [],
+  mercadoActivo = null,
   alGuardar,
   alCancelar,
 }: {
   interlocutor: Interlocutor | null;
   cuentas: CuentaInterlocutor[];
   nombreSugerido?: string;
+  // Solo llegan cuando la persona alcanza mas de un mercado y esta en la
+  // vista de listas. En el alta al vuelo desde un movimiento no se pregunta:
+  // la ficha nace en el mercado en que se esta trabajando.
+  mercados?: { id: number; codigo: string }[];
+  mercadoActivo?: number | null;
   alGuardar: (id: number, nombre: string, mensaje?: string) => void;
   alCancelar?: () => void;
 }) {
@@ -121,6 +128,25 @@ export default function FormularioInterlocutor({
           maxLength={20}
         />
       </div>
+
+      {mercados.length > 1 && (
+        <div>
+          <label className={ROTULO}>Mercado</label>
+          <select
+            name="id_pais"
+            className={CAMPO}
+            defaultValue={
+              interlocutor?.id_pais ?? mercadoActivo ?? mercados[0]?.id
+            }
+          >
+            {mercados.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.codigo}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <label className="sm:col-span-2 flex items-start gap-2 text-xs bg-crema border border-gray-200 rounded px-3 py-2">
         <input
