@@ -9,7 +9,7 @@ import { ESTADOS_PEDIDO } from "@/lib/estados";
 import { nombreImpuesto } from "@/lib/impuesto";
 import Bandera from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
-import { fecha as fmtFecha, pesos } from "@/lib/formato";
+import { fecha as fmtFecha, pesos, coincideTelefono } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +29,9 @@ export default async function Pagina({
   const rut = limpio(f.rut);
   const razon = limpio(f.razon);
   const contacto = limpio(f.contacto);
+  const fono = limpio(f.fono);
   const estado = limpio(f.estado);
-  const filtraCliente = Boolean(rut || razon || contacto);
+  const filtraCliente = Boolean(rut || razon || contacto || fono);
   const hayFiltro = Boolean(q || desde || hasta || estado || filtraCliente);
 
   const supabase = await createClient();
@@ -47,12 +48,22 @@ export default async function Pagina({
   // coinciden, despues sus pedidos.
   let idsCliente: number[] = [];
   if (filtraCliente) {
-    let cq = conPais(supabase.from("clientes").select("id"), idPaisActivo);
+    let cq = conPais(
+      supabase.from("clientes").select("id, telefono"),
+      idPaisActivo
+    );
     if (rut) cq = cq.ilike("rut", `%${rut}%`);
     if (razon) cq = cq.ilike("razon_social", `%${razon}%`);
     if (contacto) cq = cq.ilike("contacto", `%${contacto}%`);
     const { data: clis } = await cq;
-    idsCliente = (clis ?? []).map((c) => c.id as number);
+    // El telefono no se filtra en la consulta: el mismo numero esta escrito de
+    // varias formas en las fichas y un like sobre el texto dejaria fuera al que
+    // se busca. Se comparan los digitos sobre la lista de clientes, que es
+    // corta, en vez de sobre el historial de documentos, que no lo es.
+    const conFono = fono
+      ? (clis ?? []).filter((c) => coincideTelefono(c.telefono as string | null, fono))
+      : (clis ?? []);
+    idsCliente = conFono.map((c) => c.id as number);
   }
 
   let consulta = conPais(
@@ -171,7 +182,7 @@ export default async function Pagina({
           etiquetaFolio="N pedido"
           etiquetaId={etiquetaId}
           estados={ESTADOS_PEDIDO}
-          valores={{ q, desde, hasta, rut, razon, contacto, estado }}
+          valores={{ q, desde, hasta, rut, razon, contacto, fono, estado }}
           hayFiltro={hayFiltro}
           extra={
             <BotonExportarFilas

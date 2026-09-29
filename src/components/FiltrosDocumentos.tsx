@@ -10,6 +10,7 @@ export interface ValoresFiltro {
   rut?: string;
   razon?: string;
   contacto?: string;
+  fono?: string;
   estado?: string;
 }
 
@@ -74,6 +75,14 @@ export default function FiltrosDocumentos({
           name="contacto"
           defaultValue={valores.contacto ?? ""}
           className={campo}
+        />
+      </Campo>
+      <Campo rotulo="Telefono">
+        <input
+          name="fono"
+          defaultValue={valores.fono ?? ""}
+          className={campo}
+          placeholder="Numero completo o parte"
         />
       </Campo>
       <Campo rotulo="Estado">

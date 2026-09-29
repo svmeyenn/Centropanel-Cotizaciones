@@ -110,3 +110,23 @@ export function telefonoValido(v: string | null | undefined): boolean {
   const d = (v ?? "").replace(/[^\d+]/g, "");
   return /^\+\d{2}\d{8,12}$/.test(d);
 }
+
+// Busqueda por telefono. En las fichas el mismo numero aparece escrito de
+// todas las formas posibles --"9 7525 1426", "952043453", "+56936631583"--,
+// asi que comparar el texto no sirve: se comparan solo los digitos.
+//
+// El codigo de pais se prueba en las dos direcciones, porque muchas fichas
+// antiguas lo guardan sin el: buscando +56 9 5204 3453 tiene que aparecer el
+// que quedo grabado como 952043453, y al reves.
+export function coincideTelefono(
+  guardado: string | null | undefined,
+  buscado: string
+): boolean {
+  const soloDigitos = (s: string | null | undefined) =>
+    (s ?? "").replace(/\D/g, "");
+  const g = soloDigitos(guardado);
+  const b = soloDigitos(buscado);
+  if (!g || !b) return false;
+  const sinCodigo = b.replace(/^(?:56|51)/, "");
+  return g.includes(b) || (sinCodigo !== b && g.includes(sinCodigo));
+}
