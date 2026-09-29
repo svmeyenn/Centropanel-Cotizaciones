@@ -49,6 +49,7 @@ export default function PanelMantenedores({
   cuentasInterlocutores,
   moneda,
   mercados,
+  mercadoActivo,
 }: {
   cuentas: Cuenta[];
   proyectos: Proyecto[];
@@ -60,6 +61,7 @@ export default function PanelMantenedores({
   // cada fila, las doce categorias de Chile y las doce de Peru parecen doce
   // duplicadas.
   mercados: { id: number; codigo: string }[];
+  mercadoActivo: number | null;
 }) {
   const router = useRouter();
   const variosMercados = mercados.length > 1;
@@ -68,6 +70,27 @@ export default function PanelMantenedores({
   const celdaMercado = (id: number) =>
     variosMercados ? (
       <td className="px-3 py-2 text-gray-500">{codigoPais(id)}</td>
+    ) : null;
+
+  // El mercado solo se pregunta a quien alcanza mas de uno. Quien trabaja un
+  // solo pais no ve el campo y lo que da de alta queda en el suyo, que es lo
+  // unico que podria elegir.
+  const campoMercado = (valor?: number | null) =>
+    variosMercados ? (
+      <div>
+        <label className={ROTULO}>Mercado</label>
+        <select
+          name="id_pais"
+          className={CAMPO}
+          defaultValue={valor ?? mercadoActivo ?? mercados[0]?.id}
+        >
+          {mercados.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.codigo}
+            </option>
+          ))}
+        </select>
+      </div>
     ) : null;
 
   const [pestana, setPestana] = useState<Pestana>("Cuentas");
@@ -465,6 +488,7 @@ export default function PanelMantenedores({
               defaultValue={editandoCuenta?.moneda ?? moneda}
             />
           </div>
+          {campoMercado(editandoCuenta?.id_pais)}
           <div>
             <label className={ROTULO}>Saldo inicial</label>
             <input
@@ -538,22 +562,7 @@ export default function PanelMantenedores({
               solo en obras anteriores a eso.
             </p>
           </div>
-          {variosMercados && (
-            <div>
-              <label className={ROTULO}>Mercado</label>
-              <select
-                name="id_pais"
-                className={CAMPO}
-                defaultValue={editandoProyecto?.id_pais ?? mercados[0]?.id}
-              >
-                {mercados.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.codigo}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {campoMercado(editandoProyecto?.id_pais)}
           <label className="sm:col-span-2 flex items-center gap-2 text-xs">
             <input
               type="checkbox"
@@ -603,6 +612,7 @@ export default function PanelMantenedores({
               <option value="Ingreso">Ingreso</option>
             </select>
           </div>
+          {campoMercado(editandoCategoria?.id_pais)}
         </FichaSimple>
       )}
 
@@ -619,6 +629,8 @@ export default function PanelMantenedores({
           <FormularioInterlocutor
             interlocutor={editandoInter}
             cuentas={editandoInter ? cuentasDe(editandoInter.id_interlocutor) : []}
+            mercados={variosMercados ? mercados : []}
+            mercadoActivo={mercadoActivo}
             alCancelar={() => {
               setCreando(false);
               setEditandoInter(null);

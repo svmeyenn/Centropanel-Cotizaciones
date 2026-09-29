@@ -49,6 +49,37 @@ async function paisDeAlta(v: Vendedor) {
   return idPaisActivo ?? idPaisTrabajo;
 }
 
+// El mercado solo se pregunta a quien alcanza mas de uno; el resto no ve el
+// campo y no puede mandarlo. Devuelve null cuando no vino --o vino uno que la
+// persona no alcanza--: al crear manda entonces el mercado de trabajo, y al
+// editar se deja intacto el que la fila ya tenia.
+async function paisElegido(v: Vendedor, d: FormData): Promise<number | null> {
+  const pedido = Number(d.get("id_pais")) || null;
+  if (!pedido) return null;
+  const { accesibles } = await contextoMercado(v);
+  return accesibles.some((p) => p.id === pedido) ? pedido : null;
+}
+
+// Cambiar de mercado una fila que ya se uso dejaria movimientos de un pais
+// clasificados con listas del otro: la base lo impide al cargar un movimiento,
+// pero no puede verlo cuando el cambio ocurre en la lista.
+async function movimientosDeOtroMercado(
+  columna: "id_cuenta" | "id_proyecto" | "id_categoria" | "id_interlocutor",
+  id: number,
+  idPais: number
+): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("movimientos")
+    .select("id_mov", { count: "exact", head: true })
+    .eq(columna, id)
+    .neq("id_pais", idPais);
+  return count ?? 0;
+}
+
+const avisoDeMercado = (n: number) =>
+  `No se puede cambiar el mercado: ${n} movimiento(s) del otro pais lo estan usando.`;
+
 export async function guardarCuenta(
   _p: Resultado | null,
   d: FormData
@@ -70,12 +101,21 @@ export async function guardarCuenta(
     activa: d.get("activa") === "on",
   };
 
+  const idPais = await paisElegido(permiso.v, d);
   const id = d.get("id_cuenta");
+  if (id && idPais) {
+    const n = await movimientosDeOtroMercado("id_cuenta", Number(id), idPais);
+    if (n > 0) return { ok: false, mensaje: avisoDeMercado(n) };
+  }
+
   const { error } = id
-    ? await supabase.from("cuentas").update(fila).eq("id_cuenta", Number(id))
+    ? await supabase
+        .from("cuentas")
+        .update(idPais ? { ...fila, id_pais: idPais } : fila)
+        .eq("id_cuenta", Number(id))
     : await supabase
         .from("cuentas")
-        .insert({ ...fila, id_pais: await paisDeAlta(permiso.v) });
+        .insert({ ...fila, id_pais: idPais ?? (await paisDeAlta(permiso.v)) });
 
   if (error) return { ok: false, mensaje: error.message };
   refrescar();
@@ -102,22 +142,21 @@ export async function guardarProyecto(
     activo: d.get("activo") === "on",
   };
 
-  // El mercado solo se elige cuando la persona alcanza mas de uno; si no
-  // viene, manda el de trabajo.
-  const pedido = Number(d.get("id_pais")) || null;
-  const { accesibles } = await contextoMercado(permiso.v);
-  const idPais =
-    pedido && accesibles.some((p) => p.id === pedido)
-      ? pedido
-      : await paisDeAlta(permiso.v);
-
+  const idPais = await paisElegido(permiso.v, d);
   const id = d.get("id_proyecto");
+  if (id && idPais) {
+    const n = await movimientosDeOtroMercado("id_proyecto", Number(id), idPais);
+    if (n > 0) return { ok: false, mensaje: avisoDeMercado(n) };
+  }
+
   const { error } = id
     ? await supabase
         .from("proyectos")
-        .update({ ...fila, id_pais: idPais })
+        .update(idPais ? { ...fila, id_pais: idPais } : fila)
         .eq("id_proyecto", Number(id))
-    : await supabase.from("proyectos").insert({ ...fila, id_pais: idPais });
+    : await supabase
+        .from("proyectos")
+        .insert({ ...fila, id_pais: idPais ?? (await paisDeAlta(permiso.v)) });
 
   if (error)
     return {
@@ -148,12 +187,21 @@ export async function guardarCategoria(
     tipo: d.get("tipo") === "Ingreso" ? "Ingreso" : "Egreso",
   };
 
+  const idPais = await paisElegido(permiso.v, d);
   const id = d.get("id_categoria");
+  if (id && idPais) {
+    const n = await movimientosDeOtroMercado("id_categoria", Number(id), idPais);
+    if (n > 0) return { ok: false, mensaje: avisoDeMercado(n) };
+  }
+
   const { error } = id
-    ? await supabase.from("categorias").update(fila).eq("id_categoria", Number(id))
+    ? await supabase
+        .from("categorias")
+        .update(idPais ? { ...fila, id_pais: idPais } : fila)
+        .eq("id_categoria", Number(id))
     : await supabase
         .from("categorias")
-        .insert({ ...fila, id_pais: await paisDeAlta(permiso.v) });
+        .insert({ ...fila, id_pais: idPais ?? (await paisDeAlta(permiso.v)) });
 
   if (error) return { ok: false, mensaje: error.message };
   refrescar();
@@ -289,18 +337,27 @@ export async function guardarInterlocutor(
   }
 
   const fila = { razon_social, nombre_referencia, rut, con_transferencia };
+  const idPais = await paisElegido(v, d);
   const id = d.get("id_interlocutor");
+  if (id && idPais) {
+    const n = await movimientosDeOtroMercado(
+      "id_interlocutor",
+      Number(id),
+      idPais
+    );
+    if (n > 0) return { ok: false, mensaje: avisoDeMercado(n) };
+  }
 
   const { data, error } = id
     ? await supabase
         .from("interlocutores")
-        .update(fila)
+        .update(idPais ? { ...fila, id_pais: idPais } : fila)
         .eq("id_interlocutor", Number(id))
         .select("id_interlocutor")
         .maybeSingle()
     : await supabase
         .from("interlocutores")
-        .insert({ ...fila, id_pais: await paisDeAlta(v) })
+        .insert({ ...fila, id_pais: idPais ?? (await paisDeAlta(v)) })
         .select("id_interlocutor")
         .maybeSingle();
 
