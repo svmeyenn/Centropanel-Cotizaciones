@@ -96,17 +96,38 @@ export async function guardarProyecto(
   const fila = {
     nombre,
     cliente: texto(d.get("cliente")),
+    // El folio del pedido que abrio la obra. Normalmente lo pone el sistema;
+    // aqui se completa a mano para las obras anteriores a eso.
+    num_pedido: texto(d.get("num_pedido")),
     activo: d.get("activo") === "on",
   };
 
+  // El mercado solo se elige cuando la persona alcanza mas de uno; si no
+  // viene, manda el de trabajo.
+  const pedido = Number(d.get("id_pais")) || null;
+  const { accesibles } = await contextoMercado(permiso.v);
+  const idPais =
+    pedido && accesibles.some((p) => p.id === pedido)
+      ? pedido
+      : await paisDeAlta(permiso.v);
+
   const id = d.get("id_proyecto");
   const { error } = id
-    ? await supabase.from("proyectos").update(fila).eq("id_proyecto", Number(id))
-    : await supabase
+    ? await supabase
         .from("proyectos")
-        .insert({ ...fila, id_pais: await paisDeAlta(permiso.v) });
+        .update({ ...fila, id_pais: idPais })
+        .eq("id_proyecto", Number(id))
+    : await supabase.from("proyectos").insert({ ...fila, id_pais: idPais });
 
-  if (error) return { ok: false, mensaje: error.message };
+  if (error)
+    return {
+      ok: false,
+      mensaje:
+        error.code === "23505"
+          ? "Ya existe ese proyecto para el mismo cliente y pedido."
+          : error.message,
+    };
+
   refrescar();
   return { ok: true, mensaje: "Proyecto guardado." };
 }

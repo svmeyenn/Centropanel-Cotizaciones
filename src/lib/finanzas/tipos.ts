@@ -29,9 +29,24 @@ export type Proyecto = {
   id_pais: number;
   nombre: string;
   cliente: string | null;
+  // El pedido que abrio esta obra. Lo pone solo el sistema al generar el
+  // pedido, y se puede corregir a mano en el mantenedor: hay obras que
+  // existian antes de que el pedido se cargara aqui.
+  num_pedido: string | null;
   activo: boolean;
   borrado: boolean;
 };
+
+// Como se nombra un proyecto en pantalla: la obra, su pedido y su cliente.
+// Dos obras del mismo cliente solo se distinguen por el folio, asi que va
+// pegado al nombre y antes del cliente.
+export const etiquetaProyecto = (p: {
+  nombre: string;
+  num_pedido?: string | null;
+  cliente?: string | null;
+}) =>
+  [p.nombre, p.num_pedido].filter(Boolean).join(" ") +
+  (p.cliente ? ` - ${p.cliente}` : "");
 
 export type Categoria = {
   id_categoria: number;

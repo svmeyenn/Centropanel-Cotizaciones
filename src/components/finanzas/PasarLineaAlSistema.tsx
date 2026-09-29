@@ -6,6 +6,7 @@ import { pesos } from "@/lib/formato";
 import { pasarLineaAlSistema, type Resultado } from "@/app/conciliacion/acciones";
 import {
   etiquetaInterlocutor,
+  etiquetaProyecto,
   fechaCorta,
   type Categoria,
   type Interlocutor,
@@ -93,8 +94,7 @@ export default function PasarLineaAlSistema({
             <option value="">Sin proyecto</option>
             {activos.map((p) => (
               <option key={p.id_proyecto} value={p.id_proyecto}>
-                {p.nombre}
-                {p.cliente ? ` - ${p.cliente}` : ""}
+                {etiquetaProyecto(p)}
               </option>
             ))}
           </select>

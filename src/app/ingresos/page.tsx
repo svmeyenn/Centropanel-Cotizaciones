@@ -12,6 +12,7 @@ import {
 import {
   etiquetaEstado,
   etiquetaInterlocutor,
+  etiquetaProyecto,
   fechaCorta,
 } from "@/lib/finanzas/tipos";
 import { puedeVerRuta } from "@/lib/menu";
@@ -56,11 +57,7 @@ export default async function Pagina({
         : (m.origen_destino ?? ""),
       Number(m.monto),
       cuentas.find((c) => c.id_cuenta === m.id_cuenta)?.alias ?? "",
-      proyecto
-        ? proyecto.cliente
-          ? `${proyecto.nombre} - ${proyecto.cliente}`
-          : proyecto.nombre
-        : "",
+      proyecto ? etiquetaProyecto(proyecto) : "",
       categorias.find((c) => c.id_categoria === m.id_categoria)?.nombre ?? "",
       etiquetaEstado("Ingreso", m.estado_pago),
       m.comentario ?? "",

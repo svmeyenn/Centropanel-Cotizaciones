@@ -16,6 +16,7 @@ import {
   type Resultado,
 } from "@/app/rendiciones/acciones";
 import {
+  etiquetaProyecto,
   PROYECTO_GENERICO,
   type BoletaRendicion,
   type Categoria,
@@ -277,8 +278,7 @@ export default function FormularioBoleta({
             <option value="">Elija</option>
             {disponibles.map((p) => (
               <option key={p.id_proyecto} value={p.id_proyecto}>
-                {p.nombre}
-                {p.cliente ? ` - ${p.cliente}` : ""}
+                {etiquetaProyecto(p)}
               </option>
             ))}
           </select>

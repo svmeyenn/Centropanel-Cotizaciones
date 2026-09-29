@@ -97,6 +97,17 @@ function archivosValidos(datos: FormData) {
     .filter((f): f is File => f instanceof File && f.size > 0);
 }
 
+// Cuatro megas es lo que admite una peticion. Pasarse hace fallar el envio
+// antes de llegar aqui, asi que esto es la red por si algun dia el limite del
+// servidor cambia: mas vale un aviso que un error de servidor sin explicacion.
+const TOPE_ADJUNTOS = 4 * 1024 * 1024;
+
+function pesanDemasiado(archivos: File[]): string | null {
+  const total = archivos.reduce((t, f) => t + f.size, 0);
+  if (total <= TOPE_ADJUNTOS) return null;
+  return `Los archivos suman ${(total / 1024 / 1024).toFixed(1)} MB y el maximo es 4 MB. Suba menos archivos, o comprima el PDF antes.`;
+}
+
 // Sube los archivos de respaldo y crea sus filas. Si alguno falla a mitad de
 // camino, borra lo que alcanzo a subir para no dejar archivos huerfanos.
 async function subirRespaldos(
@@ -164,6 +175,9 @@ export async function crearSolicitudEgreso(
       ok: false,
       mensaje: "Adjunte al menos un archivo de respaldo (cotizacion o factura).",
     };
+
+  const pesado = pesanDemasiado(archivos);
+  if (pesado) return { ok: false, mensaje: pesado };
 
   const inter = await resolverInterlocutor(
     supabase,
@@ -260,6 +274,9 @@ export async function editarSolicitudEgreso(
 
   const archivos = archivosValidos(datos);
   if (archivos.length > 0) {
+    const pesado = pesanDemasiado(archivos);
+    if (pesado) return { ok: false, mensaje: pesado };
+
     const resultado = await subirRespaldos(supabase, idMov, archivos, v.id);
     if (!resultado.ok) return resultado;
   }

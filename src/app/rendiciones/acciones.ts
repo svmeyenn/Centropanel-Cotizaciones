@@ -348,6 +348,16 @@ const avisoPolitica = (motivo: string | null) =>
 const archivosValidos = (d: FormData) =>
   d.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0);
 
+// Cuatro megas es lo que admite una peticion: las fotos de la camara pesan
+// bastante menos, pero un PDF escaneado se pasa sin aviso.
+const TOPE_FOTOS = 4 * 1024 * 1024;
+
+function pesanDemasiado(archivos: File[]): string | null {
+  const total = archivos.reduce((t, f) => t + f.size, 0);
+  if (total <= TOPE_FOTOS) return null;
+  return `Las fotos suman ${(total / 1024 / 1024).toFixed(1)} MB y el maximo es 4 MB. Suba menos, o saquelas con menos resolucion.`;
+}
+
 export async function guardarBoleta(
   _p: Resultado | null,
   d: FormData
@@ -412,6 +422,8 @@ export async function guardarBoleta(
   };
 
   const archivos = archivosValidos(d);
+  const pesado = pesanDemasiado(archivos);
+  if (pesado) return { ok: false, mensaje: pesado };
 
   if (idGasto) {
     const { error, data } = await supabase

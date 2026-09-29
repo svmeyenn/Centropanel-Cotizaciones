@@ -12,6 +12,7 @@ import {
 } from "@/lib/finanzas/consultas";
 import {
   etiquetaInterlocutor,
+  etiquetaProyecto,
   fechaCorta,
   fechaDeRegistro,
 } from "@/lib/finanzas/tipos";
@@ -64,11 +65,7 @@ export default async function Pagina({
         : (m.origen_destino ?? ""),
       Number(m.monto),
       cuentas.find((c) => c.id_cuenta === m.id_cuenta)?.alias ?? "",
-      proyecto
-        ? proyecto.cliente
-          ? `${proyecto.nombre} - ${proyecto.cliente}`
-          : proyecto.nombre
-        : "",
+      proyecto ? etiquetaProyecto(proyecto) : "",
       categorias.find((c) => c.id_categoria === m.id_categoria)?.nombre ?? "",
       m.comentario ?? "",
       m.documento ?? "",
