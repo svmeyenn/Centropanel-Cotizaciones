@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0069-20260929**
+Version vigente: **v0070-20260929**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0070-20260929 | 29-09-2026 | Corrige el error de servidor al crear un egreso con un respaldo de mas de 1 MB; el proyecto muestra el folio del pedido y se puede editar en el mantenedor junto con su mercado | c5c4ae9 |
 | v0069-20260929 | 29-09-2026 | Cada pedido abre el proyecto "Paneles" de su cliente, para que los ingresos y gastos de esa obra tengan donde imputarse; si el cliente ya lo tiene se reutiliza, aunque este escrito con otras mayusculas o tildes | base de datos |
 | v0068-20260929 | 29-09-2026 | Las tareas de la bitacora tienen responsable: el administrador se las asigna a quien corresponda, al anotarlas o despues, y cada uno ve en la portada lo que le toca | d8f6495 |
 | v0067-20260928 | 28-09-2026 | Bandeja de tareas pendientes al final de la portada: lo comprometido en las bitacoras y no hecho, lo mas atrasado primero, con la cotizacion a un clic y el cierre desde ahi mismo | d289a89 |
