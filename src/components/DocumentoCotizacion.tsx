@@ -119,24 +119,40 @@ export default function DocumentoCotizacion({
       </div>
 
       {/* ---- items ---- */}
-      <table className="w-full text-[11px] mb-5">
+      <table className="w-full table-fixed text-[11px] mb-5">
         <thead>
+          {/* Las columnas de la derecha se ajustan a lo que miden de verdad
+              --un codigo de ocho digitos, un monto de siete-- para dejarle el
+              ancho restante a la descripcion: el nombre de un panel entra
+              completo en una linea y la tabla no se desarma en el papel. */}
           <tr className="bg-verde text-white text-[10px]">
-            <th className="text-left px-2 py-1.5 w-20">SKU</th>
+            <th className="text-left px-2 py-1.5 w-[4.5rem]">SKU</th>
             <th className="text-left px-2 py-1.5">DESCRIPCION</th>
-            <th className="text-right px-2 py-1.5 w-16">UNID.</th>
-            <th className="text-right px-2 py-1.5 w-28">V. UNITARIO</th>
-            <th className="text-right px-2 py-1.5 w-32">SUBTOTAL NETO</th>
+            <th className="text-right px-2 py-1.5 w-16 whitespace-nowrap">
+              UNID.
+            </th>
+            <th className="text-right px-2 py-1.5 w-[4.5rem] whitespace-nowrap">
+              V. UNITARIO
+            </th>
+            {/* El unico rotulo que no cabe en una linea; se parte en dos en el
+                encabezado antes que robarle ancho a la descripcion. */}
+            <th className="text-right px-2 py-1.5 w-[5.5rem]">SUBTOTAL NETO</th>
           </tr>
         </thead>
         <tbody>
           {d.items.map((it, i) => (
             <tr key={i} className={i % 2 ? "bg-gray-50" : ""}>
-              <td className="px-2 py-1 text-gray-500">{it.sku ?? ""}</td>
+              <td className="px-2 py-1 text-gray-500 whitespace-nowrap">
+                {it.sku ?? ""}
+              </td>
               <td className="px-2 py-1">{it.descripcion}</td>
-              <td className="px-2 py-1 text-right">{fmtUnid(it.unidades)}</td>
-              <td className="px-2 py-1 text-right">{pesos(it.valor_unitario)}</td>
-              <td className="px-2 py-1 text-right">
+              <td className="px-2 py-1 text-right whitespace-nowrap">
+                {fmtUnid(it.unidades)}
+              </td>
+              <td className="px-2 py-1 text-right whitespace-nowrap">
+                {pesos(it.valor_unitario)}
+              </td>
+              <td className="px-2 py-1 text-right whitespace-nowrap">
                 {pesos(Number(it.unidades) * Number(it.valor_unitario))}
               </td>
             </tr>
