@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 
 export type Resultado = { ok: boolean; mensaje?: string };
 
@@ -43,6 +43,16 @@ export async function registrarActividad(
         : "Escriba cual es la proxima accion, o quite la fecha.",
     };
 
+  // La tarea queda a nombre de alguien. Quien administra puede dejarsela a
+  // otro --el que atiende al cliente anota que hay que mandar un plano, y el
+  // plano lo hace otro--; el resto se la queda.
+  const pedido = Number(d.get("id_responsable")) || null;
+  const idResponsable = proximaAccion
+    ? tienePerfilAdmin(v)
+      ? (pedido ?? v.id)
+      : v.id
+    : null;
+
   const supabase = await createClient();
   const { error } = await supabase.from("cotizacion_actividad").insert({
     id_cotizacion: idCotizacion,
@@ -50,6 +60,7 @@ export async function registrarActividad(
     comentario,
     proxima_accion: proximaAccion,
     proxima_fecha: proximaFecha,
+    id_responsable: idResponsable,
   });
 
   if (error) return { ok: false, mensaje: error.message };
@@ -114,4 +125,32 @@ export async function reabrirAccion(
   revalidatePath(`/cotizaciones/${idCotizacion}`);
   revalidatePath("/");
   return { ok: true, mensaje: "Accion reabierta." };
+}
+
+// Pasarle una tarea a otro. Solo quien administra: si no, cualquiera se saca
+// de encima lo que le incomoda. La base lo comprueba igual.
+export async function reasignarTarea(
+  id: number,
+  idCotizacion: number,
+  idResponsable: number
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v))
+    return { ok: false, mensaje: "Solo quien administra puede reasignar tareas." };
+
+  const supabase = await createClient();
+  const { error, data } = await supabase
+    .from("cotizacion_actividad")
+    .update({ id_responsable: idResponsable })
+    .eq("id", id)
+    .is("ejecutada_en", null)
+    .select("id");
+
+  if (error) return { ok: false, mensaje: error.message };
+  if (!data?.length)
+    return { ok: false, mensaje: "Esa tarea ya esta hecha, o no puede reasignarla." };
+
+  revalidatePath(`/cotizaciones/${idCotizacion}`);
+  revalidatePath("/");
+  return { ok: true, mensaje: "Tarea reasignada." };
 }

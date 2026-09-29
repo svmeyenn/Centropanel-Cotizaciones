@@ -55,7 +55,9 @@ export default async function Home({
     .order("proxima_fecha", { ascending: true })
     .limit(50);
 
-  if (soloMias) consultaTareas = consultaTareas.eq("id_vendedor", v.id);
+  // Por responsable, no por quien la anoto: una tarea que me asignaron es mia
+  // aunque la haya escrito otro.
+  if (soloMias) consultaTareas = consultaTareas.eq("id_responsable", v.id);
   if (idPaisActivo) consultaTareas = consultaTareas.eq("id_pais", idPaisActivo);
 
   const { data: tareas } = await consultaTareas;
