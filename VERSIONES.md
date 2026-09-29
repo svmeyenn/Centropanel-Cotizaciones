@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0071-20260929**
+Version vigente: **v0072-20260929**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0072-20260929 | 29-09-2026 | Mercado asignable en Cuentas, Proyectos, Categorias e Interlocutores; el campo solo aparece a quien alcanza mas de un pais | 0819029 |
 | v0071-20260929 | 29-09-2026 | El proyecto se nombra "Paneles - Cliente - Pedido" | 4cff76f |
 | v0070-20260929 | 29-09-2026 | Corrige el error de servidor al crear un egreso con un respaldo de mas de 1 MB; el proyecto muestra el folio del pedido y se puede editar en el mantenedor junto con su mercado | c5c4ae9 |
 | v0069-20260929 | 29-09-2026 | Cada pedido abre el proyecto "Paneles" de su cliente, para que los ingresos y gastos de esa obra tengan donde imputarse; si el cliente ya lo tiene se reutiliza, aunque este escrito con otras mayusculas o tildes | base de datos |
