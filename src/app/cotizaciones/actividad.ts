@@ -55,6 +55,9 @@ export async function registrarActividad(
   if (error) return { ok: false, mensaje: error.message };
 
   revalidatePath(`/cotizaciones/${idCotizacion}`);
+  // La bandeja de la portada tiene que quedar al dia: las tareas se anotan
+  // aqui y se cierran desde las dos pantallas.
+  revalidatePath("/");
   return {
     ok: true,
     mensaje: proximaAccion
@@ -84,6 +87,7 @@ export async function marcarAccionHecha(
     return { ok: false, mensaje: "Esa accion ya estaba hecha, o no puede cerrarla." };
 
   revalidatePath(`/cotizaciones/${idCotizacion}`);
+  revalidatePath("/");
   return { ok: true, mensaje: "Accion marcada como hecha." };
 }
 
@@ -108,5 +112,6 @@ export async function reabrirAccion(
   if (!data?.length) return { ok: false, mensaje: "No puede reabrir esa accion." };
 
   revalidatePath(`/cotizaciones/${idCotizacion}`);
+  revalidatePath("/");
   return { ok: true, mensaje: "Accion reabierta." };
 }

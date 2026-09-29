@@ -1,8 +1,13 @@
 import BandaDivisas from "@/components/BandaDivisas";
 import Cabecera from "@/components/Cabecera";
 import PanelDesempeno, { type Desempeno } from "@/components/PanelDesempeno";
+import TareasPendientes, { type Tarea } from "@/components/TareasPendientes";
 import { cargarParidades } from "@/lib/divisas";
-import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import {
+  contextoMercado,
+  requerirVendedor,
+  tienePerfilAdmin,
+} from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { VERSION } from "@/lib/version";
 import { ES_SANDBOX } from "@/lib/supabase/esquema";
@@ -39,6 +44,22 @@ export default async function Home({
   });
   const desempeno = panel as Desempeno | null;
 
+  // Lo comprometido en las bitacoras y todavia no hecho. Un vendedor ve lo
+  // suyo; quien dirige ve lo del equipo, que es lo que necesita para saber que
+  // esta quedando en el camino.
+  const soloMias = !tienePerfilAdmin(v);
+  let consultaTareas = supabase
+    .from("v_tareas_pendientes")
+    .select("*")
+    // Lo mas atrasado primero: es lo que hay que resolver hoy.
+    .order("proxima_fecha", { ascending: true })
+    .limit(50);
+
+  if (soloMias) consultaTareas = consultaTareas.eq("id_vendedor", v.id);
+  if (idPaisActivo) consultaTareas = consultaTareas.eq("id_pais", idPaisActivo);
+
+  const { data: tareas } = await consultaTareas;
+
   return (
     <div className="min-h-screen">
       <Cabecera
@@ -59,6 +80,12 @@ export default async function Home({
             No se pudo cargar el tablero. Use el menu de la izquierda.
           </p>
         )}
+
+        <TareasPendientes
+          tareas={(tareas ?? []) as Tarea[]}
+          puedeCerrar={v.puede_editar}
+          soloMias={soloMias}
+        />
 
         {/* Version vigente: sube con cada entrega a produccion (VERSIONES.md).
             En pruebas se aclara que hay cambios que aun no estan en ella. */}
