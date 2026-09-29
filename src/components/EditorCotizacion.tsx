@@ -96,6 +96,11 @@ export default function EditorCotizacion(p: Props) {
   const [prodSel, setProdSel] = useState<string>("");
   const [cantidad, setCantidad] = useState<string>("1");
   const [valorUnit, setValorUnit] = useState<string>("");
+  // Fila cuya cantidad se esta tecleando, con el texto crudo del campo.
+  const [unidEditando, setUnidEditando] = useState<{
+    i: number;
+    texto: string;
+  } | null>(null);
 
   // Paneles creados desde el panel emergente durante esta sesion. Se guardan
   // aparte y no se recarga la pagina: recargar descartaria la cotizacion en
@@ -270,6 +275,18 @@ export default function EditorCotizacion(p: Props) {
       ? (p.productos.find((x) => x.id === it.id_producto)?.sku ?? "")
       : "");
 
+  // Lo que va a sumar la linea que se esta armando, antes de agregarla: con
+  // paneles de varios miles por unidad, la multiplicacion mental es justo
+  // donde se cuela el error.
+  const totalLineaNueva = useMemo(() => {
+    const prod = catalogo.find((x) => x.id === Number(prodSel));
+    if (!prod) return null;
+    const unid = Number(cantidad);
+    const valor = valorUnit.trim() ? Number(valorUnit) : prod.precio_venta;
+    if (!Number.isFinite(unid) || !Number.isFinite(valor)) return null;
+    return unid * valor;
+  }, [catalogo, prodSel, cantidad, valorUnit]);
+
   function agregarItem() {
     setError(null);
     const idProd = Number(prodSel);
@@ -304,7 +321,26 @@ export default function EditorCotizacion(p: Props) {
   }
 
   function quitarItem(i: number) {
+    setUnidEditando(null);
     setD((x) => ({ ...x, items: x.items.filter((_, j) => j !== i) }));
+  }
+
+  // Las unidades se corrigen sobre la misma linea. Antes habia que quitar el
+  // producto y volver a agregarlo, lo que mandaba la linea al final de la
+  // cotizacion y obligaba a reescribir el valor pactado.
+  //
+  // Mientras se teclea el texto se guarda tal cual --un campo a medio escribir,
+  // o vacio, no es una cantidad-- y solo se lleva al item cuando es un numero
+  // valido; al salir del campo se descarta lo que no lo era y la linea se queda
+  // con la ultima cantidad buena.
+  function cambiarUnidades(i: number, texto: string) {
+    setUnidEditando({ i, texto });
+    const n = Number(texto);
+    if (texto.trim() !== "" && Number.isFinite(n) && n > 0)
+      setD((x) => ({
+        ...x,
+        items: x.items.map((it, j) => (j === i ? { ...it, unidades: n } : it)),
+      }));
   }
 
   function guardar() {
@@ -623,7 +659,7 @@ export default function EditorCotizacion(p: Props) {
               </button>
             )}
           </div>
-          <div className="grid md:grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
+          <div className="grid md:grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-end">
             <BuscadorProducto
               productos={catalogo}
               valor={prodSel ? Number(prodSel) : null}
@@ -653,6 +689,18 @@ export default function EditorCotizacion(p: Props) {
                 onChange={(e) => setValorUnit(e.target.value)}
               />
             </label>
+            <div className="text-xs">
+              <span className="block text-dorado-osc font-semibold">
+                Total de la linea
+              </span>
+              <div className="border border-gray-200 bg-white rounded px-2 py-1 w-32 text-right font-semibold tabular-nums">
+                {totalLineaNueva == null ? (
+                  <span className="text-gray-300">—</span>
+                ) : (
+                  pesos(totalLineaNueva)
+                )}
+              </div>
+            </div>
             <button
               onClick={agregarItem}
               className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded"
@@ -696,7 +744,25 @@ export default function EditorCotizacion(p: Props) {
                     {skuDe(it)}
                   </td>
                   <td className="px-3 py-1">{it.descripcion}</td>
-                  <td className="px-3 py-1 text-right">{fmtUnid(it.unidades)}</td>
+                  <td className="px-3 py-1 text-right">
+                    {soloLectura ? (
+                      fmtUnid(it.unidades)
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        className="border border-gray-300 rounded px-1.5 py-0.5 w-20 text-right text-xs bg-white"
+                        value={
+                          unidEditando?.i === i
+                            ? unidEditando.texto
+                            : it.unidades
+                        }
+                        onChange={(e) => cambiarUnidades(i, e.target.value)}
+                        onBlur={() => setUnidEditando(null)}
+                      />
+                    )}
+                  </td>
                   <td className="px-3 py-1 text-right">{pesos(it.valor_unitario)}</td>
                   <td className="px-3 py-1 text-right font-semibold">
                     {pesos(it.unidades * it.valor_unitario)}
