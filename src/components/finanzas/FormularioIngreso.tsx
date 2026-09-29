@@ -8,12 +8,13 @@ import {
   type Resultado,
 } from "@/app/ingresos/acciones";
 import { pesos } from "@/lib/formato";
-import type {
-  Categoria,
-  Cuenta,
-  Interlocutor,
-  Movimiento,
-  Proyecto,
+import {
+  etiquetaProyecto,
+  type Categoria,
+  type Cuenta,
+  type Interlocutor,
+  type Movimiento,
+  type Proyecto,
 } from "@/lib/finanzas/tipos";
 import SelectorInterlocutor from "./SelectorInterlocutor";
 
@@ -165,8 +166,7 @@ export default function FormularioIngreso({
             <option value="">Sin proyecto</option>
             {proyectosDisponibles.map((p) => (
               <option key={p.id_proyecto} value={p.id_proyecto}>
-                {p.nombre}
-                {p.cliente ? ` - ${p.cliente}` : ""}
+                {etiquetaProyecto(p)}
               </option>
             ))}
           </select>

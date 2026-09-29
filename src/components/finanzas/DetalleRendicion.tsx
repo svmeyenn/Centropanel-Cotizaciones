@@ -17,6 +17,7 @@ import {
 import {
   desenlaceRendicion,
   etiquetaInterlocutor,
+  etiquetaProyecto,
   fechaCorta,
   type AnticipoAplicado,
   type BoletaRendicion,
@@ -88,7 +89,7 @@ export default function DetalleRendicion({
 
   const nombreProyecto = (id: number | null) => {
     const p = proyectos.find((x) => x.id_proyecto === id);
-    return p ? (p.cliente ? `${p.nombre} - ${p.cliente}` : p.nombre) : "";
+    return p ? etiquetaProyecto(p) : "";
   };
   const nombreCategoria = (id: number | null) =>
     categorias.find((c) => c.id_categoria === id)?.etiqueta ?? "";

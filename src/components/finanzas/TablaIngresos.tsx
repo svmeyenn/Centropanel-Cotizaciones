@@ -6,6 +6,7 @@ import { pesos } from "@/lib/formato";
 import {
   agruparPorMes,
   etiquetaInterlocutor,
+  etiquetaProyecto,
   fechaCorta,
   type Categoria,
   type Cuenta,
@@ -59,7 +60,7 @@ export default function TablaIngresos({
   const nombreProyecto = (id: number | null) => {
     const p = proyectos.find((x) => x.id_proyecto === id);
     if (!p) return "";
-    return p.cliente ? `${p.nombre} - ${p.cliente}` : p.nombre;
+    return etiquetaProyecto(p);
   };
   const nombreCategoria = (id: number | null) =>
     categorias.find((c) => c.id_categoria === id)?.etiqueta ?? "";

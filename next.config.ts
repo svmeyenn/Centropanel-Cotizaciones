@@ -15,6 +15,13 @@ const nextConfig: NextConfig = {
   // react-pdf trae fuentes y binarios propios: se carga desde node_modules en
   // vez de empaquetarse, o el PDF falla en Vercel.
   serverExternalPackages: ["@react-pdf/renderer"],
+  experimental: {
+    // Los respaldos --la factura del proveedor, la foto de la boleta-- viajan
+    // dentro del formulario, y por omision Next corta eso en 1 MB: una factura
+    // escaneada pasa ese limite y el alta moria con un error de servidor sin
+    // explicacion. Cuatro megas es el techo que admite Vercel por peticion.
+    serverActions: { bodySizeLimit: "4mb" },
+  },
   env: {
     NEXT_PUBLIC_DB_SCHEMA: esquema,
   },

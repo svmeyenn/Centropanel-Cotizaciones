@@ -1,6 +1,10 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+
+// Lo que admite una peticion: el formulario entero viaja junto con sus
+// respaldos.
+const TOPE_ADJUNTOS = 4 * 1024 * 1024;
 import Ventana from "@/components/Ventana";
 import {
   borrarEgreso,
@@ -9,12 +13,13 @@ import {
   type Resultado,
 } from "@/app/egresos/acciones";
 import { pesos } from "@/lib/formato";
-import type {
-  Categoria,
-  Cuenta,
-  Interlocutor,
-  Movimiento,
-  Proyecto,
+import {
+  etiquetaProyecto,
+  type Categoria,
+  type Cuenta,
+  type Interlocutor,
+  type Movimiento,
+  type Proyecto,
 } from "@/lib/finanzas/tipos";
 import SelectorInterlocutor from "./SelectorInterlocutor";
 import ListaAdjuntos from "./ListaAdjuntos";
@@ -47,6 +52,7 @@ export default function FormularioEgreso({
     null
   );
 
+  const [pesoAdjuntos, setPesoAdjuntos] = useState(0);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
   const [borrando, setBorrando] = useState(false);
   const [errorBorrado, setErrorBorrado] = useState("");
@@ -156,8 +162,7 @@ export default function FormularioEgreso({
             <option value="">Sin proyecto</option>
             {proyectosDisponibles.map((p) => (
               <option key={p.id_proyecto} value={p.id_proyecto}>
-                {p.nombre}
-                {p.cliente ? ` - ${p.cliente}` : ""}
+                {etiquetaProyecto(p)}
               </option>
             ))}
           </select>
@@ -240,7 +245,23 @@ export default function FormularioEgreso({
             accept=".pdf,.jpg,.jpeg,.png"
             multiple
             required={!movimiento}
+            onChange={(e) => {
+              // El formulario entero viaja en una sola peticion, y hay un techo
+              // de cuatro megas. Vale mas decirlo aqui que dejar que reviente
+              // al guardar, cuando ya se lleno todo lo demas.
+              const pesan = Array.from(e.target.files ?? []).reduce(
+                (t, f) => t + f.size,
+                0
+              );
+              setPesoAdjuntos(pesan);
+            }}
           />
+          {pesoAdjuntos > TOPE_ADJUNTOS && (
+            <p className="text-[11px] text-red-700 mt-0.5">
+              Los archivos suman {(pesoAdjuntos / 1024 / 1024).toFixed(1)} MB y el
+              maximo es 4 MB. Suba menos archivos, o comprima el PDF antes.
+            </p>
+          )}
         </div>
 
         {estado && !estado.ok && (

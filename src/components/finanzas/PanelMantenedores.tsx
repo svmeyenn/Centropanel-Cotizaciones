@@ -246,6 +246,7 @@ export default function PanelMantenedores({
                       <th className="text-left px-3 py-2 w-20">Mercado</th>
                     )}
                     <th className="text-left px-3 py-2">Proyecto</th>
+                    <th className="text-left px-3 py-2 w-28">Pedido</th>
                     <th className="text-left px-3 py-2">Cliente</th>
                     <th className="text-left px-3 py-2 w-24">Estado</th>
                   </>
@@ -306,6 +307,9 @@ export default function PanelMantenedores({
                   <tr key={p.id_proyecto} className="border-t border-gray-100 hover:bg-crema">
                     {celdaMercado(p.id_pais)}
                     <td className="px-3 py-2">{p.nombre}</td>
+                    <td className="px-3 py-2 tabular-nums text-gray-600">
+                      {p.num_pedido ?? <span className="text-gray-300">—</span>}
+                    </td>
                     <td className="px-3 py-2 text-gray-600">{p.cliente}</td>
                     <td className="px-3 py-2">
                       {p.activo ? (
@@ -520,6 +524,36 @@ export default function PanelMantenedores({
               defaultValue={editandoProyecto?.cliente ?? ""}
             />
           </div>
+          <div>
+            <label className={ROTULO}>Pedido</label>
+            <input
+              name="num_pedido"
+              className={CAMPO}
+              defaultValue={editandoProyecto?.num_pedido ?? ""}
+              placeholder="PED00012"
+              maxLength={20}
+            />
+            <p className="text-[11px] text-gray-600 mt-0.5">
+              Lo pone solo el sistema al generar el pedido. Se escribe a mano
+              solo en obras anteriores a eso.
+            </p>
+          </div>
+          {variosMercados && (
+            <div>
+              <label className={ROTULO}>Mercado</label>
+              <select
+                name="id_pais"
+                className={CAMPO}
+                defaultValue={editandoProyecto?.id_pais ?? mercados[0]?.id}
+              >
+                {mercados.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.codigo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <label className="sm:col-span-2 flex items-center gap-2 text-xs">
             <input
               type="checkbox"

@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { Cuenta, Interlocutor, Proyecto } from "@/lib/finanzas/tipos";
+import {
+  etiquetaProyecto,
+  type Cuenta,
+  type Interlocutor,
+  type Proyecto,
+} from "@/lib/finanzas/tipos";
 import FiltroInterlocutor from "./FiltroInterlocutor";
 
 // Filtros de los listados de finanzas, con la misma forma que los de
@@ -93,8 +98,7 @@ export default function FiltrosMovimientos({
             <option value="">Todos</option>
             {proyectosActivos.map((p) => (
               <option key={p.id_proyecto} value={p.id_proyecto}>
-                {p.nombre}
-                {p.cliente ? ` - ${p.cliente}` : ""}
+                {etiquetaProyecto(p)}
               </option>
             ))}
           </select>
