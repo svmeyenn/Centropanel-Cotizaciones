@@ -37,16 +37,14 @@ export type Proyecto = {
   borrado: boolean;
 };
 
-// Como se nombra un proyecto en pantalla: la obra, su pedido y su cliente.
-// Dos obras del mismo cliente solo se distinguen por el folio, asi que va
-// pegado al nombre y antes del cliente.
+// Como se nombra un proyecto en pantalla: la obra, su cliente y su pedido, en
+// ese orden. Se lee de lo general a lo particular, y el folio queda al final,
+// que es donde se va a mirar para distinguir dos obras del mismo cliente.
 export const etiquetaProyecto = (p: {
   nombre: string;
   num_pedido?: string | null;
   cliente?: string | null;
-}) =>
-  [p.nombre, p.num_pedido].filter(Boolean).join(" ") +
-  (p.cliente ? ` - ${p.cliente}` : "");
+}) => [p.nombre, p.cliente, p.num_pedido].filter(Boolean).join(" - ");
 
 export type Categoria = {
   id_categoria: number;
