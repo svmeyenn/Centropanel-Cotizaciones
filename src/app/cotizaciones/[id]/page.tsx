@@ -31,6 +31,17 @@ export default async function Pagina({
     .eq("id_cotizacion", id)
     .order("fecha_registro", { ascending: false });
 
+  // A quien se le puede asignar una tarea: los que trabajan, no los de
+  // consulta. Solo hace falta para quien administra.
+  const { data: gente } = tienePerfilAdmin(v)
+    ? await supabase
+        .from("vendedores")
+        .select("id, nombre")
+        .eq("activo", true)
+        .neq("rol", "Consulta")
+        .order("nombre")
+    : { data: null };
+
   const [
     { data: cot },
     { data: items },
@@ -184,6 +195,9 @@ export default async function Pagina({
           idCotizacion={id}
           actividad={(bitacora ?? []) as Actividad[]}
           puedeEscribir={v.puede_editar}
+          puedeAsignar={tienePerfilAdmin(v)}
+          equipo={(gente ?? []) as { id: number; nombre: string }[]}
+          yo={v.id}
         />
       </div>
 

@@ -11,6 +11,7 @@ export type Tarea = {
   num_cotizacion: string | null;
   cliente: string | null;
   vendedor_nombre: string;
+  responsable_nombre: string;
   comentario: string;
   proxima_accion: string;
   proxima_fecha: string;
@@ -92,7 +93,7 @@ export default function TareasPendientes({
                 <th className="text-left px-3 py-1 w-[14%]">Cotizacion</th>
                 <th className="text-left px-3 py-1 w-[20%]">Cliente</th>
                 <th className="text-left px-3 py-1 hidden lg:table-cell w-[15%]">
-                  Quien la comprometio
+                  A cargo de
                 </th>
                 {puedeCerrar && <th className="px-3 py-1 w-[14%]" />}
               </tr>
@@ -133,7 +134,12 @@ export default function TareasPendientes({
                       {t.cliente}
                     </td>
                     <td className="px-3 py-1 hidden lg:table-cell truncate text-gray-600">
-                      {t.vendedor_nombre}
+                      {t.responsable_nombre}
+                      {t.responsable_nombre !== t.vendedor_nombre && (
+                        <span className="block text-[10px] text-gray-400">
+                          la anoto {t.vendedor_nombre}
+                        </span>
+                      )}
                     </td>
                     {puedeCerrar && (
                       <td className="px-3 py-1 text-right">

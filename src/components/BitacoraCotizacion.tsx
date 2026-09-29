@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   marcarAccionHecha,
   reabrirAccion,
+  reasignarTarea,
   registrarActividad,
   type Resultado,
 } from "@/app/cotizaciones/actividad";
@@ -12,7 +13,10 @@ import {
 export type Actividad = {
   id: number;
   id_cotizacion: number;
+  id_vendedor: number;
   vendedor_nombre: string;
+  id_responsable: number | null;
+  responsable_nombre: string | null;
   fecha_registro: string;
   comentario: string;
   proxima_accion: string | null;
@@ -54,10 +58,17 @@ export default function BitacoraCotizacion({
   idCotizacion,
   actividad,
   puedeEscribir,
+  puedeAsignar,
+  equipo,
+  yo,
 }: {
   idCotizacion: number;
   actividad: Actividad[];
   puedeEscribir: boolean;
+  // Asignarle la tarea a otro es cosa de quien administra.
+  puedeAsignar: boolean;
+  equipo: { id: number; nombre: string }[];
+  yo: number;
 }) {
   const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
@@ -156,6 +167,19 @@ export default function BitacoraCotizacion({
                   required
                 />
               </label>
+
+              {puedeAsignar && (
+                <label className="text-xs">
+                  <span className={ROTULO}>Quien la hace</span>
+                  <select name="id_responsable" className={CAMPO} defaultValue={yo}>
+                    {equipo.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.id === yo ? `${p.nombre} (yo)` : p.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </>
           )}
 
@@ -214,6 +238,39 @@ export default function BitacoraCotizacion({
                       : `para el ${soloDia(a.proxima_fecha!)}`}
                     {a.ejecutor_nombre ? ` por ${a.ejecutor_nombre}` : ""}
                   </span>
+
+                  {/* De quien es. Mientras no se asigne a otro, de quien la
+                      anoto, que es como se leia antes de que existiera el
+                      responsable. */}
+                  {puedeAsignar && a.estado_proxima !== "Ejecutada" ? (
+                    <select
+                      className="border border-gray-300 rounded px-1 py-0.5 text-[11px] bg-white"
+                      value={a.id_responsable ?? a.id_vendedor}
+                      disabled={enCurso}
+                      onChange={(e) =>
+                        correr(() =>
+                          reasignarTarea(
+                            a.id,
+                            idCotizacion,
+                            Number(e.target.value)
+                          )
+                        )
+                      }
+                    >
+                      {equipo.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.id === yo ? `${p.nombre} (yo)` : p.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-gray-600">
+                      a cargo de{" "}
+                      <strong>
+                        {a.responsable_nombre ?? a.vendedor_nombre}
+                      </strong>
+                    </span>
+                  )}
 
                   {puedeEscribir && (
                     <span className="ml-auto">
