@@ -301,6 +301,12 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
               {d.pendientes_n} por {pesos(d.pendientes_monto)}
             </span>
           </div>
+          {/* Se dice de donde sale la lista: si no, una cotizacion que
+              desaparece de aqui parece un dato perdido. */}
+          <p className="px-2.5 pt-1.5 text-[10px] text-gray-500">
+            No se listan las que ya tienen una tarea por delante: esas se siguen
+            desde la bandeja de tareas.
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full text-[11px]">
               <tbody>
