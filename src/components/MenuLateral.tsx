@@ -36,7 +36,9 @@ export default function MenuLateral({
     <>
       <button
         onClick={() => setAbierto(!abierto)}
-        className="lg:hidden fixed bottom-4 left-4 z-40 bg-verde text-white text-xs font-semibold px-3 py-2 rounded shadow-lg"
+        // print:hidden porque la hoja tiene el ancho de un telefono: sin esto
+        // el boton se colaba en la esquina del PDF de la cotizacion.
+        className="lg:hidden print:hidden fixed bottom-4 left-4 z-40 bg-verde text-white text-xs font-semibold px-3 py-2 rounded shadow-lg"
         aria-expanded={abierto}
       >
         {abierto ? "Cerrar menu" : "Menu"}
@@ -45,7 +47,7 @@ export default function MenuLateral({
       <nav
         className={`${
           abierto ? "block" : "hidden"
-        } lg:block fixed lg:sticky top-0 left-0 z-30 w-60 h-screen shrink-0 overflow-y-auto bg-verde text-white`}
+        } lg:block print:hidden fixed lg:sticky top-0 left-0 z-30 w-60 h-screen shrink-0 overflow-y-auto bg-verde text-white`}
       >
         <Link
           href="/"
