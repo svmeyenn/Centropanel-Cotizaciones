@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0066-20260928**
+Version vigente: **v0067-20260928**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0067-20260928 | 28-09-2026 | Bandeja de tareas pendientes al final de la portada: lo comprometido en las bitacoras y no hecho, lo mas atrasado primero, con la cotizacion a un clic y el cierre desde ahi mismo | d289a89 |
 | v0066-20260928 | 28-09-2026 | Bitacora en cada cotizacion: quien escribio, cuando, que paso y la proxima accion con su fecha; el estado (vigente, vencida, ejecutada) se calcula y no se guarda | e4feb09 |
 | v0065-20260927 | 27-09-2026 | Conciliacion: pasar al sistema lo que solo esta en el banco, dos salidas para lo que el banco no muestra y proyeccion del saldo; formato de cartola configurable por cuenta; banda de paridades por mercado en la portada; detalle de la cotizacion mas compacto | 7b7d983 |
 | v0064-20260926 | 26-09-2026 | Finanzas completa: cartola consolidada, resumen por proyecto, rendiciones de gastos, conciliacion bancaria y topes; el saldo y los informes se calculan en la base, iguales para todo perfil; categorias con su mercado y listas que no se mezclan entre paises | 168821d |
