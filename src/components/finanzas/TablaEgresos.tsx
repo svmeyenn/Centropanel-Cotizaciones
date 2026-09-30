@@ -367,6 +367,11 @@ export default function TablaEgresos({
           cuentas={cuentasInterlocutores.filter(
             (c) => c.id_interlocutor === copiando.id_interlocutor
           )}
+          cuenta={nombreCuenta(copiando.id_cuenta)}
+          proyecto={nombreProyecto(copiando.id_proyecto)}
+          categoria={nombreCategoria(copiando.id_categoria)}
+          solicito={quienSolicito(copiando.id_vendedor)}
+          enlaceRespaldo={enlaces[copiando.id_mov] ?? null}
           alCerrar={() => setCopiando(null)}
         />
       )}

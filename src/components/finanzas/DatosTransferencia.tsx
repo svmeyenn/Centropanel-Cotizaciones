@@ -5,27 +5,44 @@ import Ventana from "@/components/Ventana";
 import { pesos } from "@/lib/formato";
 import {
   etiquetaInterlocutor,
+  fechaCorta,
+  fechaDeRegistro,
   type CuentaInterlocutor,
   type Interlocutor,
   type Movimiento,
 } from "@/lib/finanzas/tipos";
 
-// Los datos con que se paga un egreso pendiente, uno al lado de su boton de
-// copiar. En el formulario del banco se pega campo por campo --el RUT en el
-// RUT, la cuenta en la cuenta--, asi que copiar todo junto no sirve de nada.
+// Todo lo que tiene un egreso, cada dato al lado de su boton de copiar: lo
+// del banco --destinatario, RUT, monto, cuenta-- y tambien como quedo
+// clasificado, por si hay que repetirlo en otro sistema o pegarlo en un
+// correo. En el formulario del banco se pega campo por campo, asi que copiar
+// todo junto no sirve de nada.
 //
 // Lo que se copia no siempre es lo que se muestra: el monto se ve como
 // $1.234.567 y se copia 1234567, y el RUT se ve con puntos y se copia
 // 12345678-9. Es lo que aceptan los formularios del banco.
+//
+// El respaldo es la excepcion: un PDF no se copia, se mira.
 export default function DatosTransferencia({
   movimiento,
   interlocutor,
   cuentas,
+  cuenta,
+  proyecto,
+  categoria,
+  solicito,
+  enlaceRespaldo,
   alCerrar,
 }: {
   movimiento: Movimiento;
   interlocutor: Interlocutor | null;
   cuentas: CuentaInterlocutor[];
+  // Como quedo clasificado el egreso, ya resuelto a texto por la lista.
+  cuenta: string;
+  proyecto: string;
+  categoria: string;
+  solicito: string;
+  enlaceRespaldo: string | null;
   alCerrar: () => void;
 }) {
   const [copiado, setCopiado] = useState<string | null>(null);
@@ -80,7 +97,7 @@ export default function DatosTransferencia({
 
   return (
     <Ventana
-      titulo="Datos para transferir"
+      titulo="Datos del egreso"
       subtitulo={nombre}
       onCerrar={alCerrar}
       ancho="max-w-xl"
@@ -107,15 +124,87 @@ export default function DatosTransferencia({
           copiado={copiado}
           copiar={copiar}
         />
-        {movimiento.documento && (
-          <Dato
-            rotulo="Documento"
-            muestra={movimiento.documento}
-            copia={movimiento.documento}
-            copiado={copiado}
-            copiar={copiar}
-          />
-        )}
+        <Dato
+          rotulo="Documento"
+          muestra={movimiento.documento ?? "sin documento"}
+          copia={movimiento.documento ?? ""}
+          copiado={copiado}
+          copiar={copiar}
+        />
+        <Dato
+          rotulo={movimiento.fecha ? "Fecha de pago" : "Solicitado el"}
+          muestra={
+            movimiento.fecha
+              ? fechaCorta(movimiento.fecha)
+              : fechaDeRegistro(movimiento.fecha_registro)
+          }
+          copia={
+            movimiento.fecha
+              ? fechaCorta(movimiento.fecha)
+              : fechaDeRegistro(movimiento.fecha_registro)
+          }
+          copiado={copiado}
+          copiar={copiar}
+        />
+
+        <div className="border-t border-gray-200 my-2" />
+
+        <Dato
+          rotulo="Cuenta de cargo"
+          muestra={cuenta || "sin cuenta"}
+          copia={cuenta}
+          copiado={copiado}
+          copiar={copiar}
+        />
+        <Dato
+          rotulo="Proyecto"
+          muestra={proyecto || "sin proyecto"}
+          copia={proyecto}
+          copiado={copiado}
+          copiar={copiar}
+        />
+        <Dato
+          rotulo="Categoria"
+          muestra={categoria || "sin categoria"}
+          copia={categoria}
+          copiado={copiado}
+          copiar={copiar}
+        />
+        <Dato
+          rotulo="Comentario"
+          muestra={movimiento.comentario ?? "sin comentario"}
+          copia={movimiento.comentario ?? ""}
+          copiado={copiado}
+          copiar={copiar}
+        />
+        <Dato
+          rotulo="Solicito"
+          muestra={solicito || "--"}
+          copia={solicito}
+          copiado={copiado}
+          copiar={copiar}
+        />
+
+        {/* El respaldo no se copia: es un archivo, y lo que se necesita de el
+            es mirarlo antes de pagar. */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className="w-32 shrink-0 text-gray-500">Respaldo</span>
+          <span className="flex-1 truncate text-gray-600">
+            {enlaceRespaldo ? "documento adjunto" : "sin adjunto"}
+          </span>
+          {enlaceRespaldo ? (
+            <a
+              href={enlaceRespaldo}
+              target="_blank"
+              rel="noreferrer"
+              className="border border-gray-300 bg-white text-gray-700 font-semibold px-2 py-0.5 rounded w-16 text-center"
+            >
+              ver
+            </a>
+          ) : (
+            <span className="w-16" />
+          )}
+        </div>
 
         {cuentas.length === 0 ? (
           <p className="bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded px-3 py-2 mt-2">
