@@ -421,10 +421,12 @@ export async function duplicarPedido(id: number) {
   return { ok: true, id: Number(data) };
 }
 
-// Borrar un pedido: para el que se emitio por error. La base lo niega si hay
-// pagos o factura --eso se anula a mano, uno por uno-- y se lleva consigo las
-// lineas y las solicitudes a proveedores. La cotizacion queda Aceptada y sin
-// pedido, lista para volver a generarlo.
+// Borrar un pedido: para el que se emitio por error. Se hace desde la ficha
+// del pedido, no desde el listado: hay que estar adentro para ver lo que se
+// lleva por delante. La base lo niega si hay pagos o documentos tributarios
+// --eso se anula a mano, uno por uno-- y se lleva consigo las lineas y las
+// solicitudes a proveedores. La cotizacion queda Aceptada y sin pedido, lista
+// para volver a generarlo.
 export async function eliminarPedido(id: number) {
   const v = await requerirVendedor();
   if (!tienePerfilAdmin(v)) {
@@ -443,7 +445,10 @@ export async function eliminarPedido(id: number) {
   };
   if (r.en_uso) {
     const partes: string[] = [];
-    if (Number(r.facturas)) partes.push("tiene factura registrada");
+    if (Number(r.facturas))
+      partes.push(
+        `tiene ${r.facturas} documento(s) tributario(s) registrado(s)`
+      );
     if (Number(r.pagos)) partes.push(`tiene ${r.pagos} pago(s) registrados`);
     return {
       error: `No se puede eliminar: ${partes.join(" y ")}. Anule eso primero en la cuenta corriente del pedido.`,

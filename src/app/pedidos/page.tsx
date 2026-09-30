@@ -2,9 +2,8 @@ import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import FiltrosDocumentos, { type ValoresFiltro } from "@/components/FiltrosDocumentos";
-import BotonEliminarFila from "@/components/BotonEliminarFila";
 import BotonExportarFilas from "@/components/BotonExportarFilas";
-import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { ESTADOS_PEDIDO } from "@/lib/estados";
 import { nombreImpuesto } from "@/lib/impuesto";
 import Bandera from "@/components/Bandera";
@@ -42,7 +41,6 @@ export default async function Pagina({
   const paisPorId = new Map(accesibles.map((p) => [p.id, p]));
   const etiquetaId =
     [...new Set(accesibles.map((p) => p.etiqueta_id ?? "RUT"))].join(" / ") || "RUT";
-  const puedeBorrar = tienePerfilAdmin(v);
 
   // Los datos del cliente viven en su ficha: primero los clientes que
   // coinciden, despues sus pedidos.
@@ -165,7 +163,7 @@ export default async function Pagina({
     ] as (string | number | null)[];
   });
 
-  const columnas = 12 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
+  const columnas = 12 + (verPais ? 1 : 0);
 
   return (
     <div className="min-h-screen">
@@ -237,7 +235,6 @@ export default async function Pagina({
                   <th className="text-right px-3 py-2">Total con {impuesto}</th>
                   <th className="text-right px-3 py-2">Saldo</th>
                   <th className="text-left px-3 py-2">Factura</th>
-                  {puedeBorrar && <th className="px-3 py-2 w-20" />}
                 </tr>
               </thead>
               <tbody>
@@ -319,15 +316,6 @@ export default async function Pagina({
                       <td className="px-3 py-2 text-gray-600">
                         {facturaDe.get(Number(p.id)) ?? ""}
                       </td>
-                      {puedeBorrar && (
-                        <td className="px-3 py-2 text-right">
-                          <BotonEliminarFila
-                            tipo="pedido"
-                            id={Number(p.id)}
-                            num={(p.num_pedido as string) ?? ""}
-                          />
-                        </td>
-                      )}
                     </tr>
                   );
                 })}
