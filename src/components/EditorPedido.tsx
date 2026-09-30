@@ -8,8 +8,10 @@ import {
   porcentaje,
   unidades as fmtUnid,
   telefono as fmtTelefono,
+  hoyISO,
 } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
+import GrupoCabecera from "@/components/GrupoCabecera";
 import BorrarPedido from "@/components/BorrarPedido";
 import {
   ROTULO_DESCUENTO_1,
@@ -172,6 +174,16 @@ export default function EditorPedido({
     (s, l) => s + l.unidades * Number(costoPorLinea?.[l.id] ?? 0),
     0
   );
+  // Dias de atraso de la entrega comprometida: positivo si ya se paso. Solo
+  // mientras no este entregada; con la fecha real puesta el pedido ya salio.
+  const atraso =
+    d.fecha_entrega_esperada && !d.fecha_entrega_efectiva
+      ? Math.round(
+          (new Date(`${hoyISO()}T00:00:00`).getTime() -
+            new Date(`${d.fecha_entrega_esperada}T00:00:00`).getTime()) /
+            86400000
+        )
+      : null;
   const margen = totalNeto - costoPedido;
   const margenPct = totalNeto > 0 ? (margen / totalNeto) * 100 : 0;
   // Un solo alto y un solo tamano de letra para todos los campos de la
@@ -254,81 +266,158 @@ export default function EditorPedido({
         </div>
       )}
 
-      {/* cabecera */}
-      <div className="bg-white border border-gray-200 rounded p-3 grid md:grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-2 items-start">
-        <div className="lg:col-span-2">
-          <Dato titulo="Cliente" valor={cliente} />
-          <span className="block mt-1 text-[11px] leading-tight text-gray-600">
-            {clienteRut ? (
-              <span>{etiquetaId} {clienteRut}</span>
-            ) : (
-              <span className="text-gray-400">sin {etiquetaId}</span>
+      {/* Cabecera por temas: con quien es el negocio, que documento es, como
+          se paga y como se entrega. Antes eran doce campos sueltos en una
+          rejilla y habia que leerlos todos para encontrar uno. */}
+      <div className="grid gap-3 lg:grid-cols-4">
+        <GrupoCabecera titulo="CLIENTE" className="lg:col-span-2">
+          <div className="sm:col-span-2">
+            <Dato titulo="Razon social" valor={cliente} />
+            <span className="block mt-1 text-[11px] leading-tight text-gray-600">
+              {clienteRut ? (
+                <span>
+                  {etiquetaId} {clienteRut}
+                </span>
+              ) : (
+                <span className="text-gray-400">sin {etiquetaId}</span>
+              )}
+              {clienteContacto ? <span> {"\u00b7"} {clienteContacto}</span> : null}
+              {clienteTelefono ? (
+                <span> {"\u00b7"} {fmtTelefono(clienteTelefono)}</span>
+              ) : null}
+              {clienteCiudad ? <span> {"\u00b7"} {clienteCiudad}</span> : null}
+            </span>
+            {fichaCliente && puedeEditar && (
+              <button
+                type="button"
+                onClick={() => setVerFicha(true)}
+                className="mt-1 text-[11px] text-verde underline"
+                title="Completar o corregir los datos del cliente sin salir de aqui"
+              >
+                Editar datos del cliente
+              </button>
             )}
-            {clienteContacto ? <span> {"·"} {clienteContacto}</span> : null}
-            {clienteTelefono ? <span> {"·"} {fmtTelefono(clienteTelefono)}</span> : null}
-            {clienteCiudad ? <span> {"·"} {clienteCiudad}</span> : null}
-          </span>
-          {fichaCliente && puedeEditar && (
-            <button
-              type="button"
-              onClick={() => setVerFicha(true)}
-              className="mt-1 text-[11px] text-verde underline"
-              title="Completar o corregir los datos del cliente sin salir de aqui"
+          </div>
+        </GrupoCabecera>
+
+        <GrupoCabecera titulo="DOCUMENTO">
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Fecha
+            </span>
+            <input
+              type="date"
+              className={input}
+              disabled={soloLectura}
+              value={d.fecha}
+              onChange={(e) => setD({ ...d, fecha: e.target.value })}
+            />
+          </label>
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Estado
+            </span>
+            <select
+              className={input}
+              disabled={soloLectura}
+              value={d.estado}
+              onChange={(e) => setD({ ...d, estado: e.target.value })}
             >
-              Editar datos del cliente
-            </button>
+              {ESTADOS.map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Dato titulo="Ejecutivo" valor={vendedor} ancho="sm:col-span-2" />
+        </GrupoCabecera>
+
+        <GrupoCabecera titulo="PAGO">
+          <Dato
+            titulo="Forma de pago"
+            valor={formaPago ?? "--"}
+            ancho="sm:col-span-2"
+          />
+          <Dato
+            titulo="Medio de pago"
+            valor={medioPago ?? "--"}
+            ancho="sm:col-span-2"
+          />
+        </GrupoCabecera>
+
+        <GrupoCabecera titulo="ENTREGA" className="lg:col-span-4" columnas="sm:grid-cols-4">
+          <label className="text-xs sm:col-span-2">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Despachar a
+            </span>
+            <input
+              className={input}
+              disabled={soloLectura}
+              value={d.direccion_despacho}
+              onChange={(e) =>
+                setD({ ...d, direccion_despacho: e.target.value })
+              }
+            />
+          </label>
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Plazo comprometido
+            </span>
+            <input
+              className={input}
+              disabled={soloLectura}
+              placeholder="15 dias habiles"
+              value={d.tiempo_entrega}
+              onChange={(e) => setD({ ...d, tiempo_entrega: e.target.value })}
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-xs">
+              <span className="block text-dorado-osc font-semibold mb-0.5">
+                Fecha comprometida
+              </span>
+              <input
+                type="date"
+                className={input}
+                disabled={soloLectura}
+                value={d.fecha_entrega_esperada}
+                onChange={(e) =>
+                  setD({ ...d, fecha_entrega_esperada: e.target.value })
+                }
+              />
+            </label>
+            <label className="text-xs">
+              <span className="block text-dorado-osc font-semibold mb-0.5">
+                Entregado el
+              </span>
+              <input
+                type="date"
+                className={input}
+                disabled={soloLectura}
+                value={d.fecha_entrega_efectiva}
+                onChange={(e) =>
+                  setD({ ...d, fecha_entrega_efectiva: e.target.value })
+                }
+              />
+            </label>
+          </div>
+          {/* El aviso de atraso sale aqui y no solo en el tablero: quien abre
+              el pedido tiene que ver de inmediato que se paso la fecha. */}
+          {atraso != null && (
+            <p
+              className={`sm:col-span-4 text-[11px] ${
+                atraso > 0 ? "text-red-700 font-semibold" : "text-gray-600"
+              }`}
+            >
+              {atraso > 0
+                ? `Atrasado: la entrega se comprometio hace ${atraso} dia(s).`
+                : atraso === 0
+                  ? "La entrega es hoy."
+                  : `Faltan ${-atraso} dia(s) para la entrega comprometida.`}
+            </p>
           )}
-        </div>
-        <Dato titulo="Ejecutivo" valor={vendedor} />
-        <label className="text-xs">
-          <span className="block text-dorado-osc font-semibold mb-0.5">Estado</span>
-          <select
-            className={input}
-            disabled={soloLectura}
-            value={d.estado}
-            onChange={(e) => setD({ ...d, estado: e.target.value })}
-          >
-            {ESTADOS.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Dato titulo="Forma de pago" valor={formaPago ?? "--"} ancho="lg:col-span-2" />
-        <Dato titulo="Medio de pago" valor={medioPago ?? "--"} />
-        <label className="text-xs">
-          <span className="block text-dorado-osc font-semibold mb-0.5">Fecha</span>
-          <input
-            type="date"
-            className={input}
-            disabled={soloLectura}
-            value={d.fecha}
-            onChange={(e) => setD({ ...d, fecha: e.target.value })}
-          />
-        </label>
-        <label className="text-xs lg:col-span-2">
-          <span className="block text-dorado-osc font-semibold mb-0.5">
-            Tiempo de entrega
-          </span>
-          <input
-            className={input}
-            disabled={soloLectura}
-            value={d.tiempo_entrega}
-            onChange={(e) => setD({ ...d, tiempo_entrega: e.target.value })}
-          />
-        </label>
-        <label className="text-xs lg:col-span-2">
-          <span className="block text-dorado-osc font-semibold mb-0.5">
-            Despachar a
-          </span>
-          <input
-            className={input}
-            disabled={soloLectura}
-            value={d.direccion_despacho}
-            onChange={(e) => setD({ ...d, direccion_despacho: e.target.value })}
-          />
-        </label>
+        </GrupoCabecera>
       </div>
 
       {/* lineas */}
@@ -700,6 +789,7 @@ export default function EditorPedido({
         facturado={cuenta.facturado}
         porFacturar={cuenta.por_facturar}
         pieMonto={cuenta.pie_monto}
+        entregaEfectiva={d.fecha_entrega_efectiva || null}
         // La tasa sale de la propia cuenta del pedido: es la que se le aplico
         // a esta venta, no la que este vigente hoy en los parametros.
         tasaIva={cuenta.total_neto > 0 ? cuenta.iva / cuenta.total_neto : 0}
