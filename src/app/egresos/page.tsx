@@ -5,6 +5,7 @@ import BotonExportarFilas from "@/components/BotonExportarFilas";
 import FiltrosMovimientos from "@/components/finanzas/FiltrosMovimientos";
 import TablaEgresos from "@/components/finanzas/TablaEgresos";
 import {
+  cargarCuentasInterlocutores,
   cargarEnlacesRespaldo,
   cargarMaestros,
   cargarMovimientos,
@@ -46,6 +47,7 @@ export default async function Pagina({
     interlocutores
   );
   const enlaces = await cargarEnlacesRespaldo(movimientos.map((m) => m.id_mov));
+  const cuentasInterlocutores = await cargarCuentasInterlocutores();
 
   // Para mostrar quien solicito cada gasto con su nombre.
   const supabase = await createClient();
@@ -117,6 +119,7 @@ export default async function Pagina({
           proyectos={proyectos}
           categorias={categorias}
           interlocutores={interlocutores}
+          cuentasInterlocutores={cuentasInterlocutores}
           vendedores={vendedores}
           puedeSolicitar={v.fin_solicitar_gastos}
           puedePagar={v.fin_pagar_gastos}
