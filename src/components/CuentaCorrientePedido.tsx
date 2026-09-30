@@ -25,6 +25,10 @@ export interface Cuenta {
   abonado: number;
   saldo: number;
   pie_cubierto: boolean;
+  // Lo que ya tiene documento tributario y lo que falta por documentar. La
+  // venta se factura contra los depositos, asi que no van juntos con el cobro.
+  facturado: number;
+  por_facturar: number;
 }
 
 export interface PagoVista {

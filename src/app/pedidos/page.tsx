@@ -109,12 +109,24 @@ export default async function Pagina({
     ? await supabase.from("solicitudes").select("id_pedido").in("id_pedido", ids)
     : { data: [] as { id_pedido: number }[] };
 
+  // Un pedido puede llevar varios documentos --anticipo, saldo, nota de
+  // credito--, asi que la columna muestra los folios juntos.
   const { data: facturas } = ids.length
-    ? await supabase.from("facturas").select("id_pedido, numero").in("id_pedido", ids)
-    : { data: [] as { id_pedido: number; numero: string }[] };
-  const facturaDe = new Map(
-    (facturas ?? []).map((f) => [Number(f.id_pedido), f.numero as string])
-  );
+    ? await supabase
+        .from("facturas")
+        .select("id_pedido, numero, tipo")
+        .in("id_pedido", ids)
+        .order("fecha")
+    : { data: [] as { id_pedido: number; numero: string; tipo: string }[] };
+  const facturaDe = new Map<number, string>();
+  for (const f of facturas ?? []) {
+    const k = Number(f.id_pedido);
+    const folio =
+      (f.tipo as string) === "Nota de credito"
+        ? `NC ${f.numero as string}`
+        : (f.numero as string);
+    facturaDe.set(k, facturaDe.has(k) ? `${facturaDe.get(k)} / ${folio}` : folio);
+  }
 
   const solPorPedido = new Map<number, number>();
   for (const s of sols ?? []) {

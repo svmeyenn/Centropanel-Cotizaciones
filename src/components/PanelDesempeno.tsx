@@ -206,7 +206,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
               alerta={d.cobranza.sin_pie > 0}
             />
             <Dato
-              titulo="Sin factura"
+              titulo="Por facturar"
               valor={`${d.cobranza.sin_factura} de ${d.cobranza.pedidos}`}
               pie={
                 d.cobranza.sin_factura > 0

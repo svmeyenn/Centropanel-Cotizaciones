@@ -57,10 +57,16 @@ export default async function Pagina({
     ids.length
       ? supabase
           .from("facturas")
-          .select("id_pedido, numero, fecha")
+          .select("id_pedido, numero, fecha, tipo")
           .in("id_pedido", ids)
+          .order("fecha")
       : Promise.resolve({
-          data: [] as { id_pedido: number; numero: string; fecha: string }[],
+          data: [] as {
+            id_pedido: number;
+            numero: string;
+            fecha: string;
+            tipo: string;
+          }[],
         }),
   ]);
 
@@ -74,14 +80,18 @@ export default async function Pagina({
     if (!ultimoPago.has(k)) ultimoPago.set(k, g.fecha as string);
   }
 
-  // Facturado es lo que tiene factura emitida, no lo vendido: un pedido sin
-  // factura esta pendiente de facturar, por mucho que ya este pagado.
-  const facturaDe = new Map(
-    (facturas ?? []).map((f) => [
-      Number(f.id_pedido),
-      { numero: f.numero as string, fecha: f.fecha as string },
-    ])
-  );
+  // Facturado es lo que ya tiene documento tributario, no lo vendido: un
+  // pedido pagado sigue pendiente de facturar hasta que se emite. Como se
+  // factura contra los depositos, un pedido puede llevar varios folios.
+  const foliosDe = new Map<number, string[]>();
+  for (const f of facturas ?? []) {
+    const k = Number(f.id_pedido);
+    const folio =
+      (f.tipo as string) === "Nota de credito"
+        ? `NC ${f.numero as string}`
+        : (f.numero as string);
+    foliosDe.set(k, [...(foliosDe.get(k) ?? []), folio]);
+  }
 
   const uno = <T,>(x: unknown): T | null =>
     Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
@@ -109,7 +119,9 @@ export default async function Pagina({
       avance: total > 0 ? (abonado / total) * 100 : 0,
       estado,
       ultimo: ultimoPago.get(Number(p.id)) ?? null,
-      factura: facturaDe.get(Number(p.id)) ?? null,
+      folios: foliosDe.get(Number(p.id)) ?? [],
+      facturado: Number(c?.facturado ?? 0),
+      porFacturar: Number(c?.por_facturar ?? 0),
     };
   });
 
@@ -121,7 +133,7 @@ export default async function Pagina({
         : filtro === "pagado"
           ? r.estado === "Pagado"
           : filtro === "sinfactura"
-            ? r.factura == null
+            ? r.porFacturar > 0
             : true
   );
 
@@ -156,12 +168,12 @@ export default async function Pagina({
           />
           <Tarjeta
             titulo="Pendiente de factura"
-            valor={pesos(sum((r) => (r.factura ? 0 : r.total)))}
+            valor={pesos(sum((r) => r.porFacturar))}
           />
           <Tarjeta titulo="Abonado" valor={pesos(sum((r) => r.abonado))} />
           <Tarjeta
             titulo="Facturado"
-            valor={pesos(sum((r) => (r.factura ? r.total : 0)))}
+            valor={pesos(sum((r) => r.facturado))}
           />
         </div>
 
@@ -210,7 +222,7 @@ export default async function Pagina({
               r.saldo,
               r.estado,
               r.ultimo,
-              r.factura?.numero ?? "",
+              r.folios.join(" / "),
             ])}
             className="ml-auto"
           />
@@ -315,10 +327,22 @@ export default async function Pagina({
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      {r.factura ? (
-                        <span className="text-gray-700">{r.factura.numero}</span>
-                      ) : (
-                        <span className="text-amber-700">pendiente</span>
+                      {/* Los folios del pedido, y si todavia falta emitir,
+                          cuanto. Un pedido facturado a medias no es un pedido
+                          facturado. */}
+                      {r.folios.length > 0 && (
+                        <span
+                          className="text-gray-700"
+                          title={r.folios.join(" / ")}
+                        >
+                          {r.folios.slice(0, 2).join(" / ")}
+                          {r.folios.length > 2 ? ` +${r.folios.length - 2}` : ""}
+                        </span>
+                      )}
+                      {r.porFacturar > 0 && (
+                        <span className="text-amber-700 block">
+                          faltan {pesos(r.porFacturar)}
+                        </span>
                       )}
                     </td>
                   </tr>
