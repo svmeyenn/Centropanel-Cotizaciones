@@ -149,15 +149,31 @@ export default function EditorPedido({
     { rotulo: ROTULO_DESCUENTO_2, monto: descuento2 },
     { rotulo: ROTULO_DESCUENTO_3, monto: descuento3 },
   ].filter((x) => x.monto > 0);
-  const total = subtotal - descuento - descuento2 - descuento3;
+  const totalNeto = subtotal - descuento - descuento2 - descuento3;
+  // El pedido tiene que mostrar los mismos escalones que la cotizacion y la
+  // factura: neto, impuesto y bruto. La tasa sale de la cuenta del pedido
+  // --es la que se le aplico a esta venta-- y no de los parametros de hoy.
+  const tasaIva =
+    Number(cuenta.total_neto) > 0
+      ? Number(cuenta.iva) / Number(cuenta.total_neto)
+      : 0;
+  const iva = Math.round(totalNeto * tasaIva);
+  const totalBruto = totalNeto + iva;
+  // El recargo del medio de pago no se descuenta del precio: se suma sobre el
+  // total, para que a Centro Panel le llegue integro lo vendido.
+  const comisionPct = Number(cuenta.comision_pct ?? 0);
+  const totalAPagar =
+    comisionPct > 0 && comisionPct < 100
+      ? Math.round(totalBruto / (1 - comisionPct / 100))
+      : totalBruto;
   // Margen del pedido: el neto menos el costo de lo que se va a entregar. El
   // costo viene de la cotizacion de origen, congelado al vender.
   const costoPedido = ls.reduce(
     (s, l) => s + l.unidades * Number(costoPorLinea?.[l.id] ?? 0),
     0
   );
-  const margen = total - costoPedido;
-  const margenPct = total > 0 ? (margen / total) * 100 : 0;
+  const margen = totalNeto - costoPedido;
+  const margenPct = totalNeto > 0 ? (margen / totalNeto) * 100 : 0;
   // Un solo alto y un solo tamano de letra para todos los campos de la
   // cabecera, editables o no: antes los de solo lectura eran bloques grises
   // con letra grande y los editables cajas chicas, y la fila quedaba despareja.
@@ -407,59 +423,67 @@ export default function EditorPedido({
                   )}
                 </tr>
               ))}
-              {descuentos.length > 0 && (
-                <>
-                  <tr className="border-t-2 border-gray-300">
-                    <td className="px-3 py-2" colSpan={4}>
-                      SUBTOTAL
-                    </td>
-                    <td className="px-3 py-2 text-right">{pesos(subtotal)}</td>
-                    {!soloLectura && <td />}
-                  </tr>
-                  {descuentos.map((x) => (
-                    <tr key={x.rotulo} className="text-gray-600">
-                      <td className="px-3 py-1.5" colSpan={4}>
-                        {x.rotulo}
-                      </td>
-                      <td className="px-3 py-1.5 text-right">{pesos(x.monto)}</td>
-                      {!soloLectura && <td />}
-                    </tr>
-                  ))}
-                </>
-              )}
-              <tr className="border-t-2 border-gray-300 font-bold">
-                <td className="px-3 py-2" colSpan={4}>
-                  TOTAL NETO
-                </td>
-                <td className="px-3 py-2 text-right">{pesos(total)}</td>
-                {!soloLectura && <td />}
-              </tr>
-              {verMargen && (
-                <>
-                  <tr className="border-t border-gray-200 text-gray-600">
-                    <td className="px-3 py-1.5" colSpan={4}>
-                      Costo de lo pedido
-                    </td>
-                    <td className="px-3 py-1.5 text-right">{pesos(costoPedido)}</td>
-                    {!soloLectura && <td />}
-                  </tr>
-                  <tr className="bg-crema text-dorado-osc font-bold">
-                    <td className="px-3 py-1.5" colSpan={4}>
-                      MARGEN {porcentaje(margenPct)} %
-                      {lineasSinCosto > 0 && (
-                        <span className="ml-2 font-normal text-[11px] text-amber-700">
-                          ({lineasSinCosto} linea{lineasSinCosto > 1 ? "s" : ""} sin
-                          costo cargado)
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-1.5 text-right">{pesos(margen)}</td>
-                    {!soloLectura && <td />}
-                  </tr>
-                </>
-              )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Los totales van fuera de la tabla, en su propia columna a la derecha,
+          igual que en la cotizacion. Dentro de la tabla las cifras caian en la
+          columna del subtotal de cada linea y los rotulos se estiraban sobre
+          cuatro columnas: eso es lo que se veia corrido. */}
+      <div className="bg-white border border-gray-200 rounded px-3 py-2">
+        <div className="max-w-md ml-auto space-y-0.5 text-xs">
+          <Fila label="SUBTOTAL" valor={pesos(subtotal)} />
+          {descuentos.map((x) => (
+            <Fila key={x.rotulo} label={x.rotulo} valor={pesos(x.monto)} />
+          ))}
+          <Fila label="TOTAL NETO" valor={pesos(totalNeto)} fuerte />
+          <Fila
+            label={`${impuesto} ${Math.round(tasaIva * 100)}%`}
+            valor={pesos(iva)}
+          />
+          <div className="flex justify-between bg-verde text-white px-3 py-1 rounded font-bold">
+            <span>TOTAL</span>
+            <span>{pesos(totalBruto)}</span>
+          </div>
+
+          {verMargen && (
+            <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
+              <Fila label="Costo de lo pedido" valor={pesos(costoPedido)} />
+              <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
+                <span>
+                  MARGEN {porcentaje(margenPct)} %
+                  {lineasSinCosto > 0 && (
+                    <span className="ml-2 font-normal text-[11px] text-amber-700">
+                      ({lineasSinCosto} linea{lineasSinCosto > 1 ? "s" : ""} sin
+                      costo cargado)
+                    </span>
+                  )}
+                </span>
+                <span>{pesos(margen)}</span>
+              </div>
+            </div>
+          )}
+
+          {comisionPct > 0 && (
+            <>
+              <Fila
+                label={`Recargo ${porcentaje(comisionPct)} %${
+                  medioPago ? ` por ${medioPago}` : ""
+                }`}
+                valor={pesos(totalAPagar - totalBruto)}
+              />
+              <div className="flex justify-between bg-dorado-osc text-white px-3 py-1 rounded font-bold">
+                <span>TOTAL A PAGAR</span>
+                <span>{pesos(totalAPagar)}</span>
+              </div>
+              <p className="text-xs text-gray-500 text-right">
+                El total se divide por (1 - comision) para que el neto llegue
+                completo.
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -703,6 +727,25 @@ export default function EditorPedido({
       {esAdmin && (
         <BorrarPedido id={id} num={num} solicitudes={solicitudes.length} />
       )}
+    </div>
+  );
+}
+
+// Renglon de los totales: rotulo a la izquierda y cifra a la derecha. El
+// mismo que usa la cotizacion, para que los dos documentos se lean igual.
+function Fila({
+  label,
+  valor,
+  fuerte,
+}: {
+  label: string;
+  valor: string;
+  fuerte?: boolean;
+}) {
+  return (
+    <div className={`flex justify-between ${fuerte ? "font-bold" : ""}`}>
+      <span className="text-gray-700">{label}</span>
+      <span>{valor}</span>
     </div>
   );
 }
