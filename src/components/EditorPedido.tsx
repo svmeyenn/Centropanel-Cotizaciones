@@ -10,6 +10,7 @@ import {
   telefono as fmtTelefono,
 } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
+import BorrarPedido from "@/components/BorrarPedido";
 import {
   ROTULO_DESCUENTO_1,
   ROTULO_DESCUENTO_2,
@@ -696,6 +697,12 @@ export default function EditorPedido({
           />
         </label>
       </div>
+
+      {/* Ultimo de la ficha, y solo para el administrador: es lo unico que no
+          se puede deshacer. */}
+      {esAdmin && (
+        <BorrarPedido id={id} num={num} solicitudes={solicitudes.length} />
+      )}
     </div>
   );
 }
