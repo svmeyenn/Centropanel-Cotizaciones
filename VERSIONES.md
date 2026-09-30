@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0076-20260930**
+Version vigente: **v0077-20260930**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0077-20260930 | 30-09-2026 | El pedido se borra desde su propia ficha, y sus totales se leen como los de la cotizacion, con el impuesto y el bruto desglosados | 3febe97 |
 | v0076-20260930 | 30-09-2026 | Un pedido admite varios documentos tributarios: parcialidades contra los depositos y notas de credito, con el monto a mano o calculado | bf4bca7 |
 | v0075-20260929 | 29-09-2026 | En el PDF de la cotizacion cada producto ocupa una sola linea: las columnas numericas se fijan a lo que miden y la descripcion se queda con el resto | b5d7030 |
 | v0074-20260929 | 29-09-2026 | La cotizacion con una tarea vigente sale de la lista de sin respuesta: se sigue desde la bandeja de tareas | 1b36475 |
