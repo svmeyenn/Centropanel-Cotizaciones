@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0078-20260930**
+Version vigente: **v0079-20260930**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0079-20260930 | 30-09-2026 | Los datos para transferir de cada egreso pendiente se copian campo por campo desde la misma lista | 67e487f |
 | v0078-20260930 | 30-09-2026 | Fechas de entrega del pedido --comprometida y real-- con las entregas atrasadas y de las proximas dos semanas en el tablero; cabeceras agrupadas por tema y menu plegable por temas | 6db72df |
 | v0077-20260930 | 30-09-2026 | El pedido se borra desde su propia ficha, y sus totales se leen como los de la cotizacion, con el impuesto y el bruto desglosados | 3febe97 |
 | v0076-20260930 | 30-09-2026 | Un pedido admite varios documentos tributarios: parcialidades contra los depositos y notas de credito, con el monto a mano o calculado | bf4bca7 |
