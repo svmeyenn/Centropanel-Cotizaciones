@@ -59,13 +59,16 @@ export default async function Pagina({
         .eq("id_pedido", id)
         .order("fecha")
         .order("id"),
+      // Un pedido lleva varios documentos: el anticipo, el saldo, y a veces
+      // una nota de credito. Se listan en el orden en que se emitieron.
       supabase
         .from("facturas")
         .select(
-          "id, numero, fecha, neto, iva, total, archivo, archivo_nombre, vendedores(nombre)"
+          "id, tipo, numero, fecha, neto, iva, total, archivo, archivo_nombre, vendedores(nombre)"
         )
         .eq("id_pedido", id)
-        .maybeSingle(),
+        .order("fecha")
+        .order("id"),
     ]);
 
   if (!ped) notFound();
@@ -225,6 +228,8 @@ export default async function Pagina({
           abonado: Number(cta?.abonado ?? 0),
           saldo: Number(cta?.saldo ?? 0),
           pie_cubierto: Boolean(cta?.pie_cubierto),
+          facturado: Number(cta?.facturado ?? 0),
+          por_facturar: Number(cta?.por_facturar ?? 0),
         }}
         pagos={(pagos ?? []).map((g) => ({
           id: Number(g.id),
@@ -234,21 +239,21 @@ export default async function Pagina({
           referencia: g.referencia as string | null,
           quien: uno<{ nombre: string }>(g.vendedores)?.nombre ?? null,
         }))}
-        factura={
-          fact
-            ? ({
-                id: Number(fact.id),
-                numero: fact.numero as string,
-                fecha: fact.fecha as string,
-                neto: Number(fact.neto),
-                iva: Number(fact.iva),
-                total: Number(fact.total),
-                quien: uno<{ nombre: string }>(fact.vendedores)?.nombre ?? null,
-                archivo: (fact.archivo as string | null) ?? null,
-                archivo_nombre: (fact.archivo_nombre as string | null) ?? null,
-              } satisfies FacturaVista)
-            : null
-        }
+        facturas={(fact ?? []).map(
+          (f) =>
+            ({
+              id: Number(f.id),
+              tipo: (f.tipo as string) ?? "Factura",
+              numero: f.numero as string,
+              fecha: f.fecha as string,
+              neto: Number(f.neto),
+              iva: Number(f.iva),
+              total: Number(f.total),
+              quien: uno<{ nombre: string }>(f.vendedores)?.nombre ?? null,
+              archivo: (f.archivo as string | null) ?? null,
+              archivo_nombre: (f.archivo_nombre as string | null) ?? null,
+            }) satisfies FacturaVista
+        )}
         puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
         puedeCrear={v.puede_crear || tienePerfilAdmin(v)}
         esAdmin={tienePerfilAdmin(v)}

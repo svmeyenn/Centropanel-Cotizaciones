@@ -29,8 +29,8 @@ export default async function Pagina({
     .from("facturas")
     .select(
       idPaisActivo == null
-        ? "id, numero, fecha, neto, iva, total, archivo, pedidos(id, num_pedido, clientes(razon_social)), vendedores(nombre)"
-        : "id, numero, fecha, neto, iva, total, archivo, pedidos!inner(id, num_pedido, id_pais, clientes(razon_social)), vendedores(nombre)"
+        ? "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos(id, num_pedido, clientes(razon_social)), vendedores(nombre)"
+        : "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos!inner(id, num_pedido, id_pais, clientes(razon_social)), vendedores(nombre)"
     )
     .order("fecha", { ascending: false })
     .order("id", { ascending: false });
@@ -51,6 +51,7 @@ export default async function Pagina({
     const cli = uno<{ razon_social: string }>(ped?.clientes);
     return {
       id: Number(f.id),
+      tipo: (f.tipo as string) ?? "Factura",
       numero: f.numero as string,
       fecha: f.fecha as string,
       neto: Number(f.neto),
@@ -141,7 +142,8 @@ export default async function Pagina({
           <BotonExportarFilas
             nombre="facturas"
             titulos={[
-              "N factura",
+              "Numero",
+              "Documento",
               "Fecha",
               "Pedido",
               "Cliente",
@@ -152,6 +154,7 @@ export default async function Pagina({
             ]}
             filas={visibles.map((f) => [
               f.numero,
+              f.tipo,
               f.fecha,
               f.numPedido,
               f.cliente,
@@ -165,7 +168,7 @@ export default async function Pagina({
         </form>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Tarjeta titulo="Facturas" valor={String(visibles.length)} />
+          <Tarjeta titulo="Documentos" valor={String(visibles.length)} />
           <Tarjeta titulo="Neto" valor={pesos(totalNeto)} />
           <Tarjeta titulo={impuesto} valor={pesos(totalIva)} />
           <Tarjeta titulo="Total facturado" valor={pesos(total)} destacado />
@@ -185,7 +188,8 @@ export default async function Pagina({
             <table className="w-full text-xs">
               <thead className="bg-verde text-white">
                 <tr>
-                  <th className="text-left px-3 py-2 w-28">N factura</th>
+                  <th className="text-left px-3 py-2 w-28">Numero</th>
+                  <th className="text-left px-3 py-2 w-28">Documento</th>
                   <th className="text-left px-3 py-2 w-28">Fecha</th>
                   <th className="text-left px-3 py-2">Cliente</th>
                   <th className="text-left px-3 py-2 w-28">Pedido</th>
@@ -199,7 +203,7 @@ export default async function Pagina({
                 {visibles.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="px-3 py-6 text-center text-gray-500"
                     >
                       No hay facturas que cumplan el filtro.
@@ -213,6 +217,18 @@ export default async function Pagina({
                     >
                       <td className="px-3 py-2 font-semibold text-verde">
                         {f.numero}
+                      </td>
+                      {/* La nota de credito viaja en negativo, asi que los
+                          totales de abajo ya la restan; aqui solo hay que
+                          poder distinguirla de un vistazo. */}
+                      <td className="px-3 py-2">
+                        {f.tipo === "Nota de credito" ? (
+                          <span className="text-red-700 font-semibold">
+                            Nota de credito
+                          </span>
+                        ) : (
+                          <span className="text-gray-600">Factura</span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-gray-600">
                         {fmtFecha(f.fecha)}

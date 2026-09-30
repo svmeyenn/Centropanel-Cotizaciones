@@ -74,7 +74,7 @@ export default function EditorPedido({
   solicitudes,
   cuenta,
   pagos,
-  factura,
+  facturas,
   formaPago,
   medioPago,
   puedeEditar,
@@ -108,7 +108,7 @@ export default function EditorPedido({
   solicitudes: SolicitudVista[];
   cuenta: Cuenta;
   pagos: PagoVista[];
-  factura: FacturaVista | null;
+  facturas: FacturaVista[];
   formaPago: string | null;
   medioPago: string | null;
   puedeEditar: boolean;
@@ -668,9 +668,16 @@ export default function EditorPedido({
 
       <FacturaPedido
         idPedido={id}
-        factura={factura}
+        facturas={facturas}
         total={cuenta.total}
         saldo={cuenta.saldo}
+        abonado={cuenta.abonado}
+        facturado={cuenta.facturado}
+        porFacturar={cuenta.por_facturar}
+        pieMonto={cuenta.pie_monto}
+        // La tasa sale de la propia cuenta del pedido: es la que se le aplico
+        // a esta venta, no la que este vigente hoy en los parametros.
+        tasaIva={cuenta.total_neto > 0 ? cuenta.iva / cuenta.total_neto : 0}
         puedeCrear={puedeCrear}
         esAdmin={esAdmin}
       />

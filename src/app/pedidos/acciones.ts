@@ -212,13 +212,20 @@ export async function eliminarSolicitud(id: number, idPedido: number) {
 
 // --- facturacion ------------------------------------------------------------
 
-// Registrar la factura cierra el pedido. No emite el documento tributario:
-// eso lo hace el sistema de facturacion electronica, y aqui se guarda su
-// numero para amarrar pedido y factura.
+// Registra un documento tributario del pedido. No lo emite: eso lo hace el
+// sistema de facturacion electronica, y aqui se guarda su numero para amarrar
+// pedido y documento.
+//
+// Se factura contra los depositos del cliente, asi que un pedido puede llevar
+// varios documentos --anticipo, saldo-- y alguna nota de credito. El monto va
+// en bruto; sin monto se factura lo que falte. El pedido queda Facturado solo
+// cuando los documentos cubren el total: eso lo decide la base.
 export async function facturarPedido(
   idPedido: number,
   numero: string,
-  fecha: string
+  fecha: string,
+  monto?: number | null,
+  tipo: "Factura" | "Nota de credito" = "Factura"
 ) {
   const v = await requerirVendedor();
   if (!v.puede_crear && !tienePerfilAdmin(v)) {
@@ -231,13 +238,15 @@ export async function facturarPedido(
     p_numero: numero,
     p_fecha: fecha,
     p_vendedor: v.id,
+    p_monto: monto ?? null,
+    p_tipo: tipo,
   });
 
   if (error) {
     return {
       error:
         error.code === "23505"
-          ? "Ya existe una factura con ese numero."
+          ? `Ya existe un documento de esa serie con el numero ${numero.trim()}.`
           : error.message,
     };
   }
@@ -245,25 +254,26 @@ export async function facturarPedido(
   revalidatePath(`/pedidos/${idPedido}`);
   revalidatePath("/pedidos");
   revalidatePath("/cobranza");
+  revalidatePath("/facturas");
   return { ok: true, id: Number(data) };
 }
 
-// Anular la factura devuelve el pedido a Despachado: es la unica forma de
-// volver a facturarlo, y solo el administrador puede hacerlo.
+// Anular un documento deja el pedido con lo que quede facturado: la base
+// devuelve el estado que corresponda y reabre la obra si la venta ya no esta
+// facturada entera. Solo el administrador.
 export async function anularFactura(id: number, idPedido: number) {
   const v = await requerirVendedor();
   if (!tienePerfilAdmin(v)) {
-    return { error: "Solo el administrador puede anular una factura." };
+    return { error: "Solo el administrador puede anular un documento." };
   }
   const supabase = await createClient();
-  const { error } = await supabase.from("facturas").delete().eq("id", id);
+  const { error } = await supabase.rpc("anular_factura", { p_id: id });
   if (error) return { error: error.message };
-
-  await supabase.from("pedidos").update({ estado: "Despachado" }).eq("id", idPedido);
 
   revalidatePath(`/pedidos/${idPedido}`);
   revalidatePath("/pedidos");
   revalidatePath("/cobranza");
+  revalidatePath("/facturas");
   return { ok: true };
 }
 
