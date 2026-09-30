@@ -40,11 +40,45 @@ export type Proyecto = {
 // Como se nombra un proyecto en pantalla: la obra, su cliente y su pedido, en
 // ese orden. Se lee de lo general a lo particular, y el folio queda al final,
 // que es donde se va a mirar para distinguir dos obras del mismo cliente.
+//
+// La obra que nace de un pedido va sin guiones --"Paneles Juan Perez PED00012"--
+// y no pasa de 30 caracteres, para que entre en los selectores y en las
+// columnas de las listas sin partirse. Lo que se recorta es el cliente: el tipo
+// de obra y el folio son lo que la identifica.
+const TOPE_ETIQUETA = 30;
+
 export const etiquetaProyecto = (p: {
   nombre: string;
   num_pedido?: string | null;
   cliente?: string | null;
-}) => [p.nombre, p.cliente, p.num_pedido].filter(Boolean).join(" - ");
+}) => {
+  const cliente = (p.cliente ?? "").trim();
+  if (!p.num_pedido) {
+    // Las obras que no vienen de un pedido conservan el guion: sin folio que
+    // las cierre, "Otros Juan Perez" se lee como un solo nombre.
+    return [p.nombre, cliente].filter(Boolean).join(" - ");
+  }
+
+  const fijo = `${p.nombre} ${p.num_pedido}`;
+  const cabe = TOPE_ETIQUETA - fijo.length - 1;
+  if (!cliente || cabe <= 0) return fijo;
+
+  // Se corta por palabra entera mientras alcance. Si ni la primera palabra
+  // cabe --una razon social larga y sin espacios-- se corta donde sea, antes
+  // que devolver una etiqueta mas larga que el tope.
+  const podado = cliente
+    .slice(0, cabe + 1)
+    .replace(/\s+\S*$/, "")
+    .trim();
+  const corto =
+    cliente.length <= cabe
+      ? cliente
+      : podado.length > 0 && podado.length <= cabe
+        ? podado
+        : cliente.slice(0, cabe).trim();
+
+  return `${p.nombre} ${corto} ${p.num_pedido}`;
+};
 
 export type Categoria = {
   id_categoria: number;
