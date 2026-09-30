@@ -231,7 +231,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
                 Estado de pago
               </Link>
               <Link href="/facturas" className="text-verde font-semibold underline">
-                Facturas emitidas
+                Facturas y notas de credito
               </Link>
             </div>
           </div>

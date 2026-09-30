@@ -2,9 +2,12 @@ import type { Vendedor } from "@/types/database";
 import { administraUsuarios, tienePerfilAdmin } from "@/lib/sesion";
 
 // El menu del sistema, en un solo lugar: lo usan la barra lateral --siempre a
-// la vista-- y la portada. Van por concepto, siguiendo el recorrido real de una
-// venta: se cotiza, se produce, se cobra, se lleva la plata, y aparte estan las
-// maestras y la configuracion.
+// la vista-- y la portada.
+//
+// El orden sigue el recorrido del negocio y lo que se usa a diario: se vende,
+// se arma lo que se vende, se mueve la plata del dia, se cobra y se factura, y
+// al final se mira la caja. La configuracion queda ultima porque se toca una
+// vez y no todos los dias.
 export interface Opcion {
   texto: string;
   href: string;
@@ -41,47 +44,12 @@ export interface GrupoVisible {
 export const GRUPOS: Grupo[] = [
   {
     titulo: "Vender",
-    nota: "Del presupuesto al cierre con el cliente",
+    nota: "Del presupuesto al pedido en produccion",
     opciones: [
-      { texto: "Detalle de cotizacion", href: "/cotizaciones/nueva" },
+      { texto: "Nueva cotizacion", href: "/cotizaciones/nueva" },
       { texto: "Cotizaciones", href: "/cotizaciones" },
-      { texto: "Clientes", href: "/clientes" },
-    ],
-  },
-  {
-    titulo: "Producir",
-    nota: "Lo comprometido y lo que hay que comprar",
-    opciones: [
       { texto: "Pedidos", href: "/pedidos" },
-      { texto: "Proveedores", href: "/proveedores", soloAdmin: true },
-    ],
-  },
-  {
-    titulo: "Cobrar",
-    nota: "Estado de la cuenta de cada pedido",
-    opciones: [
-      { texto: "Estado de pago", href: "/cobranza" },
-      { texto: "Facturas emitidas", href: "/facturas" },
-    ],
-  },
-  {
-    titulo: "Finanzas",
-    nota: "La plata que entra, la que sale y lo que se rinde",
-    opciones: [
-      { texto: "Ingresos", href: "/ingresos", ve: (v) => v.fin_ver_ingresos },
-      { texto: "Egresos", href: "/egresos", ve: (v) => v.fin_ver_egresos },
-      {
-        texto: "Rendiciones de gastos",
-        href: "/rendiciones",
-        ve: (v) => v.fin_rendir_gastos || v.fin_pagar_gastos,
-      },
-      { texto: "Cartola consolidada", href: "/cartola", ve: (v) => v.fin_ver_cartola },
-      { texto: "Conciliacion bancaria", href: "/conciliacion", ve: (v) => v.fin_ver_cartola },
-      {
-        texto: "Resumen por proyecto",
-        href: "/resumen-proyecto",
-        ve: (v) => v.fin_ver_informes,
-      },
+      { texto: "Clientes", href: "/clientes" },
     ],
   },
   {
@@ -100,18 +68,57 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
+    titulo: "Movimientos",
+    nota: "La plata que sale, la que entra y con quien",
+    opciones: [
+      { texto: "Egresos", href: "/egresos", ve: (v) => v.fin_ver_egresos },
+      { texto: "Ingresos", href: "/ingresos", ve: (v) => v.fin_ver_ingresos },
+      {
+        texto: "Rendiciones de gastos",
+        href: "/rendiciones",
+        ve: (v) => v.fin_rendir_gastos || v.fin_pagar_gastos,
+      },
+      { texto: "Proveedores", href: "/proveedores", soloAdmin: true },
+      { texto: "Topes de gasto", href: "/topes", ve: (v) => v.fin_mantenedores },
+    ],
+  },
+  {
+    titulo: "Cobrar y facturar",
+    nota: "Estado de la cuenta de cada pedido",
+    opciones: [
+      { texto: "Estado de pago", href: "/cobranza" },
+      { texto: "Facturas y notas de credito", href: "/facturas" },
+      { texto: "Formas de pago", href: "/formas-pago" },
+    ],
+  },
+  {
+    titulo: "Caja",
+    nota: "Saldos, banco y resultado por obra",
+    opciones: [
+      { texto: "Cartola consolidada", href: "/cartola", ve: (v) => v.fin_ver_cartola },
+      {
+        texto: "Conciliacion bancaria",
+        href: "/conciliacion",
+        ve: (v) => v.fin_ver_cartola,
+      },
+      {
+        texto: "Resumen por proyecto",
+        href: "/resumen-proyecto",
+        ve: (v) => v.fin_ver_informes,
+      },
+    ],
+  },
+  {
     titulo: "Configuracion",
     nota: "Reglas del sistema y quien entra",
     opciones: [
-      { texto: "Formas de pago", href: "/formas-pago" },
-      { texto: "Vendedores y accesos", href: "/vendedores", soloUsuarios: true },
-      { texto: "Parametros", href: "/parametros", soloAdmin: true },
       {
         texto: "Cuentas, proyectos y categorias",
         href: "/mantenedores",
         ve: (v) => v.fin_mantenedores,
       },
-      { texto: "Topes de gasto", href: "/topes", ve: (v) => v.fin_mantenedores },
+      { texto: "Parametros", href: "/parametros", soloAdmin: true },
+      { texto: "Vendedores y accesos", href: "/vendedores", soloUsuarios: true },
     ],
   },
 ];
