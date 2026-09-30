@@ -92,7 +92,7 @@ export default async function Pagina() {
   return (
     <div className="min-h-screen">
       <Cabecera
-        titulo="Detalle de cotizacion"
+        titulo="Nueva cotizacion"
         subtitulo="Datos del cliente, items y valorizacion"
       />
       <EditorCotizacion

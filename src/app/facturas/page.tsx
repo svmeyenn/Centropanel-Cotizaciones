@@ -87,8 +87,8 @@ export default async function Pagina({
   return (
     <div className="min-h-screen">
       <Cabecera
-        titulo="Facturas emitidas"
-        subtitulo="Lo facturado, por cuanto y contra que pedido"
+        titulo="Facturas y notas de credito"
+        subtitulo="Lo emitido, por cuanto y contra que pedido"
       />
       <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
         <BarraNavegacion />
