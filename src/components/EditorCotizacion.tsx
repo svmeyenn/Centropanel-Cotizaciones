@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BuscadorProducto from "@/components/BuscadorProducto";
 import BotonDuplicar from "@/components/BotonDuplicar";
+import GrupoCabecera from "@/components/GrupoCabecera";
 import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
@@ -505,143 +506,167 @@ export default function EditorCotizacion(p: Props) {
         </div>
       )}
 
-      {/* cabecera */}
-      <div className="bg-white border border-gray-200 rounded px-3 py-2 grid md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-1.5">
-        <label className="text-xs md:col-span-3 lg:col-span-2">
-          <span className="flex items-center justify-between mb-0.5">
-            <span className="text-dorado-osc font-semibold">Cliente *</span>
-            {!soloLectura && p.puedeCrearPanel && (
+      {/* Cabecera por temas: a quien se le cotiza, que documento es, como se
+          paga y como se entrega. Antes eran siete campos seguidos en una sola
+          rejilla, sin decir cual iba con cual. */}
+      <div className="grid gap-3 lg:grid-cols-4">
+        <GrupoCabecera titulo="CLIENTE" className="lg:col-span-2" columnas="">
+          <label className="text-xs">
+            <span className="flex items-center justify-between mb-0.5">
+              <span className="text-dorado-osc font-semibold">Cliente *</span>
+              {!soloLectura && p.puedeCrearPanel && (
+                <button
+                  type="button"
+                  onClick={() => setModalCliente(true)}
+                  className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded"
+                  title="Crear un cliente sin salir de esta cotizacion"
+                >
+                  + Nuevo cliente
+                </button>
+              )}
+            </span>
+            <select
+              className={inputCls}
+              disabled={soloLectura}
+              value={d.id_cliente ?? ""}
+              onChange={(e) => elegirCliente(Number(e.target.value) || null)}
+            >
+              <option value="">-- elija --</option>
+              {listaClientes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.razon_social}
+                  {c.rut ? ` (${c.rut})` : ""}
+                </option>
+              ))}
+            </select>
+            <DatosDelCliente
+              cliente={clienteElegido}
+              etiqueta={
+                p.paises.find((x) => x.id === clienteElegido?.id_pais)
+                  ?.etiqueta_id ?? "RUT"
+              }
+            />
+            {clienteElegido && p.puedeEditar && (
               <button
                 type="button"
-                onClick={() => setModalCliente(true)}
-                className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded"
-                title="Crear un cliente sin salir de esta cotizacion"
+                onClick={() => setFichaCliente(true)}
+                className="mt-1 text-[11px] text-verde underline"
+                title="Completar o corregir los datos del cliente sin salir de aqui"
               >
-                + Nuevo cliente
+                Editar datos del cliente
               </button>
             )}
-          </span>
-          <select
-            className={inputCls}
-            disabled={soloLectura}
-            value={d.id_cliente ?? ""}
-            onChange={(e) => elegirCliente(Number(e.target.value) || null)}
-          >
-            <option value="">-- elija --</option>
-            {listaClientes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.razon_social}
-                {c.rut ? ` (${c.rut})` : ""}
-              </option>
-            ))}
-          </select>
-          <DatosDelCliente
-            cliente={clienteElegido}
-            etiqueta={
-              p.paises.find((x) => x.id === clienteElegido?.id_pais)?.etiqueta_id ?? "RUT"
-            }
-          />
-          {clienteElegido && p.puedeEditar && (
-            <button
-              type="button"
-              onClick={() => setFichaCliente(true)}
-              className="mt-1 text-[11px] text-verde underline"
-              title="Completar o corregir los datos del cliente sin salir de aqui"
-            >
-              Editar datos del cliente
-            </button>
-          )}
-        </label>
+          </label>
+        </GrupoCabecera>
 
-        <label className="text-xs md:col-span-2">
-          <span className="block text-dorado-osc font-semibold mb-0.5">
-            Forma de pago *
-          </span>
-          <select
-            className={inputCls}
-            disabled={soloLectura}
-            value={d.id_forma_pago ?? ""}
-            onChange={(e) => set("id_forma_pago", Number(e.target.value) || null)}
-          >
-            <option value="">-- elija --</option>
-            {formasDelPais.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.descripcion}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-xs">
-          <span className="block text-dorado-osc font-semibold mb-0.5">
-            Medio de pago *
-          </span>
-          <select
-            className={inputCls}
-            disabled={soloLectura}
-            value={d.id_medio_pago ?? ""}
-            onChange={(e) => set("id_medio_pago", Number(e.target.value) || null)}
-          >
-            <option value="">-- elija --</option>
-            {mediosDelPais.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.nombre}
-                {m.comision_pct > 0
-                  ? `  (comision ${porcentaje(m.comision_pct)} %)`
-                  : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-xs">
-          <span className="block text-dorado-osc font-semibold mb-0.5">Fecha</span>
-          <input
-            type="date"
-            className={inputCls}
-            disabled={soloLectura}
-            value={d.fecha}
-            onChange={(e) => set("fecha", e.target.value)}
-          />
-        </label>
-
-        <label className="text-xs">
-          <span className="block text-dorado-osc font-semibold mb-0.5">
-            Validez (dias)
-          </span>
-          <input
-            type="number"
-            className={inputCls}
-            disabled={soloLectura}
-            value={d.validez_dias}
-            onChange={(e) => set("validez_dias", Number(e.target.value) || 0)}
-          />
-          <span className="text-[11px] text-gray-500">
+        <GrupoCabecera titulo="DOCUMENTO">
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Fecha
+            </span>
+            <input
+              type="date"
+              className={inputCls}
+              disabled={soloLectura}
+              value={d.fecha}
+              onChange={(e) => set("fecha", e.target.value)}
+            />
+          </label>
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Validez (dias)
+            </span>
+            <input
+              type="number"
+              className={inputCls}
+              disabled={soloLectura}
+              value={d.validez_dias}
+              onChange={(e) => set("validez_dias", Number(e.target.value) || 0)}
+            />
+          </label>
+          <span className="sm:col-span-2 text-[11px] text-gray-500">
             Vence el {fmtFecha(sumarDias(d.fecha, d.validez_dias))}
           </span>
-        </label>
+        </GrupoCabecera>
 
-        <label className="text-xs">
-          <span className="block text-dorado-osc font-semibold mb-0.5">
-            Tiempo de entrega
-          </span>
-          <input
-            className={inputCls}
-            disabled={soloLectura}
-            value={d.tiempo_entrega}
-            onChange={(e) => set("tiempo_entrega", e.target.value)}
-          />
-        </label>
+        <GrupoCabecera titulo="PAGO" columnas="">
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Forma de pago *
+            </span>
+            <select
+              className={inputCls}
+              disabled={soloLectura}
+              value={d.id_forma_pago ?? ""}
+              onChange={(e) =>
+                set("id_forma_pago", Number(e.target.value) || null)
+              }
+            >
+              <option value="">-- elija --</option>
+              {formasDelPais.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.descripcion}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Medio de pago *
+            </span>
+            <select
+              className={inputCls}
+              disabled={soloLectura}
+              value={d.id_medio_pago ?? ""}
+              onChange={(e) =>
+                set("id_medio_pago", Number(e.target.value) || null)
+              }
+            >
+              <option value="">-- elija --</option>
+              {mediosDelPais.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nombre}
+                  {m.comision_pct > 0
+                    ? `  (comision ${porcentaje(m.comision_pct)} %)`
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        </GrupoCabecera>
 
-        <label className="text-xs md:col-span-2">
-          <span className="block text-dorado-osc font-semibold mb-0.5">Despachar a</span>
-          <input
-            className={inputCls}
-            disabled={soloLectura}
-            value={d.direccion_despacho}
-            onChange={(e) => set("direccion_despacho", e.target.value)}
-          />
-        </label>
+        <GrupoCabecera
+          titulo="ENTREGA"
+          className="lg:col-span-4"
+          columnas="sm:grid-cols-3"
+        >
+          <label className="text-xs sm:col-span-2">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Despachar a
+            </span>
+            <input
+              className={inputCls}
+              disabled={soloLectura}
+              value={d.direccion_despacho}
+              onChange={(e) => set("direccion_despacho", e.target.value)}
+            />
+          </label>
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Plazo de entrega
+            </span>
+            <input
+              className={inputCls}
+              disabled={soloLectura}
+              placeholder="15 dias habiles"
+              value={d.tiempo_entrega}
+              onChange={(e) => set("tiempo_entrega", e.target.value)}
+            />
+            <span className="block text-[11px] text-gray-500 mt-0.5">
+              La fecha comprometida se fija al generar el pedido.
+            </span>
+          </label>
+        </GrupoCabecera>
       </div>
 
       {/* agregar item */}

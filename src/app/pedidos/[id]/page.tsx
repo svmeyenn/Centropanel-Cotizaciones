@@ -205,6 +205,10 @@ export default async function Pagina({
           estado: ped.estado as string,
           direccion_despacho: (ped.direccion_despacho as string) ?? "",
           tiempo_entrega: (ped.tiempo_entrega as string) ?? "",
+          fecha_entrega_esperada:
+            ((ped.fecha_entrega_esperada as string) ?? "").slice(0, 10),
+          fecha_entrega_efectiva:
+            ((ped.fecha_entrega_efectiva as string) ?? "").slice(0, 10),
           notas: (ped.notas as string) ?? "",
         }}
         lineas={filas}

@@ -58,6 +58,17 @@ export interface Desempeno {
   pendientes: { id: number; fecha: string; cliente: string; total: number; dias: number }[];
   pendientes_n: number;
   pendientes_monto: number;
+  // Lo que hay que entregar: lo atrasado y las dos semanas que vienen.
+  entregas: {
+    id: number;
+    num: string;
+    entrega: string;
+    cliente: string;
+    total: number;
+    dias: number;
+  }[];
+  entregas_atrasadas: number;
+  entregas_proximas: number;
   serie: { mes: string; cotizado: number; vendido: number }[];
 }
 
@@ -292,6 +303,70 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
           </ul>
         </Caja>
       </div>
+
+      {(d.entregas?.length ?? 0) > 0 && (
+        <div className="bg-white border border-gray-200 rounded overflow-hidden">
+          <div className="bg-crema text-verde text-[11px] font-semibold px-2.5 py-1.5 flex flex-wrap justify-between gap-2">
+            <span>ENTREGAS: ATRASADAS Y DE LAS PROXIMAS DOS SEMANAS</span>
+            <span>
+              {d.entregas_atrasadas > 0 && (
+                <span className="text-red-700">
+                  {d.entregas_atrasadas} atrasada
+                  {d.entregas_atrasadas > 1 ? "s" : ""}
+                </span>
+              )}
+              {d.entregas_atrasadas > 0 && d.entregas_proximas > 0 ? " · " : ""}
+              {d.entregas_proximas > 0 && (
+                <span>{d.entregas_proximas} por venir</span>
+              )}
+            </span>
+          </div>
+          <p className="px-2.5 pt-1.5 text-[10px] text-gray-500">
+            Sale de la fecha comprometida del pedido. Al anotar la entrega real
+            el pedido deja esta lista, este facturado o no.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <tbody>
+                {d.entregas.map((e) => (
+                  <tr key={e.id} className="border-t border-gray-100">
+                    <td className="px-2.5 py-1.5 w-24">
+                      <Link
+                        href={`/pedidos/${e.id}`}
+                        className="text-verde font-semibold underline"
+                      >
+                        {e.num}
+                      </Link>
+                    </td>
+                    <td className="px-2.5 py-1.5">
+                      {e.cliente || "(sin cliente)"}
+                    </td>
+                    <td className="px-2.5 py-1.5 text-gray-600 w-28">
+                      {fmtFecha(e.entrega)}
+                    </td>
+                    <td className="px-2.5 py-1.5 text-right w-32">
+                      {pesos(e.total)}
+                    </td>
+                    {/* El numero de dias dice mas que la fecha: "hace 4 dias"
+                        se entiende sin contar en el calendario. */}
+                    <td
+                      className={`px-2.5 py-1.5 text-right w-36 font-semibold ${
+                        e.dias < 0 ? "text-red-700" : "text-gray-700"
+                      }`}
+                    >
+                      {e.dias < 0
+                        ? `atrasada ${-e.dias} dia${-e.dias > 1 ? "s" : ""}`
+                        : e.dias === 0
+                          ? "hoy"
+                          : `en ${e.dias} dia${e.dias > 1 ? "s" : ""}`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {d.pendientes.length > 0 && (
         <div className="bg-white border border-dorado rounded overflow-hidden">

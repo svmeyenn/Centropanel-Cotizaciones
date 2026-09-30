@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { generarPedido } from "@/app/pedidos/acciones";
+import { hoyISO } from "@/lib/formato";
 
 // Emitir el pedido a partir de la cotizacion. Se pide confirmacion porque el
 // paso no se deshace desde la aplicacion: la cotizacion queda congelada.
@@ -20,6 +21,7 @@ export default function BotonGenerarPedido({
 }) {
   const router = useRouter();
   const [confirmar, setConfirmar] = useState(false);
+  const [entrega, setEntrega] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -66,11 +68,30 @@ export default function BotonGenerarPedido({
             deja de poder modificarse</strong>. Lo que se edite despues se edita
             en el pedido. Esto no se deshace desde el sistema.
           </p>
+          {/* La fecha comprometida se pide aqui, que es cuando se conversa con
+              el cliente. De ella salen los avisos de entrega del tablero. */}
+          <label className="text-xs block">
+            <span className="block text-dorado-osc font-semibold mb-1">
+              Fecha comprometida de entrega
+            </span>
+            <input
+              type="date"
+              className="border border-gray-300 rounded px-2 py-1 text-sm w-44"
+              min={hoyISO()}
+              value={entrega}
+              onChange={(e) => setEntrega(e.target.value)}
+            />
+            <span className="block text-amber-900 mt-1">
+              {entrega
+                ? "Se puede corregir despues en la ficha del pedido."
+                : "Sin fecha, el pedido no aparece en las entregas del tablero."}
+            </span>
+          </label>
           <div className="flex gap-2">
             <button
               onClick={() =>
                 empezar(async () => {
-                  const r = await generarPedido(idCotizacion);
+                  const r = await generarPedido(idCotizacion, entrega);
                   if (r?.error) {
                     setError(r.error);
                     setConfirmar(false);

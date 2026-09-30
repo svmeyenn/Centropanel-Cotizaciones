@@ -9,7 +9,10 @@ import { ESQUEMA } from "@/lib/supabase/esquema";
 // en la base, en una sola transaccion: copia cabecera y lineas y deja la
 // cotizacion Aceptada. Si se hiciera por pasos desde aqui, un fallo a mitad
 // dejaria una cotizacion aceptada sin pedido.
-export async function generarPedido(idCotizacion: number) {
+export async function generarPedido(
+  idCotizacion: number,
+  entrega?: string | null
+) {
   const v = await requerirVendedor();
   if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite generar pedidos." };
@@ -18,6 +21,9 @@ export async function generarPedido(idCotizacion: number) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("generar_pedido", {
     p_cotizacion: idCotizacion,
+    // La fecha comprometida se pide aqui, que es cuando se sabe: despues
+    // nadie vuelve a la ficha a ponerla.
+    p_entrega: entrega || null,
   });
 
   if (error) return { error: error.message };
@@ -33,6 +39,11 @@ export interface DatosPedido {
   estado: string;
   direccion_despacho: string;
   tiempo_entrega: string;
+  // La comprometida con el cliente y la que ocurrio de verdad. El plazo en
+  // palabras sirve para el documento; estas dos son las que dicen si la
+  // entrega esta encima o ya se paso.
+  fecha_entrega_esperada: string;
+  fecha_entrega_efectiva: string;
   notas: string;
 }
 
@@ -49,6 +60,8 @@ export async function actualizarPedido(id: number, d: DatosPedido) {
       estado: d.estado,
       direccion_despacho: d.direccion_despacho.trim() || null,
       tiempo_entrega: d.tiempo_entrega.trim() || null,
+      fecha_entrega_esperada: d.fecha_entrega_esperada || null,
+      fecha_entrega_efectiva: d.fecha_entrega_efectiva || null,
       notas: d.notas.trim() || null,
     })
     .eq("id", id);
@@ -225,7 +238,8 @@ export async function facturarPedido(
   numero: string,
   fecha: string,
   monto?: number | null,
-  tipo: "Factura" | "Nota de credito" = "Factura"
+  tipo: "Factura" | "Nota de credito" = "Factura",
+  entrega?: string | null
 ) {
   const v = await requerirVendedor();
   if (!v.puede_crear && !tienePerfilAdmin(v)) {
@@ -240,6 +254,9 @@ export async function facturarPedido(
     p_vendedor: v.id,
     p_monto: monto ?? null,
     p_tipo: tipo,
+    // Facturar es el ultimo momento en que alguien mira ese pedido: si la
+    // entrega real no estaba anotada, se anota aqui.
+    p_entrega: entrega || null,
   });
 
   if (error) {

@@ -44,6 +44,7 @@ export default function FacturaPedido({
   porFacturar,
   pieMonto,
   tasaIva,
+  entregaEfectiva,
   puedeCrear,
   esAdmin,
 }: {
@@ -56,6 +57,9 @@ export default function FacturaPedido({
   porFacturar: number;
   pieMonto: number;
   tasaIva: number;
+  // Fecha real de entrega del pedido, si ya esta anotada. Si falta se pide
+  // aqui: facturar es el ultimo momento en que alguien mira este pedido.
+  entregaEfectiva: string | null;
   puedeCrear: boolean;
   esAdmin: boolean;
 }) {
@@ -68,6 +72,7 @@ export default function FacturaPedido({
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
   const [adjunto, setAdjunto] = useState<File | null>(null);
+  const [entrega, setEntrega] = useState("");
 
   const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
   const esNota = tipo === NOTA;
@@ -101,7 +106,8 @@ export default function FacturaPedido({
         numero,
         fecha,
         monto.trim() === "" ? null : montoNum,
-        esNota ? NOTA : "Factura"
+        esNota ? NOTA : "Factura",
+        entrega
       );
       if (r?.error) {
         setError(r.error);
@@ -324,6 +330,24 @@ export default function FacturaPedido({
                   "Indique el monto del documento."
                 )}
               </p>
+
+              {!esNota && !entregaEfectiva && (
+                <label className="text-xs block">
+                  <span className="block text-dorado-osc font-semibold mb-1">
+                    Fecha en que se entrego
+                  </span>
+                  <input
+                    type="date"
+                    className="border border-gray-300 rounded px-2 py-1 text-sm w-44"
+                    value={entrega}
+                    onChange={(e) => setEntrega(e.target.value)}
+                  />
+                  <span className="block text-gray-500 mt-1">
+                    El pedido todavia no la tiene anotada. Queda registrada con
+                    el documento; se puede corregir en la ficha.
+                  </span>
+                </label>
+              )}
 
               <label className="text-xs block">
                 <span className="block text-dorado-osc font-semibold mb-1">
