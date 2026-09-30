@@ -11,10 +11,12 @@ import {
   fechaDeRegistro,
   type Categoria,
   type Cuenta,
+  type CuentaInterlocutor,
   type Interlocutor,
   type Movimiento,
   type Proyecto,
 } from "@/lib/finanzas/tipos";
+import DatosTransferencia from "./DatosTransferencia";
 import FormularioEgreso from "./FormularioEgreso";
 import DialogoPagar from "./DialogoPagar";
 
@@ -29,6 +31,7 @@ export default function TablaEgresos({
   proyectos,
   categorias,
   interlocutores,
+  cuentasInterlocutores,
   vendedores,
   puedeSolicitar,
   puedePagar,
@@ -40,6 +43,9 @@ export default function TablaEgresos({
   proyectos: Proyecto[];
   categorias: Categoria[];
   interlocutores: Interlocutor[];
+  // Las cuentas bancarias de cada destinatario: son los datos con que se paga
+  // un egreso pendiente, y se copian desde esta misma lista.
+  cuentasInterlocutores: CuentaInterlocutor[];
   vendedores: { id: number; nombre: string }[];
   puedeSolicitar: boolean;
   puedePagar: boolean;
@@ -50,6 +56,7 @@ export default function TablaEgresos({
   const [editando, setEditando] = useState<Movimiento | null>(null);
   const [creando, setCreando] = useState(false);
   const [pagando, setPagando] = useState<Movimiento | null>(null);
+  const [copiando, setCopiando] = useState<Movimiento | null>(null);
   const [aviso, setAviso] = useState("");
   const [colapsados, setColapsados] = useState<Set<string>>(new Set());
 
@@ -160,6 +167,18 @@ export default function TablaEgresos({
         // fuera de la pantalla y el boton de pagar no se veia.
         <td className="px-3 py-2 whitespace-nowrap sticky right-0 bg-white group-hover:bg-crema border-l border-gray-100">
           <div className="flex gap-1.5 justify-end">
+            {m.estado_pago === "Pendiente" && (
+              // Los datos de la transferencia se copian desde aqui: pagar es
+              // salir a la lista, abrir la ficha y volver, y en el camino se
+              // pierde el numero de cuenta.
+              <button
+                className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
+                onClick={() => setCopiando(m)}
+                title="Copiar los datos para transferir"
+              >
+                Datos
+              </button>
+            )}
             {puedePagar && m.estado_pago === "Pendiente" && (
               <button
                 className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded"
@@ -274,7 +293,7 @@ export default function TablaEgresos({
                   Solicito
                 </th>
                 {(puedeEditar || puedePagar) && (
-                  <th className="px-3 py-2 w-[10%] min-w-[7.5rem] sticky right-0 bg-verde" />
+                  <th className="px-3 py-2 w-[10%] min-w-[11rem] sticky right-0 bg-verde" />
                 )}
               </tr>
             </thead>
@@ -334,6 +353,21 @@ export default function TablaEgresos({
             if (mensaje) setAviso(mensaje);
             router.refresh();
           }}
+        />
+      )}
+
+      {copiando && (
+        <DatosTransferencia
+          movimiento={copiando}
+          interlocutor={
+            interlocutores.find(
+              (x) => x.id_interlocutor === copiando.id_interlocutor
+            ) ?? null
+          }
+          cuentas={cuentasInterlocutores.filter(
+            (c) => c.id_interlocutor === copiando.id_interlocutor
+          )}
+          alCerrar={() => setCopiando(null)}
         />
       )}
 
