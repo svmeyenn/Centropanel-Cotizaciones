@@ -18,6 +18,7 @@ import {
 } from "@/lib/fichas";
 import {
   cambiarActivoFicha,
+  eliminarFicha,
   guardarFicha,
   juntarFichas,
   type ResultadoFicha,
@@ -93,6 +94,10 @@ export default function GestorFichas({
 
   const [abierta, setAbierta] = useState<number | null>(null);
   const [creando, setCreando] = useState(false);
+  // La ficha se abre para mirarla o para cambiarla. Abrirla siempre editable
+  // invita a tocar lo que solo se venia a consultar.
+  const [modo, setModo] = useState<"ver" | "editar">("ver");
+  const [borrando, setBorrando] = useState<Ficha | null>(null);
   const [form, setForm] = useState<DatosFicha>(vacia(paisPorDefecto, "cliente"));
   const [filasBanco, setFilasBanco] = useState<CuentaBancaria[]>([{ ...CUENTA_VACIA }]);
   const [resultado, setResultado] = useState<ResultadoFicha | null>(null);
@@ -125,9 +130,10 @@ export default function GestorFichas({
     ? TIPOS_FICHA
     : TIPOS_FICHA.filter((t) => t.tipo === "cliente");
 
-  function abrir(f: Ficha) {
+  function abrir(f: Ficha, como: "ver" | "editar" = "ver") {
     setAbierta(f.id_entidad);
     setCreando(false);
+    setModo(puedeEditar ? como : "ver");
     setResultado(null);
     setJuntarCon("");
     setForm({
@@ -151,6 +157,7 @@ export default function GestorFichas({
   function nueva() {
     setCreando(true);
     setAbierta(null);
+    setModo("editar");
     setResultado(null);
     setJuntarCon("");
     setForm(vacia(paisPorDefecto, filtro === "todos" ? "cliente" : filtro));
@@ -191,6 +198,9 @@ export default function GestorFichas({
 
   const faltan = faltantesFicha(form, veFinanzas ? filasBanco : []);
   const laAbierta = fichas.find((f) => f.id_entidad === abierta) ?? null;
+  // Un solo interruptor para toda la ventana: o se esta mirando, o se esta
+  // cambiando.
+  const bloqueado = !puedeEditar || modo === "ver";
 
   return (
     <div className="space-y-3">
@@ -272,7 +282,7 @@ export default function GestorFichas({
                 <th className="text-left px-3 py-2">Contacto</th>
                 <th className="text-left px-3 py-2 w-32">Telefono</th>
                 <th className="text-left px-3 py-2 w-16">Estado</th>
-                {puedeEditar && <th className="w-28" />}
+                <th className="w-56" />
               </tr>
             </thead>
             <tbody>
@@ -321,26 +331,46 @@ export default function GestorFichas({
                       <span className="text-gray-400">Inactiva</span>
                     )}
                   </td>
-                  {puedeEditar && (
-                    <td className="px-2 py-2 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => abrir(f)}
-                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-1.5"
-                      >
-                        abrir
-                      </button>
-                      <button
-                        onClick={() =>
-                          empezar(async () => {
-                            await cambiarActivoFicha(f.id_entidad, !f.activo);
-                          })
-                        }
-                        className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-1 rounded bg-white"
-                      >
-                        {f.activo ? "desactivar" : "activar"}
-                      </button>
-                    </td>
-                  )}
+                  <td className="px-2 py-2 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => abrir(f, "ver")}
+                      className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-1 rounded bg-white mr-1"
+                    >
+                      ver
+                    </button>
+                    {puedeEditar && (
+                      <>
+                        <button
+                          onClick={() => abrir(f, "editar")}
+                          className="bg-verde text-white text-xs font-semibold px-2 py-1 rounded mr-1"
+                        >
+                          editar
+                        </button>
+                        <button
+                          onClick={() =>
+                            empezar(async () => {
+                              await cambiarActivoFicha(f.id_entidad, !f.activo);
+                            })
+                          }
+                          className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-1 rounded bg-white mr-1"
+                          title={
+                            f.activo
+                              ? "La saca de los selectores sin tocar su historial"
+                              : "La devuelve a los selectores"
+                          }
+                        >
+                          {f.activo ? "desactivar" : "activar"}
+                        </button>
+                        <button
+                          onClick={() => setBorrando(f)}
+                          className="border border-gray-300 text-red-700 text-xs font-semibold px-2 py-1 rounded bg-white"
+                          title="Solo si no tiene cotizaciones ni movimientos"
+                        >
+                          eliminar
+                        </button>
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -348,9 +378,65 @@ export default function GestorFichas({
         </div>
       </div>
 
+      {/* Eliminar es lo unico que no se puede deshacer, asi que se pregunta.
+          La base rechaza el borrado si la ficha tiene cotizaciones, pedidos o
+          movimientos: ahi el camino es desactivarla. */}
+      {borrando && (
+        <Ventana
+          titulo="Eliminar la ficha"
+          subtitulo={borrando.razon_social}
+          ancho="max-w-md"
+          onCerrar={() => setBorrando(null)}
+        >
+          <p className="text-xs text-gray-700">
+            Se elimina la ficha con sus marcas y sus datos bancarios. No se puede
+            deshacer.
+          </p>
+          <p className="text-[11px] text-gray-500 mt-1">
+            Si tiene cotizaciones, pedidos o movimientos detras no se va a poder:
+            el historial quedaria sin nombre. Para esas use <strong>desactivar</strong>,
+            que la saca de los selectores y deja todo lo demas intacto.
+          </p>
+          <div className="flex gap-2 justify-end pt-3">
+            <button
+              className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
+              onClick={() => setBorrando(null)}
+              disabled={pendiente}
+            >
+              Cancelar
+            </button>
+            <button
+              className="bg-red-700 text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+              disabled={pendiente}
+              onClick={() => {
+                const f = borrando;
+                setBorrando(null);
+                empezar(async () => {
+                  const r = await eliminarFicha(f.id_entidad);
+                  if (r.error) setResultado({ error: r.error });
+                  else setAviso(r.mensaje ?? "Ficha eliminada.");
+                });
+              }}
+            >
+              Eliminarla
+            </button>
+          </div>
+        </Ventana>
+      )}
+
+      {/* Un error del borrado no tiene ventana propia: se muestra arriba, donde
+          se mira la lista. */}
+      {resultado?.error && abierta === null && !creando && (
+        <p className="bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2">
+          {resultado.error}
+        </p>
+      )}
+
       {(abierta !== null || creando) && (
         <Ventana
-          titulo={creando ? "Nueva ficha" : puedeEditar ? "Ficha" : "Ficha (solo lectura)"}
+          titulo={
+            creando ? "Nueva ficha" : modo === "editar" ? "Modificar ficha" : "Ficha"
+          }
           subtitulo={creando ? undefined : form.razon_social}
           onCerrar={cerrar}
         >
@@ -360,7 +446,7 @@ export default function GestorFichas({
                 <span className={ROTULO}>Razon social *</span>
                 <input
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   value={form.razon_social}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -379,7 +465,7 @@ export default function GestorFichas({
                 <span className={ROTULO}>Nombre corto *</span>
                 <input
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   value={form.nombre_referencia}
                   onChange={(e) =>
                     setForm({ ...form, nombre_referencia: e.target.value })
@@ -401,7 +487,7 @@ export default function GestorFichas({
                     <input
                       type="checkbox"
                       className="mt-0.5"
-                      disabled={!puedeEditar}
+                      disabled={bloqueado}
                       checked={form.tipos.includes(t.tipo)}
                       onChange={(e) => marcar(t.tipo, e.target.checked)}
                     />
@@ -425,7 +511,7 @@ export default function GestorFichas({
                 <span className={ROTULO}>{etiquetaId}</span>
                 <input
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   value={form.rut}
                   placeholder="12.345.678-9"
                   onChange={(e) => setForm({ ...form, rut: e.target.value })}
@@ -438,7 +524,7 @@ export default function GestorFichas({
                 </span>
                 <input
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   value={form.contacto}
                   onChange={(e) => setForm({ ...form, contacto: e.target.value })}
                 />
@@ -447,7 +533,7 @@ export default function GestorFichas({
                 <span className={ROTULO}>Correo</span>
                 <input
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />
@@ -461,7 +547,7 @@ export default function GestorFichas({
                   onChange={(v) => setForm({ ...form, telefono: v })}
                   prefijo={prefijo}
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   requerido={form.tipos.includes("cliente")}
                 />
               </label>
@@ -469,7 +555,7 @@ export default function GestorFichas({
                 <span className={ROTULO}>Direccion</span>
                 <input
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   value={form.direccion}
                   onChange={(e) => setForm({ ...form, direccion: e.target.value })}
                 />
@@ -478,7 +564,7 @@ export default function GestorFichas({
                 <span className={ROTULO}>Comuna</span>
                 <input
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   value={form.comuna}
                   onChange={(e) => setForm({ ...form, comuna: e.target.value })}
                 />
@@ -489,7 +575,7 @@ export default function GestorFichas({
                 </span>
                 <input
                   className={CAMPO}
-                  disabled={!puedeEditar}
+                  disabled={bloqueado}
                   value={form.ciudad}
                   onChange={(e) => setForm({ ...form, ciudad: e.target.value })}
                 />
@@ -499,7 +585,7 @@ export default function GestorFichas({
                   <span className={ROTULO}>Mercado</span>
                   <select
                     className={CAMPO}
-                    disabled={!esAdminGeneral || !puedeEditar}
+                    disabled={!esAdminGeneral || bloqueado}
                     value={form.id_pais ?? ""}
                     onChange={(e) =>
                       setForm({ ...form, id_pais: Number(e.target.value) || null })
@@ -524,7 +610,7 @@ export default function GestorFichas({
                   <input
                     type="checkbox"
                     className="mt-0.5"
-                    disabled={!puedeEditar}
+                    disabled={bloqueado}
                     checked={form.con_transferencia}
                     onChange={(e) =>
                       setForm({ ...form, con_transferencia: e.target.checked })
@@ -549,7 +635,7 @@ export default function GestorFichas({
                         <span className={ROTULO}>Banco</span>
                         <input
                           className={CAMPO}
-                          disabled={!puedeEditar}
+                          disabled={bloqueado}
                           value={c.banco}
                           onChange={(e) =>
                             setFilasBanco((fs) =>
@@ -564,7 +650,7 @@ export default function GestorFichas({
                         <span className={ROTULO}>Tipo</span>
                         <select
                           className={CAMPO}
-                          disabled={!puedeEditar}
+                          disabled={bloqueado}
                           value={c.tipo_cuenta}
                           onChange={(e) =>
                             setFilasBanco((fs) =>
@@ -586,7 +672,7 @@ export default function GestorFichas({
                         <span className={ROTULO}>Numero</span>
                         <input
                           className={CAMPO}
-                          disabled={!puedeEditar}
+                          disabled={bloqueado}
                           value={c.numero_cuenta}
                           onChange={(e) =>
                             setFilasBanco((fs) =>
@@ -603,7 +689,7 @@ export default function GestorFichas({
                           <input
                             type="email"
                             className={CAMPO}
-                            disabled={!puedeEditar}
+                            disabled={bloqueado}
                             value={c.email}
                             onChange={(e) =>
                               setFilasBanco((fs) =>
@@ -614,7 +700,7 @@ export default function GestorFichas({
                             }
                           />
                         </label>
-                        {filasBanco.length > 1 && puedeEditar && (
+                        {filasBanco.length > 1 && !bloqueado && (
                           <button
                             type="button"
                             className="border border-gray-300 text-gray-700 text-xs px-2 py-1 rounded bg-white"
@@ -629,7 +715,7 @@ export default function GestorFichas({
                     </div>
                   ))}
 
-                {form.con_transferencia && puedeEditar && (
+                {form.con_transferencia && !bloqueado && (
                   <button
                     type="button"
                     className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
@@ -679,7 +765,17 @@ export default function GestorFichas({
             )}
 
             <div className="flex gap-2 justify-end">
-              {puedeEditar && (
+              {/* Mirando la ficha solo se puede pasar a modificarla; los
+                  botones que cambian algo aparecen recien ahi. */}
+              {bloqueado && puedeEditar && !creando && (
+                <button
+                  onClick={() => setModo("editar")}
+                  className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded"
+                >
+                  Modificar
+                </button>
+              )}
+              {!bloqueado && (
                 <button
                   onClick={() => grabar(false)}
                   disabled={pendiente || faltan.length > 0}
@@ -701,7 +797,7 @@ export default function GestorFichas({
             {/* Juntar dos fichas repetidas. Va al final y aparte: mueve
                 cotizaciones, pedidos y movimientos de una a la otra y no se
                 deshace. */}
-            {laAbierta && puedeJuntar && (
+            {laAbierta && puedeJuntar && !bloqueado && (
               <div className="border-t border-gray-200 pt-2 space-y-1.5">
                 <p className="text-xs font-semibold text-dorado-osc">
                   Esta ficha esta repetida
