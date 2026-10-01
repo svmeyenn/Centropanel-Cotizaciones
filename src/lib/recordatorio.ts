@@ -29,7 +29,7 @@ export async function clientesIncompletos(
   const { data } = await supabase
     .from("cotizaciones")
     .select(
-      "num_cotizacion, clientes(id, razon_social, email, ciudad, comuna, contacto)"
+      "num_cotizacion, clientes:entidades(id:id_entidad, razon_social, email, ciudad, comuna, contacto)"
     )
     .eq("id_vendedor", v.id)
     .order("id", { ascending: false })

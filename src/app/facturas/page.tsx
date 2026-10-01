@@ -29,8 +29,8 @@ export default async function Pagina({
     .from("facturas")
     .select(
       idPaisActivo == null
-        ? "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos(id, num_pedido, clientes(razon_social)), vendedores(nombre)"
-        : "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos!inner(id, num_pedido, id_pais, clientes(razon_social)), vendedores(nombre)"
+        ? "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos(id, num_pedido, clientes:entidades(razon_social)), vendedores(nombre)"
+        : "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos!inner(id, num_pedido, id_pais, clientes:entidades(razon_social)), vendedores(nombre)"
     )
     .order("fecha", { ascending: false })
     .order("id", { ascending: false });

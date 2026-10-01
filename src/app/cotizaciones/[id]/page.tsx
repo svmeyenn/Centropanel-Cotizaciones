@@ -55,7 +55,7 @@ export default async function Pagina({
     supabase
       .from("cotizaciones")
       .select(
-        "*, clientes(razon_social, contacto, email, telefono), vendedores(nombre, cargo, email, telefono)"
+        "*, clientes:entidades(razon_social, contacto, email, telefono), vendedores(nombre, cargo, email, telefono)"
       )
       .eq("id", id)
       .single(),

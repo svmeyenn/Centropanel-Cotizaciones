@@ -68,7 +68,7 @@ export default async function Pagina({
     supabase
       .from("cotizaciones")
       .select(
-        "id, num_cotizacion, fecha, estado, id_pais, clientes(razon_social, rut, contacto, comuna), vendedores(nombre)"
+        "id, num_cotizacion, fecha, estado, id_pais, clientes:entidades(razon_social, rut, contacto, comuna), vendedores(nombre)"
       ),
     idPaisActivo
   )

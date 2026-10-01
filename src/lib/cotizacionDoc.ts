@@ -18,7 +18,7 @@ export async function leerCotizacionDoc(id: number): Promise<{
     supabase
       .from("cotizaciones")
       .select(
-        "*, clientes(razon_social, rut, contacto, email, telefono), vendedores(nombre, cargo, email, telefono), formas_pago(descripcion), medios_pago(nombre, comision_pct)"
+        "*, clientes:entidades(razon_social, rut, contacto, email, telefono), vendedores(nombre, cargo, email, telefono), formas_pago(descripcion), medios_pago(nombre, comision_pct)"
       )
       .eq("id", id)
       .single(),
