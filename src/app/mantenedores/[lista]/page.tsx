@@ -30,11 +30,6 @@ const LISTAS: Record<
     titulo: "Proyectos y clientes",
     subtitulo: "Las obras a las que se imputa cada movimiento",
   },
-  interlocutores: {
-    pestana: "Interlocutores",
-    titulo: "Interlocutores",
-    subtitulo: "A quien le pagamos y quien nos deposita",
-  },
   categorias: {
     pestana: "Categorias",
     titulo: "Categorias",
@@ -48,6 +43,9 @@ export default async function Pagina({
   params: Promise<{ lista: string }>;
 }) {
   const { lista } = await params;
+  // Los interlocutores se unieron con los clientes en una sola lista. Quien
+  // tenga la direccion vieja guardada llega igual a donde estan ahora.
+  if (lista === "interlocutores") redirect("/clientes?tipo=proveedor");
   const cual = LISTAS[lista];
   if (!cual) notFound();
 

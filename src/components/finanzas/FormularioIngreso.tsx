@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import Ventana from "@/components/Ventana";
+import Bitacora from "@/components/Bitacora";
 import {
   borrarIngreso,
   guardarIngreso,
@@ -264,6 +265,8 @@ export default function FormularioIngreso({
           </button>
         </div>
       </form>
+
+      {movimiento && <Bitacora tabla="movimientos" id={movimiento.id_mov} />}
 
       {confirmandoBorrado && movimiento && (
         <Ventana

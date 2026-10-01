@@ -49,6 +49,9 @@ export const GRUPOS: Grupo[] = [
       { texto: "Nueva cotizacion", href: "/cotizaciones/nueva" },
       { texto: "Cotizaciones", href: "/cotizaciones" },
       { texto: "Pedidos", href: "/pedidos" },
+      // La misma pantalla que "Clientes y proveedores" de Configuracion: la
+      // ficha es una sola. Quien vende entra por aqui y la ve filtrada en los
+      // clientes; quien maneja la plata entra por alla y ve todas.
       { texto: "Clientes", href: "/clientes" },
     ],
   },
@@ -125,8 +128,8 @@ export const GRUPOS: Grupo[] = [
         ve: (v) => v.fin_mantenedores,
       },
       {
-        texto: "Interlocutores",
-        href: "/mantenedores/interlocutores",
+        texto: "Clientes y proveedores",
+        href: "/clientes",
         ve: (v) => v.fin_mantenedores,
       },
       {
