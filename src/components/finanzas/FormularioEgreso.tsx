@@ -6,6 +6,7 @@ import { useActionState, useEffect, useState } from "react";
 // respaldos.
 const TOPE_ADJUNTOS = 4 * 1024 * 1024;
 import Ventana from "@/components/Ventana";
+import Bitacora from "@/components/Bitacora";
 import {
   borrarEgreso,
   crearSolicitudEgreso,
@@ -304,6 +305,8 @@ export default function FormularioEgreso({
           </button>
         </div>
       </form>
+
+      {movimiento && <Bitacora tabla="movimientos" id={movimiento.id_mov} />}
 
       {confirmandoBorrado && movimiento && (
         <Ventana

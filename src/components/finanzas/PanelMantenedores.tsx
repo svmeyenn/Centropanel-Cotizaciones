@@ -33,12 +33,15 @@ const BOTON_CLARO =
 
 export type Pestana = "Cuentas" | "Proyectos" | "Categorias" | "Interlocutores";
 
-// Cada lista tiene su propia direccion, y estas son las otras tres a las que
-// se puede saltar sin volver al menu.
+// Cada lista tiene su propia direccion, y estas son las otras a las que se
+// puede saltar sin volver al menu.
+//
+// Los interlocutores ya no estan aqui: se unieron con los clientes en una sola
+// lista, en /clientes. La pestaña se saco pero el codigo que la dibujaba sigue
+// en este archivo hasta que se limpie.
 const PESTANAS: { pestana: Pestana; href: string }[] = [
   { pestana: "Cuentas", href: "/mantenedores/cuentas" },
   { pestana: "Proyectos", href: "/mantenedores/proyectos" },
-  { pestana: "Interlocutores", href: "/mantenedores/interlocutores" },
   { pestana: "Categorias", href: "/mantenedores/categorias" },
 ];
 

@@ -9,6 +9,7 @@ import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
 import Ventana from "@/components/Ventana";
+import Bitacora from "@/components/Bitacora";
 import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
 import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { MateriaVenta } from "@/components/Configurador";
@@ -943,6 +944,8 @@ export default function EditorCotizacion(p: Props) {
           )}
         </div>
       </div>
+
+      {p.id && <Bitacora tabla="cotizaciones" id={p.id} />}
 
       {recordarCrm && (
         <Ventana

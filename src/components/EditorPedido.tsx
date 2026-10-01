@@ -13,6 +13,7 @@ import {
 import BotonDuplicar from "@/components/BotonDuplicar";
 import GrupoCabecera from "@/components/GrupoCabecera";
 import BorrarPedido from "@/components/BorrarPedido";
+import Bitacora from "@/components/Bitacora";
 import {
   ROTULO_DESCUENTO_1,
   ROTULO_DESCUENTO_2,
@@ -811,6 +812,8 @@ export default function EditorPedido({
           />
         </label>
       </div>
+
+      <Bitacora tabla="pedidos" id={id} />
 
       {/* Ultimo de la ficha, y solo para el administrador: es lo unico que no
           se puede deshacer. */}
