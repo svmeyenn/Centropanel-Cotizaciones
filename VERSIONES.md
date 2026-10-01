@@ -5,10 +5,13 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0080-20260930**
+Version vigente: **v0083-20261001**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0083-20261001 | 01-10-2026 | Clientes e interlocutores pasan a ser una sola ficha, con una marca por cada cosa que es; cada cambio del sistema queda anotado con fecha, persona y valores de antes y despues | 2909136 |
+| v0082-20261001 | 01-10-2026 | Menu desplegable al pasar el cursor, las cuatro listas de finanzas con su propia entrada, aviso de ficha repetida, recordatorio de Clientify y lo facturado del mes en el tablero | 94c3e7d |
+| v0081-20261001 | 01-10-2026 | La obra de un pedido se nombra sin guiones y en 30 caracteres, abreviando el cliente por pasos | bdc4bb1 |
 | v0080-20260930 | 30-09-2026 | La ventana del egreso trae todos sus campos para copiar, y el respaldo adjunto solo para verlo | 4d42fa7 |
 | v0079-20260930 | 30-09-2026 | Los datos para transferir de cada egreso pendiente se copian campo por campo desde la misma lista | 67e487f |
 | v0078-20260930 | 30-09-2026 | Fechas de entrega del pedido --comprometida y real-- con las entregas atrasadas y de las proximas dos semanas en el tablero; cabeceras agrupadas por tema y menu plegable por temas | 6db72df |
