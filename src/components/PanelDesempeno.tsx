@@ -376,6 +376,15 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-[11px]">
+              <thead className="bg-crema text-dorado-osc">
+                <tr>
+                  <th className="text-left px-2.5 py-1 w-24">Pedido</th>
+                  <th className="text-left px-2.5 py-1">Cliente</th>
+                  <th className="text-left px-2.5 py-1 w-28">Comprometida</th>
+                  <th className="text-right px-2.5 py-1 w-32">Total</th>
+                  <th className="text-right px-2.5 py-1 w-36">Plazo</th>
+                </tr>
+              </thead>
               <tbody>
                 {d.entregas.map((e) => (
                   <tr key={e.id} className="border-t border-gray-100">

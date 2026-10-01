@@ -230,3 +230,19 @@ export async function juntarFichas(mantener: number, absorber: number) {
   revalidatePath("/ingresos");
   return { ok: true, mensaje: data as string };
 }
+
+// Eliminar una ficha de verdad. La base solo la deja borrar si no tiene nada
+// detras: con una cotizacion o un movimiento encima, el historial quedaria
+// apuntando a un numero que ya no existe, y para eso esta desactivarla.
+export async function eliminarFicha(id: number) {
+  const p = await permisos();
+  if (!p.puedeEditar) return { error: "Su perfil no permite eliminar fichas." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("borrar_entidad", { p_id: id });
+  if (error) return { error: error.message };
+
+  revalidatePath("/clientes");
+  revalidatePath("/cotizaciones");
+  return { ok: true, mensaje: (data as string) ?? "Ficha eliminada." };
+}
