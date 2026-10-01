@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { buscarParecidos, type Parecido } from "@/lib/finanzas/parecidos";
 import type { Vendedor } from "@/types/database";
 
 export type Resultado = { ok: boolean; mensaje?: string };
@@ -10,6 +11,9 @@ export type Resultado = { ok: boolean; mensaje?: string };
 export type ResultadoInterlocutor = Resultado & {
   id_interlocutor?: number;
   nombre_referencia?: string;
+  // Fichas que podrian ser la misma persona. Llegan cuando el alta se frena
+  // para preguntar; la pantalla decide si insiste.
+  parecidos?: Parecido[];
 };
 
 const texto = (v: FormDataEntryValue | null) => {
@@ -25,7 +29,9 @@ function leerMonto(v: FormDataEntryValue | null): number {
 }
 
 function refrescar() {
-  revalidatePath("/mantenedores");
+  // Las cuatro listas viven en su propia direccion: se refrescan todas, que
+  // es mas barato que acertar cual se toco.
+  revalidatePath("/mantenedores", "layout");
   revalidatePath("/ingresos");
   revalidatePath("/egresos");
   revalidatePath("/cartola");
@@ -339,6 +345,31 @@ export async function guardarInterlocutor(
   const fila = { razon_social, nombre_referencia, rut, con_transferencia };
   const idPais = await paisElegido(v, d);
   const id = d.get("id_interlocutor");
+
+  // Antes de crear uno nuevo se mira si ya esta: la misma ficha cargada dos
+  // veces con el nombre escrito distinto deja los datos bancarios repartidos
+  // entre las dos, y al pagar nadie sabe cual es la buena. No se bloquea --dos
+  // personas pueden llamarse igual--; se avisa y la pantalla insiste si
+  // corresponde.
+  if (!id && d.get("crear_igual") !== "on") {
+    const { data: fichas } = await supabase
+      .from("interlocutores")
+      .select("id_interlocutor, razon_social, nombre_referencia, rut, borrado");
+    const parecidos = buscarParecidos(
+      { razon_social, nombre_referencia, rut },
+      (fichas ?? []) as Parameters<typeof buscarParecidos>[1]
+    );
+    if (parecidos.length > 0) {
+      return {
+        ok: false,
+        mensaje:
+          parecidos.length === 1
+            ? "Ya hay una ficha que podria ser la misma."
+            : `Hay ${parecidos.length} fichas que podrian ser la misma.`,
+        parecidos,
+      };
+    }
+  }
   if (id && idPais) {
     const n = await movimientosDeOtroMercado(
       "id_interlocutor",

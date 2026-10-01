@@ -43,41 +43,94 @@ export type Proyecto = {
 //
 // La obra que nace de un pedido va sin guiones --"Paneles Juan Perez PED00012"--
 // y no pasa de 30 caracteres, para que entre en los selectores y en las
-// columnas de las listas sin partirse. Lo que se recorta es el cliente: el tipo
-// de obra y el folio son lo que la identifica.
+// columnas de las listas sin partirse.
+//
+// Lo que se recorta es el cliente, y por pasos: primero su nombre de pila
+// queda en la inicial ("J. Perez") y despues se va entero, dejando el apellido
+// ("Perez"). El tipo de obra y sobre todo el folio no se tocan: el folio es lo
+// unico que distingue dos obras del mismo cliente.
 const TOPE_ETIQUETA = 30;
+
+// Lo que delata a una empresa. Una razon social se abrevia al reves que una
+// persona: de "CONSTRUCTORA SANTA MARIA LTDA" lo que identifica es el
+// principio, no el final.
+const SUFIJOS_EMPRESA = [
+  "SPA",
+  "S.A.",
+  "SA",
+  "LTDA",
+  "LIMITADA",
+  "EIRL",
+  "E.I.R.L.",
+  "S.A.C.",
+  "SAC",
+  "SRL",
+];
+
+// Las formas de escribir un nombre, de la que mas dice a la que menos: entera,
+// con el nombre de pila en la inicial, sin el nombre de pila, los dos
+// apellidos y el apellido paterno solo. Se usa la primera que quepa, no la
+// mas corta: "G. Parra" dice mas que "Guillermo".
+function formasDelNombre(cliente: string): string[] {
+  const partes = cliente.split(" ").filter(Boolean);
+  if (partes.length < 2) return [cliente];
+
+  const ultima = partes[partes.length - 1].toUpperCase().replace(/[.,]+$/, "");
+  const esEmpresa = SUFIJOS_EMPRESA.includes(ultima) ||
+    SUFIJOS_EMPRESA.includes(partes[partes.length - 1].toUpperCase());
+
+  if (esEmpresa) {
+    // Se van soltando palabras por el final, que es donde esta el tipo de
+    // sociedad y el relleno.
+    const sinSufijo = partes.slice(0, -1);
+    return sinSufijo
+      .map((_, i) => sinSufijo.slice(0, sinSufijo.length - i).join(" "))
+      .filter(Boolean);
+  }
+
+  const [pila, ...resto] = partes;
+  const formas = [
+    cliente,
+    `${pila.charAt(0).toUpperCase()}. ${resto.join(" ")}`,
+    resto.join(" "),
+    partes.slice(-2).join(" "),
+    // El paterno: en un nombre de pila mas dos apellidos es la penultima
+    // palabra, y es lo ultimo que se puede soltar sin perder de quien se
+    // trata.
+    partes[partes.length - 2],
+  ];
+
+  return [...new Set(formas)].filter(Boolean);
+}
 
 export const etiquetaProyecto = (p: {
   nombre: string;
   num_pedido?: string | null;
   cliente?: string | null;
 }) => {
-  const cliente = (p.cliente ?? "").trim();
+  // Un solo espacio entre palabras: los nombres vienen tecleados a mano y
+  // traen espacios de mas que en la etiqueta se notan.
+  const cliente = (p.cliente ?? "").replace(/\s+/g, " ").trim();
+  const nombre = p.nombre.replace(/\s+/g, " ").trim();
+
   if (!p.num_pedido) {
     // Las obras que no vienen de un pedido conservan el guion: sin folio que
     // las cierre, "Otros Juan Perez" se lee como un solo nombre.
-    return [p.nombre, cliente].filter(Boolean).join(" - ");
+    return [nombre, cliente].filter(Boolean).join(" - ");
   }
 
-  const fijo = `${p.nombre} ${p.num_pedido}`;
+  const folio = p.num_pedido.trim();
+  const fijo = `${nombre} ${folio}`;
   const cabe = TOPE_ETIQUETA - fijo.length - 1;
   if (!cliente || cabe <= 0) return fijo;
 
-  // Se corta por palabra entera mientras alcance. Si ni la primera palabra
-  // cabe --una razon social larga y sin espacios-- se corta donde sea, antes
-  // que devolver una etiqueta mas larga que el tope.
-  const podado = cliente
-    .slice(0, cabe + 1)
-    .replace(/\s+\S*$/, "")
-    .trim();
-  const corto =
-    cliente.length <= cabe
-      ? cliente
-      : podado.length > 0 && podado.length <= cabe
-        ? podado
-        : cliente.slice(0, cabe).trim();
+  const forma =
+    formasDelNombre(cliente).find((x) => x.length <= cabe) ??
+    // Ni el apellido solo cabe --una razon social larga-- y se corta donde
+    // sea, antes que devolver una etiqueta mas larga que el tope.
+    cliente.slice(0, cabe).trim();
 
-  return `${p.nombre} ${corto} ${p.num_pedido}`;
+  return `${nombre} ${forma} ${folio}`;
 };
 
 export type Categoria = {
