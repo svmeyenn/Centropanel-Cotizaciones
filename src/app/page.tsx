@@ -2,6 +2,7 @@ import BandaDivisas from "@/components/BandaDivisas";
 import Cabecera from "@/components/Cabecera";
 import PanelDesempeno, { type Desempeno } from "@/components/PanelDesempeno";
 import TareasPendientes, { type Tarea } from "@/components/TareasPendientes";
+import PanelSeguimiento, { type Seguimiento } from "@/components/PanelSeguimiento";
 import { cargarParidades } from "@/lib/divisas";
 import {
   contextoMercado,
@@ -43,6 +44,15 @@ export default async function Home({
     p_mes: /^\d{4}-\d{2}$/.test(mes ?? "") ? `${mes}-01` : null,
   });
   const desempeno = panel as Desempeno | null;
+
+  // Si el seguimiento se esta haciendo. Va en una consulta aparte de la del
+  // desempeno porque mide otra cosa --no cuanto se vendio, sino si lo que se
+  // promete se cumple-- y porque asi el tablero de ventas no carga con ella.
+  const { data: seg } = await supabase.rpc("panel_seguimiento", {
+    p_pais: idPaisActivo,
+    p_mes: /^\d{4}-\d{2}$/.test(mes ?? "") ? `${mes}-01` : null,
+  });
+  const seguimiento = seg as Seguimiento | null;
 
   // Lo comprometido en las bitacoras y todavia no hecho. Un vendedor ve lo
   // suyo; quien dirige ve lo del equipo, que es lo que necesita para saber que
@@ -88,6 +98,8 @@ export default async function Home({
           puedeCerrar={v.puede_editar}
           soloMias={soloMias}
         />
+
+        {seguimiento && <PanelSeguimiento s={seguimiento} />}
 
         {/* Version vigente: sube con cada entrega a produccion (VERSIONES.md).
             En pruebas se aclara que hay cambios que aun no estan en ella. */}

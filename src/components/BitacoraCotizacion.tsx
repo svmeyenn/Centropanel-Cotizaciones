@@ -2,11 +2,14 @@
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Bitacora from "@/components/Bitacora";
 import {
+  caducarAccion,
   marcarAccionHecha,
   reabrirAccion,
   reasignarTarea,
   registrarActividad,
+  revocarCaducidad,
   type Resultado,
 } from "@/app/cotizaciones/actividad";
 
@@ -23,7 +26,10 @@ export type Actividad = {
   proxima_fecha: string | null;
   ejecutada_en: string | null;
   ejecutor_nombre: string | null;
-  estado_proxima: "Vigente" | "Vencida" | "Ejecutada" | null;
+  caducada_en: string | null;
+  caducador_nombre: string | null;
+  motivo_caduca: string | null;
+  estado_proxima: "Vigente" | "Vencida" | "Ejecutada" | "Caduca" | null;
 };
 
 const CAMPO = "border border-gray-300 rounded px-2 py-0.5 text-xs w-full bg-white";
@@ -35,6 +41,7 @@ const TONO: Record<string, string> = {
   Vigente: "bg-crema text-verde border-verde",
   Vencida: "bg-red-50 text-red-700 border-red-300",
   Ejecutada: "bg-verde text-white border-verde",
+  Caduca: "bg-gray-100 text-gray-500 border-gray-300 line-through",
 };
 
 // Fecha y hora en que quedo escrito, en hora de Chile: el registro se guarda
@@ -75,6 +82,10 @@ export default function BitacoraCotizacion({
   const [enCurso, comenzar] = useTransition();
   const [aviso, setAviso] = useState("");
   const [conAccion, setConAccion] = useState(false);
+  // Caducar pide un motivo escrito, asi que el boton no actua de inmediato:
+  // abre el campo para esa accion y recien despues se confirma.
+  const [caducando, setCaducando] = useState<number | null>(null);
+  const [motivo, setMotivo] = useState("");
 
   const [estado, enviar, pendiente] = useActionState<Resultado | null, FormData>(
     registrarActividad,
@@ -273,8 +284,8 @@ export default function BitacoraCotizacion({
                   )}
 
                   {puedeEscribir && (
-                    <span className="ml-auto">
-                      {a.estado_proxima === "Ejecutada" ? (
+                    <span className="ml-auto flex gap-1.5">
+                      {a.estado_proxima === "Ejecutada" && (
                         <button
                           className={BOTON_CLARO}
                           disabled={enCurso}
@@ -284,25 +295,122 @@ export default function BitacoraCotizacion({
                         >
                           Reabrir
                         </button>
-                      ) : (
+                      )}
+
+                      {/* Revivir una accion caduca la vuelve a dejar
+                          pendiente. Solo quien administra: caducar es dejar
+                          escrito que algo no se hizo, y si cualquiera pudiera
+                          borrar ese registro no valdria como registro. */}
+                      {a.estado_proxima === "Caduca" && puedeAsignar && (
                         <button
-                          className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded disabled:opacity-50"
+                          className={BOTON_CLARO}
                           disabled={enCurso}
                           onClick={() =>
-                            correr(() => marcarAccionHecha(a.id, idCotizacion))
+                            correr(() => revocarCaducidad(a.id, idCotizacion))
                           }
                         >
-                          Ya esta hecha
+                          Revivir
                         </button>
+                      )}
+
+                      {(a.estado_proxima === "Vigente" ||
+                        a.estado_proxima === "Vencida") && (
+                        <>
+                          <button
+                            className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded disabled:opacity-50"
+                            disabled={enCurso}
+                            onClick={() =>
+                              correr(() => marcarAccionHecha(a.id, idCotizacion))
+                            }
+                          >
+                            Ya esta hecha
+                          </button>
+                          <button
+                            className={BOTON_CLARO}
+                            disabled={enCurso}
+                            onClick={() => {
+                              setCaducando(a.id);
+                              setMotivo("");
+                            }}
+                          >
+                            Dar por caduca
+                          </button>
+                        </>
                       )}
                     </span>
                   )}
                 </div>
               )}
+
+              {/* Caducar no se hace de un clic: hay que decir por que no se
+                  va a hacer. Dentro de seis meses "no se hizo" no le sirve a
+                  nadie. */}
+              {caducando === a.id && (
+                <div className="mt-1 bg-amber-50 border border-amber-300 rounded px-2 py-1.5 space-y-1.5">
+                  <label className="block text-[11px] text-amber-900 font-semibold">
+                    Por que esta accion ya no se va a hacer
+                  </label>
+                  <input
+                    className={CAMPO}
+                    autoFocus
+                    value={motivo}
+                    maxLength={300}
+                    placeholder="El cliente compro en otro lado"
+                    onChange={(e) => setMotivo(e.target.value)}
+                  />
+                  <p className="text-[11px] text-amber-900">
+                    Queda escrito que se comprometio y no se cumplio. Solo un
+                    administrador puede deshacerlo.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      className="bg-dorado-osc text-white text-xs font-semibold px-2 py-0.5 rounded disabled:opacity-50"
+                      disabled={enCurso || !motivo.trim()}
+                      onClick={() => {
+                        setCaducando(null);
+                        correr(() => caducarAccion(a.id, idCotizacion, motivo));
+                      }}
+                    >
+                      Darla por caduca
+                    </button>
+                    <button
+                      className={BOTON_CLARO}
+                      disabled={enCurso}
+                      onClick={() => setCaducando(null)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {a.estado_proxima === "Caduca" && (
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Caduca: {a.motivo_caduca}
+                  {a.caducador_nombre ? ` (${a.caducador_nombre}` : ""}
+                  {a.caducador_nombre && a.caducada_en
+                    ? `, ${soloDia(a.caducada_en)})`
+                    : a.caducador_nombre
+                      ? ")"
+                      : ""}
+                </p>
+              )}
             </li>
           ))}
         </ul>
       )}
+
+      {/* Lo que se hablo con el cliente y lo que le paso al documento son dos
+          mitades de la misma historia: el precio que se bajo el martes explica
+          la llamada del jueves. El enlace las junta sin llenar esta lista de
+          anotaciones automaticas. */}
+      <div className="border-t border-gray-200 px-3 py-1.5">
+        <Bitacora
+          tabla="cotizaciones"
+          id={idCotizacion}
+          etiqueta="Ver que cambio en el documento (precios, estado, fechas)"
+        />
+      </div>
     </div>
   );
 }
