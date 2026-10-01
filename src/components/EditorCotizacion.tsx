@@ -8,6 +8,7 @@ import GrupoCabecera from "@/components/GrupoCabecera";
 import Link from "next/link";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import ModalNuevoPanel from "@/components/ModalNuevoPanel";
+import Ventana from "@/components/Ventana";
 import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
 import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { MateriaVenta } from "@/components/Configurador";
@@ -379,6 +380,11 @@ export default function EditorCotizacion(p: Props) {
       else {
         setAviso("Cambios grabados.");
         setEditable(false);
+        // La cotizacion vive aqui, pero la oportunidad vive en Clientify: si
+        // no se crea ahi, el embudo comercial queda contando de menos. El
+        // recordatorio sale solo al nacer la cotizacion, no cada vez que se
+        // graba un cambio.
+        if (p.modo === "crear") setRecordarCrm(true);
       }
     });
   }
@@ -386,6 +392,7 @@ export default function EditorCotizacion(p: Props) {
   // Empezar otra cotizacion sin salir de la pantalla. Si hay algo escrito se
   // pide confirmar: limpiar no se puede deshacer y perder una cotizacion a
   // medio armar es caro.
+  const [recordarCrm, setRecordarCrm] = useState(false);
   const [confirmarNueva, setConfirmarNueva] = useState(false);
   const hayAlgoEscrito =
     d.items.length > 0 || d.id_cliente != null || d.notas.trim() !== "";
@@ -936,6 +943,39 @@ export default function EditorCotizacion(p: Props) {
           )}
         </div>
       </div>
+
+      {recordarCrm && (
+        <Ventana
+          titulo="Falta la oportunidad en Clientify"
+          subtitulo="La cotizacion quedo grabada"
+          onCerrar={() => setRecordarCrm(false)}
+          ancho="max-w-md"
+        >
+          <p className="text-xs text-gray-700">
+            Cree la oportunidad en Clientify y deje su estado al dia. La
+            cotizacion vive en este sistema, pero el embudo comercial se mira
+            alla: lo que no esta cargado no se pronostica ni se hace
+            seguimiento.
+          </p>
+          <div className="flex gap-2 justify-end pt-3">
+            <a
+              href="https://app.clientify.net/"
+              target="_blank"
+              rel="noreferrer"
+              className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
+            >
+              Abrir Clientify
+            </a>
+            <button
+              type="button"
+              onClick={() => setRecordarCrm(false)}
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+            >
+              Entendido
+            </button>
+          </div>
+        </Ventana>
+      )}
 
       {/* notas */}
       <div className="bg-white border border-gray-200 rounded px-3 py-2">

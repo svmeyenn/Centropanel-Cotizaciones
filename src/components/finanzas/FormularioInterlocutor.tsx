@@ -63,6 +63,9 @@ export default function FormularioInterlocutor({
   const [conTransferencia, setConTransferencia] = useState(
     interlocutor?.con_transferencia ?? false
   );
+  // Cuando el servidor avisa que la ficha ya podria existir, el formulario
+  // guarda ese aviso y solo insiste si la persona lo pide.
+  const [crearIgual, setCrearIgual] = useState(false);
   const [filas, setFilas] = useState<FilaCuenta[]>(
     cuentas.length > 0
       ? cuentas.map((c) => ({
@@ -95,6 +98,7 @@ export default function FormularioInterlocutor({
           value={interlocutor.id_interlocutor}
         />
       )}
+      {crearIgual && <input type="hidden" name="crear_igual" value="on" />}
 
       <div>
         <label className={ROTULO}>Razon social *</label>
@@ -241,10 +245,51 @@ export default function FormularioInterlocutor({
         </div>
       )}
 
-      {estado && !estado.ok && (
-        <p className="sm:col-span-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2">
-          {estado.mensaje}
-        </p>
+      {estado && !estado.ok && (estado.parecidos?.length ?? 0) > 0 ? (
+        <div className="sm:col-span-2 bg-amber-50 border border-amber-300 rounded px-3 py-2 space-y-1.5">
+          <p className="text-xs text-amber-900 font-semibold">
+            {estado.mensaje}
+          </p>
+          <ul className="text-xs text-amber-900 space-y-0.5">
+            {estado.parecidos?.map((x) => (
+              <li key={x.id}>
+                <strong>{x.nombre}</strong>
+                {x.rut ? ` · ${x.rut}` : ""} — {x.motivo}
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-amber-900">
+            Si es la misma, cancele y use la que ya existe. Si de verdad es otra
+            --dos personas pueden llamarse igual-- siga adelante.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              onClick={() => setCrearIgual(true)}
+              className="bg-dorado-osc text-white text-xs font-semibold px-2.5 py-1 rounded"
+              disabled={pendiente}
+            >
+              Crear de todos modos
+            </button>
+            {alCancelar && (
+              <button
+                type="button"
+                className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
+                onClick={alCancelar}
+                disabled={pendiente}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        estado &&
+        !estado.ok && (
+          <p className="sm:col-span-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2">
+            {estado.mensaje}
+          </p>
+        )
       )}
 
       <div className="sm:col-span-2 flex gap-2 justify-end pt-1">

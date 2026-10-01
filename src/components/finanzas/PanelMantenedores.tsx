@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Ventana from "@/components/Ventana";
 import BotonExportarFilas from "@/components/BotonExportarFilas";
@@ -30,18 +31,22 @@ const BOTON = "bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded";
 const BOTON_CLARO =
   "border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white whitespace-nowrap";
 
-type Pestana = "Cuentas" | "Proyectos" | "Categorias" | "Interlocutores";
-const PESTANAS: Pestana[] = [
-  "Cuentas",
-  "Proyectos",
-  "Categorias",
-  "Interlocutores",
+export type Pestana = "Cuentas" | "Proyectos" | "Categorias" | "Interlocutores";
+
+// Cada lista tiene su propia direccion, y estas son las otras tres a las que
+// se puede saltar sin volver al menu.
+const PESTANAS: { pestana: Pestana; href: string }[] = [
+  { pestana: "Cuentas", href: "/mantenedores/cuentas" },
+  { pestana: "Proyectos", href: "/mantenedores/proyectos" },
+  { pestana: "Interlocutores", href: "/mantenedores/interlocutores" },
+  { pestana: "Categorias", href: "/mantenedores/categorias" },
 ];
 
 // Las listas con que se clasifica cada movimiento. Nada se borra de verdad:
 // lo eliminado desaparece de los selectores pero los movimientos que ya lo
 // usaban siguen mostrando su nombre.
 export default function PanelMantenedores({
+  pestana,
   cuentas,
   proyectos,
   categorias,
@@ -51,6 +56,7 @@ export default function PanelMantenedores({
   mercados,
   mercadoActivo,
 }: {
+  pestana: Pestana;
   cuentas: Cuenta[];
   proyectos: Proyecto[];
   categorias: Categoria[];
@@ -93,8 +99,13 @@ export default function PanelMantenedores({
       </div>
     ) : null;
 
-  const [pestana, setPestana] = useState<Pestana>("Cuentas");
   const [busca, setBusca] = useState("");
+  // Vigencia de los proyectos que se listan. Las obras cerradas no se borran
+  // --sus movimientos las siguen usando-- pero estorban cuando lo que se
+  // busca es una obra viva, que es casi siempre.
+  const [vigencia, setVigencia] = useState<"vigentes" | "inactivos" | "todos">(
+    "vigentes"
+  );
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
   const [pendiente, empezar] = useTransition();
@@ -140,9 +151,14 @@ export default function PanelMantenedores({
       proyectos.filter(
         (p) =>
           !p.borrado &&
-          (!q || `${p.nombre} ${p.cliente ?? ""}`.toLowerCase().includes(q))
+          (vigencia === "todos" ||
+            (vigencia === "vigentes" ? p.activo : !p.activo)) &&
+          (!q ||
+            `${p.nombre} ${p.cliente ?? ""} ${p.num_pedido ?? ""}`
+              .toLowerCase()
+              .includes(q))
       ),
-    [proyectos, q]
+    [proyectos, q, vigencia]
   );
   const categoriasFiltradas = useMemo(
     () =>
@@ -195,21 +211,18 @@ export default function PanelMantenedores({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-1">
-          {PESTANAS.map((p) => (
-            <button
-              key={p}
-              onClick={() => {
-                setPestana(p);
-                setBusca("");
-              }}
+          {PESTANAS.map((x) => (
+            <Link
+              key={x.pestana}
+              href={x.href}
               className={`text-xs font-semibold px-3 py-1 rounded ${
-                pestana === p
+                pestana === x.pestana
                   ? "bg-verde text-white"
                   : "border border-gray-300 text-gray-700 bg-white"
               }`}
             >
-              {p}
-            </button>
+              {x.pestana}
+            </Link>
           ))}
         </div>
 
@@ -219,6 +232,21 @@ export default function PanelMantenedores({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
+
+        {pestana === "Proyectos" && (
+          <select
+            className={`${CAMPO} max-w-[10rem]`}
+            value={vigencia}
+            onChange={(e) =>
+              setVigencia(e.target.value as "vigentes" | "inactivos" | "todos")
+            }
+            title="Que obras se listan"
+          >
+            <option value="vigentes">Solo vigentes</option>
+            <option value="inactivos">Solo no vigentes</option>
+            <option value="todos">Vigentes y no vigentes</option>
+          </select>
+        )}
 
         <div className="ml-auto flex gap-2">
           <BotonExportarFilas

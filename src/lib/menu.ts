@@ -112,9 +112,26 @@ export const GRUPOS: Grupo[] = [
     titulo: "Configuracion",
     nota: "Reglas del sistema y quien entra",
     opciones: [
+      // Las cuatro listas, cada una con su direccion: se entra derecho a la
+      // que se va a tocar en vez de elegir una pestana al llegar.
       {
-        texto: "Cuentas, proyectos y categorias",
-        href: "/mantenedores",
+        texto: "Cuentas bancarias",
+        href: "/mantenedores/cuentas",
+        ve: (v) => v.fin_mantenedores,
+      },
+      {
+        texto: "Proyectos y clientes",
+        href: "/mantenedores/proyectos",
+        ve: (v) => v.fin_mantenedores,
+      },
+      {
+        texto: "Interlocutores",
+        href: "/mantenedores/interlocutores",
+        ve: (v) => v.fin_mantenedores,
+      },
+      {
+        texto: "Categorias",
+        href: "/mantenedores/categorias",
         ve: (v) => v.fin_mantenedores,
       },
       { texto: "Parametros", href: "/parametros", soloAdmin: true },

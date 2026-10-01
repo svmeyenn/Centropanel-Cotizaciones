@@ -69,6 +69,11 @@ export interface Desempeno {
   }[];
   entregas_atrasadas: number;
   entregas_proximas: number;
+  // Lo emitido en el mes, que no es lo mismo que lo vendido.
+  facturado_mes: number;
+  facturas_mes: number;
+  // Lo que todavia esta en juego, por estado.
+  embudo: { estado: string; n: number; monto: number }[];
   serie: { mes: string; cotizado: number; vendido: number }[];
 }
 
@@ -113,7 +118,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
         <SelectorMes mes={d.mes} meses={d.meses} />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
         <Tarjeta
           titulo="Cotizado del mes"
           valor={pesos(d.venta.cotizado)}
@@ -132,6 +137,19 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
           nota={varVendido?.texto}
           signo={varVendido?.signo}
           destacado
+        />
+        {/* Vender y facturar no son lo mismo: lo que falta entre las dos
+            cifras es lo que hay que ir a emitir. */}
+        <Tarjeta
+          titulo="Facturado del mes"
+          valor={pesos(d.facturado_mes ?? 0)}
+          pie={`${d.facturas_mes ?? 0} documento${
+            (d.facturas_mes ?? 0) === 1 ? "" : "s"
+          } · ${
+            d.venta.vendido > 0
+              ? `${porcentaje(((d.facturado_mes ?? 0) / d.venta.vendido) * 100)} % de lo vendido`
+              : "sin pedidos del mes"
+          }`}
         />
         <Tarjeta
           titulo="Conversion"
@@ -304,6 +322,37 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
         </Caja>
       </div>
 
+      {/* Lo que esta en juego: cotizaciones que todavia se pueden ganar. El
+          borrador es trabajo a medias, la emitida espera envio y la enviada
+          espera respuesta: son tres cosas distintas que hacer. */}
+      <div className="bg-white border border-gray-200 rounded overflow-hidden">
+        <div className="bg-crema text-verde text-[11px] font-semibold px-2.5 py-1.5">
+          COTIZACIONES EN JUEGO
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-gray-100">
+          {["Borrador", "Emitida", "Enviada"].map((estado) => {
+            const fila = (d.embudo ?? []).find((x) => x.estado === estado);
+            return (
+              <Link
+                key={estado}
+                href={`/cotizaciones?estado=${estado}`}
+                className="px-2.5 py-2 hover:bg-crema"
+              >
+                <div className="text-[10px] text-gray-500 uppercase tracking-wide">
+                  {estado}
+                </div>
+                <div className="font-bold text-negro tabular-nums">
+                  {pesos(fila?.monto ?? 0)}
+                </div>
+                <div className="text-[11px] text-gray-600">
+                  {fila?.n ?? 0} cotizacion{(fila?.n ?? 0) === 1 ? "" : "es"}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {(d.entregas?.length ?? 0) > 0 && (
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="bg-crema text-verde text-[11px] font-semibold px-2.5 py-1.5 flex flex-wrap justify-between gap-2">
@@ -382,8 +431,25 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
             No se listan las que ya tienen una tarea por delante: esas se siguen
             desde la bandeja de tareas.
           </p>
-          <div className="overflow-x-auto">
+          {/* Se desplaza en vez de cortarse: antes solo salian las seis mas
+              viejas y el resto no se veia en ninguna parte. El encabezado
+              queda fijo arriba mientras se recorre. */}
+          <div className="overflow-y-auto max-h-72">
             <table className="w-full text-[11px]">
+              <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                <tr>
+                  <th className="text-left px-2.5 py-1 font-semibold">Cliente</th>
+                  <th className="text-left px-2.5 py-1 w-28 font-semibold">
+                    Creada el
+                  </th>
+                  <th className="text-right px-2.5 py-1 w-32 font-semibold">
+                    Total
+                  </th>
+                  <th className="text-right px-2.5 py-1 w-24 font-semibold">
+                    Espera
+                  </th>
+                </tr>
+              </thead>
               <tbody>
                 {d.pendientes.map((p) => (
                   <tr key={p.id} className="border-t border-gray-100">
@@ -395,9 +461,13 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
                         {p.cliente || "(sin cliente)"}
                       </Link>
                     </td>
-                    <td className="px-2.5 py-1.5 text-gray-600">{fmtFecha(p.fecha)}</td>
-                    <td className="px-2.5 py-1.5 text-right">{pesos(p.total)}</td>
-                    <td className="px-2.5 py-1.5 text-right text-dorado-osc font-semibold">
+                    <td className="px-2.5 py-1.5 text-gray-600">
+                      {fmtFecha(p.fecha)}
+                    </td>
+                    <td className="px-2.5 py-1.5 text-right tabular-nums">
+                      {pesos(p.total)}
+                    </td>
+                    <td className="px-2.5 py-1.5 text-right text-dorado-osc font-semibold tabular-nums">
                       {p.dias} dias
                     </td>
                   </tr>
