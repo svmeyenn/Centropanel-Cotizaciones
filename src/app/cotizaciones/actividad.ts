@@ -154,3 +154,50 @@ export async function reasignarTarea(
   revalidatePath("/");
   return { ok: true, mensaje: "Tarea reasignada." };
 }
+
+// Dar por caduca una accion que ya no se va a hacer.
+//
+// No es lo mismo que marcarla hecha ni que borrarla: queda escrito que se
+// comprometio y no se cumplio, con el motivo. Esa constancia es justamente lo
+// que despues permite mirar quien promete y no cumple, asi que se pide el
+// motivo y no se puede deshacer salvo que lo haga un administrador.
+export async function caducarAccion(
+  id: number,
+  idCotizacion: number,
+  motivo: string
+): Promise<Resultado> {
+  await requerirVendedor();
+  if (!motivo.trim())
+    return { ok: false, mensaje: "Escriba por que esta accion ya no se va a hacer." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("caducar_accion", {
+    p_id: id,
+    p_motivo: motivo.trim(),
+  });
+
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath(`/cotizaciones/${idCotizacion}`);
+  revalidatePath("/");
+  return { ok: true, mensaje: (data as string) ?? "La accion quedo caduca." };
+}
+
+// Volver atras una caducidad. Solo el administrador, y la base lo comprueba
+// otra vez por su cuenta.
+export async function revocarCaducidad(
+  id: number,
+  idCotizacion: number
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v))
+    return { ok: false, mensaje: "Solo quien administra puede revivir una accion caduca." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("revocar_caducidad", { p_id: id });
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath(`/cotizaciones/${idCotizacion}`);
+  revalidatePath("/");
+  return { ok: true, mensaje: (data as string) ?? "La accion volvio a quedar pendiente." };
+}

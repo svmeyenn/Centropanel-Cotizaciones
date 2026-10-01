@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { marcarAccionHecha } from "@/app/cotizaciones/actividad";
+import { caducarAccion, marcarAccionHecha } from "@/app/cotizaciones/actividad";
 
 export type Tarea = {
   id: number;
@@ -46,7 +46,23 @@ export default function TareasPendientes({
   const [enCurso, comenzar] = useTransition();
   const [aviso, setAviso] = useState("");
 
-  const vencidas = tareas.filter((t) => t.estado_proxima === "Vencida");
+  // El dia se parte en tres: lo atrasado, lo de hoy y lo que viene. Abierto
+  // muestra solo lo primero y lo segundo, que es lo que hay que resolver antes
+  // de cerrar la jornada; el resto esta a un clic.
+  const vencidas = tareas.filter((t) => t.dias_de_atraso > 0);
+  const deHoy = tareas.filter((t) => t.dias_de_atraso === 0);
+  const proximas = tareas.filter((t) => t.dias_de_atraso < 0);
+
+  const [tramo, setTramo] = useState<"dia" | "proximas" | "todas">("dia");
+  const [caducando, setCaducando] = useState<number | null>(null);
+  const [motivo, setMotivo] = useState("");
+
+  const visibles =
+    tramo === "dia"
+      ? [...vencidas, ...deHoy]
+      : tramo === "proximas"
+        ? proximas
+        : tareas;
 
   function cerrar(t: Tarea) {
     comenzar(async () => {
@@ -56,19 +72,38 @@ export default function TareasPendientes({
     });
   }
 
+  function caducar(t: Tarea) {
+    const texto = motivo;
+    setCaducando(null);
+    comenzar(async () => {
+      const r = await caducarAccion(t.id, t.id_cotizacion, texto);
+      setAviso(r.mensaje ?? "");
+      router.refresh();
+    });
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden">
       <div className="bg-verde text-white text-[11px] font-semibold px-3 py-1 flex items-center justify-between">
-        <span>
-          {soloMias ? "MIS TAREAS PENDIENTES" : "TAREAS PENDIENTES DEL EQUIPO"}
-        </span>
-        <span className="font-normal">
-          {tareas.length}
-          {vencidas.length > 0 && (
-            <span className="ml-2 bg-white text-red-700 rounded px-1.5 py-0.5 font-semibold">
-              {vencidas.length} vencida{vencidas.length === 1 ? "" : "s"}
-            </span>
-          )}
+        <span>{soloMias ? "MI DIA" : "EL DIA DEL EQUIPO"}</span>
+        <span className="font-normal flex gap-1">
+          {(
+            [
+              ["dia", `Hoy y atrasadas (${vencidas.length + deHoy.length})`],
+              ["proximas", `Mas adelante (${proximas.length})`],
+              ["todas", `Todas (${tareas.length})`],
+            ] as const
+          ).map(([k, texto]) => (
+            <button
+              key={k}
+              onClick={() => setTramo(k)}
+              className={`rounded px-1.5 py-0.5 ${
+                tramo === k ? "bg-white text-verde font-semibold" : "bg-white/15"
+              }`}
+            >
+              {texto}
+            </button>
+          ))}
         </span>
       </div>
 
@@ -78,10 +113,50 @@ export default function TareasPendientes({
         </p>
       )}
 
-      {tareas.length === 0 ? (
+      {/* Caducar no se hace de un clic: hay que decir por que no se va a
+          hacer. Queda escrito que se comprometio y no se cumplio, y solo un
+          administrador puede deshacerlo. */}
+      {caducando !== null && (() => {
+        const t = tareas.find((x) => x.id === caducando);
+        if (!t) return null;
+        return (
+          <div className="px-3 py-2 bg-amber-50 border-b border-amber-300 space-y-1.5">
+            <p className="text-[11px] text-amber-900 font-semibold">
+              Dar por caduca: {t.proxima_accion} ({t.num_cotizacion ?? t.id_cotizacion})
+            </p>
+            <input
+              className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white"
+              autoFocus
+              maxLength={300}
+              value={motivo}
+              placeholder="Por que ya no se va a hacer. Ej: el cliente compro en otro lado"
+              onChange={(e) => setMotivo(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                className="bg-dorado-osc text-white text-xs font-semibold px-2 py-0.5 rounded disabled:opacity-50"
+                disabled={enCurso || !motivo.trim()}
+                onClick={() => caducar(t)}
+              >
+                Darla por caduca
+              </button>
+              <button
+                className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
+                disabled={enCurso}
+                onClick={() => setCaducando(null)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {visibles.length === 0 ? (
         <p className="px-3 py-4 text-center text-xs text-gray-400">
-          Nada pendiente. Lo que se comprometa en la bitacora de una cotizacion
-          aparece aqui.
+          {tramo === "dia"
+            ? "Nada vencido ni para hoy."
+            : "Nada pendiente. Lo que se comprometa en la bitacora de una cotizacion aparece aqui."}
         </p>
       ) : (
         <div className="overflow-x-auto">
@@ -99,7 +174,7 @@ export default function TareasPendientes({
               </tr>
             </thead>
             <tbody>
-              {tareas.map((t) => {
+              {visibles.map((t) => {
                 const vencida = t.estado_proxima === "Vencida";
                 return (
                   <tr
@@ -142,13 +217,24 @@ export default function TareasPendientes({
                       )}
                     </td>
                     {puedeCerrar && (
-                      <td className="px-3 py-1 text-right">
+                      <td className="px-3 py-1 text-right whitespace-nowrap">
                         <button
                           className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white disabled:opacity-50"
                           disabled={enCurso}
                           onClick={() => cerrar(t)}
                         >
                           Ya esta hecha
+                        </button>
+                        <button
+                          className="border border-gray-300 text-gray-500 text-xs px-2 py-0.5 rounded bg-white disabled:opacity-50 ml-1"
+                          disabled={enCurso}
+                          title="Ya no se va a hacer"
+                          onClick={() => {
+                            setCaducando(t.id);
+                            setMotivo("");
+                          }}
+                        >
+                          Caducar
                         </button>
                       </td>
                     )}
