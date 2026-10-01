@@ -36,7 +36,7 @@ export default async function Pagina({
     supabase
       .from("pedidos")
       .select(
-        "id, num_pedido, fecha, estado, clientes(razon_social), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre)"
+        "id, num_pedido, fecha, estado, clientes:entidades(razon_social), vendedores(nombre), formas_pago(descripcion), medios_pago(nombre)"
       ),
     idPaisActivo
   ).order("id", { ascending: false });
