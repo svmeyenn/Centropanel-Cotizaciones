@@ -32,6 +32,8 @@ export interface ContactoClientify {
   campos_personalizados: unknown[];
   origen: string | null;
   modificado_clientify: string | null;
+  comuna: string | null;
+  region: string | null;
 }
 
 type Crudo = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -41,6 +43,13 @@ const texto = (x: unknown): string | null => {
   return s ? s : null;
 };
 
+// Los formularios traen un "Seleccione una Region" cuando la persona no eligio:
+// eso no es un dato.
+const dato = (x: unknown): string | null => {
+  const s = texto(x);
+  return s && !/^seleccione/i.test(s) ? s : null;
+};
+
 // Clientify responde con pequenas variaciones segun el punto de la API
 // (nombre de la empresa suelto o dentro de un objeto, el responsable como
 // correo o como nombre). Aqui se normaliza a una sola forma.
@@ -48,6 +57,10 @@ export function mapearContacto(c: Crudo): ContactoClientify {
   const emails: Crudo[] = Array.isArray(c.emails) ? c.emails : [];
   const telefonos: Crudo[] = Array.isArray(c.phones) ? c.phones : [];
   const responsable = texto(c.owner);
+  const direccion: Crudo | null = Array.isArray(c.addresses) ? (c.addresses[0] ?? null) : null;
+  const campoLugar: Crudo | undefined = (Array.isArray(c.custom_fields) ? c.custom_fields : []).find(
+    (f: Crudo) => /^lugar de construcc/i.test(String(f?.field ?? ""))
+  );
   const detalleEmpresa: Crudo | null =
     c.company_detail && typeof c.company_detail === "object" ? c.company_detail : null;
 
@@ -81,6 +94,8 @@ export function mapearContacto(c: Crudo): ContactoClientify {
     campos_personalizados: Array.isArray(c.custom_fields) ? c.custom_fields : [],
     origen: texto(c.contact_source),
     modificado_clientify: texto(c.modified),
+    comuna: dato(direccion?.city),
+    region: dato(direccion?.state) ?? dato(campoLugar?.value),
   };
 }
 

@@ -45,6 +45,8 @@ interface Fila {
   observaciones: string | null;
   campos_personalizados: { field?: string; value?: string }[];
   origen: string | null;
+  comuna: string | null;
+  region: string | null;
 }
 
 interface Filtros {
@@ -70,7 +72,7 @@ export default async function Pagina({
   let consulta = supabase
     .from("clientify_contactos")
     .select(
-      "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen",
+      "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen, comuna, region",
       { count: "exact" }
     );
 
@@ -225,28 +227,35 @@ export default async function Pagina({
           </span>
         </form>
 
-        <div className="bg-white border border-gray-200 rounded overflow-x-auto">
-          <table className="w-full text-xs">
+        {/* Siete columnas que caben en el ancho de la pantalla: sin barra lateral.
+            El ancho se reparte por porcentaje y el texto largo se corta con "..."
+            --el completo se ve al dejar el cursor encima--. */}
+        <div className="bg-white border border-gray-200 rounded">
+          <table className="w-full table-fixed text-xs">
+            <colgroup>
+              <col className="w-[9%]" />
+              <col className="w-[21%]" />
+              <col className="w-[12%]" />
+              <col className="w-[24%]" />
+              <col className="w-[11%]" />
+              <col className="w-[15%]" />
+              <col className="w-[8%]" />
+            </colgroup>
             <thead className="bg-verde text-white">
               <tr>
-                <th className="text-left px-3 py-1.5">Contacto</th>
-                <th className="text-left px-3 py-1.5 w-24">Creado</th>
-                <th className="text-left px-3 py-1.5">Empresa</th>
-                <th className="text-left px-3 py-1.5">Correo</th>
+                <th className="text-left px-3 py-1.5">Fecha de creacion</th>
+                <th className="text-left px-3 py-1.5">Nombre</th>
                 <th className="text-left px-3 py-1.5">Telefono</th>
+                <th className="text-left px-3 py-1.5">Correo</th>
+                <th className="text-left px-3 py-1.5">Comuna</th>
+                <th className="text-left px-3 py-1.5">Region / Provincia</th>
                 <th className="text-left px-3 py-1.5">Estado</th>
-                <th className="text-left px-3 py-1.5">Responsable</th>
-                <th className="text-left px-3 py-1.5">Interes</th>
-                <th className="text-left px-3 py-1.5">Observaciones</th>
-                <th className="text-left px-3 py-1.5">Origen</th>
-                <th className="text-left px-3 py-1.5">Etiquetas</th>
-                <th className="text-left px-3 py-1.5 w-28">Ultimo contacto</th>
               </tr>
             </thead>
             <tbody>
               {contactos.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={7} className="px-3 py-8 text-center text-gray-400">
                     {filtros.total === 0
                       ? "Todavia no hay contactos. Cargue el archivo con la lista de Clientify."
                       : "Ningun contacto coincide con la busqueda."}
@@ -255,45 +264,33 @@ export default async function Pagina({
               ) : (
                 contactos.map((c) => (
                   <tr key={c.id_clientify} className="border-t border-gray-100 hover:bg-crema">
-                    <td className="px-3 py-1">
-                      <span className="font-semibold">{c.nombre_completo || "(sin nombre)"}</span>
-                      {c.cargo && <span className="block text-gray-500">{c.cargo}</span>}
-                    </td>
                     <td className="px-3 py-1 whitespace-nowrap">{dia(c.creado_clientify)}</td>
-                    <td className="px-3 py-1">{c.empresa}</td>
-                    <td className="px-3 py-1">{c.email}</td>
-                    <td className="px-3 py-1 whitespace-nowrap">{c.telefono}</td>
-                    <td className="px-3 py-1 whitespace-nowrap">{estadoLegible(c.estado)}</td>
-                    <td className="px-3 py-1 whitespace-nowrap">{c.propietario}</td>
-                    <td className="px-3 py-1 text-gray-600">
-                      {(c.campos_personalizados ?? [])
-                        .filter((x) => x.value)
-                        .map((x) => x.value)
-                        .join(" · ")}
-                    </td>
-                    <td className="px-3 py-1 max-w-64">
-                      <span className="block truncate text-gray-600" title={c.observaciones ?? ""}>
-                        {c.observaciones}
+                    <td className="px-3 py-1 font-semibold">
+                      <span className="block truncate" title={c.nombre_completo}>
+                        {c.nombre_completo || "(sin nombre)"}
                       </span>
                     </td>
-                    <td className="px-3 py-1 whitespace-nowrap">{c.origen}</td>
+                    <td className="px-3 py-1 whitespace-nowrap">{c.telefono}</td>
                     <td className="px-3 py-1">
-                      <div className="flex flex-wrap gap-1">
-                        {c.etiquetas.slice(0, 3).map((t) => (
-                          <span
-                            key={t}
-                            className="bg-crema text-dorado-osc rounded px-1.5 py-0.5 max-w-40 truncate"
-                            title={t}
-                          >
-                            {t}
-                          </span>
-                        ))}
-                        {c.etiquetas.length > 3 && (
-                          <span className="text-gray-500">+{c.etiquetas.length - 3}</span>
-                        )}
-                      </div>
+                      <span className="block truncate" title={c.email ?? ""}>
+                        {c.email}
+                      </span>
                     </td>
-                    <td className="px-3 py-1 whitespace-nowrap">{dia(c.ultimo_contacto)}</td>
+                    <td className="px-3 py-1">
+                      <span className="block truncate" title={c.comuna ?? ""}>
+                        {c.comuna}
+                      </span>
+                    </td>
+                    <td className="px-3 py-1">
+                      <span className="block truncate" title={c.region ?? ""}>
+                        {c.region}
+                      </span>
+                    </td>
+                    <td className="px-3 py-1">
+                      <span className="block truncate" title={estadoLegible(c.estado)}>
+                        {estadoLegible(c.estado)}
+                      </span>
+                    </td>
                   </tr>
                 ))
               )}
