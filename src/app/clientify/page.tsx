@@ -2,6 +2,7 @@ import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonSincronizarClientify from "@/components/BotonSincronizarClientify";
+import CargarContactosClientify from "@/components/CargarContactosClientify";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { hayClaveClientify } from "@/lib/clientify";
@@ -41,6 +42,9 @@ interface Fila {
   creado_clientify: string | null;
   ultimo_contacto: string | null;
   id_entidad: number | null;
+  observaciones: string | null;
+  campos_personalizados: { field?: string; value?: string }[];
+  origen: string | null;
 }
 
 interface Filtros {
@@ -66,7 +70,7 @@ export default async function Pagina({
   let consulta = supabase
     .from("clientify_contactos")
     .select(
-      "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad",
+      "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen",
       { count: "exact" }
     );
 
@@ -148,21 +152,18 @@ export default async function Pagina({
             )}
           </div>
           {puedeSincronizar ? (
-            <BotonSincronizarClientify
-              deshabilitado={!hayClave}
-              motivo="Falta cargar CLIENTIFY_API_KEY en Vercel"
-            />
+            <div className="flex flex-wrap items-center gap-4">
+              <CargarContactosClientify />
+              {/* La API de Clientify es de pago aparte: el boton solo aparece si
+                  la cuenta cargo la clave. */}
+              {hayClave && (
+                <BotonSincronizarClientify deshabilitado={false} />
+              )}
+            </div>
           ) : (
-            <p className="text-gray-500">La sincroniza el Administrador o el Supervisor.</p>
+            <p className="text-gray-500">Los carga el Administrador o el Supervisor.</p>
           )}
         </div>
-
-        {!hayClave && puedeSincronizar && (
-          <p className="text-xs bg-amber-50 border border-amber-300 text-amber-800 rounded px-3 py-2">
-            Falta la clave de Clientify. Cargue la variable <strong>CLIENTIFY_API_KEY</strong> en
-            Vercel (Settings → Environment Variables) y vuelva a desplegar.
-          </p>
-        )}
 
         <form className="flex flex-wrap items-end gap-2 text-xs" action="/clientify">
           <div>
@@ -234,6 +235,9 @@ export default async function Pagina({
                 <th className="text-left px-3 py-1.5">Telefono</th>
                 <th className="text-left px-3 py-1.5">Estado</th>
                 <th className="text-left px-3 py-1.5">Responsable</th>
+                <th className="text-left px-3 py-1.5">Interes</th>
+                <th className="text-left px-3 py-1.5">Observaciones</th>
+                <th className="text-left px-3 py-1.5">Origen</th>
                 <th className="text-left px-3 py-1.5">Etiquetas</th>
                 <th className="text-left px-3 py-1.5 w-24">Creado</th>
                 <th className="text-left px-3 py-1.5 w-28">Ultimo contacto</th>
@@ -242,9 +246,9 @@ export default async function Pagina({
             <tbody>
               {contactos.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={12} className="px-3 py-8 text-center text-gray-400">
                     {filtros.total === 0
-                      ? "Todavia no hay contactos. Pulse \"Sincronizar ahora\" para traerlos de Clientify."
+                      ? "Todavia no hay contactos. Cargue el archivo con la lista de Clientify."
                       : "Ningun contacto coincide con la busqueda."}
                   </td>
                 </tr>
@@ -260,6 +264,18 @@ export default async function Pagina({
                     <td className="px-3 py-1 whitespace-nowrap">{c.telefono}</td>
                     <td className="px-3 py-1 whitespace-nowrap">{estadoLegible(c.estado)}</td>
                     <td className="px-3 py-1 whitespace-nowrap">{c.propietario}</td>
+                    <td className="px-3 py-1 text-gray-600">
+                      {(c.campos_personalizados ?? [])
+                        .filter((x) => x.value)
+                        .map((x) => x.value)
+                        .join(" · ")}
+                    </td>
+                    <td className="px-3 py-1 max-w-64">
+                      <span className="block truncate text-gray-600" title={c.observaciones ?? ""}>
+                        {c.observaciones}
+                      </span>
+                    </td>
+                    <td className="px-3 py-1 whitespace-nowrap">{c.origen}</td>
                     <td className="px-3 py-1">
                       <div className="flex flex-wrap gap-1">
                         {c.etiquetas.slice(0, 3).map((t) => (

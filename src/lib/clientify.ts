@@ -1,5 +1,6 @@
-// Lectura de los contactos de Clientify. Es la unica pieza que habla con su
-// API: el resto del sistema trabaja con la copia que queda en la base.
+// Los contactos de Clientify llegan por dos caminos y los dos terminan en la
+// misma forma: por su API --si hay clave, que es de pago aparte-- o desde un
+// archivo con la lista que se sube a la pantalla.
 //
 // La clave se carga en Vercel como CLIENTIFY_API_KEY; nunca viaja al navegador
 // porque esto solo corre en el servidor. La direccion de la API es la de la
@@ -27,6 +28,10 @@ export interface ContactoClientify {
   estado_marketing: number | null;
   creado_clientify: string | null;
   ultimo_contacto: string | null;
+  observaciones: string | null;
+  campos_personalizados: unknown[];
+  origen: string | null;
+  modificado_clientify: string | null;
 }
 
 type Crudo = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -72,6 +77,10 @@ export function mapearContacto(c: Crudo): ContactoClientify {
       : null,
     creado_clientify: texto(c.created),
     ultimo_contacto: texto(c.last_contact),
+    observaciones: texto(c.remarks) ?? texto(c.description),
+    campos_personalizados: Array.isArray(c.custom_fields) ? c.custom_fields : [],
+    origen: texto(c.contact_source),
+    modificado_clientify: texto(c.modified),
   };
 }
 
@@ -105,14 +114,15 @@ async function pedir(url: string): Promise<Crudo> {
   throw new Error(`No se pudo leer Clientify: ${ultimoError}`);
 }
 
-// Recorre todos los contactos, pagina por pagina, y entrega cada pagina ya
-// normalizada. Se entrega de a una para no tener los 6.000 en memoria.
-export async function* contactosClientify(): AsyncGenerator<ContactoClientify[]> {
+// Recorre todos los contactos, pagina por pagina, tal como llegan: quien los
+// guarda los normaliza con mapearContacto, igual que cuando vienen de un
+// archivo. Se entrega de a una pagina para no tener los 6.000 en memoria.
+export async function* contactosClientify(): AsyncGenerator<Crudo[]> {
   let url: string | null = `${BASE}/contacts/?page_size=100`;
   while (url) {
     const pagina = await pedir(url);
     const filas: Crudo[] = Array.isArray(pagina.results) ? pagina.results : [];
-    yield filas.filter((f) => f?.id != null).map(mapearContacto);
+    yield filas.filter((f) => f?.id != null);
     url = typeof pagina.next === "string" && pagina.next ? pagina.next : null;
   }
 }

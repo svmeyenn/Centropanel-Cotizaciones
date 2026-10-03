@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
-import { contactosClientify, hayClaveClientify } from "@/lib/clientify";
+import { contactosClientify, hayClaveClientify, mapearContacto } from "@/lib/clientify";
 
 export interface ResultadoSync {
   ok?: boolean;
@@ -12,68 +12,137 @@ export interface ResultadoSync {
   error?: string;
 }
 
-// Trae todos los contactos de Clientify y deja la copia igual a lo que hay
-// alla: los nuevos se agregan, los cambiados se actualizan y los que ya no
-// estan se quitan. Lo hace el sistema solo; no depende de nadie mas.
-export async function sincronizarClientify(): Promise<ResultadoSync> {
+export interface ResultadoCorrida {
+  id?: number;
+  inicio?: string;
+  error?: string;
+}
+
+async function exigirAdmin(): Promise<string | null> {
   const v = await requerirVendedor();
-  if (!tienePerfilAdmin(v))
-    return { error: "Solo el Administrador o el Supervisor puede sincronizar." };
-  if (!hayClaveClientify())
-    return { error: "Falta cargar la clave de Clientify (CLIENTIFY_API_KEY) en Vercel." };
+  return tienePerfilAdmin(v) ? null : "Solo el Administrador o el Supervisor puede cargar contactos.";
+}
+
+// Una carga --por la API o por archivo-- es una "corrida": se abre, se le van
+// agregando lotes y se cierra. Al cerrarla, lo que no vino en ella ya no existe
+// en Clientify y se quita de la copia.
+export async function abrirCorrida(): Promise<ResultadoCorrida> {
+  const sinPermiso = await exigirAdmin();
+  if (sinPermiso) return { error: sinPermiso };
 
   const supabase = await createClient();
   const inicio = new Date().toISOString();
-
-  const { data: corrida, error: errCorrida } = await supabase
+  const { data, error } = await supabase
     .from("clientify_sincronizaciones")
     .insert({ inicio })
     .select("id")
     .single();
-  if (errCorrida) return { error: errCorrida.message };
+  if (error) return { error: error.message };
+  return { id: data.id, inicio };
+}
+
+// Guarda un lote de contactos tal como los entrega Clientify. El upsert solo
+// pisa las columnas que se mandan: el enlace con la ficha (id_entidad) sobrevive
+// a cada carga.
+export async function guardarLote(
+  inicio: string,
+  filas: unknown[]
+): Promise<{ guardados?: number; error?: string }> {
+  const sinPermiso = await exigirAdmin();
+  if (sinPermiso) return { error: sinPermiso };
+  if (!Array.isArray(filas) || filas.length === 0) return { guardados: 0 };
+  if (filas.length > 500) return { error: "El lote es demasiado grande." };
+
+  const contactos = filas
+    .filter((f): f is Record<string, unknown> => typeof f === "object" && f !== null && "id" in f)
+    .map((f) => mapearContacto(f as Record<string, never>))
+    .filter((c) => Number.isFinite(c.id_clientify));
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("clientify_contactos")
+    .upsert(
+      contactos.map((c) => ({ ...c, sincronizado_en: inicio })),
+      { onConflict: "id_clientify" }
+    );
+  if (error) return { error: error.message };
+  return { guardados: contactos.length };
+}
+
+// Cierra la corrida. Se quitan los contactos que no vinieron solo si llegaron
+// todos los que se esperaban: una lista cortada o vacia no debe vaciar la copia.
+export async function cerrarCorrida(
+  id: number,
+  inicio: string,
+  leidos: number,
+  esperados: number | null,
+  error?: string
+): Promise<ResultadoSync> {
+  const sinPermiso = await exigirAdmin();
+  if (sinPermiso) return { error: sinPermiso };
+
+  const supabase = await createClient();
+
+  if (error) {
+    await supabase
+      .from("clientify_sincronizaciones")
+      .update({ fin: new Date().toISOString(), estado: "con error", leidos, error })
+      .eq("id", id);
+    revalidatePath("/clientify");
+    return { error };
+  }
+
+  let quitados = 0;
+  if (esperados !== null && esperados > 0 && leidos === esperados) {
+    const { data: borrados, error: errBorrar } = await supabase
+      .from("clientify_contactos")
+      .delete()
+      .lt("sincronizado_en", inicio)
+      .select("id_clientify");
+    if (errBorrar) {
+      await supabase
+        .from("clientify_sincronizaciones")
+        .update({ fin: new Date().toISOString(), estado: "con error", leidos, error: errBorrar.message })
+        .eq("id", id);
+      return { error: errBorrar.message };
+    }
+    quitados = borrados?.length ?? 0;
+  }
+
+  await supabase
+    .from("clientify_sincronizaciones")
+    .update({ fin: new Date().toISOString(), estado: "ok", leidos, quitados })
+    .eq("id", id);
+
+  revalidatePath("/clientify");
+  return { ok: true, leidos, quitados };
+}
+
+// Trae todos los contactos por la API de Clientify. Solo sirve si la cuenta
+// tiene la clave de API; si no, se carga el archivo.
+export async function sincronizarClientify(): Promise<ResultadoSync> {
+  if (!hayClaveClientify())
+    return { error: "Falta cargar la clave de Clientify (CLIENTIFY_API_KEY) en Vercel." };
+
+  const corrida = await abrirCorrida();
+  if (corrida.error || !corrida.id || !corrida.inicio) return { error: corrida.error };
 
   let leidos = 0;
   try {
     for await (const pagina of contactosClientify()) {
-      // El upsert solo pisa las columnas que se mandan: el enlace con la ficha
-      // (id_entidad) sobrevive a cada sincronizacion.
-      const { error } = await supabase
-        .from("clientify_contactos")
-        .upsert(
-          pagina.map((c) => ({ ...c, sincronizado_en: inicio })),
-          { onConflict: "id_clientify" }
-        );
-      if (error) throw new Error(error.message);
-      leidos += pagina.length;
+      const r = await guardarLote(corrida.inicio, pagina as unknown[]);
+      if (r.error) throw new Error(r.error);
+      leidos += r.guardados ?? 0;
     }
-
-    // Lo que no se vio en esta vuelta ya no existe en Clientify. Solo se quita
-    // si se leyo algo: una respuesta vacia por error no debe vaciar la copia.
-    let quitados = 0;
-    if (leidos > 0) {
-      const { data: borrados, error } = await supabase
-        .from("clientify_contactos")
-        .delete()
-        .lt("sincronizado_en", inicio)
-        .select("id_clientify");
-      if (error) throw new Error(error.message);
-      quitados = borrados?.length ?? 0;
-    }
-
-    await supabase
-      .from("clientify_sincronizaciones")
-      .update({ fin: new Date().toISOString(), estado: "ok", leidos, quitados })
-      .eq("id", corrida.id);
-
-    revalidatePath("/clientify");
-    return { ok: true, leidos, quitados };
   } catch (e) {
-    const mensaje = e instanceof Error ? e.message : "Error desconocido.";
-    await supabase
-      .from("clientify_sincronizaciones")
-      .update({ fin: new Date().toISOString(), estado: "con error", leidos, error: mensaje })
-      .eq("id", corrida.id);
-    revalidatePath("/clientify");
-    return { error: mensaje };
+    return cerrarCorrida(
+      corrida.id,
+      corrida.inicio,
+      leidos,
+      null,
+      e instanceof Error ? e.message : "Error desconocido."
+    );
   }
+  // Por la API la lista es la completa: lo leido es lo esperado.
+  return cerrarCorrida(corrida.id, corrida.inicio, leidos, leidos);
 }
