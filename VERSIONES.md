@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0086-20261001**
+Version vigente: **v0087-20261003**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0087-20261003 | 03-10-2026 | El sistema pasa a llamarse Sistema de Gestion Centropanel: nombre del proyecto, direccion de la aplicacion y titulo de la pestaña | 37e0f2e |
 | v0086-20261001 | 01-10-2026 | La ficha de un cliente o proveedor se puede ver, editar o eliminar por separado, y el recuadro de entregas del tablero trae el titulo de cada columna | 2dc5769 |
 | v0085-20261001 | 01-10-2026 | Seguimiento de cotizaciones: una accion comprometida se puede dar por caduca con su motivo, y el tablero muestra la espera de cada cotizacion, el cumplimiento por persona y las que no tienen a nadie a cargo | 81e7812 |
 | v0084-20261001 | 01-10-2026 | Las listas de cotizaciones, pedidos, facturas y cobranza vuelven a traer el nombre del cliente tras la union de las fichas | c328693 |
