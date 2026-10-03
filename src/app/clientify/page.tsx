@@ -230,6 +230,7 @@ export default async function Pagina({
             <thead className="bg-verde text-white">
               <tr>
                 <th className="text-left px-3 py-1.5">Contacto</th>
+                <th className="text-left px-3 py-1.5 w-24">Creado</th>
                 <th className="text-left px-3 py-1.5">Empresa</th>
                 <th className="text-left px-3 py-1.5">Correo</th>
                 <th className="text-left px-3 py-1.5">Telefono</th>
@@ -239,7 +240,6 @@ export default async function Pagina({
                 <th className="text-left px-3 py-1.5">Observaciones</th>
                 <th className="text-left px-3 py-1.5">Origen</th>
                 <th className="text-left px-3 py-1.5">Etiquetas</th>
-                <th className="text-left px-3 py-1.5 w-24">Creado</th>
                 <th className="text-left px-3 py-1.5 w-28">Ultimo contacto</th>
               </tr>
             </thead>
@@ -259,6 +259,7 @@ export default async function Pagina({
                       <span className="font-semibold">{c.nombre_completo || "(sin nombre)"}</span>
                       {c.cargo && <span className="block text-gray-500">{c.cargo}</span>}
                     </td>
+                    <td className="px-3 py-1 whitespace-nowrap">{dia(c.creado_clientify)}</td>
                     <td className="px-3 py-1">{c.empresa}</td>
                     <td className="px-3 py-1">{c.email}</td>
                     <td className="px-3 py-1 whitespace-nowrap">{c.telefono}</td>
@@ -292,8 +293,7 @@ export default async function Pagina({
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-1">{dia(c.creado_clientify)}</td>
-                    <td className="px-3 py-1">{dia(c.ultimo_contacto)}</td>
+                    <td className="px-3 py-1 whitespace-nowrap">{dia(c.ultimo_contacto)}</td>
                   </tr>
                 ))
               )}
