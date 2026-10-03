@@ -1,10 +1,10 @@
-# Cotizador Centro Panel — web
+# Sistema de Gestión Centropanel — web
 
-Migración del cotizador Access a Supabase + Next.js, desplegado en Vercel.
+Migración del cotizador Access a Supabase + Next.js, desplegado en Vercel. Abreviado: `sist_gest_centropanel`.
 
-- **Supabase**: proyecto `CentroPanel_Cotizaciones` (`vutefkwblynvkzidgcoi`)
-- **Vercel**: equipo `Centropanel`, proyecto `centropanel-cotizador`
-- **URL**: https://centropanel-cotizador.vercel.app
+- **Supabase**: proyecto `Sistema de Gestión Centropanel` (`vutefkwblynvkzidgcoi`; la referencia no se puede cambiar)
+- **Vercel**: equipo `Centropanel`, proyecto `sist-gest-centropanel`
+- **URL**: https://sist-gest-centropanel.vercel.app (el dominio anterior `centropanel-cotizador.vercel.app` sigue activo para los enlaces ya enviados)
 
 ## Variables de entorno
 
