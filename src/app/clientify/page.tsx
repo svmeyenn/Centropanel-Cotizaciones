@@ -266,9 +266,13 @@ export default async function Pagina({
                   <tr key={c.id_clientify} className="border-t border-gray-100 hover:bg-crema">
                     <td className="px-3 py-1 whitespace-nowrap">{dia(c.creado_clientify)}</td>
                     <td className="px-3 py-1 font-semibold">
-                      <span className="block truncate" title={c.nombre_completo}>
+                      <Link
+                        href={`/clientify/${c.id_clientify}`}
+                        className="block truncate text-verde underline"
+                        title={c.nombre_completo}
+                      >
                         {c.nombre_completo || "(sin nombre)"}
-                      </span>
+                      </Link>
                     </td>
                     <td className="px-3 py-1 whitespace-nowrap">{c.telefono}</td>
                     <td className="px-3 py-1">

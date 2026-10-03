@@ -2,7 +2,12 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { abrirCorrida, cerrarCorrida, guardarLote } from "@/app/clientify/acciones";
+import {
+  abrirCorrida,
+  cerrarCorrida,
+  guardarLote,
+  type TablaClientify,
+} from "@/app/clientify/acciones";
 
 const LOTE = 100;
 
@@ -18,15 +23,25 @@ export default function CargarContactosClientify() {
 
   async function cargar(archivo: File) {
     setMensaje(null);
-    let filas: unknown[];
+    let contactos: unknown[];
+    let oportunidades: unknown[] = [];
+    let actividad: unknown[] = [];
     let esperados: number | null = null;
+    let opEsperadas: number | null = null;
     try {
       const datos = JSON.parse(await archivo.text());
       if (Array.isArray(datos)) {
-        filas = datos;
+        contactos = datos;
       } else if (datos && Array.isArray(datos.contactos)) {
-        filas = datos.contactos;
+        contactos = datos.contactos;
         esperados = Number.isInteger(datos.total) ? datos.total : null;
+        if (Array.isArray(datos.oportunidades)) {
+          oportunidades = datos.oportunidades;
+          opEsperadas = Number.isInteger(datos.total_oportunidades)
+            ? datos.total_oportunidades
+            : null;
+        }
+        if (Array.isArray(datos.actividad)) actividad = datos.actividad;
       } else {
         throw new Error("formato");
       }
@@ -34,12 +49,13 @@ export default function CargarContactosClientify() {
       setMensaje({ texto: "El archivo no es una lista de contactos valida.", error: true });
       return;
     }
-    if (filas.length === 0) {
+    if (contactos.length === 0) {
       setMensaje({ texto: "El archivo no trae contactos.", error: true });
       return;
     }
 
-    setAvance({ hechos: 0, total: filas.length });
+    const total = contactos.length + oportunidades.length + actividad.length;
+    setAvance({ hechos: 0, total });
     const corrida = await abrirCorrida();
     if (corrida.error || !corrida.id || !corrida.inicio) {
       setAvance(null);
@@ -47,30 +63,48 @@ export default function CargarContactosClientify() {
       return;
     }
 
+    // Contactos, luego oportunidades, luego conversaciones: cada grupo va en
+    // lotes y el avance cuenta todo junto.
+    const grupos: { tabla: TablaClientify; filas: unknown[] }[] = [
+      { tabla: "contactos", filas: contactos },
+      { tabla: "oportunidades", filas: oportunidades },
+      { tabla: "actividad", filas: actividad },
+    ];
     let hechos = 0;
-    for (let i = 0; i < filas.length; i += LOTE) {
-      const r = await guardarLote(corrida.inicio, filas.slice(i, i + LOTE));
-      if (r.error) {
-        await cerrarCorrida(corrida.id, corrida.inicio, hechos, null, r.error);
-        setAvance(null);
-        setMensaje({
-          texto: `Se detuvo despues de ${hechos} contactos: ${r.error}`,
-          error: true,
-        });
-        router.refresh();
-        return;
+    const leidos = { contactos: 0, oportunidades: 0 };
+    for (const g of grupos) {
+      const lote = g.tabla === "actividad" ? 20 : LOTE;
+      for (let i = 0; i < g.filas.length; i += lote) {
+        const trozo = g.filas.slice(i, i + lote);
+        const r = await guardarLote(corrida.inicio, trozo, g.tabla);
+        if (r.error) {
+          await cerrarCorrida(corrida.id, corrida.inicio, leidos.contactos, null, r.error);
+          setAvance(null);
+          setMensaje({ texto: `Se detuvo en ${g.tabla}: ${r.error}`, error: true });
+          router.refresh();
+          return;
+        }
+        if (g.tabla === "contactos") leidos.contactos += r.guardados ?? 0;
+        if (g.tabla === "oportunidades") leidos.oportunidades += r.guardados ?? 0;
+        hechos += trozo.length;
+        setAvance({ hechos, total });
       }
-      hechos += r.guardados ?? 0;
-      setAvance({ hechos, total: filas.length });
     }
 
-    const cierre = await cerrarCorrida(corrida.id, corrida.inicio, hechos, esperados);
+    const cierre = await cerrarCorrida(
+      corrida.id,
+      corrida.inicio,
+      leidos.contactos,
+      esperados,
+      undefined,
+      opEsperadas ? { leidas: leidos.oportunidades, esperadas: opEsperadas } : undefined
+    );
     setAvance(null);
     setMensaje(
       cierre.error
         ? { texto: cierre.error, error: true }
         : {
-            texto: `Listo: ${cierre.leidos} contactos cargados, ${cierre.quitados} quitados por ya no estar en Clientify.`,
+            texto: `Listo: ${cierre.leidos} contactos, ${leidos.oportunidades} oportunidades y ${actividad.length} contactos con conversacion; ${cierre.quitados} contactos quitados por ya no estar en Clientify.`,
             error: false,
           }
     );

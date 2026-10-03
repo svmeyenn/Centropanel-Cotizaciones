@@ -34,6 +34,9 @@ export interface ContactoClientify {
   modificado_clientify: string | null;
   comuna: string | null;
   region: string | null;
+  direccion: string | null;
+  ciudad: string | null;
+  pais: string | null;
 }
 
 type Crudo = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -94,8 +97,12 @@ export function mapearContacto(c: Crudo): ContactoClientify {
     campos_personalizados: Array.isArray(c.custom_fields) ? c.custom_fields : [],
     origen: texto(c.contact_source),
     modificado_clientify: texto(c.modified),
+    // Clientify guarda una sola "ciudad" por direccion; en Chile es la comuna.
     comuna: dato(direccion?.city),
     region: dato(direccion?.state) ?? dato(campoLugar?.value),
+    direccion: texto(direccion?.street),
+    ciudad: dato(direccion?.city),
+    pais: dato(direccion?.country),
   };
 }
 
@@ -140,4 +147,137 @@ export async function* contactosClientify(): AsyncGenerator<Crudo[]> {
     yield filas.filter((f) => f?.id != null);
     url = typeof pagina.next === "string" && pagina.next ? pagina.next : null;
   }
+}
+
+// --- Oportunidades -------------------------------------------------------
+
+export interface OportunidadClientify {
+  id_clientify: number;
+  nombre: string | null;
+  monto: number | null;
+  moneda: string | null;
+  estado: number | null;
+  id_etapa: number | null;
+  id_pipeline: number | null;
+  probabilidad: number | null;
+  id_contacto: number | null;
+  id_empresa: number | null;
+  propietario_email: string | null;
+  creado_clientify: string | null;
+  modificado_clientify: string | null;
+  cierre_esperado: string | null;
+  cierre_real: string | null;
+  cotizaciones: string[];
+}
+
+// Las etapas de los dos embudos de Centro Panel, por su numero en Clientify.
+export const ETAPAS: Record<number, string> = {
+  394303: "Contacto realizado",
+  394304: "Cotizacion enviada",
+  394305: "Negociacion",
+  370167: "Presentacion de presupuesto",
+  370166: "Reunion consultiva",
+  370168: "Ajuste o negociacion",
+};
+
+export const ESTADOS_OPORTUNIDAD: Record<number, string> = {
+  1: "Abierta",
+  2: "Vencida",
+  3: "Ganada",
+  4: "Perdida",
+};
+
+const idDeUrl = (x: unknown, recurso: string): number | null => {
+  const m = typeof x === "string" ? x.match(new RegExp("/" + recurso + "/(\\d+)")) : null;
+  return m ? Number(m[1]) : null;
+};
+
+// Los folios que nombra una oportunidad. El equipo los escribe como "COT00118",
+// y cuando una oportunidad agrupa varias, como "COT00114-5-7": los numeros
+// cortos reemplazan los ultimos digitos del primero (114, 115 y 117).
+export function foliosEnNombre(nombre: string): string[] {
+  const folios = new Set<string>();
+  const re = /COT\s*(\d+)((?:\s*-\s*\d+)*)/gi;
+  for (const m of nombre.matchAll(re)) {
+    const base = m[1];
+    folios.add(`COT${base.padStart(5, "0")}`);
+    for (const suf of (m[2].match(/\d+/g) ?? [])) {
+      folios.add(`COT${(base.slice(0, Math.max(0, base.length - suf.length)) + suf).padStart(5, "0")}`);
+    }
+  }
+  return [...folios];
+}
+
+export function mapearOportunidad(d: Crudo): OportunidadClientify {
+  const monto = Number(d.amount);
+  const nombre = texto(d.name);
+  return {
+    id_clientify: Number(d.id),
+    nombre,
+    monto: Number.isFinite(monto) ? monto : null,
+    moneda: texto(d.currency),
+    estado: Number.isFinite(Number(d.status)) ? Number(d.status) : null,
+    id_etapa: idDeUrl(d.pipeline_stage, "stages"),
+    id_pipeline: idDeUrl(d.pipeline, "pipelines"),
+    probabilidad: Number.isFinite(Number(d.probability)) ? Number(d.probability) : null,
+    id_contacto: idDeUrl(d.contact, "contacts"),
+    id_empresa: idDeUrl(d.company, "companies"),
+    propietario_email: texto(d.owner),
+    creado_clientify: texto(d.created),
+    modificado_clientify: texto(d.modified),
+    cierre_esperado: texto(d.expected_closed_date),
+    cierre_real: texto(d.actual_closed_date),
+    cotizaciones: nombre ? foliosEnNombre(nombre) : [],
+  };
+}
+
+// --- Conversacion --------------------------------------------------------
+
+export interface ActividadClientify {
+  id: number;
+  id_contacto: number;
+  tipo: string;
+  fecha: string;
+  autor: string | null;
+  titulo: string | null;
+  texto: string | null;
+}
+
+const ENTIDADES: Record<string, string> = {
+  nbsp: " ", amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
+  aacute: "a", eacute: "e", iacute: "i", oacute: "o", uacute: "u",
+  Aacute: "A", Eacute: "E", Iacute: "I", Oacute: "O", Uacute: "U",
+  ntilde: "n", Ntilde: "N", uuml: "u", iexcl: "!", iquest: "?",
+};
+
+// Las notas llegan en HTML. Se guardan como texto con saltos de linea.
+export function textoPlano(html: string): string {
+  return html
+    .replace(/<\s*br\s*\/?>/gi, "\n")
+    .replace(/<\/\s*(p|div|li)\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&([a-zA-Z]+);/g, (m, e) => ENTIDADES[e] ?? m)
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// Un registro del muro de un contacto. Solo interesan los que son conversacion:
+// notas, llamadas, correos y reuniones.
+const TIPOS_CONVERSACION = /^(note|call|meeting|email|mail|sms|whatsapp)/i;
+
+export function mapearActividad(e: Crudo, idContacto: number): ActividadClientify | null {
+  const tipo = texto(e.type);
+  if (!tipo || !TIPOS_CONVERSACION.test(tipo) || !texto(e.created)) return null;
+  const x: Crudo = e.extra && typeof e.extra === "object" ? e.extra : {};
+  const cuerpo = x.note_comment ?? x.comment ?? x.body ?? x.description ?? x.subject ?? "";
+  return {
+    id: Number(e.id),
+    id_contacto: idContacto,
+    tipo,
+    fecha: String(e.created),
+    autor: texto(e.user),
+    titulo: texto(x.note_name) ?? texto(x.title) ?? texto(x.subject),
+    texto: textoPlano(String(cuerpo)) || null,
+  };
 }

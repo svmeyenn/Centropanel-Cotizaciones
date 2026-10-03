@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
-import { contactosClientify, hayClaveClientify, mapearContacto } from "@/lib/clientify";
+import {
+  contactosClientify,
+  hayClaveClientify,
+  mapearActividad,
+  mapearContacto,
+  mapearOportunidad,
+} from "@/lib/clientify";
 
 export interface ResultadoSync {
   ok?: boolean;
@@ -41,32 +47,65 @@ export async function abrirCorrida(): Promise<ResultadoCorrida> {
   return { id: data.id, inicio };
 }
 
-// Guarda un lote de contactos tal como los entrega Clientify. El upsert solo
-// pisa las columnas que se mandan: el enlace con la ficha (id_entidad) sobrevive
-// a cada carga.
+// Guarda un lote tal como lo entrega Clientify. El upsert solo pisa las columnas
+// que se mandan: el enlace de un contacto con su ficha (id_entidad) sobrevive a
+// cada carga.
+export type TablaClientify = "contactos" | "oportunidades" | "actividad";
+
 export async function guardarLote(
   inicio: string,
-  filas: unknown[]
+  filas: unknown[],
+  tabla: TablaClientify = "contactos"
 ): Promise<{ guardados?: number; error?: string }> {
   const sinPermiso = await exigirAdmin();
   if (sinPermiso) return { error: sinPermiso };
   if (!Array.isArray(filas) || filas.length === 0) return { guardados: 0 };
   if (filas.length > 500) return { error: "El lote es demasiado grande." };
 
-  const contactos = filas
-    .filter((f): f is Record<string, unknown> => typeof f === "object" && f !== null && "id" in f)
-    .map((f) => mapearContacto(f as Record<string, never>))
-    .filter((c) => Number.isFinite(c.id_clientify));
-
+  const crudas = filas.filter(
+    (f): f is Record<string, never> => typeof f === "object" && f !== null && "id" in f
+  );
   const supabase = await createClient();
+
+  if (tabla === "contactos") {
+    const contactos = crudas.map(mapearContacto).filter((c) => Number.isFinite(c.id_clientify));
+    const { error } = await supabase
+      .from("clientify_contactos")
+      .upsert(
+        contactos.map((c) => ({ ...c, sincronizado_en: inicio })),
+        { onConflict: "id_clientify" }
+      );
+    return error ? { error: error.message } : { guardados: contactos.length };
+  }
+
+  if (tabla === "oportunidades") {
+    const ops = crudas.map(mapearOportunidad).filter((o) => Number.isFinite(o.id_clientify));
+    const { error } = await supabase
+      .from("clientify_oportunidades")
+      .upsert(
+        ops.map((o) => ({ ...o, sincronizado_en: inicio })),
+        { onConflict: "id_clientify" }
+      );
+    return error ? { error: error.message } : { guardados: ops.length };
+  }
+
+  // Actividad: cada fila trae el contacto y los registros de su muro
+  // ({ id_contacto, entradas: [...] }).
+  const acts = filas.flatMap((f) => {
+    const { id_contacto, entradas } = (f ?? {}) as { id_contacto?: number; entradas?: unknown[] };
+    if (!Number.isFinite(id_contacto) || !Array.isArray(entradas)) return [];
+    return entradas
+      .map((e) => mapearActividad(e as Record<string, never>, id_contacto as number))
+      .filter((a): a is NonNullable<typeof a> => a !== null);
+  });
+  if (acts.length === 0) return { guardados: 0 };
   const { error } = await supabase
-    .from("clientify_contactos")
+    .from("clientify_actividad")
     .upsert(
-      contactos.map((c) => ({ ...c, sincronizado_en: inicio })),
-      { onConflict: "id_clientify" }
+      acts.map((a) => ({ ...a, sincronizado_en: inicio })),
+      { onConflict: "id" }
     );
-  if (error) return { error: error.message };
-  return { guardados: contactos.length };
+  return error ? { error: error.message } : { guardados: acts.length };
 }
 
 // Cierra la corrida. Se quitan los contactos que no vinieron solo si llegaron
@@ -76,7 +115,8 @@ export async function cerrarCorrida(
   inicio: string,
   leidos: number,
   esperados: number | null,
-  error?: string
+  error?: string,
+  oportunidades?: { leidas: number; esperadas: number | null }
 ): Promise<ResultadoSync> {
   const sinPermiso = await exigirAdmin();
   if (sinPermiso) return { error: sinPermiso };
@@ -107,6 +147,11 @@ export async function cerrarCorrida(
       return { error: errBorrar.message };
     }
     quitados = borrados?.length ?? 0;
+  }
+
+  // Igual con las oportunidades: solo si llegaron todas las que se esperaban.
+  if (oportunidades && oportunidades.esperadas && oportunidades.leidas === oportunidades.esperadas) {
+    await supabase.from("clientify_oportunidades").delete().lt("sincronizado_en", inicio);
   }
 
   await supabase
