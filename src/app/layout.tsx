@@ -4,8 +4,8 @@ import Estructura from "@/components/Estructura";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Centro Panel - Sistema de Gestion",
-  description: "Costeo y cotizacion de paneles estructurales SIP",
+  title: "Sistema de Gestión Centropanel",
+  description: "Gestión comercial y financiera de Centropanel",
 };
 
 // Pantallas sin menu: las que se abren sin sesion --ingreso, recuperacion de
