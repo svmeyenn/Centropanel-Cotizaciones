@@ -54,7 +54,7 @@ export const GRUPOS: Grupo[] = [
       // clientes; quien maneja la plata entra por alla y ve todas.
       { texto: "Clientes", href: "/clientes" },
       // La copia de los contactos del CRM. Se mira aqui; se edita en Clientify.
-      { texto: "Contactos Clientify", href: "/clientify" },
+      { texto: "Leads", href: "/clientify" },
     ],
   },
   {

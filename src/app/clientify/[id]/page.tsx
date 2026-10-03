@@ -13,7 +13,7 @@ const ESTADOS: Record<string, string> = {
   "cold-lead": "Lead frio",
   "warm-lead": "Lead tibio",
   "hot-lead": "Lead caliente",
-  "in-deal": "En negociacion",
+  "in-deal": "Oportunidad",
   "not-qualified-lead": "Lead no calificado",
   "lost-lead": "Lead perdido",
   client: "Cliente",
@@ -26,7 +26,7 @@ const TIPOS: { patron: RegExp; texto: string }[] = [
   { patron: /^note/i, texto: "Nota" },
   { patron: /^call/i, texto: "Llamada" },
   { patron: /^meeting/i, texto: "Reunion" },
-  { patron: /^(email|mail)/i, texto: "Correo" },
+  { patron: /^(email|mail)/i, texto: "Email" },
   { patron: /^(sms|whatsapp)/i, texto: "Mensaje" },
 ];
 const tipoLegible = (t: string) => TIPOS.find((x) => x.patron.test(t))?.texto ?? t;
@@ -149,7 +149,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             href="/clientify"
             className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
-            Lista de contactos
+            Lista de leads
           </Link>
         </BarraNavegacion>
 

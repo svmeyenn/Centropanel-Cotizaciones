@@ -18,6 +18,7 @@ const POR_PAGINA = 50;
 // en castellano; un estado nuevo se muestra tal cual llega.
 const ESTADOS: Record<string, string> = {
   "cold-lead": "Lead frio",
+  "in-deal": "Oportunidad",
   "warm-lead": "Lead tibio",
   "hot-lead": "Lead caliente",
   client: "Cliente",
@@ -128,8 +129,8 @@ export default async function Pagina({
   return (
     <div className="min-h-screen">
       <Cabecera
-        titulo="Contactos de Clientify"
-        subtitulo="La copia de los contactos del CRM dentro del sistema"
+        titulo="Leads"
+        subtitulo="Los contactos del CRM de Clientify dentro del sistema"
       />
       <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
         <BarraNavegacion />
@@ -233,20 +234,22 @@ export default async function Pagina({
         <div className="bg-white border border-gray-200 rounded">
           <table className="w-full table-fixed text-xs">
             <colgroup>
-              <col className="w-[9%]" />
+              <col className="w-[8%]" />
+              <col className="w-[17%]" />
+              <col className="w-[11%]" />
               <col className="w-[21%]" />
               <col className="w-[12%]" />
-              <col className="w-[24%]" />
-              <col className="w-[11%]" />
-              <col className="w-[15%]" />
-              <col className="w-[8%]" />
+              <col className="w-[9%]" />
+              <col className="w-[13%]" />
+              <col className="w-[9%]" />
             </colgroup>
             <thead className="bg-verde text-white">
               <tr>
                 <th className="text-left px-3 py-1.5">Fecha de creacion</th>
                 <th className="text-left px-3 py-1.5">Nombre</th>
                 <th className="text-left px-3 py-1.5">Telefono</th>
-                <th className="text-left px-3 py-1.5">Correo</th>
+                <th className="text-left px-3 py-1.5">Email</th>
+                <th className="text-left px-3 py-1.5">Propietario</th>
                 <th className="text-left px-3 py-1.5">Comuna</th>
                 <th className="text-left px-3 py-1.5">Region / Provincia</th>
                 <th className="text-left px-3 py-1.5">Estado</th>
@@ -255,7 +258,7 @@ export default async function Pagina({
             <tbody>
               {contactos.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={8} className="px-3 py-8 text-center text-gray-400">
                     {filtros.total === 0
                       ? "Todavia no hay contactos. Cargue el archivo con la lista de Clientify."
                       : "Ningun contacto coincide con la busqueda."}
@@ -278,6 +281,11 @@ export default async function Pagina({
                     <td className="px-3 py-1">
                       <span className="block truncate" title={c.email ?? ""}>
                         {c.email}
+                      </span>
+                    </td>
+                    <td className="px-3 py-1">
+                      <span className="block truncate" title={c.propietario ?? ""}>
+                        {c.propietario}
                       </span>
                     </td>
                     <td className="px-3 py-1">
