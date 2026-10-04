@@ -89,6 +89,10 @@ export async function marcarCompromisoHecho(id: number, idLead: number): Promise
     .eq("id", id)
     .is("ejecutada_en", null)
     .select("id");
+  // Un compromiso revocado o caduco no se puede dar por cumplido sin antes
+  // reversar eso.
+  if (error?.message.includes("un_solo_final"))
+    return { ok: false, mensaje: "Ese compromiso esta revocado o caduco: no se puede cumplir." };
   if (error) return { ok: false, mensaje: error.message };
   if (!data?.length)
     return { ok: false, mensaje: "Ese compromiso ya estaba hecho, o no puede cerrarlo." };
@@ -147,4 +151,78 @@ export async function editarCompromiso(
 
   revalidatePath(`/clientify/${idLead}`);
   return { ok: true, mensaje: "Compromiso actualizado." };
+}
+
+// Revocar: el compromiso ya no corresponde --el cliente desistio, cambio el
+// plan--. Quien puede escribir, pero con el motivo escrito: queda constancia de
+// por que no se hizo.
+export async function revocarCompromiso(
+  id: number,
+  idLead: number,
+  motivo: string
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.puede_editar) return { ok: false, mensaje: "Su perfil no permite revocar compromisos." };
+  if (!motivo.trim()) return { ok: false, mensaje: "Escriba por que se revoca el compromiso." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lead_revocar_compromiso", {
+    p_id: id,
+    p_motivo: motivo.trim(),
+  });
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath(`/clientify/${idLead}`);
+  return { ok: true, mensaje: (data as string) ?? "El compromiso quedo revocado." };
+}
+
+// Deshacer una revocacion. Solo el Administrador.
+export async function reversarRevocacion(id: number, idLead: number): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!administraUsuarios(v))
+    return { ok: false, mensaje: "Solo el Administrador puede reversar una revocacion." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lead_reversar_revocacion", { p_id: id });
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath(`/clientify/${idLead}`);
+  return { ok: true, mensaje: (data as string) ?? "La revocacion quedo sin efecto." };
+}
+
+// Caducar por incumplimiento: quedo escrito que se comprometio y no se cumplio.
+// Solo el Administrador, solo si ya esta vencido y con el motivo.
+export async function caducarCompromiso(
+  id: number,
+  idLead: number,
+  motivo: string
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!administraUsuarios(v))
+    return { ok: false, mensaje: "Solo el Administrador puede caducar un compromiso." };
+  if (!motivo.trim()) return { ok: false, mensaje: "Escriba el motivo del incumplimiento." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lead_caducar_compromiso", {
+    p_id: id,
+    p_motivo: motivo.trim(),
+  });
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath(`/clientify/${idLead}`);
+  return { ok: true, mensaje: (data as string) ?? "El compromiso quedo caduco." };
+}
+
+// Deshacer una caducidad. Solo el Administrador.
+export async function reversarCaducidad(id: number, idLead: number): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!administraUsuarios(v))
+    return { ok: false, mensaje: "Solo el Administrador puede reversar una caducidad." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lead_revocar_caducidad", { p_id: id });
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath(`/clientify/${idLead}`);
+  return { ok: true, mensaje: (data as string) ?? "La caducidad quedo sin efecto." };
 }

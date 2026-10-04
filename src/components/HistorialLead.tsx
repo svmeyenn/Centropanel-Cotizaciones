@@ -4,10 +4,14 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  caducarCompromiso,
   editarCompromiso,
   marcarCompromisoHecho,
   reabrirCompromiso,
   registrarConversacionLead,
+  reversarCaducidad,
+  reversarRevocacion,
+  revocarCompromiso,
   type Resultado,
 } from "@/app/clientify/actividad-lead";
 
@@ -25,7 +29,13 @@ export type EntradaHistorial = {
   proxima_fecha: string | null;
   ejecutada_en: string | null;
   ejecutor_nombre: string | null;
-  estado_proxima: "Vigente" | "Vencida" | "Ejecutada" | "Caduca" | null;
+  revocada_en: string | null;
+  revocador_nombre: string | null;
+  motivo_revoca: string | null;
+  caducada_en: string | null;
+  caducador_nombre: string | null;
+  motivo_caduca: string | null;
+  estado_proxima: "Vigente" | "Vencida" | "Ejecutada" | "Revocada" | "Caduca" | null;
 };
 
 const CAMPO = "border border-gray-300 rounded px-2 py-0.5 text-[11px] w-full bg-white";
@@ -37,8 +47,13 @@ const TONO: Record<string, string> = {
   Vigente: "bg-crema text-verde border-verde",
   Vencida: "bg-red-50 text-red-700 border-red-300",
   Ejecutada: "bg-verde text-white border-verde",
+  Revocada: "bg-gray-100 text-gray-600 border-gray-300",
   Caduca: "bg-gray-100 text-gray-500 border-gray-300 line-through",
 };
+
+// Un compromiso sigue abierto mientras no se cumpla, se revoque ni caduque.
+const abierto = (e: EntradaHistorial) =>
+  e.estado_proxima === "Vigente" || e.estado_proxima === "Vencida";
 
 const dia = (f: string) => f.slice(0, 10).split("-").reverse().join("-");
 
@@ -79,6 +94,12 @@ export default function HistorialLead({
   const [conCompromiso, setConCompromiso] = useState(false);
   const [editando, setEditando] = useState<number | null>(null);
   const [edicion, setEdicion] = useState({ accion: "", fecha: "", responsable: yo });
+  // Revocar y caducar piden el motivo escrito: el boton no actua de inmediato,
+  // abre el campo y recien despues se confirma.
+  const [conMotivo, setConMotivo] = useState<{ id: number; tipo: "revocar" | "caducar" } | null>(
+    null
+  );
+  const [motivo, setMotivo] = useState("");
 
   const [estado, enviar, pendiente] = useActionState<Resultado | null, FormData>(
     registrarConversacionLead,
@@ -99,6 +120,8 @@ export default function HistorialLead({
       setAviso(r.mensaje ?? "");
       if (r.ok) {
         setEditando(null);
+        setConMotivo(null);
+        setMotivo("");
         router.refresh();
       }
     });
@@ -270,17 +293,46 @@ export default function HistorialLead({
                       </span>
                     )}
 
-                    <span className="ml-auto flex items-center gap-1">
-                      {propia && puedeEscribir && !e.ejecutada_en && (
-                        <button
-                          className={BOTON_CLARO}
-                          disabled={enCurso}
-                          onClick={() => correr(() => marcarCompromisoHecho(e.id, idLead))}
-                        >
-                          Marcar hecha
+                    <span className="ml-auto flex flex-wrap items-center gap-1">
+                      {propia && abierto(e) && puedeEscribir && (
+                        <>
+                          <button
+                            className={BOTON_CLARO}
+                            disabled={enCurso}
+                            onClick={() => correr(() => marcarCompromisoHecho(e.id, idLead))}
+                          >
+                            Cumplida
+                          </button>
+                          <button
+                            className={BOTON_CLARO}
+                            disabled={enCurso}
+                            onClick={() => {
+                              setMotivo("");
+                              setConMotivo({ id: e.id, tipo: "revocar" });
+                            }}
+                          >
+                            Revocar
+                          </button>
+                        </>
+                      )}
+                      {propia && abierto(e) && puedeEditarCompromiso && (
+                        <button className={BOTON_CLARO} onClick={() => abrirEdicion(e)}>
+                          Editar
                         </button>
                       )}
-                      {propia && puedeEscribir && e.ejecutada_en && (
+                      {propia && e.estado_proxima === "Vencida" && puedeEditarCompromiso && (
+                        <button
+                          className="border border-red-300 text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded bg-white disabled:opacity-50"
+                          disabled={enCurso}
+                          onClick={() => {
+                            setMotivo("");
+                            setConMotivo({ id: e.id, tipo: "caducar" });
+                          }}
+                        >
+                          Caducar por incumplimiento
+                        </button>
+                      )}
+                      {propia && e.estado_proxima === "Ejecutada" && puedeEscribir && (
                         <button
                           className={BOTON_CLARO}
                           disabled={enCurso}
@@ -289,15 +341,81 @@ export default function HistorialLead({
                           Reabrir
                         </button>
                       )}
-                      {propia && puedeEditarCompromiso && !e.ejecutada_en && (
-                        <button className={BOTON_CLARO} onClick={() => abrirEdicion(e)}>
-                          Editar compromiso
+                      {propia && e.estado_proxima === "Revocada" && puedeEditarCompromiso && (
+                        <button
+                          className={BOTON_CLARO}
+                          disabled={enCurso}
+                          onClick={() => correr(() => reversarRevocacion(e.id, idLead))}
+                        >
+                          Reversar revocacion
+                        </button>
+                      )}
+                      {propia && e.estado_proxima === "Caduca" && puedeEditarCompromiso && (
+                        <button
+                          className={BOTON_CLARO}
+                          disabled={enCurso}
+                          onClick={() => correr(() => reversarCaducidad(e.id, idLead))}
+                        >
+                          Reversar caducidad
                         </button>
                       )}
                       {!propia && (
                         <span className="text-gray-400">se gestiona en la cotizacion</span>
                       )}
                     </span>
+                  </div>
+                )}
+
+                {e.revocada_en && (
+                  <p className="mt-1 text-gray-600">
+                    <span className="font-semibold">Revocada</span> {cuando(e.revocada_en)}
+                    {e.revocador_nombre ? ` por ${e.revocador_nombre}` : ""}. Motivo: {e.motivo_revoca}
+                  </p>
+                )}
+                {e.caducada_en && (
+                  <p className="mt-1 text-gray-600">
+                    <span className="font-semibold">Caduca por incumplimiento</span> {cuando(e.caducada_en)}
+                    {e.caducador_nombre ? ` por ${e.caducador_nombre}` : ""}. Motivo: {e.motivo_caduca}
+                  </p>
+                )}
+
+                {conMotivo?.id === e.id && (
+                  <div className="mt-1 flex flex-wrap items-end gap-2 bg-crema border border-gray-200 rounded px-2 py-2">
+                    <label className="flex-1 min-w-60">
+                      <span className={ROTULO}>
+                        {conMotivo.tipo === "revocar"
+                          ? "Por que se revoca *"
+                          : "Motivo del incumplimiento *"}
+                      </span>
+                      <input
+                        className={CAMPO}
+                        value={motivo}
+                        maxLength={300}
+                        autoFocus
+                        placeholder={
+                          conMotivo.tipo === "revocar"
+                            ? "El cliente desistio del proyecto"
+                            : "Prometio enviar el plano y no lo hizo"
+                        }
+                        onChange={(x) => setMotivo(x.target.value)}
+                      />
+                    </label>
+                    <button className={BOTON_CLARO} onClick={() => setConMotivo(null)}>
+                      Cancelar
+                    </button>
+                    <button
+                      className="bg-verde text-white text-[11px] font-semibold px-3 py-0.5 rounded disabled:opacity-50"
+                      disabled={enCurso || !motivo.trim()}
+                      onClick={() =>
+                        correr(() =>
+                          conMotivo.tipo === "revocar"
+                            ? revocarCompromiso(e.id, idLead, motivo)
+                            : caducarCompromiso(e.id, idLead, motivo)
+                        )
+                      }
+                    >
+                      {conMotivo.tipo === "revocar" ? "Revocar compromiso" : "Caducar compromiso"}
+                    </button>
                   </div>
                 )}
 
