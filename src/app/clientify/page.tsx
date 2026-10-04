@@ -3,6 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonSincronizarClientify from "@/components/BotonSincronizarClientify";
 import CargarContactosClientify from "@/components/CargarContactosClientify";
+import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
 import { administraUsuarios, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { hayClaveClientify } from "@/lib/clientify";
@@ -157,6 +158,7 @@ export default async function Pagina({
           {puedeSincronizar ? (
             <div className="flex flex-wrap items-center gap-4">
               <CargarContactosClientify />
+              <BotonEnlazarClientes />
               {/* La API de Clientify es de pago aparte: el boton solo aparece si
                   la cuenta cargo la clave. */}
               {hayClave && (

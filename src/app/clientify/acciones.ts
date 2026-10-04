@@ -15,6 +15,7 @@ export interface ResultadoSync {
   ok?: boolean;
   leidos?: number;
   quitados?: number;
+  enlazados?: number;
   error?: string;
 }
 
@@ -159,8 +160,39 @@ export async function cerrarCorrida(
     .update({ fin: new Date().toISOString(), estado: "ok", leidos, quitados })
     .eq("id", id);
 
+  // Con los contactos al dia, se enlazan con su ficha de cliente los que se
+  // reconocen sin duda (mismo email, o mismo telefono y nombre parecido).
+  const { enlazados } = await enlazarLeadsConClientes();
+
   revalidatePath("/clientify");
-  return { ok: true, leidos, quitados };
+  return { ok: true, leidos, quitados, enlazados };
+}
+
+// Enlaza cada lead con la ficha de cliente que es la misma persona, cuando la
+// coincidencia es segura. Nunca pisa un enlace que ya existe. Solo el
+// Administrador; la base lo comprueba igual.
+export async function enlazarLeadsConClientes(): Promise<{
+  enlazados: number;
+  pendientes: number;
+  error?: string;
+}> {
+  const sinPermiso = await exigirAdmin();
+  if (sinPermiso) return { enlazados: 0, pendientes: 0, error: sinPermiso };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("clientify_enlazar_fichas");
+  if (error) return { enlazados: 0, pendientes: 0, error: error.message };
+
+  const r = (data ?? {}) as {
+    por_email?: number;
+    por_telefono_y_nombre?: number;
+    pendientes_de_revisar?: number;
+  };
+  revalidatePath("/clientify");
+  return {
+    enlazados: (r.por_email ?? 0) + (r.por_telefono_y_nombre ?? 0),
+    pendientes: r.pendientes_de_revisar ?? 0,
+  };
 }
 
 // Trae todos los contactos por la API de Clientify. Solo sirve si la cuenta

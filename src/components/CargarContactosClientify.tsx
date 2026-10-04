@@ -104,7 +104,7 @@ export default function CargarContactosClientify() {
       cierre.error
         ? { texto: cierre.error, error: true }
         : {
-            texto: `Listo: ${cierre.leidos} contactos, ${leidos.oportunidades} oportunidades y ${actividad.length} contactos con conversacion; ${cierre.quitados} contactos quitados por ya no estar en Clientify.`,
+            texto: `Listo: ${cierre.leidos} contactos, ${leidos.oportunidades} oportunidades y ${actividad.length} contactos con conversacion; ${cierre.quitados} contactos quitados por ya no estar en Clientify; ${cierre.enlazados ?? 0} leads enlazados con su cliente.`,
             error: false,
           }
     );
