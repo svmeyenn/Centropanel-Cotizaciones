@@ -5,10 +5,36 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0062-20260924**
+Version vigente: **v0088-20261004**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0088-20261004 | 04-10-2026 | Leads: contactos de Clientify y de Meta con su estado, linea (paneles o casas), compromisos y conversaciones, datos corregibles con historial y acceso por pais; tablero por mercado; correcciones de Peru (WhatsApp, moneda, RUC, fechas); vistas que estaban abiertas de mas quedan cerradas | 8390efc |
+| v0087-20261003 | 03-10-2026 | El sistema pasa a llamarse Sistema de Gestion Centropanel: nombre del proyecto, direccion de la aplicacion y titulo de la pestaña | 37e0f2e |
+| v0086-20261001 | 01-10-2026 | La ficha de un cliente o proveedor se puede ver, editar o eliminar por separado, y el recuadro de entregas del tablero trae el titulo de cada columna | 2dc5769 |
+| v0085-20261001 | 01-10-2026 | Seguimiento de cotizaciones: una accion comprometida se puede dar por caduca con su motivo, y el tablero muestra la espera de cada cotizacion, el cumplimiento por persona y las que no tienen a nadie a cargo | 81e7812 |
+| v0084-20261001 | 01-10-2026 | Las listas de cotizaciones, pedidos, facturas y cobranza vuelven a traer el nombre del cliente tras la union de las fichas | c328693 |
+| v0083-20261001 | 01-10-2026 | Clientes e interlocutores pasan a ser una sola ficha, con una marca por cada cosa que es; cada cambio del sistema queda anotado con fecha, persona y valores de antes y despues | 2909136 |
+| v0082-20261001 | 01-10-2026 | Menu desplegable al pasar el cursor, las cuatro listas de finanzas con su propia entrada, aviso de ficha repetida, recordatorio de Clientify y lo facturado del mes en el tablero | 94c3e7d |
+| v0081-20261001 | 01-10-2026 | La obra de un pedido se nombra sin guiones y en 30 caracteres, abreviando el cliente por pasos | bdc4bb1 |
+| v0080-20260930 | 30-09-2026 | La ventana del egreso trae todos sus campos para copiar, y el respaldo adjunto solo para verlo | 4d42fa7 |
+| v0079-20260930 | 30-09-2026 | Los datos para transferir de cada egreso pendiente se copian campo por campo desde la misma lista | 67e487f |
+| v0078-20260930 | 30-09-2026 | Fechas de entrega del pedido --comprometida y real-- con las entregas atrasadas y de las proximas dos semanas en el tablero; cabeceras agrupadas por tema y menu plegable por temas | 6db72df |
+| v0077-20260930 | 30-09-2026 | El pedido se borra desde su propia ficha, y sus totales se leen como los de la cotizacion, con el impuesto y el bruto desglosados | 3febe97 |
+| v0076-20260930 | 30-09-2026 | Un pedido admite varios documentos tributarios: parcialidades contra los depositos y notas de credito, con el monto a mano o calculado | bf4bca7 |
+| v0075-20260929 | 29-09-2026 | En el PDF de la cotizacion cada producto ocupa una sola linea: las columnas numericas se fijan a lo que miden y la descripcion se queda con el resto | b5d7030 |
+| v0074-20260929 | 29-09-2026 | La cotizacion con una tarea vigente sale de la lista de sin respuesta: se sigue desde la bandeja de tareas | 1b36475 |
+| v0073-20260929 | 29-09-2026 | Cantidad editable en la linea de la cotizacion y total del item por agregar; el menu ya no sale en el PDF; filtro por telefono en cotizaciones y pedidos; los paneles dicen APA Protec | 10c2eae |
+| v0072-20260929 | 29-09-2026 | Mercado asignable en Cuentas, Proyectos, Categorias e Interlocutores; el campo solo aparece a quien alcanza mas de un pais | 0819029 |
+| v0071-20260929 | 29-09-2026 | El proyecto se nombra "Paneles - Cliente - Pedido" | 4cff76f |
+| v0070-20260929 | 29-09-2026 | Corrige el error de servidor al crear un egreso con un respaldo de mas de 1 MB; el proyecto muestra el folio del pedido y se puede editar en el mantenedor junto con su mercado | c5c4ae9 |
+| v0069-20260929 | 29-09-2026 | Cada pedido abre el proyecto "Paneles" de su cliente, para que los ingresos y gastos de esa obra tengan donde imputarse; si el cliente ya lo tiene se reutiliza, aunque este escrito con otras mayusculas o tildes | base de datos |
+| v0068-20260929 | 29-09-2026 | Las tareas de la bitacora tienen responsable: el administrador se las asigna a quien corresponda, al anotarlas o despues, y cada uno ve en la portada lo que le toca | d8f6495 |
+| v0067-20260928 | 28-09-2026 | Bandeja de tareas pendientes al final de la portada: lo comprometido en las bitacoras y no hecho, lo mas atrasado primero, con la cotizacion a un clic y el cierre desde ahi mismo | d289a89 |
+| v0066-20260928 | 28-09-2026 | Bitacora en cada cotizacion: quien escribio, cuando, que paso y la proxima accion con su fecha; el estado (vigente, vencida, ejecutada) se calcula y no se guarda | e4feb09 |
+| v0065-20260927 | 27-09-2026 | Conciliacion: pasar al sistema lo que solo esta en el banco, dos salidas para lo que el banco no muestra y proyeccion del saldo; formato de cartola configurable por cuenta; banda de paridades por mercado en la portada; detalle de la cotizacion mas compacto | 7b7d983 |
+| v0064-20260926 | 26-09-2026 | Finanzas completa: cartola consolidada, resumen por proyecto, rendiciones de gastos, conciliacion bancaria y topes; el saldo y los informes se calculan en la base, iguales para todo perfil; categorias con su mercado y listas que no se mezclan entre paises | 168821d |
+| v0063-20260925 | 25-09-2026 | Sistema de Gestion: la herramienta cambia de nombre y suma la seccion de Finanzas con Ingresos, Egresos y Mantenedores; calculos iguales para todo perfil y enlace publico con sus totales | bf6f228 |
 | v0062-20260924 | 24-09-2026 | Tablero de desempeno en la portada: venta, conversion, margen, cobranza, equipo y clientes, con mes seleccionable y cada tasa con su magnitud | 49ef41d |
 | v0061-20260924 | 24-09-2026 | Codigo del producto (PLU) en los items de la cotizacion y busqueda por codigo al agregar productos | 7927c2a |
 | v0060-20260924 | 24-09-2026 | Tres descuentos por base (productos, flete, instalaciones) configurables por familia y por producto; panel de familias y subfamilias; parametros de materias primas; filtros y descarga a Excel en los listados | 7109ab2 |
