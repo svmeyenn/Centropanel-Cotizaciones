@@ -169,8 +169,8 @@ export default async function Pagina({
           {puedeSincronizar ? (
             <div className="flex flex-wrap items-center gap-4">
               <CargarContactosClientify />
-              <Link href="/clientify/meta" className="text-verde underline font-semibold">
-                Leads de Meta
+              <Link href="/clientify/meta" className="bg-verde text-white font-semibold px-3 py-1 rounded">
+                Subir leads de Meta
               </Link>
               <BotonEnlazarClientes />
               {/* La API de Clientify es de pago aparte: el boton solo aparece si
