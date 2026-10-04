@@ -124,6 +124,7 @@ async function VistaGestion({
   mercado: string | null;
   qs: string;
   orden: (c: CuadroOrden) => Orden;
+  // Lee un parametro de la direccion web, sea un rango o un filtro.
   rango: (param: string) => string | undefined;
 }) {
   // Quien dirige o consulta puede mirar el equipo, lo suyo o a una persona; por
@@ -164,6 +165,16 @@ async function VistaGestion({
         cot_desde: ctD, cot_hasta: ctH,
         cot_dias_min: diD, cot_dias_max: diH,
         cot_total_min: toD, cot_total_max: toH,
+      },
+      p_filtros: {
+        nuevos_linea: rango("f_nuevos_linea") ?? "",
+        nuevos_origen: rango("f_nuevos_origen") ?? "",
+        nuevos_propietario: rango("f_nuevos_prop") ?? "",
+        frios_linea: rango("f_frios_linea") ?? "",
+        frios_estado: rango("f_frios_estado") ?? "",
+        frios_propietario: rango("f_frios_prop") ?? "",
+        cot_estado: rango("f_cot_estado") ?? "",
+        cot_vendedor: rango("f_cot_vendedor") ?? "",
       },
     }),
     esJefe

@@ -3,7 +3,7 @@ import { BanderaDe } from "@/components/Bandera";
 import { dinero, fecha as fmtFecha, importe } from "@/lib/formato";
 import { antiguedad, type Gestion } from "@/components/inicio/tipos";
 import TituloOrden from "@/components/TituloOrden";
-import FiltroRangos from "@/components/FiltroRangos";
+import FiltrosCuadro from "@/components/FiltrosCuadro";
 import { COTIZACIONES } from "@/components/inicio/orden";
 import type { Orden } from "@/lib/ordenTabla";
 
@@ -86,8 +86,24 @@ export default function CotizacionesEnJuego({
         </h3>
         <span className="text-[10px] text-gray-500">Vivas y sin nada comprometido: anote que sigue en cada una.</span>
       </div>
-      <FiltroRangos
-        campos={[
+      <FiltrosCuadro
+        selecciones={[
+          {
+            param: "f_cot_estado",
+            texto: "Estado",
+            opciones: (g.opciones?.cot_estado ?? []).map((e) => ({ valor: e, texto: e })),
+          },
+          ...(verEjecutivo
+            ? [
+                {
+                  param: "f_cot_vendedor",
+                  texto: "Ejecutivo",
+                  opciones: (g.opciones?.cot_vendedor ?? []).map((e) => ({ valor: e, texto: e })),
+                },
+              ]
+            : []),
+        ]}
+        rangos={[
           { param: "rg_cot_fecha", texto: "Fecha", tipo: "fecha" },
           { param: "rg_cot_dias", texto: "Dias sin tocar", tipo: "numero" },
           { param: "rg_cot_total", texto: "Total", tipo: "numero", nota: "en la moneda de cada cotizacion" },

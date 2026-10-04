@@ -51,12 +51,24 @@ export type CotizacionSinAccion = {
   id_pais: number;
 };
 
+// Lo que hay para elegir en cada filtro de Mi gestion, sacado de los datos que
+// existen y no de una lista escrita a mano.
+export type OpcionesGestion = {
+  nuevos_origen: string[];
+  nuevos_propietario: string[];
+  frios_estado: string[];
+  frios_propietario: string[];
+  cot_estado: string[];
+  cot_vendedor: string[];
+};
+
 export type Gestion = {
   hoy: string;
   lunes: string;
   quien: number | null;
   jefe: boolean;
   mis_emails: string[];
+  opciones: OpcionesGestion;
   agenda: ItemAgenda[];
   conteos: { atrasado: number; hoy: number; semana: number; proxima: number };
   // n es el total del mercado, para el resumen de arriba; n_filtrado es lo que

@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { BanderaDe } from "@/components/Bandera";
 import PildoraLinea from "@/components/PildoraLinea";
-import { estadoLegible } from "@/lib/leads";
+import { estadoLegible, LINEAS } from "@/lib/leads";
 import { antiguedad, diasEntre, type Gestion, type LeadEnBandeja } from "@/components/inicio/tipos";
 import { BarraOrden } from "@/components/TituloOrden";
-import FiltroRangos from "@/components/FiltroRangos";
+import FiltrosCuadro from "@/components/FiltrosCuadro";
 import { FRIOS, NUEVOS } from "@/components/inicio/orden";
 import type { Orden } from "@/lib/ordenTabla";
 
@@ -29,6 +29,13 @@ export default function BandejaLeads({
   ordenNuevos: Orden;
   ordenFrios: Orden;
 }) {
+  const lineas = [
+    { valor: "paneles", texto: LINEAS.paneles },
+    { valor: "casas", texto: LINEAS.casas },
+  ];
+  const lista = (vs: string[]) => vs.map((v) => ({ valor: v, texto: v }));
+  const o = g.opciones;
+
   return (
     <div className="grid gap-2 lg:grid-cols-2">
       <Lista
@@ -39,8 +46,13 @@ export default function BandejaLeads({
         href={hrefSinContactar}
         barra={<BarraOrden qs={qs} param={NUEVOS.param} actual={ordenNuevos} opciones={NUEVOS.columnas} />}
         filtro={
-          <FiltroRangos
-            campos={[{ param: "rg_nuevos", texto: "Fecha de entrada", tipo: "fecha" }]}
+          <FiltrosCuadro
+            selecciones={[
+              { param: "f_nuevos_linea", texto: "Linea", opciones: lineas },
+              { param: "f_nuevos_origen", texto: "Origen", opciones: lista(o?.nuevos_origen ?? []) },
+              { param: "f_nuevos_prop", texto: "Propietario", opciones: lista(o?.nuevos_propietario ?? []) },
+            ]}
+            rangos={[{ param: "rg_nuevos", texto: "Fecha de entrada", tipo: "fecha" }]}
             nFiltrado={g.sin_contactar.n_filtrado ?? g.sin_contactar.n}
             nTotal={g.sin_contactar.n}
             unidad="leads"
@@ -66,8 +78,17 @@ export default function BandejaLeads({
         href={hrefSinSeguimiento}
         barra={<BarraOrden qs={qs} param={FRIOS.param} actual={ordenFrios} opciones={FRIOS.columnas} />}
         filtro={
-          <FiltroRangos
-            campos={[{ param: "rg_frios", texto: "Ultimo contacto", tipo: "fecha" }]}
+          <FiltrosCuadro
+            selecciones={[
+              { param: "f_frios_linea", texto: "Linea", opciones: lineas },
+              {
+                param: "f_frios_estado",
+                texto: "Estado",
+                opciones: (o?.frios_estado ?? []).map((e) => ({ valor: e, texto: estadoLegible(e) })),
+              },
+              { param: "f_frios_prop", texto: "Propietario", opciones: lista(o?.frios_propietario ?? []) },
+            ]}
+            rangos={[{ param: "rg_frios", texto: "Ultimo contacto", tipo: "fecha" }]}
             nFiltrado={g.sin_seguimiento.n_filtrado ?? g.sin_seguimiento.n}
             nTotal={g.sin_seguimiento.n}
             unidad="leads"
