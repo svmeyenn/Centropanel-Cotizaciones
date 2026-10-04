@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0093-20261004**
+Version vigente: **v0094-20261004**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0094-20261004 | 04-10-2026 | El icono del sistema pasa a ser el mismo del sistema de finanzas, y se agrega favicon.ico | a62bc30 |
 | v0093-20261004 | 04-10-2026 | Oportunidades con etapa, proceso y razon de ganada o perdida, importables desde la misma planilla del CRM; ventas suma conversion mes a mes, cotizaciones en juego y barras de participacion; el tablero de leads dice por que se pierde y por que se gana | da47d12 |
 | v0092-20261004 | 04-10-2026 | Inicio en dos vistas: Mi gestión (agenda de dos semanas, leads por contactar y sin seguimiento, cotizaciones en juego) y Desempeño (ventas, leads y cumplimiento); gráfico de ventas suma lo facturado a lo cotizado y vendido; línea Proyecto y píldora de Paneles | cadd9a3 |
 | v0092-20261004 | 04-10-2026 | Inicio en dos vistas: Desempeno (entrada, con el mes en curso y lo facturado en el grafico) y Mi gestion (agenda de dos semanas, leads por contactar y sin seguimiento, cotizaciones en juego); desempeno de leads por mercado; la linea pasa a llamarse Proyecto; la vista de leads vuelve a filtrar por pais | cadd9a3 |
