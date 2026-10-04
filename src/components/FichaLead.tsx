@@ -264,6 +264,7 @@ export default function FichaLead({
         </div>
       ) : (
         <form onSubmit={guardar} className="p-2.5 space-y-2">
+          <h3 className={SUBTITULO}>La persona</h3>
           <div className="grid gap-x-3 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-4">
             <label>
               <span className={ROTULO}>Nombre</span>
@@ -331,11 +332,14 @@ export default function FichaLead({
                 <input className={`${CAMPO} bg-gray-50`} value={lead.pais ?? ""} readOnly />
               )}
             </label>
+          </div>
+          <h3 className={SUBTITULO}>El lead</h3>
+          <div className="grid gap-x-3 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-4">
             <label>
               <span className={ROTULO}>Origen</span>
               <input className={CAMPO} value={form.origen} onChange={poner("origen")} maxLength={200} />
             </label>
-            <label>
+            <label className="lg:col-span-2">
               <span className={ROTULO}>Campana</span>
               <input className={CAMPO} value={form.campana} onChange={poner("campana")} maxLength={200} />
             </label>
