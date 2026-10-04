@@ -138,6 +138,11 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
         </Caja>
       </div>
 
+      <div className="grid gap-2.5 lg:grid-cols-2">
+        <Razones titulo="Por que se pierde" filas={d.razones_perdida ?? []} clase="bg-[#B5654A]" />
+        <Razones titulo="Por que se gana" filas={d.razones_ganada ?? []} clase="bg-verde" />
+      </div>
+
       <Caja titulo="Como trabaja la cartera cada propietario">
         <div className="overflow-x-auto">
           <table className="w-full text-[11px]">
@@ -254,6 +259,45 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
 function sumar(iso: string, dias: number) {
   const [a, m, dd] = iso.slice(0, 10).split("-").map(Number);
   return new Date(Date.UTC(a, m - 1, dd + dias)).toISOString().slice(0, 10);
+}
+
+// Las razones que anota el CRM al cerrar una oportunidad. Sin esto no se puede
+// responder por que se pierde.
+function Razones({
+  titulo,
+  filas,
+  clase,
+}: {
+  titulo: string;
+  filas: { razon: string; n: number; monto: number }[];
+  clase: string;
+}) {
+  const total = filas.reduce((a, b) => a + b.n, 0);
+  return (
+    <Caja titulo={`${titulo} · oportunidades cerradas en el ultimo ano`}>
+      {filas.length === 0 ? (
+        <p className="px-3 py-5 text-center text-xs text-gray-400">
+          Sin oportunidades cerradas con razon anotada. La razon viene de la planilla del CRM.
+        </p>
+      ) : (
+        <ul className="p-3 space-y-1.5 text-[11px]">
+          {filas.map((f) => (
+            <li key={f.razon} className="grid grid-cols-[8rem_1fr_auto] items-center gap-2">
+              <span className="truncate" title={f.razon}>
+                {f.razon}
+              </span>
+              <span className="h-3 bg-gray-100 rounded-sm overflow-hidden">
+                <span className={`block h-full ${clase}`} style={{ width: `${pct(f.n, total)}%` }} />
+              </span>
+              <span className="tabular-nums text-right">
+                <b>{n(f.n)}</b> <span className="text-gray-500">{pct(f.n, total)} %</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Caja>
+  );
 }
 
 function BarraEstado({

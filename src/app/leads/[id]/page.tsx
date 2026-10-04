@@ -47,6 +47,10 @@ interface Oportunidad {
   moneda: string | null;
   estado: number | null;
   id_etapa: number | null;
+  etapa: string | null;
+  proceso: string | null;
+  razon_perdida: string | null;
+  razon_ganada: string | null;
   creado_clientify: string | null;
 }
 
@@ -159,7 +163,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
       : supabase.rpc("clientify_cotizaciones_de", { p_contacto: idContacto }),
     supabase
       .from("clientify_oportunidades")
-      .select("id_clientify, nombre, monto, moneda, estado, id_etapa, creado_clientify")
+      .select("id_clientify, nombre, monto, moneda, estado, id_etapa, etapa, proceso, razon_perdida, razon_ganada, creado_clientify")
       .eq("id_contacto", idContacto)
       .order("creado_clientify", { ascending: false }),
     supabase
@@ -333,6 +337,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
                     <th className="text-left px-3 py-0.5">Oportunidad</th>
                     <th className="text-left px-3 py-0.5 w-44">Etapa</th>
                     <th className="text-left px-3 py-0.5 w-20">Estado</th>
+                    <th className="text-left px-3 py-0.5 w-36">Por que</th>
                     <th className="text-right px-3 py-0.5 w-32">Monto</th>
                   </tr>
                 </thead>
@@ -343,9 +348,19 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
                         {o.creado_clientify ? fecha(o.creado_clientify.slice(0, 10)) : ""}
                       </td>
                       <td className="px-3 py-0.5">{o.nombre}</td>
-                      <td className="px-3 py-0.5">{o.id_etapa ? (ETAPAS[o.id_etapa] ?? "") : ""}</td>
+                      {/* El nombre de la etapa viene de la planilla; de la API
+                          solo llega su numero. */}
+                      <td className="px-3 py-0.5">
+                        {o.etapa ?? (o.id_etapa ? (ETAPAS[o.id_etapa] ?? "") : "")}
+                        {o.proceso && (
+                          <span className="block text-[9px] text-gray-500">{o.proceso}</span>
+                        )}
+                      </td>
                       <td className="px-3 py-0.5">
                         {o.estado ? (ESTADOS_OPORTUNIDAD[o.estado] ?? "") : ""}
+                      </td>
+                      <td className="px-3 py-0.5 text-gray-600">
+                        {o.razon_perdida ?? o.razon_ganada ?? ""}
                       </td>
                       <td className="px-3 py-0.5 text-right tabular-nums whitespace-nowrap">
                         {dinero(o.monto ?? 0, o.moneda ?? monedaBase)}
