@@ -1,5 +1,7 @@
 "use server";
 
+import { leerMontoLibre } from "@/lib/formato";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
@@ -8,8 +10,7 @@ export type Resultado = { ok: boolean; mensaje?: string };
 
 // El monto se teclea con la puntuacion de aca: 50.000 son cincuenta mil.
 function leerMonto(v: FormDataEntryValue | null): number {
-  const s = (v ?? "").toString().trim().replace(/\./g, "").replace(",", ".");
-  const n = Number(s);
+  const n = leerMontoLibre((v ?? "").toString());
   return Number.isFinite(n) ? n : 0;
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pesos, porcentaje, fecha as fmtFecha, hoyISO } from "@/lib/formato";
+import { importe, pesos, decimalesDe, porcentaje, fecha as fmtFecha, hoyISO } from "@/lib/formato";
 import {
   registrarPago,
   anularPago,
@@ -61,8 +61,10 @@ export default function CuentaCorrientePedido({
   pagos,
   puedeCrear,
   esAdmin,
+  moneda = "CLP",
 }: {
   idPedido: number;
+  moneda?: string;
   formaPago: string | null;
   medioPago: string | null;
   cuenta: Cuenta;
@@ -95,13 +97,13 @@ export default function CuentaCorrientePedido({
 
       <div className="p-3 space-y-3">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Dato titulo={`Total con ${impuesto}`} valor={pesos(cuenta.total)} destacado />
+          <Dato titulo={`Total con ${impuesto}`} valor={importe(cuenta.total, moneda)} destacado />
           <Dato
             titulo={`Pie exigido (${porcentaje(cuenta.pie_pct)} %)`}
-            valor={pesos(cuenta.pie_monto)}
+            valor={importe(cuenta.pie_monto, moneda)}
           />
-          <Dato titulo="Abonado" valor={pesos(cuenta.abonado)} />
-          <Dato titulo="Saldo" valor={pesos(cuenta.saldo)} />
+          <Dato titulo="Abonado" valor={importe(cuenta.abonado, moneda)} />
+          <Dato titulo="Saldo" valor={importe(cuenta.saldo, moneda)} />
         </div>
 
         {(formaPago || medioPago) && (
@@ -114,9 +116,9 @@ export default function CuentaCorrientePedido({
 
         {cuenta.comision_pct > 0 && (
           <p className="text-xs text-gray-600">
-            Total sin comision {pesos(cuenta.total_sin_comision)} + recargo{" "}
-            {porcentaje(cuenta.comision_pct)} % ({pesos(cuenta.comision_monto)})
-            = {pesos(cuenta.total)}. El recargo hace que el neto llegue completo.
+            Total sin comision {importe(cuenta.total_sin_comision, moneda)} + recargo{" "}
+            {porcentaje(cuenta.comision_pct)} % ({importe(cuenta.comision_monto, moneda)})
+            = {importe(cuenta.total, moneda)}. El recargo hace que el neto llegue completo.
           </p>
         )}
 
@@ -128,7 +130,7 @@ export default function CuentaCorrientePedido({
             </div>
           ) : (
             <div className="bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded p-3">
-              <strong>Falta el pie: {pesos(faltaPie)}.</strong> Hasta que se
+              <strong>Falta el pie: {importe(faltaPie, moneda)}.</strong> Hasta que se
               registre, no se generan solicitudes a proveedores: comprar antes
               seria financiar la produccion con caja propia.
             </div>
@@ -169,24 +171,37 @@ export default function CuentaCorrientePedido({
                   <span className="block text-dorado-osc font-semibold mb-1">
                     Monto
                   </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className={`${input} text-right`}
-                    value={pesos(d.monto)}
-                    onChange={(e) =>
-                      setD({
-                        ...d,
-                        monto: Number(e.target.value.replace(/\D/g, "")) || 0,
-                      })
-                    }
-                  />
+                  {decimalesDe(moneda) > 0 ? (
+                    // Con centimos el navegador entrega el numero ya leido: no se
+                    // adivina si la coma o el punto son decimales.
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className={`${input} text-right`}
+                      value={d.monto || ""}
+                      onChange={(e) => setD({ ...d, monto: Number(e.target.value) || 0 })}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className={`${input} text-right`}
+                      value={pesos(d.monto)}
+                      onChange={(e) =>
+                        setD({
+                          ...d,
+                          monto: Number(e.target.value.replace(/\D/g, "")) || 0,
+                        })
+                      }
+                    />
+                  )}
                   {faltaPie > 0 && (
                     <button
                       onClick={() => setD({ ...d, monto: faltaPie })}
                       className="bg-verde text-white text-[11px] font-semibold px-2 py-0.5 rounded mt-0.5"
                     >
-                      usar el pie que falta ({pesos(faltaPie)})
+                      usar el pie que falta ({importe(faltaPie, moneda)})
                     </button>
                   )}
                 </label>
@@ -286,7 +301,7 @@ export default function CuentaCorrientePedido({
                 <tr key={p.id} className="border-t border-gray-100">
                   <td className="px-3 py-2">{fmtFecha(p.fecha)}</td>
                   <td className="px-3 py-2 text-right font-semibold">
-                    {pesos(p.monto)}
+                    {importe(p.monto, moneda)}
                   </td>
                   <td className="px-3 py-2">{p.medio ?? ""}</td>
                   <td className="px-3 py-2 text-gray-600">

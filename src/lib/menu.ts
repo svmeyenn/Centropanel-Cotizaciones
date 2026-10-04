@@ -49,7 +49,7 @@ export const GRUPOS: Grupo[] = [
       // Los contactos del CRM, con sus cotizaciones, conversaciones y compromisos.
       // Los datos de Clientify se cargan por archivo; lo que se corrige aqui no se
       // pierde en la carga siguiente.
-      { texto: "Leads", href: "/clientify" },
+      { texto: "Leads", href: "/leads" },
       { texto: "Nueva cotizacion", href: "/cotizaciones/nueva" },
       { texto: "Cotizaciones", href: "/cotizaciones" },
       { texto: "Pedidos", href: "/pedidos" },

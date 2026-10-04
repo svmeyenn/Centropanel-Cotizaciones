@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import Ventana from "@/components/Ventana";
 import {
   borrarLinea,

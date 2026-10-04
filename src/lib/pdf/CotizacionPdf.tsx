@@ -13,7 +13,7 @@ import type { CotizacionDoc, PersonaDoc } from "@/components/DocumentoCotizacion
 import { pTxt, pNum, type Parametros } from "@/lib/parametros";
 import {
   fecha as fmtFecha,
-  pesos,
+  importe,
   porcentaje,
   sumarDias,
   unidades as fmtUnid,
@@ -174,9 +174,9 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
             <Text style={[s.celda, s.cSku, { color: GRIS }]}>{it.sku ?? ""}</Text>
             <Text style={[s.celda, s.cDesc]}>{it.descripcion}</Text>
             <Text style={[s.celda, s.cUnid]}>{fmtUnid(it.unidades)}</Text>
-            <Text style={[s.celda, s.cUnit]}>{pesos(it.valor_unitario)}</Text>
+            <Text style={[s.celda, s.cUnit]}>{importe(it.valor_unitario, d.moneda)}</Text>
             <Text style={[s.celda, s.cSub]}>
-              {pesos(Number(it.unidades) * Number(it.valor_unitario))}
+              {importe(Number(it.unidades) * Number(it.valor_unitario), d.moneda)}
             </Text>
           </View>
         ))}
@@ -184,29 +184,29 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
 
         {/* ---- totales ---- */}
         <View style={s.totales} wrap={false}>
-          <Total rotulo="SUBTOTAL" valor={pesos(d.subtotal)} />
+          <Total rotulo="SUBTOTAL" valor={importe(d.subtotal, d.moneda)} />
           {d.descuento > 0 && (
-            <Total rotulo={ROTULO_DESCUENTO_1} valor={pesos(d.descuento)} />
+            <Total rotulo={ROTULO_DESCUENTO_1} valor={importe(d.descuento, d.moneda)} />
           )}
           {d.descuento2 > 0 && (
-            <Total rotulo={ROTULO_DESCUENTO_2} valor={pesos(d.descuento2)} />
+            <Total rotulo={ROTULO_DESCUENTO_2} valor={importe(d.descuento2, d.moneda)} />
           )}
           {d.descuento3 > 0 && (
-            <Total rotulo={ROTULO_DESCUENTO_3} valor={pesos(d.descuento3)} />
+            <Total rotulo={ROTULO_DESCUENTO_3} valor={importe(d.descuento3, d.moneda)} />
           )}
-          <Total rotulo="TOTAL NETO" valor={pesos(d.total_neto)} negrita />
+          <Total rotulo="TOTAL NETO" valor={importe(d.total_neto, d.moneda)} negrita />
           <Total
             rotulo={`${pTxt(p, "NombreImpuesto", "IVA")} ${Math.round(pNum(p, "IVA", 0.19) * 100)}%`}
-            valor={pesos(d.iva)}
+            valor={importe(d.iva, d.moneda)}
           />
-          <Total rotulo="TOTAL" valor={pesos(d.total)} fondo={VERDE} />
+          <Total rotulo="TOTAL" valor={importe(d.total, d.moneda)} fondo={VERDE} />
           {d.comision_pct > 0 && (
             <>
               <Total
                 rotulo={`RECARGO ${d.medio_pago ?? ""} ${porcentaje(d.comision_pct)}%`}
-                valor={pesos(d.total_a_pagar - d.total)}
+                valor={importe(d.total_a_pagar - d.total, d.moneda)}
               />
-              <Total rotulo="TOTAL A PAGAR" valor={pesos(d.total_a_pagar)} fondo={DORADO_OSC} />
+              <Total rotulo="TOTAL A PAGAR" valor={importe(d.total_a_pagar, d.moneda)} fondo={DORADO_OSC} />
             </>
           )}
         </View>

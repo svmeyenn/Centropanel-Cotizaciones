@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import Ventana from "@/components/Ventana";
 import { crearRendicion, type ResultadoRendicion } from "@/app/rendiciones/acciones";
 import {

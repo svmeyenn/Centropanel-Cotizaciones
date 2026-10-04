@@ -13,7 +13,7 @@ import {
   reversarRevocacion,
   revocarCompromiso,
   type Resultado,
-} from "@/app/clientify/actividad-lead";
+} from "@/app/leads/actividad-lead";
 import {
   caducarAccion,
   marcarAccionHecha,

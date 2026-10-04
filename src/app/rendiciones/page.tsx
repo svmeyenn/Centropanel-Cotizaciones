@@ -9,7 +9,7 @@ import {
   type FiltroRendicion,
 } from "@/lib/finanzas/consultas";
 import { etiquetaInterlocutor } from "@/lib/finanzas/tipos";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 

@@ -5,7 +5,7 @@ import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
-import { pesos, porcentaje, fecha as fmtFecha } from "@/lib/formato";
+import { importe, monedaDelPais, resumenMontos, porcentaje, fecha as fmtFecha } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
 
@@ -122,6 +122,7 @@ export default async function Pagina({
       folios: foliosDe.get(Number(p.id)) ?? [],
       facturado: Number(c?.facturado ?? 0),
       porFacturar: Number(c?.por_facturar ?? 0),
+      moneda: monedaDelPais(Number(c?.id_pais)),
     };
   });
 
@@ -136,9 +137,6 @@ export default async function Pagina({
             ? r.porFacturar > 0
             : true
   );
-
-  const sum = (f: (r: (typeof filas)[number]) => number) =>
-    visibles.reduce((s, r) => s + f(r), 0);
 
   return (
     <div className="min-h-screen">
@@ -160,20 +158,20 @@ export default async function Pagina({
             en que se miran, de lo vendido a lo facturado. */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
           <Tarjeta titulo="Pedidos" valor={String(visibles.length)} />
-          <Tarjeta titulo="Total pedidos" valor={pesos(sum((r) => r.total))} />
+          <Tarjeta titulo="Total pedidos" valor={resumenMontos(visibles.map((r) => [r.moneda, r.total]))} />
           <Tarjeta
             titulo="Por cobrar"
-            valor={pesos(sum((r) => Math.max(r.saldo, 0)))}
+            valor={resumenMontos(visibles.map((r) => [r.moneda, Math.max(r.saldo, 0)]))}
             destacado
           />
           <Tarjeta
             titulo="Pendiente de factura"
-            valor={pesos(sum((r) => r.porFacturar))}
+            valor={resumenMontos(visibles.map((r) => [r.moneda, r.porFacturar]))}
           />
-          <Tarjeta titulo="Abonado" valor={pesos(sum((r) => r.abonado))} />
+          <Tarjeta titulo="Abonado" valor={resumenMontos(visibles.map((r) => [r.moneda, r.abonado]))} />
           <Tarjeta
             titulo="Facturado"
-            valor={pesos(sum((r) => r.facturado))}
+            valor={resumenMontos(visibles.map((r) => [r.moneda, r.facturado]))}
           />
         </div>
 
@@ -280,14 +278,14 @@ export default async function Pagina({
                       {r.medio ? ` · ${r.medio}` : ""}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold">
-                      {pesos(r.total)}
+                      {importe(r.total, r.moneda)}
                     </td>
                     <td className="px-3 py-2 text-right text-gray-600">
-                      {r.pie > 0 ? pesos(r.pie) : "--"}
+                      {r.pie > 0 ? importe(r.pie, r.moneda) : "--"}
                     </td>
-                    <td className="px-3 py-2 text-right">{pesos(r.abonado)}</td>
+                    <td className="px-3 py-2 text-right">{importe(r.abonado, r.moneda)}</td>
                     <td className="px-3 py-2 text-right font-semibold">
-                      {pesos(Math.max(r.saldo, 0))}
+                      {importe(Math.max(r.saldo, 0), r.moneda)}
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
@@ -341,7 +339,7 @@ export default async function Pagina({
                       )}
                       {r.porFacturar > 0 && (
                         <span className="text-amber-700 block">
-                          faltan {pesos(r.porFacturar)}
+                          faltan {importe(r.porFacturar, r.moneda)}
                         </span>
                       )}
                     </td>

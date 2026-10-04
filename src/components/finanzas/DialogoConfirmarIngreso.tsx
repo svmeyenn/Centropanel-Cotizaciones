@@ -3,7 +3,7 @@
 import { useActionState, useEffect } from "react";
 import Ventana from "@/components/Ventana";
 import { confirmarIngreso, type Resultado } from "@/app/ingresos/acciones";
-import { hoyISO, pesos } from "@/lib/formato";
+import { hoyISO, pesosConCentimos as pesos } from "@/lib/formato";
 import type { Movimiento } from "@/lib/finanzas/tipos";
 
 const hoy = () => hoyISO();

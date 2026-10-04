@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0088-20261004**
+Version vigente: **v0089-20261004**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0089-20261004 | 04-10-2026 | Perú con céntimos (cálculo en la base, editores, documentos, pedidos, facturas, finanzas y enlace público con su moneda); Leads sin referencias a Clientify salvo el botón de importar (ruta /leads); importación de la planilla .xlsx de contactos | d46dcb4 |
 | v0088-20261004 | 04-10-2026 | Leads: contactos de Clientify y de Meta con su estado, linea (paneles o casas), compromisos y conversaciones, datos corregibles con historial y acceso por pais; tablero por mercado; correcciones de Peru (WhatsApp, moneda, RUC, fechas); vistas que estaban abiertas de mas quedan cerradas | 8390efc |
 | v0087-20261003 | 03-10-2026 | El sistema pasa a llamarse Sistema de Gestion Centropanel: nombre del proyecto, direccion de la aplicacion y titulo de la pestaña | 37e0f2e |
 | v0086-20261001 | 01-10-2026 | La ficha de un cliente o proveedor se puede ver, editar o eliminar por separado, y el recuadro de entregas del tablero trae el titulo de cada columna | 2dc5769 |

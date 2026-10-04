@@ -3,7 +3,7 @@
 import { useActionState, useEffect } from "react";
 import Ventana from "@/components/Ventana";
 import { guardarPago, type Resultado } from "@/app/egresos/acciones";
-import { hoyISO, pesos } from "@/lib/formato";
+import { hoyISO, pesosConCentimos as pesos } from "@/lib/formato";
 import type { Movimiento } from "@/lib/finanzas/tipos";
 import ListaAdjuntos from "./ListaAdjuntos";
 

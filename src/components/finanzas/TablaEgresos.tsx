@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import {
   agruparPorMes,
   etiquetaInterlocutor,

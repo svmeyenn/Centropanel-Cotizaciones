@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import Ventana from "@/components/Ventana";
 import {
   aprobarRendicion,

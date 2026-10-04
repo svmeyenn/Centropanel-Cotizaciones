@@ -13,7 +13,7 @@ import {
   editarSolicitudEgreso,
   type Resultado,
 } from "@/app/egresos/acciones";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import {
   etiquetaProyecto,
   type Categoria,

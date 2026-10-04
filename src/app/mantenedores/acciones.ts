@@ -1,5 +1,7 @@
 "use server";
 
+import { leerMontoLibre } from "@/lib/formato";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
@@ -23,8 +25,7 @@ const texto = (v: FormDataEntryValue | null) => {
 
 // El monto se teclea a mano y con la puntuacion de aca.
 function leerMonto(v: FormDataEntryValue | null): number {
-  const s = (v ?? "").toString().trim().replace(/\./g, "").replace(",", ".");
-  const n = Number(s);
+  const n = leerMontoLibre((v ?? "").toString());
   return Number.isFinite(n) ? n : 0;
 }
 

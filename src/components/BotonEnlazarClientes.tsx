@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { enlazarLeadsConClientes } from "@/app/clientify/acciones";
+import { enlazarLeadsConClientes } from "@/app/leads/acciones";
 
 // Enlaza los leads con sus fichas de cliente sin tener que volver a cargar el
 // archivo. Solo se ve para el Administrador.

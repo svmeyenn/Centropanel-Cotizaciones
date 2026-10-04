@@ -3,7 +3,7 @@ import {
   ROTULO_DESCUENTO_2,
   ROTULO_DESCUENTO_3,
 } from "@/lib/descuentos";
-import { pesos, porcentaje, unidades as fmtUnid, fecha as fmtFecha, sumarDias } from "@/lib/formato";
+import { importe, porcentaje, unidades as fmtUnid, fecha as fmtFecha, sumarDias } from "@/lib/formato";
 import { pTxt, pNum, type Parametros } from "@/lib/parametros";
 import { LOGO_PDF } from "@/lib/logo";
 
@@ -32,6 +32,8 @@ export interface ItemDoc {
 }
 
 export interface CotizacionDoc {
+  // CLP o PEN: los importes salen con los decimales y el simbolo de la suya.
+  moneda?: string;
   num_cotizacion: string | null;
   fecha: string;
   validez_dias: number;
@@ -150,10 +152,10 @@ export default function DocumentoCotizacion({
                 {fmtUnid(it.unidades)}
               </td>
               <td className="px-2 py-1 text-right whitespace-nowrap">
-                {pesos(it.valor_unitario)}
+                {importe(it.valor_unitario, d.moneda)}
               </td>
               <td className="px-2 py-1 text-right whitespace-nowrap">
-                {pesos(Number(it.unidades) * Number(it.valor_unitario))}
+                {importe(Number(it.unidades) * Number(it.valor_unitario), d.moneda)}
               </td>
             </tr>
           ))}
@@ -166,7 +168,7 @@ export default function DocumentoCotizacion({
           <tbody>
             <tr>
               <td className="text-right pr-6 py-0.5">SUBTOTAL</td>
-              <td className="text-right py-0.5 w-32">{pesos(d.subtotal)}</td>
+              <td className="text-right py-0.5 w-32">{importe(d.subtotal, d.moneda)}</td>
             </tr>
             {/* Las lineas de descuento no se imprimen cuando son cero, igual
                 que el IIf(Nz([DescuentoMonto],0)=0,Null,...) del informe. Cada
@@ -174,34 +176,34 @@ export default function DocumentoCotizacion({
             {d.descuento > 0 && (
               <tr>
                 <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_1}</td>
-                <td className="text-right py-0.5">{pesos(d.descuento)}</td>
+                <td className="text-right py-0.5">{importe(d.descuento, d.moneda)}</td>
               </tr>
             )}
             {d.descuento2 > 0 && (
               <tr>
                 <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_2}</td>
-                <td className="text-right py-0.5">{pesos(d.descuento2)}</td>
+                <td className="text-right py-0.5">{importe(d.descuento2, d.moneda)}</td>
               </tr>
             )}
             {d.descuento3 > 0 && (
               <tr>
                 <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_3}</td>
-                <td className="text-right py-0.5">{pesos(d.descuento3)}</td>
+                <td className="text-right py-0.5">{importe(d.descuento3, d.moneda)}</td>
               </tr>
             )}
             <tr className="font-bold">
               <td className="text-right pr-6 py-0.5">TOTAL NETO</td>
-              <td className="text-right py-0.5">{pesos(d.total_neto)}</td>
+              <td className="text-right py-0.5">{importe(d.total_neto, d.moneda)}</td>
             </tr>
             <tr>
               <td className="text-right pr-6 py-0.5">
                 {pTxt(p, "NombreImpuesto", "IVA")} {Math.round(pNum(p, "IVA", 0.19) * 100)}%
               </td>
-              <td className="text-right py-0.5">{pesos(d.iva)}</td>
+              <td className="text-right py-0.5">{importe(d.iva, d.moneda)}</td>
             </tr>
             <tr className="bg-verde text-white font-bold">
               <td className="text-right pr-6 py-1.5">TOTAL</td>
-              <td className="text-right py-1.5 pr-2">{pesos(d.total)}</td>
+              <td className="text-right py-1.5 pr-2">{importe(d.total, d.moneda)}</td>
             </tr>
             {d.comision_pct > 0 && (
               <>
@@ -210,13 +212,13 @@ export default function DocumentoCotizacion({
                     RECARGO {d.medio_pago} {porcentaje(d.comision_pct)}%
                   </td>
                   <td className="text-right py-0.5">
-                    {pesos(d.total_a_pagar - d.total)}
+                    {importe(d.total_a_pagar - d.total, d.moneda)}
                   </td>
                 </tr>
                 <tr className="bg-dorado-osc text-white font-bold">
                   <td className="text-right pr-6 py-1.5">TOTAL A PAGAR</td>
                   <td className="text-right py-1.5 pr-2">
-                    {pesos(d.total_a_pagar)}
+                    {importe(d.total_a_pagar, d.moneda)}
                   </td>
                 </tr>
               </>

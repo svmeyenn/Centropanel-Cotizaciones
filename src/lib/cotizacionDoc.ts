@@ -50,6 +50,7 @@ export async function leerCotizacionDoc(id: number): Promise<{
 
   const d: CotizacionDoc = {
     num_cotizacion: cot.num_cotizacion,
+    moneda: (cot.moneda as string | null) ?? undefined,
     fecha: (cot.fecha as string).slice(0, 10),
     validez_dias: cot.validez_dias ?? 7,
     tiempo_entrega: cot.tiempo_entrega,
@@ -59,7 +60,7 @@ export async function leerCotizacionDoc(id: number): Promise<{
     forma_pago: fp?.descripcion ?? null,
     medio_pago: mp?.nombre ?? null,
     comision_pct: Number(mp?.comision_pct ?? 0),
-    total_a_pagar: conComision(Number(tot?.total ?? 0), Number(mp?.comision_pct ?? 0)),
+    total_a_pagar: conComision(Number(tot?.total ?? 0), Number(mp?.comision_pct ?? 0), cot.moneda as string | null),
     items: (items ?? []).map((it) => ({
       sku: (it.sku as string | null) ?? null,
       descripcion: it.descripcion,

@@ -8,7 +8,7 @@ import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/
 import { ESTADOS_COTIZACION } from "@/lib/estados";
 import Bandera from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
-import { pesos, fecha as fmtFecha, coincideTelefono } from "@/lib/formato";
+import { importe, monedaDelPais, fecha as fmtFecha, coincideTelefono } from "@/lib/formato";
 
 // Listado de cotizaciones, equivalente a frmCotizaciones. Los filtros se
 // resuelven en el servidor (query string) y no filtrando en el navegador, para
@@ -231,7 +231,7 @@ export default async function Pagina({
                         {c.estado as string}
                       </td>
                       <td className="px-3 py-2 text-right font-semibold">
-                        {pesos(totalPorId.get(c.id as number) ?? 0)}
+                        {importe(totalPorId.get(c.id as number) ?? 0, monedaDelPais(c.id_pais as number))}
                       </td>
                       {puedeBorrar && (
                         <td className="px-3 py-2 text-right">

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonExportarFilas from "@/components/BotonExportarFilas";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import FiltrosMovimientos from "@/components/finanzas/FiltrosMovimientos";
 import TablaCartola from "@/components/finanzas/TablaCartola";
 import {

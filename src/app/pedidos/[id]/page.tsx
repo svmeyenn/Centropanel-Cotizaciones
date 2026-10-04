@@ -1,3 +1,4 @@
+import { monedaDelPais } from "@/lib/formato";
 import { notFound } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import EditorPedido, {
@@ -190,6 +191,7 @@ export default async function Pagina({
       </div>
       <EditorPedido
         id={id}
+        moneda={(ped.moneda as string | null) ?? monedaDelPais(Number(ped.id_pais))}
         num={ped.num_pedido as string}
         cotizacion={cot ? { id: cot.id, num: cot.num_cotizacion } : null}
         cliente={cli?.razon_social ?? ""}

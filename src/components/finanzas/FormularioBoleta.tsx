@@ -219,7 +219,7 @@ export default function FormularioBoleta({
           <input
             name="monto"
             className={CAMPO}
-            inputMode="numeric"
+            inputMode="decimal"
             defaultValue={boleta ? String(boleta.monto) : ""}
             placeholder="12.500"
             required

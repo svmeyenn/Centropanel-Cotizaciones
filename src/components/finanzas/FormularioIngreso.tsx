@@ -8,7 +8,7 @@ import {
   guardarIngreso,
   type Resultado,
 } from "@/app/ingresos/acciones";
-import { hoyISO, pesos } from "@/lib/formato";
+import { hoyISO, pesosConCentimos as pesos } from "@/lib/formato";
 import {
   etiquetaProyecto,
   type Categoria,

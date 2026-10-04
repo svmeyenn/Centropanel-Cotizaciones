@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import {
   asociarAnticipo,
   quitarAnticipo,
@@ -159,7 +159,7 @@ export default function PanelAnticipos({
             <input
               name="monto_aplicado"
               className={CAMPO}
-              inputMode="numeric"
+              inputMode="decimal"
               defaultValue={anticipo ? String(anticipo.disponible) : ""}
               key={elegido}
               required
