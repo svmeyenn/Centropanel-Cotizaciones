@@ -7,7 +7,7 @@ import {
   cerrarCorrida,
   guardarLote,
   type TablaClientify,
-} from "@/app/clientify/acciones";
+} from "@/app/leads/acciones";
 
 const LOTE = 100;
 
@@ -104,7 +104,7 @@ export default function CargarContactosClientify() {
       cierre.error
         ? { texto: cierre.error, error: true }
         : {
-            texto: `Listo: ${cierre.leidos} contactos, ${leidos.oportunidades} oportunidades y ${actividad.length} contactos con conversacion; ${cierre.quitados} contactos quitados por ya no estar en Clientify; ${cierre.enlazados ?? 0} leads enlazados con su cliente.`,
+            texto: `Listo: ${cierre.leidos} contactos, ${leidos.oportunidades} oportunidades y ${actividad.length} contactos con conversacion; ${cierre.quitados} contactos quitados por ya no estar en el archivo; ${cierre.enlazados ?? 0} leads enlazados con su cliente.`,
             error: false,
           }
     );
@@ -130,7 +130,7 @@ export default function CargarContactosClientify() {
         disabled={trabajando}
         className="bg-verde text-white text-xs font-semibold px-3 py-1.5 rounded hover:opacity-90 disabled:opacity-50"
       >
-        {trabajando ? "Cargando..." : "Cargar archivo de contactos"}
+        {trabajando ? "Importando..." : "Importar leads desde Clientify"}
       </button>
       {avance && (
         <span className="text-xs text-gray-600" role="status">

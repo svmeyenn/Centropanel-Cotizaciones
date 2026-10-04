@@ -215,12 +215,12 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     <div className="min-h-screen">
       <Cabecera
         titulo={c.nombre_completo || "(sin nombre)"}
-        subtitulo={[c.empresa, c.cargo].filter(Boolean).join(" · ") || "Lead de Clientify"}
+        subtitulo={[c.empresa, c.cargo].filter(Boolean).join(" · ") || "Lead"}
       />
       <div className="max-w-screen-xl mx-auto p-4 space-y-3 text-[11px]">
-        <BarraNavegacion volverA="/clientify">
+        <BarraNavegacion volverA="/leads">
           <Link
-            href="/clientify"
+            href="/leads"
             className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Lista de leads
@@ -265,7 +265,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             {cotizaciones.length === 0 ? (
               <p className="px-3 py-4 text-center text-[11px] text-gray-400">
                 Este lead no tiene cotizaciones vinculadas. Use &quot;Crear cotizacion&quot; para
-                hacerle una, o ponga el folio en el nombre de su oportunidad en Clientify (por
+                hacerle una, o ponga el folio en el nombre de su oportunidad (por
                 ejemplo &quot;Maria Perez - COT00118&quot;).
               </p>
             ) : (
@@ -313,11 +313,11 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           </section>
         )}
 
-        {/* Oportunidades del contacto en Clientify */}
+        {/* Oportunidades del contacto */}
         {oportunidades.length > 0 && (
           <section className="bg-white border border-gray-200 rounded overflow-hidden">
             <h2 className={TITULO}>
-              <span>OPORTUNIDADES EN CLIENTIFY</span>
+              <span>OPORTUNIDADES</span>
               <span className="font-normal">{oportunidades.length}</span>
             </h2>
             <div className="overflow-x-auto">
@@ -371,11 +371,11 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           />
         </section>
 
-        {/* Lo que el equipo dejo anotado en Clientify */}
+        {/* Lo que el equipo dejo anotado antes */}
         {(c.observaciones || notasClientify.length > 0) && (
           <section className="bg-white border border-gray-200 rounded overflow-hidden">
             <h2 className={TITULO}>
-              <span>ANOTADO EN CLIENTIFY</span>
+              <span>NOTAS ANTERIORES</span>
               <span className="font-normal">{notasClientify.length + (c.observaciones ? 1 : 0)}</span>
             </h2>
             {c.observaciones && (
@@ -406,8 +406,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
               </ol>
             )}
             <p className="px-3 py-1.5 text-[10px] text-gray-500 border-t border-gray-100">
-              Lo registrado en Clientify. Los textos largos llegan recortados; el historial completo,
-              con los mensajes de WhatsApp, vive en Clientify.
+              Lo registrado antes de pasar al sistema. Los textos largos llegan recortados y los
+              mensajes de WhatsApp no se importan.
             </p>
           </section>
         )}

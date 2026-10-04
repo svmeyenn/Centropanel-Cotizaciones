@@ -3,13 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  pesos,
-  porcentaje,
-  unidades as fmtUnid,
-  telefono as fmtTelefono,
-  hoyISO,
-} from "@/lib/formato";
+import { porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
 import GrupoCabecera from "@/components/GrupoCabecera";
 import BorrarPedido from "@/components/BorrarPedido";
@@ -89,6 +83,7 @@ export default function EditorPedido({
   lineasSinCosto = 0,
   fichaCliente = null,
   prefijoTelefono = "+56",
+  moneda = "CLP",
 }: {
   id: number;
   num: string;
@@ -127,6 +122,8 @@ export default function EditorPedido({
   // Ficha completa del cliente, para editarla desde el pedido.
   fichaCliente?: FichaCliente | null;
   prefijoTelefono?: string;
+  // CLP o PEN: fija decimales y simbolo de todos los montos del pedido.
+  moneda?: string;
 }) {
   const router = useRouter();
   const [editable, setEditable] = useState(false);
@@ -160,14 +157,19 @@ export default function EditorPedido({
     Number(cuenta.total_neto) > 0
       ? Number(cuenta.iva) / Number(cuenta.total_neto)
       : 0;
-  const iva = Math.round(totalNeto * tasaIva);
-  const totalBruto = totalNeto + iva;
+  // Si el neto es el de la cuenta, el impuesto es el de la cuenta: la tasa sale de
+  // un cociente ya redondeado y recalcular desde ella puede errar un centimo.
+  const iva =
+    totalNeto === Number(cuenta.total_neto)
+      ? Number(cuenta.iva)
+      : redondea(totalNeto * tasaIva, moneda);
+  const totalBruto = limpia(totalNeto + iva);
   // El recargo del medio de pago no se descuenta del precio: se suma sobre el
   // total, para que a Centro Panel le llegue integro lo vendido.
   const comisionPct = Number(cuenta.comision_pct ?? 0);
   const totalAPagar =
     comisionPct > 0 && comisionPct < 100
-      ? Math.round(totalBruto / (1 - comisionPct / 100))
+      ? redondea(totalBruto / (1 - comisionPct / 100), moneda)
       : totalBruto;
   // Margen del pedido: el neto menos el costo de lo que se va a entregar. El
   // costo viene de la cotizacion de origen, congelado al vender.
@@ -469,13 +471,13 @@ export default function EditorPedido({
                   </td>
                   <td className="px-3 py-2 text-right">
                     {soloLectura ? (
-                      pesos(l.valor_unitario)
+                      importe(l.valor_unitario, moneda)
                     ) : (
                       <input
                         type="text"
                         inputMode="numeric"
                         className="border border-gray-300 rounded px-2 py-1 text-right w-28"
-                        value={pesos(l.valor_unitario)}
+                        value={importe(l.valor_unitario, moneda)}
                         onChange={(e) =>
                           setLs((x) =>
                             x.map((y) =>
@@ -493,7 +495,7 @@ export default function EditorPedido({
                     )}
                   </td>
                   <td className="px-3 py-2 text-right font-semibold">
-                    {pesos(l.unidades * l.valor_unitario)}
+                    {importe(l.unidades * l.valor_unitario, moneda)}
                   </td>
                   {!soloLectura && (
                     <td className="px-2 text-right">
@@ -524,23 +526,23 @@ export default function EditorPedido({
           cuatro columnas: eso es lo que se veia corrido. */}
       <div className="bg-white border border-gray-200 rounded px-3 py-2">
         <div className="max-w-md ml-auto space-y-0.5 text-xs">
-          <Fila label="SUBTOTAL" valor={pesos(subtotal)} />
+          <Fila label="SUBTOTAL" valor={importe(subtotal, moneda)} />
           {descuentos.map((x) => (
-            <Fila key={x.rotulo} label={x.rotulo} valor={pesos(x.monto)} />
+            <Fila key={x.rotulo} label={x.rotulo} valor={importe(x.monto, moneda)} />
           ))}
-          <Fila label="TOTAL NETO" valor={pesos(totalNeto)} fuerte />
+          <Fila label="TOTAL NETO" valor={importe(totalNeto, moneda)} fuerte />
           <Fila
             label={`${impuesto} ${Math.round(tasaIva * 100)}%`}
-            valor={pesos(iva)}
+            valor={importe(iva, moneda)}
           />
           <div className="flex justify-between bg-verde text-white px-3 py-1 rounded font-bold">
             <span>TOTAL</span>
-            <span>{pesos(totalBruto)}</span>
+            <span>{importe(totalBruto, moneda)}</span>
           </div>
 
           {verMargen && (
             <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
-              <Fila label="Costo de lo pedido" valor={pesos(costoPedido)} />
+              <Fila label="Costo de lo pedido" valor={importe(costoPedido, moneda)} />
               <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
                 <span>
                   MARGEN {porcentaje(margenPct)} %
@@ -551,7 +553,7 @@ export default function EditorPedido({
                     </span>
                   )}
                 </span>
-                <span>{pesos(margen)}</span>
+                <span>{importe(margen, moneda)}</span>
               </div>
             </div>
           )}
@@ -562,11 +564,11 @@ export default function EditorPedido({
                 label={`Recargo ${porcentaje(comisionPct)} %${
                   medioPago ? ` por ${medioPago}` : ""
                 }`}
-                valor={pesos(totalAPagar - totalBruto)}
+                valor={importe(totalAPagar - totalBruto, moneda)}
               />
               <div className="flex justify-between bg-dorado-osc text-white px-3 py-1 rounded font-bold">
                 <span>TOTAL A PAGAR</span>
-                <span>{pesos(totalAPagar)}</span>
+                <span>{importe(totalAPagar, moneda)}</span>
               </div>
               <p className="text-xs text-gray-500 text-right">
                 El total se divide por (1 - comision) para que el neto llegue
@@ -588,6 +590,7 @@ export default function EditorPedido({
 
       <CuentaCorrientePedido
         idPedido={id}
+        moneda={moneda}
         impuesto={impuesto}
         formaPago={formaPago}
         medioPago={medioPago}
@@ -783,6 +786,7 @@ export default function EditorPedido({
 
       <FacturaPedido
         idPedido={id}
+        moneda={moneda}
         facturas={facturas}
         total={cuenta.total}
         saldo={cuenta.saldo}

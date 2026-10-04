@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Ventana from "@/components/Ventana";
 import BotonExportarFilas from "@/components/BotonExportarFilas";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import {
   borrarCategoria,
   borrarInterlocutor,

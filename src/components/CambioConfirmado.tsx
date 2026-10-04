@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Resultado } from "@/app/clientify/actividad-lead";
+import type { Resultado } from "@/app/leads/actividad-lead";
 
 // Un valor que se cambia por su cuenta --el estado del lead, su linea--. El
 // cambio no se aplica al elegir: primero se muestra de que a que, y solo se

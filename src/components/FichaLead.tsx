@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import CambioConfirmado from "@/components/CambioConfirmado";
 import { fecha } from "@/lib/formato";
 import { ESTADOS_LEAD, LINEAS, ORDEN_ESTADOS, estadoLegible, type Linea } from "@/lib/leads";
-import { fijarEstadoLead, fijarLineaLead, guardarDatosLead } from "@/app/clientify/edicion-lead";
+import { fijarEstadoLead, fijarLineaLead, guardarDatosLead } from "@/app/leads/edicion-lead";
 
 export interface DatosFicha {
   id_clientify: number;
@@ -136,10 +136,10 @@ export default function FichaLead({
   }
 
   const notaEstado = lead.estado_manual
-    ? "Fijado a mano: no cambia con Clientify ni con las cotizaciones."
+    ? "Fijado a mano: no cambia con las importaciones ni con las cotizaciones."
     : lead.con_cotizacion_enviada && lead.estado !== "in-deal"
       ? "Oportunidad por tener una cotizacion enviada."
-      : "Segun Clientify.";
+      : "Segun el archivo importado.";
 
   return (
     <section className="bg-white border border-gray-200 rounded overflow-hidden">
@@ -215,11 +215,11 @@ export default function FichaLead({
                 puedeEditar={puedeEditar}
                 resultadoAuto={estadoLegible(lead.con_cotizacion_enviada ? "in-deal" : lead.estado)}
                 opciones={[
-                  { valor: "auto", texto: "Automatico (segun Clientify y cotizaciones)" },
+                  { valor: "auto", texto: "Automatico (segun el archivo importado y las cotizaciones)" },
                   ...ORDEN_ESTADOS.map((e) => ({ valor: e, texto: ESTADOS_LEAD[e] })),
                 ]}
                 aviso={(desde, hasta) =>
-                  `Va a cambiar el estado de «${desde}» a «${hasta}». El cambio es solo de este sistema: Clientify no se modifica.`
+                  `Va a cambiar el estado de «${desde}» a «${hasta}». El cambio queda registrado en la ficha.`
                 }
                 accion={(v) => fijarEstadoLead(lead.id_clientify, v === "auto" ? null : v)}
               />
@@ -243,7 +243,7 @@ export default function FichaLead({
               <Dato etiqueta="Origen">{lead.origen}</Dato>
               <Dato etiqueta="Campana">{lead.campana}</Dato>
               <Dato etiqueta="Propietario">{lead.propietario}</Dato>
-              <Dato etiqueta="Creado en Clientify">
+              <Dato etiqueta="Creado">
                 {lead.creado_clientify ? fecha(lead.creado_clientify.slice(0, 10)) : ""}
               </Dato>
             </dl>
@@ -328,8 +328,8 @@ export default function FichaLead({
             </label>
           </div>
           <p className="text-[10px] text-gray-500">
-            Lo que corrija aqui queda en este sistema y las cargas de Clientify no lo pisan; los
-            campos que no toque siguen al dia con Clientify. El estado y la linea se cambian aparte,
+            Lo que corrija aqui queda en este sistema y las importaciones no lo pisan; los
+            campos que no toque se siguen actualizando con cada importacion. El estado y la linea se cambian aparte,
             con su confirmacion.
           </p>
           {error && (

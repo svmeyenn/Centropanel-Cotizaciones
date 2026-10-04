@@ -13,7 +13,7 @@ export const maxDuration = 300;
 
 export default async function Pagina() {
   const v = await requerirVendedor();
-  if (!puedeCargarLeads(v)) redirect("/clientify");
+  if (!puedeCargarLeads(v)) redirect("/leads");
 
   const supabase = await createClient();
   const { data } = await supabase.rpc("meta_comparar", { p_id: null });
@@ -26,9 +26,9 @@ export default async function Pagina() {
         subtitulo="Comparar el archivo descargado de Meta con los leads del sistema"
       />
       <div className="max-w-screen-xl mx-auto p-4 space-y-3 text-[11px]">
-        <BarraNavegacion volverA="/clientify">
+        <BarraNavegacion volverA="/leads">
           <Link
-            href="/clientify"
+            href="/leads"
             className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
           >
             Lista de leads

@@ -5,7 +5,7 @@ import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
-import { pesos, fecha as fmtFecha } from "@/lib/formato";
+import { importe, monedaDelPais, resumenMontos, fecha as fmtFecha } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +29,7 @@ export default async function Pagina({
     .from("facturas")
     .select(
       idPaisActivo == null
-        ? "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos(id, num_pedido, clientes:entidades(razon_social)), vendedores(nombre)"
+        ? "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos(id, num_pedido, id_pais, clientes:entidades(razon_social)), vendedores(nombre)"
         : "id, tipo, numero, fecha, neto, iva, total, archivo, pedidos!inner(id, num_pedido, id_pais, clientes:entidades(razon_social)), vendedores(nombre)"
     )
     .order("fecha", { ascending: false })
@@ -44,7 +44,7 @@ export default async function Pagina({
   const uno = <T,>(x: unknown): T | null =>
     Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
-  type Ped = { id: number; num_pedido: string; clientes: unknown };
+  type Ped = { id: number; num_pedido: string; id_pais?: number; clientes: unknown };
 
   const filas = (data ?? []).map((f) => {
     const ped = uno<Ped>(f.pedidos);
@@ -57,6 +57,7 @@ export default async function Pagina({
       neto: Number(f.neto),
       iva: Number(f.iva),
       total: Number(f.total),
+      moneda: monedaDelPais(ped?.id_pais),
       tieneArchivo: Boolean(f.archivo),
       idPedido: ped ? Number(ped.id) : null,
       numPedido: ped?.num_pedido ?? "",
@@ -169,9 +170,9 @@ export default async function Pagina({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Tarjeta titulo="Documentos" valor={String(visibles.length)} />
-          <Tarjeta titulo="Neto" valor={pesos(totalNeto)} />
-          <Tarjeta titulo={impuesto} valor={pesos(totalIva)} />
-          <Tarjeta titulo="Total facturado" valor={pesos(total)} destacado />
+          <Tarjeta titulo="Neto" valor={resumenMontos(visibles.map((f) => [f.moneda, f.neto]))} />
+          <Tarjeta titulo={impuesto} valor={resumenMontos(visibles.map((f) => [f.moneda, f.iva]))} />
+          <Tarjeta titulo="Total facturado" valor={resumenMontos(visibles.map((f) => [f.moneda, f.total]))} destacado />
         </div>
 
         {sinArchivo > 0 && (
@@ -246,12 +247,12 @@ export default async function Pagina({
                           <span className="text-gray-400">--</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right">{pesos(f.neto)}</td>
+                      <td className="px-3 py-2 text-right">{importe(f.neto, f.moneda)}</td>
                       <td className="px-3 py-2 text-right text-gray-600">
-                        {pesos(f.iva)}
+                        {importe(f.iva, f.moneda)}
                       </td>
                       <td className="px-3 py-2 text-right font-semibold">
-                        {pesos(f.total)}
+                        {importe(f.total, f.moneda)}
                       </td>
                       <td className="px-3 py-2">
                         {f.tieneArchivo ? (

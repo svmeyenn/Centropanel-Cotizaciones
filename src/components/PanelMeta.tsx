@@ -10,7 +10,7 @@ import {
   cargarLoteMeta,
   ignorarMeta,
   type TipoMasivo,
-} from "@/app/clientify/meta/acciones";
+} from "@/app/leads/meta/acciones";
 import {
   comparar,
   filasDeArchivoMeta,
@@ -160,7 +160,7 @@ function TarjetaMeta({ f }: { f: FilaMeta }) {
             <>
               Coincide por {VIA[f.via ?? "nombre"]} con{" "}
               <Link
-                href={`/clientify/${f.id_lead}`}
+                href={`/leads/${f.id_lead}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-verde underline font-semibold"

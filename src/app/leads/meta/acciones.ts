@@ -15,7 +15,7 @@ import {
   type FilaMeta,
   type ModoMeta,
 } from "@/lib/meta";
-import type { Resultado } from "@/app/clientify/actividad-lead";
+import type { Resultado } from "@/app/leads/actividad-lead";
 
 // Comparar los leads de Meta con los del sistema, y decidir que hacer con cada
 // uno: corregir un dato, agregar el que falta, o agregarlo entero como lead nuevo.
@@ -27,8 +27,8 @@ async function exigir(): Promise<string | null> {
 }
 
 function refrescar() {
-  revalidatePath("/clientify/meta");
-  revalidatePath("/clientify");
+  revalidatePath("/leads/meta");
+  revalidatePath("/leads");
 }
 
 export async function cargarLoteMeta(filas: FilaArchivoMeta[]): Promise<{ guardados?: number; error?: string }> {

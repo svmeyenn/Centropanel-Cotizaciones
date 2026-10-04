@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import { fechaCorta, type FilaCartola } from "@/lib/finanzas/tipos";
 
 // El movimiento de todas las cuentas en una sola linea de tiempo, con el saldo

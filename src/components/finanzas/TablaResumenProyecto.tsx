@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import type { FilaResumenProyecto } from "@/lib/finanzas/tipos";
 
 // Un proyecto puede llevarse varias veces con clientes distintos --"Paneles"

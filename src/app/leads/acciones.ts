@@ -134,7 +134,7 @@ export async function cerrarCorrida(
       .from("clientify_sincronizaciones")
       .update({ fin: new Date().toISOString(), estado: "con error", leidos, error })
       .eq("id", id);
-    revalidatePath("/clientify");
+    revalidatePath("/leads");
     return { error };
   }
 
@@ -170,7 +170,7 @@ export async function cerrarCorrida(
   // reconocen sin duda (mismo email, o mismo telefono y nombre parecido).
   const { enlazados } = await enlazarLeadsConClientes();
 
-  revalidatePath("/clientify");
+  revalidatePath("/leads");
   return { ok: true, leidos, quitados, enlazados };
 }
 
@@ -194,7 +194,7 @@ export async function enlazarLeadsConClientes(): Promise<{
     por_telefono_y_nombre?: number;
     pendientes_de_revisar?: number;
   };
-  revalidatePath("/clientify");
+  revalidatePath("/leads");
   return {
     enlazados: (r.por_email ?? 0) + (r.por_telefono_y_nombre ?? 0),
     pendientes: r.pendientes_de_revisar ?? 0,
@@ -205,7 +205,7 @@ export async function enlazarLeadsConClientes(): Promise<{
 // tiene la clave de API; si no, se carga el archivo.
 export async function sincronizarClientify(): Promise<ResultadoSync> {
   if (!hayClaveClientify())
-    return { error: "Falta cargar la clave de Clientify (CLIENTIFY_API_KEY) en Vercel." };
+    return { error: "Falta cargar la clave de la API (CLIENTIFY_API_KEY) en Vercel." };
 
   const corrida = await abrirCorrida();
   if (corrida.error || !corrida.id || !corrida.inicio) return { error: corrida.error };

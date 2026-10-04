@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { prepararCotizacionDesdeLead } from "@/app/clientify/acciones-lead";
+import { prepararCotizacionDesdeLead } from "@/app/leads/acciones-lead";
 
 // Lleva a crear una cotizacion con el cliente del lead ya elegido. Si el lead
 // todavia no tiene ficha de cliente, la deja lista antes de salir.

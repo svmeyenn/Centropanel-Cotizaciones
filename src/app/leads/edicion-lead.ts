@@ -11,7 +11,7 @@ import {
   TOPE_ARCHIVO_LEAD,
   puedeEscribirLeads,
 } from "@/lib/leads";
-import type { Resultado } from "@/app/clientify/actividad-lead";
+import type { Resultado } from "@/app/leads/actividad-lead";
 
 // Editar un lead: sus datos, su estado, su linea, y --en las casas-- el proyecto
 // con sus archivos. Lo corregido a mano queda aparte de lo que trae Clientify:
@@ -175,8 +175,8 @@ export async function guardarDatosLead(idLead: number, d: DatosLead): Promise<Re
   });
   if (error) return { ok: false, mensaje: error.message };
 
-  revalidatePath(`/clientify/${idLead}`);
-  revalidatePath("/clientify");
+  revalidatePath(`/leads/${idLead}`);
+  revalidatePath("/leads");
   return { ok: true, mensaje: (msg as string) ?? "Datos actualizados." };
 }
 
@@ -193,8 +193,8 @@ export async function fijarEstadoLead(idLead: number, estado: string | null): Pr
   const { data, error } = await supabase.rpc("lead_fijar_estado", { p_lead: idLead, p_estado: estado });
   if (error) return { ok: false, mensaje: error.message };
 
-  revalidatePath(`/clientify/${idLead}`);
-  revalidatePath("/clientify");
+  revalidatePath(`/leads/${idLead}`);
+  revalidatePath("/leads");
   return { ok: true, mensaje: (data as string) ?? "Estado actualizado." };
 }
 
@@ -211,8 +211,8 @@ export async function fijarLineaLead(
   const { data, error } = await supabase.rpc("lead_fijar_linea", { p_lead: idLead, p_linea: linea });
   if (error) return { ok: false, mensaje: error.message };
 
-  revalidatePath(`/clientify/${idLead}`);
-  revalidatePath("/clientify");
+  revalidatePath(`/leads/${idLead}`);
+  revalidatePath("/leads");
   return { ok: true, mensaje: (data as string) ?? "Linea actualizada." };
 }
 
@@ -263,7 +263,7 @@ export async function guardarProyectoCasa(idLead: number, d: DatosCasa): Promise
   });
   if (errRpc) return { ok: false, mensaje: errRpc.message };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: (data as string) ?? "Datos del proyecto guardados." };
 }
 
@@ -317,7 +317,7 @@ export async function registrarArchivoLead(
     return { ok: false, mensaje: error.message };
   }
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: "Archivo subido." };
 }
 
@@ -338,7 +338,7 @@ export async function quitarArchivoLead(idArchivo: number, idLead: number): Prom
   if (!data?.length) return { ok: false, mensaje: "Solo quien lo subio, o quien administra, puede quitarlo." };
 
   await supabase.storage.from(BUCKET_LEADS).remove([data[0].ruta as string]);
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: "Archivo quitado." };
 }
 

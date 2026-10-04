@@ -1,12 +1,10 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
-import BotonSincronizarClientify from "@/components/BotonSincronizarClientify";
 import CargarContactosClientify from "@/components/CargarContactosClientify";
 import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { hayClaveClientify } from "@/lib/clientify";
 import { ESTADOS_LEAD, LINEAS, estadoLegible, puedeCargarLeads } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +64,6 @@ export default async function Pagina({
   const { activo, idPaisActivo } = await contextoMercado(v);
   const esPeru = activo?.codigo === "PE";
   const puedeSincronizar = puedeCargarLeads(v);
-  const hayClave = hayClaveClientify();
 
   const actual = Math.max(1, Number.parseInt(pagina, 10) || 1);
   const desde = (actual - 1) * POR_PAGINA;
@@ -126,7 +123,7 @@ export default async function Pagina({
     if (linea) s.set("linea", linea);
     if (p > 1) s.set("pagina", String(p));
     const t = s.toString();
-    return `/clientify${t ? `?${t}` : ""}`;
+    return `/leads${t ? `?${t}` : ""}`;
   };
 
   const cuando = (f: string | null | undefined) =>
@@ -142,7 +139,7 @@ export default async function Pagina({
     <div className="min-h-screen">
       <Cabecera
         titulo="Leads"
-        subtitulo="Los contactos del CRM de Clientify dentro del sistema"
+        subtitulo="Contactos, conversaciones, compromisos y cotizaciones"
       />
       <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
         <BarraNavegacion />
@@ -169,22 +166,17 @@ export default async function Pagina({
           {puedeSincronizar ? (
             <div className="flex flex-wrap items-center gap-4">
               <CargarContactosClientify />
-              <Link href="/clientify/meta" className="bg-verde text-white font-semibold px-3 py-1 rounded">
+              <Link href="/leads/meta" className="bg-verde text-white font-semibold px-3 py-1 rounded">
                 Subir leads de Meta
               </Link>
               <BotonEnlazarClientes />
-              {/* La API de Clientify es de pago aparte: el boton solo aparece si
-                  la cuenta cargo la clave. */}
-              {hayClave && (
-                <BotonSincronizarClientify deshabilitado={false} />
-              )}
             </div>
           ) : (
             <p className="text-gray-500">Los carga el Administrador.</p>
           )}
         </div>
 
-        <form className="flex flex-wrap items-end gap-2 text-xs" action="/clientify">
+        <form className="flex flex-wrap items-end gap-2 text-xs" action="/leads">
           <div>
             <label htmlFor="q" className="block font-semibold text-dorado-osc mb-0.5">
               Buscar
@@ -250,7 +242,7 @@ export default async function Pagina({
           </div>
           <button className="bg-verde text-white font-semibold px-3 py-1 rounded">Filtrar</button>
           {(busqueda || estado || dueno || linea) && (
-            <Link href="/clientify" className="text-verde underline py-1">
+            <Link href="/leads" className="text-verde underline py-1">
               Quitar filtros
             </Link>
           )}
@@ -297,7 +289,7 @@ export default async function Pagina({
                 <tr>
                   <td colSpan={10} className="px-3 py-8 text-center text-gray-400">
                     {totalMercado === 0
-                      ? "Todavia no hay contactos. Cargue el archivo con la lista de Clientify."
+                      ? "Todavia no hay leads. Importe el archivo de leads."
                       : "Ningun contacto coincide con la busqueda."}
                   </td>
                 </tr>
@@ -316,7 +308,7 @@ export default async function Pagina({
                           </span>
                         )}
                         <Link
-                          href={`/clientify/${c.id_clientify}`}
+                          href={`/leads/${c.id_clientify}`}
                           className="block truncate text-verde underline"
                           title={c.nombre_completo}
                         >

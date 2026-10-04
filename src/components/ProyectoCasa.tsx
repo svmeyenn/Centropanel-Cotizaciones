@@ -11,7 +11,7 @@ import {
   quitarArchivoLead,
   registrarArchivoLead,
   urlArchivoLead,
-} from "@/app/clientify/edicion-lead";
+} from "@/app/leads/edicion-lead";
 
 export interface DatosCasaGuardados {
   metros2: number | null;

@@ -71,7 +71,7 @@ export async function registrarConversacionLead(
   });
   if (error) return { ok: false, mensaje: error.message };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return {
     ok: true,
     mensaje: proximaAccion ? "Anotado, con su compromiso." : "Conversacion anotada.",
@@ -97,7 +97,7 @@ export async function marcarCompromisoHecho(id: number, idLead: number): Promise
   if (!data?.length)
     return { ok: false, mensaje: "Ese compromiso ya estaba hecho, o no puede cerrarlo." };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: "Compromiso marcado como hecho." };
 }
 
@@ -116,7 +116,7 @@ export async function reabrirCompromiso(id: number, idLead: number): Promise<Res
   if (error) return { ok: false, mensaje: error.message };
   if (!data?.length) return { ok: false, mensaje: "No puede reabrir ese compromiso." };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: "Compromiso reabierto." };
 }
 
@@ -149,7 +149,7 @@ export async function editarCompromiso(
   if (error) return { ok: false, mensaje: error.message };
   if (!data?.length) return { ok: false, mensaje: "Esa conversacion no tiene un compromiso." };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: "Compromiso actualizado." };
 }
 
@@ -172,7 +172,7 @@ export async function revocarCompromiso(
   });
   if (error) return { ok: false, mensaje: error.message };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: (data as string) ?? "El compromiso quedo revocado." };
 }
 
@@ -186,7 +186,7 @@ export async function reversarRevocacion(id: number, idLead: number): Promise<Re
   const { data, error } = await supabase.rpc("lead_reversar_revocacion", { p_id: id });
   if (error) return { ok: false, mensaje: error.message };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: (data as string) ?? "La revocacion quedo sin efecto." };
 }
 
@@ -209,7 +209,7 @@ export async function caducarCompromiso(
   });
   if (error) return { ok: false, mensaje: error.message };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: (data as string) ?? "El compromiso quedo caduco." };
 }
 
@@ -223,6 +223,6 @@ export async function reversarCaducidad(id: number, idLead: number): Promise<Res
   const { data, error } = await supabase.rpc("lead_revocar_caducidad", { p_id: id });
   if (error) return { ok: false, mensaje: error.message };
 
-  revalidatePath(`/clientify/${idLead}`);
+  revalidatePath(`/leads/${idLead}`);
   return { ok: true, mensaje: (data as string) ?? "La caducidad quedo sin efecto." };
 }

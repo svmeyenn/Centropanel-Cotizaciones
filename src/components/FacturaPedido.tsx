@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { pesos, fecha as fmtFecha, hoyISO } from "@/lib/formato";
+import { importe, leerMonto, redondea, fecha as fmtFecha, hoyISO } from "@/lib/formato";
 import {
   facturarPedido,
   anularFactura,
@@ -47,8 +47,10 @@ export default function FacturaPedido({
   entregaEfectiva,
   puedeCrear,
   esAdmin,
+  moneda = "CLP",
 }: {
   idPedido: number;
+  moneda?: string;
   facturas: FacturaVista[];
   total: number;
   saldo: number;
@@ -90,13 +92,13 @@ export default function FacturaPedido({
         { rotulo: "Pie del pedido", valor: pieMonto },
       ];
 
-  const montoNum = Number(monto.replace(/\./g, "").replace(",", "."));
+  const montoNum = leerMonto(monto, moneda);
   const montoEfectivo =
     monto.trim() === "" ? (esNota ? 0 : porFacturar) : montoNum;
   // El monto se escribe en bruto --es lo que dice el deposito-- y la base lo
   // desglosa con la misma cuenta que se muestra aqui.
-  const netoPrevio = Math.round(montoEfectivo / (1 + tasaIva));
-  const ivaPrevio = montoEfectivo - netoPrevio;
+  const netoPrevio = redondea(montoEfectivo / (1 + tasaIva), moneda);
+  const ivaPrevio = redondea(montoEfectivo - netoPrevio, moneda);
 
   function registrar() {
     empezar(async () => {
@@ -144,10 +146,10 @@ export default function FacturaPedido({
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Dato titulo="Total del pedido" valor={pesos(total)} />
-          <Dato titulo="Facturado" valor={pesos(facturado)} destacado />
-          <Dato titulo="Por facturar" valor={pesos(porFacturar)} />
-          <Dato titulo="Depositado" valor={pesos(abonado)} />
+          <Dato titulo="Total del pedido" valor={importe(total, moneda)} />
+          <Dato titulo="Facturado" valor={importe(facturado, moneda)} destacado />
+          <Dato titulo="Por facturar" valor={importe(porFacturar, moneda)} />
+          <Dato titulo="Depositado" valor={importe(abonado, moneda)} />
         </div>
 
         {facturas.length > 0 ? (
@@ -181,10 +183,10 @@ export default function FacturaPedido({
                       {fmtFecha(f.fecha)}
                     </td>
                     <td className="px-2 py-1.5 text-right tabular-nums">
-                      {pesos(f.neto)}
+                      {importe(f.neto, moneda)}
                     </td>
                     <td className="px-2 py-1.5 text-right tabular-nums font-semibold">
-                      {pesos(f.total)}
+                      {importe(f.total, moneda)}
                     </td>
                     <td className="px-2 py-1.5">
                       <ArchivoFactura
@@ -231,13 +233,13 @@ export default function FacturaPedido({
 
         {porFacturar > 0 && saldo > 0 && (
           <div className="bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded p-3">
-            Quedan <strong>{pesos(porFacturar)}</strong> por facturar y{" "}
-            <strong>{pesos(saldo)}</strong> por cobrar.
+            Quedan <strong>{importe(porFacturar, moneda)}</strong> por facturar y{" "}
+            <strong>{importe(saldo, moneda)}</strong> por cobrar.
             {depositadoSinFacturar > 0 && (
               <>
                 {" "}
                 El cliente ya deposito{" "}
-                <strong>{pesos(depositadoSinFacturar)}</strong> sin documento.
+                <strong>{importe(depositadoSinFacturar, moneda)}</strong> sin documento.
               </>
             )}
           </div>
@@ -292,7 +294,7 @@ export default function FacturaPedido({
                   <input
                     className={input}
                     inputMode="decimal"
-                    placeholder={esNota ? "0" : pesos(porFacturar)}
+                    placeholder={esNota ? "0" : importe(porFacturar, moneda)}
                     value={monto}
                     onChange={(e) => setMonto(e.target.value)}
                   />
@@ -310,10 +312,10 @@ export default function FacturaPedido({
                     <button
                       key={a.rotulo}
                       type="button"
-                      onClick={() => setMonto(String(Math.round(a.valor)))}
+                      onClick={() => setMonto(String(redondea(a.valor, moneda)))}
                       className="border border-gray-300 bg-white text-gray-700 text-[11px] font-semibold px-2 py-0.5 rounded"
                     >
-                      {a.rotulo}: {pesos(a.valor)}
+                      {a.rotulo}: {importe(a.valor, moneda)}
                     </button>
                   ))}
               </div>
@@ -322,8 +324,8 @@ export default function FacturaPedido({
                 {montoEfectivo > 0 ? (
                   <>
                     {esNota ? "Se acredita" : "Se factura"}{" "}
-                    <strong>{pesos(montoEfectivo)}</strong>: neto{" "}
-                    {pesos(netoPrevio)} mas impuesto {pesos(ivaPrevio)}.
+                    <strong>{importe(montoEfectivo, moneda)}</strong>: neto{" "}
+                    {importe(netoPrevio, moneda)} mas impuesto {importe(ivaPrevio, moneda)}.
                     {!esNota && monto.trim() === "" && " Es todo lo que falta."}
                   </>
                 ) : (

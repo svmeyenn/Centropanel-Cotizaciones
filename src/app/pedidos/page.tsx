@@ -8,7 +8,7 @@ import { ESTADOS_PEDIDO } from "@/lib/estados";
 import { nombreImpuesto } from "@/lib/impuesto";
 import Bandera from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
-import { fecha as fmtFecha, pesos, coincideTelefono } from "@/lib/formato";
+import { fecha as fmtFecha, importe, monedaDelPais, coincideTelefono } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
 
@@ -296,7 +296,7 @@ export default async function Pagina({
                         )}
                       </td>
                       <td className="px-3 py-2 text-right font-semibold">
-                        {pesos(cuentaPorPedido.get(Number(p.id))?.total ?? 0)}
+                        {importe(cuentaPorPedido.get(Number(p.id))?.total ?? 0, monedaDelPais(p.id_pais as number))}
                       </td>
                       <td className="px-3 py-2 text-right">
                         {(() => {
@@ -306,10 +306,10 @@ export default async function Pagina({
                             <span className="text-green-700">pagado</span>
                           ) : !c.pie_cubierto ? (
                             <span className="text-amber-700" title="Falta el pie">
-                              {pesos(c.saldo)}
+                              {importe(c.saldo, monedaDelPais(p.id_pais as number))}
                             </span>
                           ) : (
-                            pesos(c.saldo)
+                            importe(c.saldo, monedaDelPais(p.id_pais as number))
                           );
                         })()}
                       </td>

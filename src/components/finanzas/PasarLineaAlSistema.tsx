@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect } from "react";
 import Ventana from "@/components/Ventana";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import { pasarLineaAlSistema, type Resultado } from "@/app/conciliacion/acciones";
 import {
   etiquetaInterlocutor,

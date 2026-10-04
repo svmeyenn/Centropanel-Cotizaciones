@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import { guardarTope, quitarTope, type Resultado } from "@/app/topes/acciones";
 import type { Categoria, PoliticaGasto } from "@/lib/finanzas/tipos";
 
@@ -77,7 +77,7 @@ export default function PanelTopes({
             <input
               name="tope"
               className={CAMPO}
-              inputMode="numeric"
+              inputMode="decimal"
               placeholder="50.000"
               required
             />

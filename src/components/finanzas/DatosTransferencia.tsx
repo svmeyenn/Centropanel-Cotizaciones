@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Ventana from "@/components/Ventana";
-import { pesos } from "@/lib/formato";
+import { pesosConCentimos as pesos } from "@/lib/formato";
 import {
   etiquetaInterlocutor,
   fechaCorta,

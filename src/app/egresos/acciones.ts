@@ -1,5 +1,7 @@
 "use server";
 
+import { leerMontoLibre } from "@/lib/formato";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
@@ -24,8 +26,7 @@ function numeroONulo(v: FormDataEntryValue | null) {
 // El monto se teclea a mano y con la puntuacion de aca: "1.234.567" son un
 // millon doscientos, no una fraccion.
 function leerMonto(v: FormDataEntryValue | null): number {
-  const s = (v ?? "").toString().trim().replace(/\./g, "").replace(",", ".");
-  return Number(s);
+  return leerMontoLibre((v ?? "").toString());
 }
 
 function refrescarFinanzas() {

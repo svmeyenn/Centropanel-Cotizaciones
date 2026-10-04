@@ -22,6 +22,13 @@ const nextConfig: NextConfig = {
     // explicacion. Cuatro megas es el techo que admite Vercel por peticion.
     serverActions: { bodySizeLimit: "4mb" },
   },
+  // Los leads vivian en /clientify: los enlaces guardados siguen llegando.
+  async redirects() {
+    return [
+      { source: "/clientify", destination: "/leads", permanent: false },
+      { source: "/clientify/:path*", destination: "/leads/:path*", permanent: false },
+    ];
+  },
   env: {
     NEXT_PUBLIC_DB_SCHEMA: esquema,
   },

@@ -13,14 +13,7 @@ import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
 import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { MateriaVenta } from "@/components/Configurador";
 import type { MedioPago } from "@/components/GestorMediosPago";
-import {
-  pesos,
-  unidades as fmtUnid,
-  sumarDias,
-  fecha as fmtFecha,
-  porcentaje,
-  hoyISO,
-} from "@/lib/formato";
+import { unidades as fmtUnid, sumarDias, fecha as fmtFecha, porcentaje, hoyISO, importe, redondea, limpia } from "@/lib/formato";
 import {
   crearCotizacion,
   actualizarCotizacion,
@@ -136,6 +129,9 @@ export default function EditorCotizacion(p: Props) {
   const tasaIva = p.ivaPorPais[idPaisDoc ?? p.paises[0]?.id ?? 0] ?? 0;
   const nombreImpuesto =
     p.paises.find((x) => x.id === idPaisDoc)?.codigo === "PE" ? "IGV" : "IVA";
+  // La moneda del documento es la de su pais: fija los decimales de cada cuenta,
+  // igual que lo hace la base de datos.
+  const moneda = p.paises.find((x) => x.id === idPaisDoc)?.moneda_base ?? "CLP";
 
   const catalogo = useMemo(() => {
     const vistos = new Set(p.productos.map((x) => x.id));
@@ -144,7 +140,7 @@ export default function EditorCotizacion(p: Props) {
 
   // --- totales, con la misma formula que la vista v_cotizacion_totales ---
   const subtotal = useMemo(
-    () => d.items.reduce((s, it) => s + it.unidades * it.valor_unitario, 0),
+    () => limpia(d.items.reduce((s, it) => s + it.unidades * it.valor_unitario, 0)),
     [d.items]
   );
 
@@ -171,28 +167,28 @@ export default function EditorCotizacion(p: Props) {
   const descuento = useMemo(() => {
     if (d.descuento_tipo === "Porcentaje") {
       const pct = Math.min(Math.max(d.descuento_pct, 0), 100);
-      return Math.round((baseProductos * pct) / 100);
+      return redondea((baseProductos * pct) / 100, moneda);
     }
     return Math.min(Math.max(d.descuento_monto, 0), baseProductos);
-  }, [d.descuento_tipo, d.descuento_pct, d.descuento_monto, baseProductos]);
+  }, [d.descuento_tipo, d.descuento_pct, d.descuento_monto, baseProductos, moneda]);
 
   const descuento2 = useMemo(() => {
     if (d.descuento2_tipo === "Porcentaje") {
       const pct = Math.min(Math.max(d.descuento2_pct, 0), 100);
-      return Math.round((baseFlete * pct) / 100);
+      return redondea((baseFlete * pct) / 100, moneda);
     }
     return Math.min(Math.max(d.descuento2_monto, 0), baseFlete);
-  }, [d.descuento2_tipo, d.descuento2_pct, d.descuento2_monto, baseFlete]);
+  }, [d.descuento2_tipo, d.descuento2_pct, d.descuento2_monto, baseFlete, moneda]);
 
   const descuento3 = useMemo(() => {
     if (d.descuento3_tipo === "Porcentaje") {
       const pct = Math.min(Math.max(d.descuento3_pct, 0), 100);
-      return Math.round((baseInstalaciones * pct) / 100);
+      return redondea((baseInstalaciones * pct) / 100, moneda);
     }
     return Math.min(Math.max(d.descuento3_monto, 0), baseInstalaciones);
-  }, [d.descuento3_tipo, d.descuento3_pct, d.descuento3_monto, baseInstalaciones]);
+  }, [d.descuento3_tipo, d.descuento3_pct, d.descuento3_monto, baseInstalaciones, moneda]);
 
-  const totalNeto = subtotal - descuento - descuento2 - descuento3;
+  const totalNeto = limpia(subtotal - descuento - descuento2 - descuento3);
 
   // Margen de la venta: lo que queda sobre el costo de lo cotizado. Se
   // recalcula solo al cambiar lineas, cantidades, precios o descuento.
@@ -206,8 +202,8 @@ export default function EditorCotizacion(p: Props) {
   const itemsSinCosto = d.items.filter((it) => costoDe(it) === 0).length;
   const margen = totalNeto - costoTotal;
   const margenPct = totalNeto > 0 ? (margen / totalNeto) * 100 : 0;
-  const iva = Math.round(totalNeto * tasaIva);
-  const total = totalNeto + iva;
+  const iva = redondea(totalNeto * tasaIva, moneda);
+  const total = limpia(totalNeto + iva);
 
   // La comision del medio de pago no se descuenta del precio: se recarga sobre
   // el total, dividiendo por (1 - comision), para que a Centro Panel le llegue
@@ -217,7 +213,7 @@ export default function EditorCotizacion(p: Props) {
   const medioNombre = medio?.nombre ?? "";
   const totalConComision =
     comisionPct > 0 && comisionPct < 100
-      ? Math.round(total / (1 - comisionPct / 100))
+      ? redondea(total / (1 - comisionPct / 100), moneda)
       : total;
 
   const pctMostrado =
@@ -705,6 +701,7 @@ export default function EditorCotizacion(p: Props) {
               <span className="block text-dorado-osc font-semibold">Cantidad</span>
               <input
                 type="number"
+                step="any"
                 className={`${inputCls} w-24`}
                 value={cantidad}
                 onChange={(e) => setCantidad(e.target.value)}
@@ -716,6 +713,7 @@ export default function EditorCotizacion(p: Props) {
               </span>
               <input
                 type="number"
+                step="any"
                 className={`${inputCls} w-32`}
                 value={valorUnit}
                 onChange={(e) => setValorUnit(e.target.value)}
@@ -729,7 +727,7 @@ export default function EditorCotizacion(p: Props) {
                 {totalLineaNueva == null ? (
                   <span className="text-gray-300">—</span>
                 ) : (
-                  pesos(totalLineaNueva)
+                  importe(totalLineaNueva, moneda)
                 )}
               </div>
             </div>
@@ -795,9 +793,9 @@ export default function EditorCotizacion(p: Props) {
                       />
                     )}
                   </td>
-                  <td className="px-3 py-1 text-right">{pesos(it.valor_unitario)}</td>
+                  <td className="px-3 py-1 text-right">{importe(it.valor_unitario, moneda)}</td>
                   <td className="px-3 py-1 text-right font-semibold">
-                    {pesos(it.unidades * it.valor_unitario)}
+                    {importe(it.unidades * it.valor_unitario, moneda)}
                   </td>
                   {!soloLectura && (
                     <td className="px-2 text-right">
@@ -819,7 +817,7 @@ export default function EditorCotizacion(p: Props) {
       {/* totales */}
       <div className="bg-white border border-gray-200 rounded px-3 py-2">
         <div className="max-w-md ml-auto space-y-0.5 text-xs">
-          <Fila label="SUBTOTAL" valor={pesos(subtotal)} />
+          <Fila label="SUBTOTAL" valor={importe(subtotal, moneda)} />
 
           {(
             [
@@ -862,7 +860,7 @@ export default function EditorCotizacion(p: Props) {
               <span className="text-gray-700 mr-auto">
                 {f.rotulo}
                 <span className="block text-[11px] text-gray-400">
-                  sobre {f.sobre}: {pesos(f.base)}
+                  sobre {f.sobre}: {importe(f.base, moneda)}
                 </span>
               </span>
               <input
@@ -881,7 +879,7 @@ export default function EditorCotizacion(p: Props) {
                 inputMode="numeric"
                 className="border border-gray-300 rounded px-2 py-1 text-right w-32 disabled:bg-gray-100"
                 disabled={soloLectura}
-                value={pesos(f.monto)}
+                value={importe(f.monto, moneda)}
                 onChange={(e) =>
                   setD((x) => ({
                     ...x,
@@ -897,19 +895,19 @@ export default function EditorCotizacion(p: Props) {
             va sobre su propia base y en 0 no aparece en el PDF.
           </p>
 
-          <Fila label="TOTAL NETO" valor={pesos(totalNeto)} fuerte />
+          <Fila label="TOTAL NETO" valor={importe(totalNeto, moneda)} fuerte />
           <Fila
             label={`${nombreImpuesto} ${Math.round(tasaIva * 100)}%`}
-            valor={pesos(iva)}
+            valor={importe(iva, moneda)}
           />
           <div className="flex justify-between bg-verde text-white px-3 py-1 rounded font-bold">
             <span>TOTAL</span>
-            <span>{pesos(total)}</span>
+            <span>{importe(total, moneda)}</span>
           </div>
 
           {p.verMargen && (
             <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
-              <Fila label="Costo de lo cotizado" valor={pesos(costoTotal)} />
+              <Fila label="Costo de lo cotizado" valor={importe(costoTotal, moneda)} />
               <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
                 <span>
                   MARGEN {porcentaje(margenPct)} %
@@ -920,7 +918,7 @@ export default function EditorCotizacion(p: Props) {
                     </span>
                   )}
                 </span>
-                <span>{pesos(margen)}</span>
+                <span>{importe(margen, moneda)}</span>
               </div>
             </div>
           )}
@@ -929,11 +927,11 @@ export default function EditorCotizacion(p: Props) {
             <>
               <Fila
                 label={`Recargo ${porcentaje(comisionPct)} % por ${medioNombre}`}
-                valor={pesos(totalConComision - total)}
+                valor={importe(totalConComision - total, moneda)}
               />
               <div className="flex justify-between bg-dorado-osc text-white px-3 py-1 rounded font-bold">
                 <span>TOTAL A PAGAR</span>
-                <span>{pesos(totalConComision)}</span>
+                <span>{importe(totalConComision, moneda)}</span>
               </div>
               <p className="text-xs text-gray-500 text-right">
                 El total se divide por (1 &minus; comision) para que el neto
@@ -946,13 +944,13 @@ export default function EditorCotizacion(p: Props) {
 
       {recordarCrm && (
         <Ventana
-          titulo="Falta la oportunidad en Clientify"
+          titulo="Falta la oportunidad en el CRM"
           subtitulo="La cotizacion quedo grabada"
           onCerrar={() => setRecordarCrm(false)}
           ancho="max-w-md"
         >
           <p className="text-xs text-gray-700">
-            Cree la oportunidad en Clientify y deje su estado al dia. La
+            Cree la oportunidad en el CRM y deje su estado al dia. La
             cotizacion vive en este sistema, pero el embudo comercial se mira
             alla: lo que no esta cargado no se pronostica ni se hace
             seguimiento.
@@ -964,7 +962,7 @@ export default function EditorCotizacion(p: Props) {
               rel="noreferrer"
               className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
             >
-              Abrir Clientify
+              Abrir el CRM
             </a>
             <button
               type="button"

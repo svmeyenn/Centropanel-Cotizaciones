@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { sincronizarClientify } from "@/app/clientify/acciones";
+import { sincronizarClientify } from "@/app/leads/acciones";
 
 export default function BotonSincronizarClientify({
   deshabilitado,
