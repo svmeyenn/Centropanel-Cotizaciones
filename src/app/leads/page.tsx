@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
+import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { BanderaDe } from "@/components/Bandera";
 import AsignarPropietarioMasivo from "@/components/AsignarPropietarioMasivo";
 import PildoraLinea from "@/components/PildoraLinea";
@@ -34,6 +35,7 @@ interface Fila {
   propietario: string | null;
   propietario_email: string | null;
   id_pais: number;
+  ultimo_toque: string | null;
   etiquetas: string[];
   creado_clientify: string | null;
   ultimo_contacto: string | null;
@@ -61,10 +63,25 @@ export default async function Pagina({
     dueno?: string;
     linea?: string;
     gestion?: string;
+    campo?: string;
+    dias?: string;
     pagina?: string;
   }>;
 }) {
-  const { q = "", estado = "", dueno = "", linea = "", gestion = "", pagina = "1" } = await searchParams;
+  const {
+    q = "",
+    estado = "",
+    dueno = "",
+    linea = "",
+    gestion = "",
+    campo = "",
+    dias = "",
+    pagina = "1",
+  } = await searchParams;
+  // Antiguedad: se mide contra cuando entro el lead o contra el ultimo
+  // movimiento. Viene de la pantalla de depuracion, y se puede ajustar aqui.
+  const campoEdad: "creado" | "toque" = campo === "creado" ? "creado" : "toque";
+  const diasEdad = Math.max(0, Math.min(3650, Number.parseInt(dias, 10) || 0));
   const v = await requerirVendedor();
   const supabase = await createClient();
   const { activo, idPaisActivo } = await contextoMercado(v);
@@ -81,14 +98,15 @@ export default async function Pagina({
     supabase
       .from("v_leads")
       .select(
-        "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, estado_efectivo, linea, campana, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen, comuna, region, id_pais",
+        "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, estado_efectivo, linea, campana, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen, comuna, region, id_pais, ultimo_toque",
         { count: "exact" }
       ),
     idPaisActivo
   );
 
   const busqueda = q.replace(/[,()%*]/g, " ").trim();
-  consulta = aplicarFiltrosLeads(consulta, { q, estado, dueno, linea, gestion });
+  const filtroActual = { q, estado, dueno, linea, gestion, campo: campoEdad, dias: diasEdad };
+  consulta = aplicarFiltrosLeads(consulta, filtroActual);
 
   const [{ data: filas, count }, { data: filtrosData }, { data: posibles }, { data: ultima }] = await Promise.all([
     consulta
@@ -118,6 +136,10 @@ export default async function Pagina({
     if (dueno) s.set("dueno", dueno);
     if (linea) s.set("linea", linea);
     if (gestion) s.set("gestion", gestion);
+    if (diasEdad > 0) {
+      s.set("campo", campoEdad);
+      s.set("dias", String(diasEdad));
+    }
     if (p > 1) s.set("pagina", String(p));
     const t = s.toString();
     return `/leads${t ? `?${t}` : ""}`;
@@ -239,6 +261,33 @@ export default async function Pagina({
               <option value="casas">{LINEAS.casas}</option>
             </select>
           </div>
+          <div>
+            <label htmlFor="dias" className="block font-semibold text-dorado-osc mb-0.5">
+              Antiguedad
+            </label>
+            <span className="flex items-center gap-1">
+              <select
+                id="campo"
+                name="campo"
+                defaultValue={campoEdad}
+                className="border border-gray-300 rounded px-2 py-1"
+              >
+                <option value="toque">Sin actividad hace</option>
+                <option value="creado">Entro hace</option>
+              </select>
+              <input
+                id="dias"
+                name="dias"
+                type="number"
+                min={0}
+                max={3650}
+                defaultValue={diasEdad || ""}
+                placeholder="dias"
+                className="border border-gray-300 rounded px-2 py-1 w-20 text-right"
+              />
+              <span className="text-gray-500">dias</span>
+            </span>
+          </div>
           {gestion && GESTIONES[gestion] && (
             <span className="inline-flex items-center gap-1 bg-crema border border-dorado rounded px-2 py-1">
               <input type="hidden" name="gestion" value={gestion} />
@@ -253,13 +302,51 @@ export default async function Pagina({
             </span>
           )}
           <button className="bg-verde text-white font-semibold px-3 py-1 rounded">Filtrar</button>
-          {(busqueda || estado || dueno || linea || gestion) && (
+          {(busqueda || estado || dueno || linea || gestion || diasEdad > 0) && (
             <Link href="/leads" className="text-verde underline py-1">
               Quitar filtros
             </Link>
           )}
-          <span className="ml-auto text-gray-500 py-1">
-            {total.toLocaleString("es-CL")} resultados
+          <span className="ml-auto flex items-center gap-3 py-1">
+            <span className="text-gray-500">{total.toLocaleString("es-CL")} resultados</span>
+            <BotonExportarFilas
+              nombre="leads"
+              titulos={[
+                "Id",
+                "Nombre",
+                "Telefono",
+                "Email",
+                "Campana",
+                "Propietario",
+                "Comuna",
+                "Region",
+                "Estado",
+                "Origen",
+                "Linea",
+                "Creado",
+                "Ultimo movimiento",
+              ]}
+              filas={contactos.map((c) => [
+                c.id_clientify,
+                c.nombre_completo,
+                c.telefono,
+                c.email,
+                c.campana,
+                c.propietario,
+                c.comuna,
+                c.region,
+                estadoLegible(c.estado_efectivo),
+                c.origen,
+                c.linea === "casas" ? LINEAS.casas : LINEAS.paneles,
+                dia(c.creado_clientify),
+                dia(c.ultimo_toque),
+              ])}
+            />
+            {puedeAsignar && (
+              <Link href="/leads/depurar" className="text-verde underline whitespace-nowrap">
+                Depurar
+              </Link>
+            )}
           </span>
         </form>
 
@@ -267,7 +354,7 @@ export default async function Pagina({
           <AsignarPropietarioMasivo
             propietarios={(posibles ?? []) as { email: string; nombre: string }[]}
             total={total}
-            filtro={{ q, estado, dueno, linea, gestion }}
+            filtro={filtroActual}
           />
         )}
 
