@@ -6,12 +6,14 @@ import {
   abrirCorrida,
   cerrarCorrida,
   guardarLote,
+  guardarLoteLeads,
   type TablaClientify,
 } from "@/app/leads/acciones";
+import { leadsDeHoja } from "@/lib/importarLeads";
 
 const LOTE = 100;
 
-// Sube a la base la lista de contactos de Clientify desde un archivo. Se hace
+// Sube a la base la lista de contactos de Clientify desde un archivo (.json o .xlsx). Se hace
 // de a lotes desde el navegador: un solo envio con los 6.000 superaria el tope
 // de tamano de la peticion, y asi ademas se ve el avance.
 export default function CargarContactosClientify() {
@@ -21,7 +23,64 @@ export default function CargarContactosClientify() {
   const [mensaje, setMensaje] = useState<{ texto: string; error: boolean } | null>(null);
   const trabajando = avance !== null;
 
+  // La planilla (.xlsx) que se descarga de Clientify: agrega los leads que faltan
+  // y completa los que ya estan, sin borrar nada.
+  async function cargarPlanilla(archivo: File) {
+    setMensaje(null);
+    let leads;
+    try {
+      const { readSheet } = await import("read-excel-file/browser");
+      const r = leadsDeHoja((await readSheet(archivo)) as unknown[][]);
+      if (r.error) {
+        setMensaje({ texto: r.error, error: true });
+        return;
+      }
+      leads = r.leads;
+    } catch {
+      setMensaje({ texto: "No se pudo leer la planilla. Verifique que sea un archivo .xlsx.", error: true });
+      return;
+    }
+    if (leads.length === 0) {
+      setMensaje({ texto: "La planilla no trae contactos.", error: true });
+      return;
+    }
+    setAvance({ hechos: 0, total: leads.length });
+    const corrida = await abrirCorrida();
+    if (corrida.error || !corrida.id || !corrida.inicio) {
+      setAvance(null);
+      setMensaje({ texto: corrida.error ?? "No se pudo iniciar la importacion.", error: true });
+      return;
+    }
+    let nuevos = 0;
+    let actualizados = 0;
+    for (let i = 0; i < leads.length; i += 200) {
+      const r = await guardarLoteLeads(corrida.inicio, leads.slice(i, i + 200));
+      if (r.error) {
+        await cerrarCorrida(corrida.id, corrida.inicio, nuevos + actualizados, null, r.error);
+        setAvance(null);
+        setMensaje({ texto: r.error, error: true });
+        return;
+      }
+      nuevos += r.nuevos ?? 0;
+      actualizados += r.actualizados ?? 0;
+      setAvance({ hechos: Math.min(i + 200, leads.length), total: leads.length });
+    }
+    // Sin cantidad esperada: la planilla nunca quita leads.
+    const cierre = await cerrarCorrida(corrida.id, corrida.inicio, nuevos + actualizados, null);
+    setAvance(null);
+    setMensaje(
+      cierre.error
+        ? { texto: cierre.error, error: true }
+        : {
+            texto: `Listo: ${nuevos} leads nuevos y ${actualizados} al dia; ${cierre.enlazados ?? 0} enlazados con su cliente.`,
+            error: false,
+          }
+    );
+    router.refresh();
+  }
+
   async function cargar(archivo: File) {
+    if (/\.xlsx$/i.test(archivo.name)) return cargarPlanilla(archivo);
     setMensaje(null);
     let contactos: unknown[];
     let oportunidades: unknown[] = [];
@@ -117,7 +176,7 @@ export default function CargarContactosClientify() {
         ref={entrada}
         id="archivo-contactos"
         type="file"
-        accept=".json,application/json"
+        accept=".json,application/json,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         className="hidden"
         onChange={(e) => {
           const archivo = e.target.files?.[0];

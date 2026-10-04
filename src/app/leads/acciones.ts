@@ -11,6 +11,7 @@ import {
   mapearContacto,
   mapearOportunidad,
 } from "@/lib/clientify";
+import type { LeadImportado } from "@/lib/importarLeads";
 
 export interface ResultadoSync {
   ok?: boolean;
@@ -112,6 +113,95 @@ export async function guardarLote(
       { onConflict: "id" }
     );
   return error ? { error: error.message } : { guardados: acts.length };
+}
+
+// Importar la planilla de contactos (.xlsx). Un lead que ya esta se completa y se
+// pone al dia; uno que no esta se agrega. Nunca se borra nada, y lo que la planilla
+// trae vacio no borra lo que ya hay: los emails y telefonos se suman a los que
+// tenia, con sus marcas de WhatsApp.
+const ultimos9 = (t: string) => t.replace(/\D/g, "").slice(-9);
+
+export async function guardarLoteLeads(
+  inicio: string,
+  leads: LeadImportado[]
+): Promise<{ nuevos?: number; actualizados?: number; error?: string }> {
+  const sinPermiso = await exigirAdmin();
+  if (sinPermiso) return { error: sinPermiso };
+  if (!Array.isArray(leads) || leads.length === 0) return { nuevos: 0, actualizados: 0 };
+  if (leads.length > 300) return { error: "El lote es demasiado grande." };
+
+  const supabase = await createClient();
+  const ids = leads.map((l) => l.id).filter((n) => Number.isInteger(n));
+
+  const [{ data: previos }, { data: duenos }] = await Promise.all([
+    supabase
+      .from("clientify_contactos")
+      .select(
+        "id_clientify, nombre, apellido, empresa, cargo, propietario, propietario_email, estado, origen, creado_clientify, ultimo_contacto, etiquetas, observaciones, campos_personalizados, direccion, ciudad, comuna, region, pais, emails, telefonos"
+      )
+      .in("id_clientify", ids),
+    supabase.from("clientify_contactos").select("propietario, propietario_email").not("propietario_email", "is", null).limit(2000),
+  ]);
+  const previo = new Map((previos ?? []).map((p) => [Number(p.id_clientify), p]));
+  // La planilla trae el nombre del propietario y no su email: se toma el que ya
+  // tienen sus otros leads.
+  const emailDe = new Map<string, string>();
+  for (const d of duenos ?? [])
+    if (d.propietario && d.propietario_email) emailDe.set(String(d.propietario), String(d.propietario_email));
+
+  let nuevos = 0;
+  const filas = leads.map((l) => {
+    const p = previo.get(l.id);
+    if (!p) nuevos++;
+
+    const emails = [...((p?.emails as { email?: string }[] | null) ?? [])];
+    for (const e of l.emails)
+      if (!emails.some((x) => (x.email ?? "").toLowerCase() === e)) emails.push({ email: e });
+    const telefonos = [...((p?.telefonos as { phone?: string }[] | null) ?? [])];
+    for (const t of l.telefonos)
+      if (!telefonos.some((x) => ultimos9(x.phone ?? "") === ultimos9(t))) telefonos.push({ phone: t });
+
+    // Los campos propios se renuevan por nombre; los que el archivo no trae se conservan.
+    const campos = [...((p?.campos_personalizados as { field: string; value: string }[] | null) ?? [])];
+    for (const c of l.campos) {
+      const i = campos.findIndex((x) => x.field === c.field);
+      if (i >= 0) campos[i] = c;
+      else campos.push(c);
+    }
+
+    const propietario = l.propietario ?? (p?.propietario as string | null) ?? null;
+    return {
+      id_clientify: l.id,
+      nombre: l.nombre ?? p?.nombre ?? null,
+      apellido: l.apellido ?? p?.apellido ?? null,
+      empresa: l.empresa ?? p?.empresa ?? null,
+      cargo: l.cargo ?? p?.cargo ?? null,
+      propietario,
+      propietario_email: (propietario ? emailDe.get(propietario) : null) ?? p?.propietario_email ?? null,
+      estado: l.estado ?? p?.estado ?? null,
+      // Del origen manda el que ya estaba: el archivo lo dice con otras palabras.
+      origen: (p?.origen as string | null) ?? l.origen ?? null,
+      creado_clientify: l.creado ?? p?.creado_clientify ?? null,
+      ultimo_contacto: l.ultimo_contacto ?? p?.ultimo_contacto ?? null,
+      etiquetas: l.etiquetas.length ? l.etiquetas : ((p?.etiquetas as string[] | null) ?? []),
+      observaciones: l.observaciones ?? p?.observaciones ?? null,
+      campos_personalizados: campos,
+      direccion: l.direccion ?? p?.direccion ?? null,
+      ciudad: l.ciudad ?? p?.ciudad ?? null,
+      comuna: l.ciudad ?? p?.comuna ?? null,
+      region: l.region ?? p?.region ?? null,
+      pais: l.pais ?? p?.pais ?? null,
+      email: emails[0]?.email ?? null,
+      emails,
+      telefono: telefonos[0]?.phone ?? null,
+      telefonos,
+      sincronizado_en: inicio,
+    };
+  });
+
+  const { error } = await supabase.from("clientify_contactos").upsert(filas, { onConflict: "id_clientify" });
+  if (error) return { error: error.message };
+  return { nuevos, actualizados: leads.length - nuevos };
 }
 
 // Cierra la corrida. Se quitan los contactos que no vinieron solo si llegaron
