@@ -19,6 +19,8 @@ import { VERSION } from "@/lib/version";
 import { ES_SANDBOX } from "@/lib/supabase/esquema";
 
 // El inicio tiene dos caras que no se mezclan:
+//  - Desempeno (la que se abre al entrar): como va el negocio en el mes en
+//    curso, un bloque por mercado, con el mes elegible.
 //  - Mi gestion: lo que hay que hacer. La agenda de esta semana y la proxima
 //    (compromisos con leads, acciones de cotizaciones y entregas), los leads
 //    que esperan y las cotizaciones en juego. Un vendedor ve lo suyo; quien
@@ -34,7 +36,7 @@ export default async function Home({
 }) {
   const v = await requerirVendedor();
   const { mes, vista: vistaPedida, quien: quienPedido } = await searchParams;
-  const vista = vistaPedida === "desempeno" ? "desempeno" : "gestion";
+  const vista = vistaPedida === "gestion" ? "gestion" : "desempeno";
 
   const { idPaisActivo, activo, accesibles } = await contextoMercado(v);
   const supabase = await createClient();

@@ -17,13 +17,13 @@ export default function PestanasInicio({
       clave: "gestion" as const,
       texto: "Mi gestion",
       ayuda: "Lo comprometido, lo que espera y lo que viene",
-      href: `/${quien ? `?quien=${encodeURIComponent(quien)}` : ""}`,
+      href: `/?vista=gestion${quien ? `&quien=${encodeURIComponent(quien)}` : ""}`,
     },
     {
       clave: "desempeno" as const,
       texto: "Desempeno",
       ayuda: "Ventas, leads y cumplimiento del mes",
-      href: `/?vista=desempeno${mes ? `&mes=${encodeURIComponent(mes)}` : ""}`,
+      href: `/${mes ? `?mes=${encodeURIComponent(mes)}` : ""}`,
     },
   ];
   return (

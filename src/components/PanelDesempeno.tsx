@@ -74,7 +74,17 @@ export interface Desempeno {
   facturas_mes: number;
   // Lo que todavia esta en juego, por estado.
   embudo: { estado: string; n: number; monto: number }[];
-  serie: { mes: string; cotizado: number; vendido: number }[];
+  // Cada mes de la serie: lo cotizado, lo vendido y lo facturado, con los
+  // conteos para poder mostrar la conversion mes a mes.
+  serie: {
+    mes: string;
+    cotizado: number;
+    vendido: number;
+    facturado: number;
+    cotizaciones: number;
+    convertidas: number;
+    pedidos: number;
+  }[];
 }
 
 const MESES = [
@@ -104,7 +114,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
   const varVendido = variacion(d.venta.vendido, d.venta.vendido_anterior);
   const tope = Math.max(
     1,
-    ...d.serie.map((s) => Math.max(Number(s.cotizado), Number(s.vendido)))
+    ...d.serie.map((s) => Math.max(Number(s.cotizado), Number(s.vendido), Number(s.facturado ?? 0)))
   );
   const bajoObjetivo =
     d.margen.pct != null && d.margen.objetivo > 0 && d.margen.pct < d.margen.objetivo;
@@ -179,7 +189,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
       </div>
 
       <div className="grid lg:grid-cols-[1.3fr_1fr] gap-2.5">
-        <Caja titulo={`Cotizado y vendido, 6 meses hasta ${nombreMes(d.mes)}`}>
+        <Caja titulo={`Cotizado, vendido y facturado, 6 meses hasta ${nombreMes(d.mes)}`}>
           <div className="p-3">
             <div className="flex items-end justify-between gap-2 h-28 mt-3">
               {d.serie.map((s) => (
@@ -187,6 +197,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
                   <div className="flex items-end gap-0.5 h-24 w-full justify-center">
                     <Barra valor={Number(s.cotizado)} tope={tope} clase="bg-dorado" />
                     <Barra valor={Number(s.vendido)} tope={tope} clase="bg-verde" />
+                    <Barra valor={Number(s.facturado ?? 0)} tope={tope} clase="bg-[#2F5D8A]" />
                   </div>
                   <span
                     className={`text-[10px] ${
@@ -204,6 +215,9 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
               </span>
               <span className="flex items-center gap-1">
                 <i className="inline-block w-3 h-2 bg-verde rounded-sm" /> Vendido
+              </span>
+              <span className="flex items-center gap-1">
+                <i className="inline-block w-3 h-2 bg-[#2F5D8A] rounded-sm" /> Facturado
               </span>
               <span className="text-gray-400">
                 mayor del periodo {pesos(tope)}
@@ -341,14 +355,14 @@ function Barra({ valor, tope, clase }: { valor: number; tope: number; clase: str
   // y que no hubo movimiento.
   const alto = Math.max(1, Math.round((valor / tope) * 100));
   return (
-    <div className="relative w-1/2 h-full" title={pesos(valor)}>
+    <div className="relative flex-1 h-full" title={pesos(valor)}>
       <span
         className="absolute inset-x-0 text-center text-[8px] sm:text-[9px] leading-none tabular-nums text-gray-700 whitespace-nowrap"
         style={{ bottom: `calc(${alto}% + 2px)` }}
       >
         {pesosCorto(valor)}
       </span>
-      <div className={`${clase} absolute bottom-0 inset-x-0 rounded-t-sm`} style={{ height: `${alto}%` }} />
+      <div className={`${clase} absolute bottom-0 inset-x-px rounded-t-sm`} style={{ height: `${alto}%` }} />
     </div>
   );
 }
