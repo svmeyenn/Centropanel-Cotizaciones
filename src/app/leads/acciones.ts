@@ -12,6 +12,7 @@ import {
   mapearOportunidad,
 } from "@/lib/clientify";
 import type { LeadImportado } from "@/lib/importarLeads";
+import type { OportunidadImportada } from "@/lib/importarOportunidades";
 
 export interface ResultadoSync {
   ok?: boolean;
@@ -318,4 +319,84 @@ export async function sincronizarClientify(): Promise<ResultadoSync> {
   }
   // Por la API la lista es la completa: lo leido es lo esperado.
   return cerrarCorrida(corrida.id, corrida.inicio, leidos, leidos);
+}
+
+// --- Oportunidades del CRM ---------------------------------------------------
+
+// Sube un lote de oportunidades leidas de la planilla. Completa y pone al dia:
+// lo que el archivo no trae no se borra, y los folios de cotizacion ya enlazados
+// se conservan. El archivo trae el nombre del propietario y no su email: se toma
+// el que ya usan sus leads.
+export async function guardarLoteOportunidades(
+  oportunidades: OportunidadImportada[]
+): Promise<{ nuevas?: number; actualizadas?: number; error?: string }> {
+  const sinPermiso = await exigirAdmin();
+  if (sinPermiso) return { error: sinPermiso };
+  if (!Array.isArray(oportunidades) || oportunidades.length === 0)
+    return { nuevas: 0, actualizadas: 0 };
+  if (oportunidades.length > 300) return { error: "El lote es demasiado grande." };
+
+  const supabase = await createClient();
+  const ids = oportunidades.map((o) => o.id).filter((n) => Number.isInteger(n));
+
+  const [{ data: previas }, { data: duenos }] = await Promise.all([
+    supabase
+      .from("clientify_oportunidades")
+      .select("id_clientify, cotizaciones, propietario_email, id_contacto, id_empresa, id_etapa, id_pipeline")
+      .in("id_clientify", ids),
+    supabase
+      .from("clientify_contactos")
+      .select("propietario, propietario_email")
+      .not("propietario_email", "is", null)
+      .limit(2000),
+  ]);
+  const previa = new Map((previas ?? []).map((p) => [Number(p.id_clientify), p]));
+  const emailDe = new Map<string, string>();
+  for (const d of duenos ?? [])
+    if (d.propietario && d.propietario_email)
+      emailDe.set(String(d.propietario).toLowerCase(), String(d.propietario_email));
+
+  let nuevas = 0;
+  const filas = oportunidades.map((o) => {
+    const p = previa.get(o.id);
+    if (!p) nuevas++;
+
+    // Los folios ya enlazados se mantienen; los del nombre se suman.
+    const cotizaciones = [...((p?.cotizaciones as string[] | null) ?? [])];
+    for (const c of o.cotizaciones) if (!cotizaciones.includes(c)) cotizaciones.push(c);
+
+    return {
+      id_clientify: o.id,
+      nombre: o.nombre,
+      monto: o.monto,
+      moneda: o.moneda,
+      estado: o.estado,
+      etapa: o.etapa,
+      proceso: o.proceso,
+      probabilidad: o.probabilidad,
+      razon_perdida: o.razon_perdida,
+      razon_ganada: o.razon_ganada,
+      id_contacto: o.id_contacto ?? p?.id_contacto ?? null,
+      id_empresa: p?.id_empresa ?? null,
+      id_etapa: p?.id_etapa ?? null,
+      id_pipeline: p?.id_pipeline ?? null,
+      propietario_email:
+        (o.propietario ? emailDe.get(o.propietario.toLowerCase()) : null) ?? p?.propietario_email ?? null,
+      creado_clientify: o.creado,
+      modificado_clientify: o.modificado,
+      cierre_esperado: o.cierre_esperado,
+      cierre_real: o.cierre_real,
+      cotizaciones,
+      sincronizado_en: new Date().toISOString(),
+    };
+  });
+
+  const { error } = await supabase
+    .from("clientify_oportunidades")
+    .upsert(filas, { onConflict: "id_clientify" });
+  if (error) return { error: error.message };
+
+  revalidatePath("/leads");
+  revalidatePath("/");
+  return { nuevas, actualizadas: filas.length - nuevas };
 }
