@@ -120,16 +120,21 @@ export async function guardarDatosLead(idLead: number, d: DatosLead): Promise<Re
         .filter(Boolean)
     ),
   ];
-  const malo = emailsNuevos.find((e) => !CORREO.test(e));
+  const emailsActuales = [
+    ...new Set((actual.emails ?? []).map((e) => (e.email ?? "").trim().toLowerCase()).filter(Boolean)),
+  ];
+  // Solo se revisa el formato de los que se escriben ahora: uno que ya venia de
+  // Clientify no puede impedir corregir otro dato.
+  const malo = emailsNuevos.find((e) => !emailsActuales.includes(e) && !CORREO.test(e));
   if (malo) return { ok: false, mensaje: `"${malo}" no parece un email.` };
   if (emailsNuevos.length > 10) return { ok: false, mensaje: "Son demasiados emails (maximo 10)." };
-  const emailsActuales = (actual.emails ?? []).map((e) => (e.email ?? "").trim().toLowerCase()).filter(Boolean);
   if (emailsNuevos.join("|") !== emailsActuales.join("|")) {
     const previos = new Map((actual.emails ?? []).map((e) => [(e.email ?? "").trim().toLowerCase(), e]));
     cambios.emails = emailsNuevos.map((email) => ({ ...(previos.get(email) ?? {}), email }));
   }
 
   // Telefonos: uno por linea, con el codigo del pais (+56 Chile, +51 Peru).
+  const previos = new Map((actual.telefonos ?? []).map((t) => [soloDigitos(t.phone ?? ""), t]));
   const lineas = (d.telefonos ?? "")
     .split(/[\n;]+/)
     .map((t) => t.trim())
@@ -137,17 +142,22 @@ export async function guardarDatosLead(idLead: number, d: DatosLead): Promise<Re
   const telefonosNuevos: string[] = [];
   for (const t of lineas) {
     const limpio = t.replace(/[^\d+]/g, "");
-    if (!telefonoValido(limpio))
+    const previo = previos.get(soloDigitos(limpio));
+    // Uno que ya estaba se deja como esta; solo se exige el codigo de pais a los
+    // que se escriben ahora.
+    const phone = previo?.phone ?? limpio;
+    if (!previo && !telefonoValido(limpio))
       return {
         ok: false,
         mensaje: `El telefono "${t}" necesita el codigo de pais, por ejemplo +56 9 1234 5678 (Chile) o +51 987 654 321 (Peru).`,
       };
-    if (!telefonosNuevos.includes(limpio)) telefonosNuevos.push(limpio);
+    if (!telefonosNuevos.includes(phone)) telefonosNuevos.push(phone);
   }
   if (telefonosNuevos.length > 10) return { ok: false, mensaje: "Son demasiados telefonos (maximo 10)." };
-  const telefonosActuales = (actual.telefonos ?? []).map((t) => t.phone ?? "").filter(Boolean);
-  if (telefonosNuevos.map(soloDigitos).join("|") !== telefonosActuales.map(soloDigitos).join("|")) {
-    const previos = new Map((actual.telefonos ?? []).map((t) => [soloDigitos(t.phone ?? ""), t]));
+  const telefonosActuales = [
+    ...new Set((actual.telefonos ?? []).map((t) => soloDigitos(t.phone ?? "")).filter(Boolean)),
+  ];
+  if (telefonosNuevos.map(soloDigitos).join("|") !== telefonosActuales.join("|")) {
     cambios.telefonos = telefonosNuevos.map((phone) => ({
       ...(previos.get(soloDigitos(phone)) ?? {}),
       phone,

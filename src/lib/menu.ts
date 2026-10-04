@@ -53,7 +53,9 @@ export const GRUPOS: Grupo[] = [
       // ficha es una sola. Quien vende entra por aqui y la ve filtrada en los
       // clientes; quien maneja la plata entra por alla y ve todas.
       { texto: "Clientes", href: "/clientes" },
-      // La copia de los contactos del CRM. Se mira aqui; se edita en Clientify.
+      // Los contactos del CRM, con sus cotizaciones, conversaciones y compromisos.
+      // Los datos de Clientify se cargan por archivo; lo que se corrige aqui no se
+      // pierde en la carga siguiente.
       { texto: "Leads", href: "/clientify" },
     ],
   },
