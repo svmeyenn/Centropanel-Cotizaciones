@@ -7,9 +7,11 @@ import {
   cerrarCorrida,
   guardarLote,
   guardarLoteLeads,
+  guardarLoteOportunidades,
   type TablaClientify,
 } from "@/app/leads/acciones";
 import { leadsDeHoja } from "@/lib/importarLeads";
+import { esPlanillaDeOportunidades, oportunidadesDeHoja } from "@/lib/importarOportunidades";
 
 const LOTE = 100;
 
@@ -25,12 +27,51 @@ export default function CargarContactosClientify() {
 
   // La planilla (.xlsx) que se descarga de Clientify: agrega los leads que faltan
   // y completa los que ya estan, sin borrar nada.
+  // La planilla de oportunidades: completa las que ya estan y agrega las que
+  // faltan, con su etapa y con por que se gano o se perdio.
+  async function cargarOportunidades(filas: unknown[][]) {
+    const r = oportunidadesDeHoja(filas);
+    if (r.error) {
+      setMensaje({ texto: r.error, error: true });
+      return;
+    }
+    const lista = r.oportunidades;
+    if (lista.length === 0) {
+      setMensaje({ texto: "La planilla no trae oportunidades.", error: true });
+      return;
+    }
+    setAvance({ hechos: 0, total: lista.length });
+    let nuevas = 0;
+    let actualizadas = 0;
+    for (let i = 0; i < lista.length; i += 200) {
+      const x = await guardarLoteOportunidades(lista.slice(i, i + 200));
+      if (x.error) {
+        setAvance(null);
+        setMensaje({ texto: x.error, error: true });
+        return;
+      }
+      nuevas += x.nuevas ?? 0;
+      actualizadas += x.actualizadas ?? 0;
+      setAvance({ hechos: Math.min(i + 200, lista.length), total: lista.length });
+    }
+    setAvance(null);
+    setMensaje({
+      texto: `Listo: ${nuevas} oportunidades nuevas y ${actualizadas} al dia.`,
+      error: false,
+    });
+    router.refresh();
+  }
+
   async function cargarPlanilla(archivo: File) {
     setMensaje(null);
     let leads;
     try {
       const { readSheet } = await import("read-excel-file/browser");
-      const r = leadsDeHoja((await readSheet(archivo)) as unknown[][]);
+      const filas = (await readSheet(archivo)) as unknown[][];
+      // El mismo boton sirve para las dos planillas del CRM: se reconocen por
+      // sus columnas.
+      if (esPlanillaDeOportunidades(filas)) return cargarOportunidades(filas);
+      const r = leadsDeHoja(filas);
       if (r.error) {
         setMensaje({ texto: r.error, error: true });
         return;
@@ -189,7 +230,7 @@ export default function CargarContactosClientify() {
         disabled={trabajando}
         className="bg-verde text-white text-xs font-semibold px-3 py-1.5 rounded hover:opacity-90 disabled:opacity-50"
       >
-        {trabajando ? "Importando..." : "Importar leads desde Clientify"}
+        {trabajando ? "Importando..." : "Importar desde Clientify"}
       </button>
       {avance && (
         <span className="text-xs text-gray-600" role="status">

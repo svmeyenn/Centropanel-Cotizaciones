@@ -110,6 +110,9 @@ export type PanelLeadsDatos = {
   semanas_desde: string;
   origenes_top: string[];
   equipo: FilaEquipoLeads[];
+  // Por que se cierra una oportunidad, segun lo que anota el CRM. Del ultimo ano.
+  razones_perdida: { razon: string; n: number; monto: number }[];
+  razones_ganada: { razon: string; n: number; monto: number }[];
   origenes: { origen: string; n: number; oportunidades: number }[];
   cumplimiento: CumplimientoFila[];
 };

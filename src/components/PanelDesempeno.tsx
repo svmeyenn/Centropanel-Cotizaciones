@@ -109,6 +109,10 @@ function variacion(actual: number, anterior: number) {
   };
 }
 
+// Los tres estados de una cotizacion que todavia se puede ganar, en el orden en
+// que avanza.
+const ENJUEGO = ["Borrador", "Emitida", "Enviada"];
+
 export default function PanelDesempeno({ d }: { d: Desempeno }) {
   const varCotizado = variacion(d.venta.cotizado, d.venta.cotizado_anterior);
   const varVendido = variacion(d.venta.vendido, d.venta.vendido_anterior);
@@ -116,6 +120,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
     1,
     ...d.serie.map((s) => Math.max(Number(s.cotizado), Number(s.vendido), Number(s.facturado ?? 0)))
   );
+  const topeEmbudo = Math.max(1, ...(d.embudo ?? []).map((e) => Number(e.monto)));
   const bajoObjetivo =
     d.margen.pct != null && d.margen.objetivo > 0 && d.margen.pct < d.margen.objetivo;
 
@@ -270,6 +275,82 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
         </Caja>
       </div>
 
+      <div className="grid lg:grid-cols-[1fr_1fr] gap-2.5">
+        <Caja titulo="Cuanto de lo cotizado se vendio, mes a mes">
+          <div className="p-3">
+            <div className="flex items-end justify-between gap-2 h-24 mt-3">
+              {d.serie.map((s) => {
+                const pct =
+                  s.cotizaciones > 0 ? Math.round((s.convertidas / s.cotizaciones) * 100) : null;
+                return (
+                  <div key={s.mes} className="flex-1 flex flex-col items-center gap-1 h-full">
+                    <div className="relative w-full flex-1">
+                      <span
+                        className="absolute inset-x-0 text-center text-[9px] leading-none tabular-nums text-gray-700"
+                        style={{ bottom: `calc(${pct ?? 0}% + 2px)` }}
+                      >
+                        {pct == null ? "--" : `${pct} %`}
+                      </span>
+                      <div
+                        className="absolute bottom-0 inset-x-[22%] bg-verde rounded-t-sm"
+                        style={{ height: `${pct ?? 0}%` }}
+                        title={`${s.convertidas} de ${s.cotizaciones} cotizaciones`}
+                      />
+                    </div>
+                    <span
+                      className={`text-[10px] ${
+                        s.mes === d.mes ? "text-verde font-semibold" : "text-gray-500"
+                      }`}
+                    >
+                      {nombreMes(s.mes)}
+                    </span>
+                    <span className="text-[9px] text-gray-400 leading-none">
+                      {s.convertidas}/{s.cotizaciones}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10px] text-gray-500">
+              Cotizaciones que terminaron en pedido, sobre las emitidas en ese mes. La escala va de
+              0 a 100 %.
+            </p>
+          </div>
+        </Caja>
+
+        <Caja titulo="Cotizaciones en juego, por estado">
+          <div className="p-3 space-y-2 text-[11px]">
+            {ENJUEGO.map((estado) => {
+              const e = (d.embudo ?? []).find((x) => x.estado === estado);
+              const monto = Number(e?.monto ?? 0);
+              const ancho = Math.max(monto > 0 ? 2 : 0, Math.round((monto / topeEmbudo) * 100));
+              return (
+                <Link
+                  key={estado}
+                  href={`/cotizaciones?estado=${estado}`}
+                  className="block hover:bg-crema rounded px-1 py-0.5"
+                >
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="font-semibold">{estado}</span>
+                    <span className="tabular-nums">
+                      {pesos(monto)}
+                      <span className="text-gray-500"> · {e?.n ?? 0} cot.</span>
+                    </span>
+                  </span>
+                  <span className="mt-0.5 block h-3 bg-gray-100 rounded-sm overflow-hidden">
+                    <span className="block h-full bg-dorado" style={{ width: `${ancho}%` }} />
+                  </span>
+                </Link>
+              );
+            })}
+            <p className="text-[10px] text-gray-500">
+              Lo que todavia se puede ganar, al dia de hoy. Pulse un estado para ver esas
+              cotizaciones.
+            </p>
+          </div>
+        </Caja>
+      </div>
+
       <div className="grid lg:grid-cols-[1.3fr_1fr] gap-2.5">
         <Caja titulo="Equipo, en el mes">
           <div className="overflow-x-auto">
@@ -299,7 +380,10 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
                       <span className="text-gray-400"> · {r.cotizaciones} cot.</span>
                     </td>
                     <td className="px-2.5 py-1.5 text-right text-gray-600">
-                      {porcentaje(r.parte)} %
+                      <span className="flex items-center justify-end gap-1.5">
+                        <span className="h-2 bg-dorado rounded-sm" style={{ width: `${Math.max(Number(r.parte), 1)}%` }} />
+                        <span className="tabular-nums w-10">{porcentaje(r.parte)} %</span>
+                      </span>
                     </td>
                     <td className="px-2.5 py-1.5 text-right font-semibold">
                       {pesos(r.vendido)}
@@ -321,14 +405,22 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
               <li className="text-gray-400 text-center py-3">Sin cotizaciones en el periodo.</li>
             )}
             {d.clientes.map((c) => (
-              <li key={c.nombre} className="flex justify-between gap-3">
-                <span className="text-gray-700 truncate" title={c.nombre}>
-                  {c.nombre}
-                  <span className="text-gray-400"> · {c.cotizaciones} cot.</span>
+              <li key={c.nombre}>
+                <span className="flex justify-between gap-3">
+                  <span className="text-gray-700 truncate" title={c.nombre}>
+                    {c.nombre}
+                    <span className="text-gray-400"> · {c.cotizaciones} cot.</span>
+                  </span>
+                  <span className="shrink-0">
+                    <b>{pesos(c.monto)}</b>
+                    <span className="text-gray-500"> · {porcentaje(c.parte)} %</span>
+                  </span>
                 </span>
-                <span className="shrink-0">
-                  <b>{pesos(c.monto)}</b>
-                  <span className="text-gray-500"> · {porcentaje(c.parte)} %</span>
+                <span className="mt-0.5 block h-1.5 bg-gray-100 rounded-sm overflow-hidden">
+                  <span
+                    className="block h-full bg-verde"
+                    style={{ width: `${Math.max(Number(c.parte), 1)}%` }}
+                  />
                 </span>
               </li>
             ))}

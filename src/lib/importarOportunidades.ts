@@ -101,6 +101,14 @@ export function folios(nombre: string): string[] {
   return [...new Set(salida)].map((n) => `COT${String(n).padStart(5, "0")}`);
 }
 
+// Las dos planillas que se descargan del CRM se abren con el mismo boton: esta
+// se reconoce porque sus columnas hablan de importe y de etapa.
+export function esPlanillaDeOportunidades(filas: unknown[][]): boolean {
+  if (!filas || filas.length === 0) return false;
+  const cab = filas[0].map(clave);
+  return cab.includes("importe") && cab.includes("etapa");
+}
+
 export function oportunidadesDeHoja(filas: unknown[][]): {
   oportunidades: OportunidadImportada[];
   error?: string;
