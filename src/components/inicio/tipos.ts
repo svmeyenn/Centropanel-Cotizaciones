@@ -94,6 +94,9 @@ export type CumplimientoFila = {
 
 export type PanelLeadsDatos = {
   mes: string;
+  // La cartera que se mira: el mes elegido y los dos anteriores, nada mas atras.
+  desde: string;
+  hasta: string;
   kpi: {
     total: number;
     nuevos_mes: number;
@@ -110,7 +113,7 @@ export type PanelLeadsDatos = {
   semanas_desde: string;
   origenes_top: string[];
   equipo: FilaEquipoLeads[];
-  // Por que se cierra una oportunidad, segun lo que anota el CRM. Del ultimo ano.
+  // Por que se cierra una oportunidad, segun lo que anota el CRM. Del periodo.
   razones_perdida: { razon: string; n: number; monto: number }[];
   razones_ganada: { razon: string; n: number; monto: number }[];
   origenes: { origen: string; n: number; oportunidades: number }[];
@@ -144,6 +147,14 @@ export function diaSemana(iso: string): string {
 export function diaCorto(iso: string): string {
   const [, m, d] = iso.slice(0, 10).split("-").map(Number);
   return `${d} ${MESES[m - 1]}`;
+}
+
+// "ago a oct 2026": el periodo de tres meses que mira el desempeno de leads.
+export function periodo(desde: string, hasta: string): string {
+  const [a1, m1] = desde.slice(0, 10).split("-").map(Number);
+  const [a2, m2] = hasta.slice(0, 10).split("-").map(Number);
+  const uno = `${MESES[m1 - 1]}${a1 === a2 ? "" : ` ${a1}`}`;
+  return `${uno} a ${MESES[m2 - 1]} ${a2}`;
 }
 
 // "hace 3 dias", "hoy", "en 2 dias": se entiende sin contar en el calendario.
