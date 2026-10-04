@@ -30,6 +30,8 @@ export interface DatosLead {
   region: string;
   origen: string;
   campana: string;
+  // Email del propietario; vacio, sin propietario.
+  propietario: string;
   id_pais: number | null;
 }
 
@@ -73,6 +75,7 @@ interface Actual {
   region: string | null;
   origen: string | null;
   campana: string | null;
+  propietario_email: string | null;
   emails: { email?: string }[] | null;
   telefonos: { phone?: string; whatsapp?: boolean }[] | null;
   id_pais: number;
@@ -87,7 +90,7 @@ export async function guardarDatosLead(idLead: number, d: DatosLead): Promise<Re
   const { data } = await supabase
     .from("v_leads")
     .select(
-      "nombre, apellido, empresa, cargo, direccion, comuna, ciudad, region, origen, campana, emails, telefonos, id_pais"
+      "nombre, apellido, empresa, cargo, direccion, comuna, ciudad, region, origen, campana, emails, telefonos, id_pais, propietario_email"
     )
     .eq("id_clientify", idLead)
     .maybeSingle();
@@ -163,6 +166,10 @@ export async function guardarDatosLead(idLead: number, d: DatosLead): Promise<Re
       phone,
     }));
   }
+
+  // El propietario se elige de una lista; la base valida que sea uno de ella.
+  const propNuevo = (d.propietario ?? "").trim().toLowerCase();
+  if (propNuevo !== (actual.propietario_email ?? "").toLowerCase()) cambios.propietario = propNuevo;
 
   const cambiaPais = d.id_pais != null && d.id_pais !== actual.id_pais;
   if (Object.keys(cambios).length === 0 && !cambiaPais)

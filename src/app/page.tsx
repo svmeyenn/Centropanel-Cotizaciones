@@ -1,4 +1,5 @@
 import BandaDivisas from "@/components/BandaDivisas";
+import Bandera from "@/components/Bandera";
 import Cabecera from "@/components/Cabecera";
 import PanelDesempeno, { type Desempeno } from "@/components/PanelDesempeno";
 import TareasPendientes, { type Tarea } from "@/components/TareasPendientes";
@@ -58,7 +59,6 @@ export default async function Home({
       };
     })
   );
-  const variosMercados = tableros.length > 1;
 
   // Lo comprometido en las bitacoras y todavia no hecho. Un vendedor ve lo
   // suyo; quien dirige ve lo del equipo, que es lo que necesita para saber que
@@ -93,12 +93,11 @@ export default async function Home({
 
         {tableros.map(({ pais, desempeno }) => (
           <div key={pais.codigo} className="space-y-3">
-            {variosMercados && (
-              <h2 className="text-xs font-semibold text-verde border-b border-verde pb-0.5">
-                {pais.nombre.toUpperCase()} · montos en{" "}
-                {pais.moneda_base === "PEN" ? "soles" : "pesos chilenos"}
-              </h2>
-            )}
+            <h2 className="flex items-center gap-1.5 text-xs font-semibold text-verde border-b border-verde pb-0.5">
+              <Bandera codigo={pais.codigo} />
+              {pais.nombre.toUpperCase()} · montos en{" "}
+              {pais.moneda_base === "PEN" ? "soles" : "pesos chilenos"}
+            </h2>
             {desempeno ? (
               <PanelDesempeno d={desempeno} />
             ) : (
@@ -119,11 +118,10 @@ export default async function Home({
           ({ pais, seguimiento }) =>
             seguimiento && (
               <div key={pais.codigo} className="space-y-3">
-                {variosMercados && (
-                  <h2 className="text-xs font-semibold text-verde border-b border-verde pb-0.5">
-                    SEGUIMIENTO · {pais.nombre.toUpperCase()}
-                  </h2>
-                )}
+                <h2 className="flex items-center gap-1.5 text-xs font-semibold text-verde border-b border-verde pb-0.5">
+                  <Bandera codigo={pais.codigo} />
+                  SEGUIMIENTO · {pais.nombre.toUpperCase()}
+                </h2>
                 <PanelSeguimiento s={seguimiento} />
               </div>
             )

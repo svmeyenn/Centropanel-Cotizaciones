@@ -1,5 +1,7 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
+
 import { Fragment, useMemo, useState, useTransition } from "react";
 import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
 import { nombreImpuesto } from "@/lib/impuesto";
@@ -716,6 +718,7 @@ export default function TablaProductos({
                           className="border-t border-gray-100 hover:bg-crema"
                         >
                           <td className="px-3 py-2 pl-6 text-gray-500 font-mono text-[11px]">
+                            <BanderaDe idPais={p.id_pais} />
                             {p.sku ?? ""}
                           </td>
                           <td className="px-3 py-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
 import { Fragment, useState } from "react";
 import { pesosConCentimos as pesos } from "@/lib/formato";
 import { fechaCorta, type FilaCartola } from "@/lib/finanzas/tipos";
@@ -16,7 +17,7 @@ export default function TablaCartola({
   grupos: { mes: string; filas: FilaCartola[] }[];
   // El saldo con que queda cada cuenta, calculado sobre todo el historial y no
   // sobre lo que muestre el filtro.
-  saldos: { cuenta: string; saldo: number }[];
+  saldos: { cuenta: string; saldo: number; id_pais?: number }[];
   hayFiltro: boolean;
 }) {
   const [colapsados, setColapsados] = useState<Set<string>>(new Set());
@@ -39,6 +40,7 @@ export default function TablaCartola({
             className="bg-white border border-gray-200 rounded px-3 py-2"
           >
             <div className="text-[11px] uppercase tracking-wide text-dorado-osc font-semibold">
+              <BanderaDe idPais={s.id_pais} />
               {s.cuenta}
             </div>
             <div
@@ -125,6 +127,7 @@ export default function TablaCartola({
                           className="border-t border-gray-100 hover:bg-crema"
                         >
                           <td className="px-3 py-2 whitespace-nowrap">
+                            <BanderaDe idPais={f.id_pais} />
                             {fechaCorta(f.fecha)}
                           </td>
                           <td className="px-3 py-2">

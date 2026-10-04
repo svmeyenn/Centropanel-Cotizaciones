@@ -5,6 +5,7 @@ import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
+import { BanderaDe } from "@/components/Bandera";
 import { importe, monedaDelPais, resumenMontos, porcentaje, fecha as fmtFecha } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
@@ -123,6 +124,7 @@ export default async function Pagina({
       facturado: Number(c?.facturado ?? 0),
       porFacturar: Number(c?.por_facturar ?? 0),
       moneda: monedaDelPais(Number(c?.id_pais)),
+      idPais: Number(c?.id_pais),
     };
   });
 
@@ -264,6 +266,7 @@ export default async function Pagina({
                     className="border-t border-gray-100 hover:bg-crema"
                   >
                     <td className="px-3 py-2">
+                      <BanderaDe idPais={r.idPais} />
                       <Link
                         href={`/pedidos/${r.id}`}
                         className="text-verde font-semibold underline"

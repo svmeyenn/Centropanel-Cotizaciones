@@ -1,5 +1,6 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { pesosConCentimos as pesos } from "@/lib/formato";
@@ -104,6 +105,7 @@ export default function TablaEgresos({
   const fila = (m: Movimiento) => (
     <tr key={m.id_mov} className="group border-t border-gray-100 hover:bg-crema">
       <td className="px-3 py-2 whitespace-nowrap">
+        <BanderaDe idPais={m.id_pais} />
         {m.fecha ? (
           fechaCorta(m.fecha)
         ) : (

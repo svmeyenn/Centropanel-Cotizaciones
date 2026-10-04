@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
+import { BanderaDe } from "@/components/Bandera";
 import CargarContactosClientify from "@/components/CargarContactosClientify";
 import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
@@ -29,6 +30,7 @@ interface Fila {
   campana: string | null;
   propietario: string | null;
   propietario_email: string | null;
+  id_pais: number;
   etiquetas: string[];
   creado_clientify: string | null;
   ultimo_contacto: string | null;
@@ -74,7 +76,7 @@ export default async function Pagina({
     supabase
       .from("v_leads")
       .select(
-        "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, estado_efectivo, linea, campana, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen, comuna, region",
+        "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, estado_efectivo, linea, campana, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen, comuna, region, id_pais",
         { count: "exact" }
       ),
     idPaisActivo
@@ -299,6 +301,7 @@ export default async function Pagina({
                     <td className="px-2 py-1 whitespace-nowrap">{dia(c.creado_clientify)}</td>
                     <td className="px-2 py-1 font-semibold">
                       <div className="flex items-center gap-1 min-w-0">
+                        <BanderaDe idPais={c.id_pais} />
                         {c.linea === "casas" && (
                           <span
                             className="shrink-0 text-[9px] font-semibold text-dorado-osc border border-dorado-osc rounded px-1"

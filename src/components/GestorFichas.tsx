@@ -1,5 +1,7 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
+
 import { useMemo, useState, useTransition } from "react";
 import Ventana from "@/components/Ventana";
 import Bitacora from "@/components/Bitacora";
@@ -296,6 +298,7 @@ export default function GestorFichas({
               {filtradas.map((f) => (
                 <tr key={f.id_entidad} className="border-t border-gray-100 hover:bg-crema">
                   <td className="px-3 py-2 font-semibold">
+                    <BanderaDe idPais={f.id_pais} />
                     <button
                       onClick={() => abrir(f)}
                       className="text-verde underline text-left"

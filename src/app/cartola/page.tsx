@@ -40,6 +40,7 @@ export default async function Pagina({
     .filter((c) => c.activa)
     .map((c) => ({
       cuenta: c.alias ?? c.banco,
+      id_pais: c.id_pais,
       // Las filas vienen de la mas nueva a la mas vieja: la primera de cada
       // cuenta es la que deja el saldo de hoy.
       saldo:

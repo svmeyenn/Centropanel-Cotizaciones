@@ -82,6 +82,7 @@ const CAMPOS_CAMBIO: Record<string, string> = {
   region: "Region / departamento",
   origen: "Origen",
   campana: "Campana",
+  propietario: "Propietario",
   estado: "Estado",
   linea: "Linea",
   pais: "Pais",
@@ -124,7 +125,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   const { data: contacto } = await supabase
     .from("v_leads")
     .select(
-      "id_clientify, nombre, apellido, nombre_completo, telefonos, emails, direccion, comuna, ciudad, region, pais, id_pais, estado, estado_efectivo, estado_manual, con_cotizacion_enviada, origen, campana, linea, linea_manual, linea_auto, editado, propietario, creado_clientify, empresa, cargo, observaciones"
+      "id_clientify, nombre, apellido, nombre_completo, telefonos, emails, direccion, comuna, ciudad, region, pais, id_pais, estado, estado_efectivo, estado_manual, con_cotizacion_enviada, origen, campana, linea, linea_manual, linea_auto, editado, propietario, propietario_email, creado_clientify, empresa, cargo, observaciones"
     )
     .eq("id_clientify", idContacto)
     .maybeSingle();
@@ -150,6 +151,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     { data: cambiosDb },
     { data: casaDb },
     { data: archivosDb },
+    { data: propietariosDb },
   ] = await Promise.all([
     // Las cotizaciones de paneles no se ven en un lead de casas.
     esCasas
@@ -196,6 +198,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           .eq("id_clientify", idContacto)
           .order("creado_en", { ascending: false })
       : Promise.resolve({ data: [] }),
+    // A quien se le puede asignar el lead: solo se pide si se puede editar.
+    puedeEscribirLeads(v) ? supabase.rpc("lead_propietarios") : Promise.resolve({ data: [] }),
   ]);
   const cotizaciones = (cots ?? []) as CotizacionVinculada[];
   const oportunidades = (ops ?? []) as Oportunidad[];
@@ -242,6 +246,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           lead={c}
           codigoPais={codigoPais}
           paises={accesibles.map((p) => ({ id: p.id, nombre: p.nombre }))}
+          propietarios={(propietariosDb ?? []) as { email: string; nombre: string }[]}
           puedeEditar={puedeEscribir}
           puedeCambiarPais={tienePerfilAdmin(v)}
         />

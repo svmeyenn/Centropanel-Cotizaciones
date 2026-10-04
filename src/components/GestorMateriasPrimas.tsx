@@ -1,5 +1,7 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
+
 import { useMemo, useRef, useState, useTransition } from "react";
 import Ventana from "@/components/Ventana";
 import { pesos, unidades } from "@/lib/formato";
@@ -460,6 +462,7 @@ export default function GestorMateriasPrimas({
               {filtrados.map((m) => (
                 <tr key={m.id} className="border-t border-gray-100 hover:bg-crema">
                   <td className="px-3 py-2">
+                    <BanderaDe idPais={m.id_pais} />
                     <button
                       onClick={() => editar(m)}
                       className="text-verde underline text-left"

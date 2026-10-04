@@ -1,5 +1,6 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -151,6 +152,7 @@ export default function PanelRendiciones({
                     className="border-t border-gray-100 hover:bg-crema"
                   >
                     <td className="px-3 py-2 whitespace-nowrap">
+                      <BanderaDe idPais={r.id_pais} />
                       {fechaCorta(r.periodo_desde)} a{" "}
                       {fechaCorta(r.periodo_hasta)}
                     </td>
