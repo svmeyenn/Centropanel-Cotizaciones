@@ -3,7 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonSincronizarClientify from "@/components/BotonSincronizarClientify";
 import CargarContactosClientify from "@/components/CargarContactosClientify";
-import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
+import { administraUsuarios, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { hayClaveClientify } from "@/lib/clientify";
 
@@ -64,7 +64,7 @@ export default async function Pagina({
   const { q = "", estado = "", dueno = "", pagina = "1" } = await searchParams;
   const v = await requerirVendedor();
   const supabase = await createClient();
-  const puedeSincronizar = tienePerfilAdmin(v);
+  const puedeSincronizar = administraUsuarios(v);
   const hayClave = hayClaveClientify();
 
   const actual = Math.max(1, Number.parseInt(pagina, 10) || 1);
@@ -164,7 +164,7 @@ export default async function Pagina({
               )}
             </div>
           ) : (
-            <p className="text-gray-500">Los carga el Administrador o el Supervisor.</p>
+            <p className="text-gray-500">Los carga el Administrador.</p>
           )}
         </div>
 
