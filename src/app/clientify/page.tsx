@@ -57,11 +57,10 @@ export default async function Pagina({
     estado?: string;
     dueno?: string;
     linea?: string;
-    revisar?: string;
     pagina?: string;
   }>;
 }) {
-  const { q = "", estado = "", dueno = "", linea = "", revisar = "", pagina = "1" } = await searchParams;
+  const { q = "", estado = "", dueno = "", linea = "", pagina = "1" } = await searchParams;
   const v = await requerirVendedor();
   const supabase = await createClient();
   const { activo, idPaisActivo } = await contextoMercado(v);
@@ -98,10 +97,8 @@ export default async function Pagina({
   if (estado) consulta = consulta.eq("estado_efectivo", estado);
   if (dueno) consulta = consulta.eq("propietario_email", dueno);
   if (linea === "paneles" || linea === "casas") consulta = consulta.eq("linea", linea);
-  // Para revisar: leads con cotizacion que no figuran como Oportunidad.
-  if (revisar === "1") consulta = consulta.eq("con_cotizacion", true).neq("estado_efectivo", "in-deal");
 
-  const [{ data: filas, count }, { data: filtrosData }, { data: ultima }, { count: porRevisar }] = await Promise.all([
+  const [{ data: filas, count }, { data: filtrosData }, { data: ultima }] = await Promise.all([
     consulta
       .order("creado_clientify", { ascending: false, nullsFirst: false })
       .range(desde, desde + POR_PAGINA - 1),
@@ -112,12 +109,6 @@ export default async function Pagina({
       .order("id", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    conPais(
-      supabase.from("v_leads").select("id_clientify", { count: "exact", head: true }),
-      idPaisActivo
-    )
-      .eq("con_cotizacion", true)
-      .neq("estado_efectivo", "in-deal"),
   ]);
 
   const contactos = (filas ?? []) as Fila[];
@@ -133,7 +124,6 @@ export default async function Pagina({
     if (estado) s.set("estado", estado);
     if (dueno) s.set("dueno", dueno);
     if (linea) s.set("linea", linea);
-    if (revisar) s.set("revisar", revisar);
     if (p > 1) s.set("pagina", String(p));
     const t = s.toString();
     return `/clientify${t ? `?${t}` : ""}`;
@@ -255,28 +245,16 @@ export default async function Pagina({
               <option value="casas">{LINEAS.casas}</option>
             </select>
           </div>
-          {revisar === "1" && <input type="hidden" name="revisar" value="1" />}
           <button className="bg-verde text-white font-semibold px-3 py-1 rounded">Filtrar</button>
-          {(busqueda || estado || dueno || linea || revisar) && (
+          {(busqueda || estado || dueno || linea) && (
             <Link href="/clientify" className="text-verde underline py-1">
               Quitar filtros
-            </Link>
-          )}
-          {revisar !== "1" && (porRevisar ?? 0) > 0 && (
-            <Link href="/clientify?revisar=1" className="text-verde underline py-1">
-              Con cotizacion y sin ser Oportunidad ({porRevisar})
             </Link>
           )}
           <span className="ml-auto text-gray-500 py-1">
             {total.toLocaleString("es-CL")} resultados
           </span>
         </form>
-        {revisar === "1" && (
-          <p className="text-xs bg-crema border border-gray-200 rounded px-3 py-1.5">
-            Leads que tienen cotizacion pero no figuran como Oportunidad. Abra cada uno para cambiar
-            su estado.
-          </p>
-        )}
 
         {/* Diez columnas que caben en el ancho de la pantalla: sin barra lateral.
             El ancho se reparte por porcentaje y el texto largo se corta con "..."
