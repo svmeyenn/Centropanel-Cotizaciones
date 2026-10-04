@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { pesos, fecha as fmtFecha, porcentaje } from "@/lib/formato";
+import { pesos, pesosCorto, fecha as fmtFecha, porcentaje } from "@/lib/formato";
 import SelectorMes from "@/components/SelectorMes";
 
 // Tablero de la portada. Todo lo calcula panel_desempeno() en la base; aqui
@@ -181,7 +181,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
       <div className="grid lg:grid-cols-[1.3fr_1fr] gap-2.5">
         <Caja titulo={`Cotizado y vendido, 6 meses hasta ${nombreMes(d.mes)}`}>
           <div className="p-3">
-            <div className="flex items-end justify-between gap-2 h-28">
+            <div className="flex items-end justify-between gap-2 h-28 mt-3">
               {d.serie.map((s) => (
                 <div key={s.mes} className="flex-1 flex flex-col items-center gap-1">
                   <div className="flex items-end gap-0.5 h-24 w-full justify-center">
@@ -506,11 +506,15 @@ function Barra({ valor, tope, clase }: { valor: number; tope: number; clase: str
   // y que no hubo movimiento.
   const alto = Math.max(1, Math.round((valor / tope) * 100));
   return (
-    <div
-      className={`${clase} w-1/2 rounded-t-sm`}
-      style={{ height: `${alto}%` }}
-      title={pesos(valor)}
-    />
+    <div className="relative w-1/2 h-full" title={pesos(valor)}>
+      <span
+        className="absolute inset-x-0 text-center text-[8px] sm:text-[9px] leading-none tabular-nums text-gray-700 whitespace-nowrap"
+        style={{ bottom: `calc(${alto}% + 2px)` }}
+      >
+        {pesosCorto(valor)}
+      </span>
+      <div className={`${clase} absolute bottom-0 inset-x-0 rounded-t-sm`} style={{ height: `${alto}%` }} />
+    </div>
   );
 }
 

@@ -3,8 +3,8 @@ import { ES_SANDBOX } from "@/lib/supabase/esquema";
 // Los estados llegan de Clientify en su propio idioma. Los conocidos se dicen en
 // castellano; uno nuevo se muestra tal cual llega.
 export const ESTADOS_LEAD: Record<string, string> = {
-  "cold-lead": "Lead frio",
-  "warm-lead": "Lead tibio",
+  "cold-lead": "No contactado",
+  "warm-lead": "Contactado",
   "hot-lead": "Lead caliente",
   "in-deal": "Oportunidad",
   client: "Cliente",
