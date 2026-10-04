@@ -59,12 +59,15 @@ export type Gestion = {
   mis_emails: string[];
   agenda: ItemAgenda[];
   conteos: { atrasado: number; hoy: number; semana: number; proxima: number };
-  sin_contactar: { n: number; n7: number; lista: LeadEnBandeja[] };
-  sin_seguimiento: { n: number; lista: LeadEnBandeja[] };
+  // n es el total del mercado, para el resumen de arriba; n_filtrado es lo que
+  // deja ver el rango que puso la pantalla, y es lo que dice cada caja.
+  sin_contactar: { n: number; n7: number; n_filtrado: number; lista: LeadEnBandeja[] };
+  sin_seguimiento: { n: number; n_filtrado: number; lista: LeadEnBandeja[] };
   sin_propietario: number | null;
   cotizaciones: {
     embudo: EstadoEnJuego[];
     sin_accion_n: number;
+    sin_accion_n_filtrado: number;
     sin_accion_montos: Record<string, number>;
     sin_accion: CotizacionSinAccion[];
   };

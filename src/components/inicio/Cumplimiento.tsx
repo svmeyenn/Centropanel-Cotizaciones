@@ -1,4 +1,7 @@
 import type { CumplimientoFila } from "@/components/inicio/tipos";
+import TituloOrden from "@/components/TituloOrden";
+import { CUMPLIMIENTO } from "@/components/inicio/orden";
+import { ordenar, type Orden } from "@/lib/ordenTabla";
 
 // Lo que cada persona prometio para el mes y lo que cumplio, juntando las
 // acciones de cotizaciones y los compromisos con leads. Una accion caduca no es
@@ -7,9 +10,13 @@ import type { CumplimientoFila } from "@/components/inicio/tipos";
 export default function Cumplimiento({
   cotizaciones,
   leads,
+  qs,
+  orden,
 }: {
   cotizaciones: CumplimientoFila[];
   leads: CumplimientoFila[];
+  qs: string;
+  orden: Orden;
 }) {
   const filas = new Map<number, { vendedor: string; cot: CumplimientoFila | null; lead: CumplimientoFila | null }>();
   for (const c of cotizaciones) filas.set(c.id_vendedor, { vendedor: c.vendedor, cot: c, lead: null });
@@ -20,7 +27,14 @@ export default function Cumplimiento({
   }
   const suma = (a: CumplimientoFila | null, b: CumplimientoFila | null, k: keyof CumplimientoFila) =>
     Number(a?.[k] ?? 0) + Number(b?.[k] ?? 0);
-  const lista = [...filas.values()].sort((a, b) => suma(b.cot, b.lead, "comprometidas") - suma(a.cot, a.lead, "comprometidas"));
+  const lista = ordenar([...filas.values()], orden, (f, c) => {
+    if (c === "quien") return f.vendedor;
+    if (c === "cumplimiento") {
+      const prom = suma(f.cot, f.lead, "comprometidas");
+      return prom > 0 ? suma(f.cot, f.lead, "a_tiempo") / prom : 0;
+    }
+    return suma(f.cot, f.lead, c as keyof CumplimientoFila);
+  });
   const total = lista.reduce((t, f) => t + suma(f.cot, f.lead, "comprometidas"), 0);
   const aTiempo = lista.reduce((t, f) => t + suma(f.cot, f.lead, "a_tiempo"), 0);
 
@@ -37,13 +51,20 @@ export default function Cumplimiento({
           <table className="w-full text-[11px]">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
-                <th className="text-left px-2.5 py-1">Quien</th>
-                <th className="text-right px-2.5 py-1">Prometio</th>
-                <th className="text-right px-2.5 py-1">A tiempo</th>
-                <th className="text-right px-2.5 py-1">Tarde</th>
-                <th className="text-right px-2.5 py-1">Caducas</th>
-                <th className="text-right px-2.5 py-1">Sin hacer</th>
-                <th className="text-left px-2.5 py-1 w-[28%]">A tiempo</th>
+                {CUMPLIMIENTO.columnas.map((c) => (
+                  <TituloOrden
+                    key={c.campo}
+                    qs={qs}
+                    param={CUMPLIMIENTO.param}
+                    campo={c.campo}
+                    actual={orden}
+                    inicial={c.inicial}
+                    alineacion={c.campo === "quien" || c.campo === "cumplimiento" ? "left" : "right"}
+                    ancho={c.campo === "cumplimiento" ? "w-[28%]" : undefined}
+                  >
+                    {c.texto}
+                  </TituloOrden>
+                ))}
               </tr>
             </thead>
             <tbody>

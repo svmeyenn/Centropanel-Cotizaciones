@@ -11,6 +11,9 @@ import CotizacionesEnJuego from "@/components/inicio/CotizacionesEnJuego";
 import PanelLeads from "@/components/inicio/PanelLeads";
 import Cumplimiento from "@/components/inicio/Cumplimiento";
 import type { CumplimientoFila, Gestion, PanelLeadsDatos } from "@/components/inicio/tipos";
+import * as Cuadro from "@/components/inicio/orden";
+import { campos, type CuadroOrden } from "@/components/inicio/orden";
+import { leerOrden, type Orden } from "@/lib/ordenTabla";
 import { cargarParidades } from "@/lib/divisas";
 import { SIN_PROPIETARIO } from "@/lib/filtrosLeads";
 import { contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
@@ -32,11 +35,23 @@ import { ES_SANDBOX } from "@/lib/supabase/esquema";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; vista?: string; quien?: string }>;
+  // Ademas de mes, vista y quien llegan el orden y los rangos de cada cuadro
+  // (ord_* y rg_*), que son varios y cambian: se leen como vengan.
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const v = await requerirVendedor();
-  const { mes, vista: vistaPedida, quien: quienPedido } = await searchParams;
-  const vista = vistaPedida === "gestion" ? "gestion" : "desempeno";
+  const sp = await searchParams;
+  const uno = (k: string) => (Array.isArray(sp[k]) ? (sp[k] as string[])[0] : (sp[k] as string | undefined));
+  const mes = uno("mes");
+  const vista = uno("vista") === "gestion" ? "gestion" : "desempeno";
+  const quienPedido = uno("quien");
+
+  // La direccion tal como esta, para que cada titulo pinchable arme la suya
+  // cambiando solo su propio parametro y conservando todo lo demas.
+  const qs = new URLSearchParams(
+    Object.entries(sp).flatMap(([k, x]) => (x == null ? [] : Array.isArray(x) ? x.map((y) => [k, y] as [string, string]) : [[k, x] as [string, string]]))
+  ).toString();
+  const orden = (c: CuadroOrden): Orden => leerOrden(uno(c.param), c.pordefecto, campos(c));
 
   const { idPaisActivo, activo, accesibles } = await contextoMercado(v);
   const supabase = await createClient();
@@ -57,9 +72,18 @@ export default async function Home({
       <div className="max-w-screen-2xl mx-auto p-4 space-y-3">
         <BandaDivisas bandas={bandas} />
         {vista === "gestion" ? (
-          <VistaGestion v={v} idPaisActivo={idPaisActivo} quienPedido={quienPedido} supabase={supabase} mercado={activo?.codigo ?? null} />
+          <VistaGestion
+            v={v}
+            idPaisActivo={idPaisActivo}
+            quienPedido={quienPedido}
+            supabase={supabase}
+            mercado={activo?.codigo ?? null}
+            qs={qs}
+            orden={orden}
+            rango={(k) => uno(k)}
+          />
         ) : (
-          <VistaDesempeno mercados={mercados} mes={mes} supabase={supabase} />
+          <VistaDesempeno mercados={mercados} mes={mes} supabase={supabase} qs={qs} orden={orden} />
         )}
 
         {/* Version vigente: sube con cada entrega a produccion (VERSIONES.md).
@@ -76,18 +100,31 @@ export default async function Home({
 type Supa = Awaited<ReturnType<typeof createClient>>;
 type Vend = Awaited<ReturnType<typeof requerirVendedor>>;
 
+// "2026-09-01..2026-09-30" -> los dos lados; cualquiera puede venir vacio, y
+// vacio es sin limite. La base recibe texto y lo convierte.
+function partes(v: string | undefined): [string, string] {
+  const [a = "", b = ""] = (v ?? "").split("..");
+  return [a.trim(), b.trim()];
+}
+
 async function VistaGestion({
   v,
   idPaisActivo,
   quienPedido,
   supabase,
   mercado,
+  qs,
+  orden,
+  rango,
 }: {
   v: Vend;
   idPaisActivo: number | null;
   quienPedido?: string;
   supabase: Supa;
   mercado: string | null;
+  qs: string;
+  orden: (c: CuadroOrden) => Orden;
+  rango: (param: string) => string | undefined;
 }) {
   // Quien dirige o consulta puede mirar el equipo, lo suyo o a una persona; por
   // defecto el equipo. Un vendedor siempre ve lo suyo (la base lo fuerza).
@@ -101,8 +138,34 @@ async function VistaGestion({
         : "equipo";
   const pQuien = alcance === "equipo" ? null : alcance === "yo" ? v.id : Number(alcance);
 
+  // Orden y rangos viajan a la base: estas tres listas muestran quince filas de
+  // miles, asi que es el orden el que decide cuales quince llegan.
+  const oNuevos = orden(Cuadro.NUEVOS);
+  const oFrios = orden(Cuadro.FRIOS);
+  const oCot = orden(Cuadro.COTIZACIONES);
+  const [nvD, nvH] = partes(rango("rg_nuevos"));
+  const [frD, frH] = partes(rango("rg_frios"));
+  const [ctD, ctH] = partes(rango("rg_cot_fecha"));
+  const [diD, diH] = partes(rango("rg_cot_dias"));
+  const [toD, toH] = partes(rango("rg_cot_total"));
+
   const [{ data, error }, { data: equipoDb }] = await Promise.all([
-    supabase.rpc("inicio_gestion", { p_pais: idPaisActivo, p_quien: pQuien }),
+    supabase.rpc("inicio_gestion", {
+      p_pais: idPaisActivo,
+      p_quien: pQuien,
+      p_orden: {
+        nuevos: `${oNuevos.campo}:${oNuevos.dir}`,
+        frios: `${oFrios.campo}:${oFrios.dir}`,
+        cot: `${oCot.campo}:${oCot.dir}`,
+      },
+      p_rangos: {
+        nuevos_desde: nvD, nuevos_hasta: nvH,
+        frios_desde: frD, frios_hasta: frH,
+        cot_desde: ctD, cot_hasta: ctH,
+        cot_dias_min: diD, cot_dias_max: diH,
+        cot_total_min: toD, cot_total_max: toH,
+      },
+    }),
     esJefe
       ? supabase
           .from("vendedores")
@@ -160,9 +223,12 @@ async function VistaGestion({
         verPropietario={verEquipo}
         hrefSinContactar={hrefLeads("sin_contactar")}
         hrefSinSeguimiento={hrefLeads("sin_seguimiento")}
+        qs={qs}
+        ordenNuevos={oNuevos}
+        ordenFrios={oFrios}
       />
 
-      <CotizacionesEnJuego g={g} verEjecutivo={verEquipo} />
+      <CotizacionesEnJuego g={g} verEjecutivo={verEquipo} qs={qs} orden={oCot} />
     </>
   );
 }
@@ -171,10 +237,14 @@ async function VistaDesempeno({
   mercados,
   mes,
   supabase,
+  qs,
+  orden,
 }: {
   mercados: { id: number; codigo: string; nombre: string; moneda_base: string }[];
   mes?: string;
   supabase: Supa;
+  qs: string;
+  orden: (c: CuadroOrden) => Orden;
 }) {
   // Llega como AAAA-MM desde el selector; la base espera una fecha.
   const mesBase = /^\d{4}-\d{2}$/.test(mes ?? "") ? `${mes}-01` : null;
@@ -212,16 +282,35 @@ async function VistaDesempeno({
 
           <Subtitulo>Ventas</Subtitulo>
           {desempeno ? (
-            <PanelDesempeno d={desempeno} />
+            <PanelDesempeno
+              d={desempeno}
+              qs={qs}
+              ordenEquipo={orden(Cuadro.EQUIPO)}
+              ordenClientes={orden(Cuadro.CLIENTES)}
+            />
           ) : (
             <p className="text-sm text-gray-500">No se pudo cargar el desempeno de ventas.</p>
           )}
 
           <Subtitulo>Leads</Subtitulo>
-          {leads ? <PanelLeads d={leads} /> : <p className="text-sm text-gray-500">No se pudo cargar el desempeno de leads.</p>}
+          {leads ? (
+            <PanelLeads
+              d={leads}
+              qs={qs}
+              ordenPropietarios={orden(Cuadro.PROPIETARIOS)}
+              ordenOrigenes={orden(Cuadro.ORIGENES)}
+            />
+          ) : (
+            <p className="text-sm text-gray-500">No se pudo cargar el desempeno de leads.</p>
+          )}
 
           <Subtitulo>Seguimiento</Subtitulo>
-          <Cumplimiento cotizaciones={cumpleCot} leads={leads?.cumplimiento ?? []} />
+          <Cumplimiento
+            cotizaciones={cumpleCot}
+            leads={leads?.cumplimiento ?? []}
+            qs={qs}
+            orden={orden(Cuadro.CUMPLIMIENTO)}
+          />
         </section>
       ))}
     </>

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { pesos, pesosCorto, fecha as fmtFecha, porcentaje } from "@/lib/formato";
 import SelectorMes from "@/components/SelectorMes";
+import TituloOrden, { BarraOrden } from "@/components/TituloOrden";
+import { CLIENTES, EQUIPO } from "@/components/inicio/orden";
+import { ordenar, type Orden } from "@/lib/ordenTabla";
 
 // Tablero de la portada. Todo lo calcula panel_desempeno() en la base; aqui
 // solo se pinta. Dos reglas: el mes en curso se compara siempre con el
@@ -113,7 +116,33 @@ function variacion(actual: number, anterior: number) {
 // que avanza.
 const ENJUEGO = ["Borrador", "Emitida", "Enviada"];
 
-export default function PanelDesempeno({ d }: { d: Desempeno }) {
+// El ancho de cada columna del equipo, que antes estaba en cada <th>.
+const ANCHO: Record<string, string | undefined> = {
+  cotizado: "w-28",
+  parte: "w-20",
+  vendido: "w-28",
+  conversion: "w-24",
+};
+
+export default function PanelDesempeno({
+  d,
+  qs,
+  ordenEquipo,
+  ordenClientes,
+}: {
+  d: Desempeno;
+  qs: string;
+  ordenEquipo: Orden;
+  ordenClientes: Orden;
+}) {
+  // Las dos llegan completas: se ordenan aqui, en el servidor, con el criterio
+  // que dice la direccion web.
+  const ranking = ordenar(d.ranking, ordenEquipo, (r, c) =>
+    c === "vendedor" ? r.nombre : Number(r[c as keyof typeof r] ?? 0)
+  );
+  const clientes = ordenar(d.clientes, ordenClientes, (x, c) =>
+    c === "cliente" ? x.nombre : Number(x[c as keyof typeof x] ?? 0)
+  );
   const varCotizado = variacion(d.venta.cotizado, d.venta.cotizado_anterior);
   const varVendido = variacion(d.venta.vendido, d.venta.vendido_anterior);
   const tope = Math.max(
@@ -357,22 +386,31 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
             <table className="w-full text-[11px]">
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="text-left px-2.5 py-1.5">Vendedor</th>
-                  <th className="text-right px-2.5 py-1.5 w-28">Cotizado</th>
-                  <th className="text-right px-2.5 py-1.5 w-20">Parte</th>
-                  <th className="text-right px-2.5 py-1.5 w-28">Vendido</th>
-                  <th className="text-right px-2.5 py-1.5 w-24">Conversion</th>
+                  {EQUIPO.columnas.map((c) => (
+                    <TituloOrden
+                      key={c.campo}
+                      qs={qs}
+                      param={EQUIPO.param}
+                      campo={c.campo}
+                      actual={ordenEquipo}
+                      inicial={c.inicial}
+                      alineacion={c.campo === "vendedor" ? "left" : "right"}
+                      ancho={ANCHO[c.campo]}
+                    >
+                      {c.texto}
+                    </TituloOrden>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {d.ranking.length === 0 && (
+                {ranking.length === 0 && (
                   <tr>
                     <td colSpan={5} className="text-center text-gray-400 py-5">
                       Sin movimiento en el mes.
                     </td>
                   </tr>
                 )}
-                {d.ranking.map((r) => (
+                {ranking.map((r) => (
                   <tr key={r.nombre} className="border-t border-gray-100">
                     <td className="px-2.5 py-1.5 font-semibold text-verde">{r.nombre}</td>
                     <td className="px-2.5 py-1.5 text-right">
@@ -400,11 +438,14 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
         </Caja>
 
         <Caja titulo="Clientes con mas monto, 6 meses">
+          <div className="px-2.5 pt-2">
+            <BarraOrden qs={qs} param={CLIENTES.param} actual={ordenClientes} opciones={CLIENTES.columnas} />
+          </div>
           <ul className="p-2.5 space-y-1.5 text-[11px]">
-            {d.clientes.length === 0 && (
+            {clientes.length === 0 && (
               <li className="text-gray-400 text-center py-3">Sin cotizaciones en el periodo.</li>
             )}
-            {d.clientes.map((c) => (
+            {clientes.map((c) => (
               <li key={c.nombre}>
                 <span className="flex justify-between gap-3">
                   <span className="text-gray-700 truncate" title={c.nombre}>

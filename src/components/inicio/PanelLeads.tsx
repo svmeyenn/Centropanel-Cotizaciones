@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { ESTADOS_LEAD, LINEAS } from "@/lib/leads";
 import { diaCorto, periodo, type PanelLeadsDatos } from "@/components/inicio/tipos";
+import TituloOrden from "@/components/TituloOrden";
+import { ORIGENES, PROPIETARIOS } from "@/components/inicio/orden";
+import { ordenar, type Orden } from "@/lib/ordenTabla";
 
 // Desempeno de los leads de un mercado: cuantos llegan y de donde, en que estado
 // esta la cartera, como la trabaja cada propietario y que origen convierte.
@@ -22,9 +25,27 @@ const COLOR_OTROS = "#B8B4A8";
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 const n = (x: number) => x.toLocaleString("es-CL");
 
-export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
+export default function PanelLeads({
+  d,
+  qs,
+  ordenPropietarios,
+  ordenOrigenes,
+}: {
+  d: PanelLeadsDatos;
+  qs: string;
+  ordenPropietarios: Orden;
+  ordenOrigenes: Orden;
+}) {
   const k = d.kpi;
   const rango = periodo(d.desde, d.hasta);
+  // Estas dos tablas llegan completas, asi que se ordenan aqui, en el servidor,
+  // y no en el navegador: el orden queda en la direccion web como en el resto.
+  const equipo = ordenar(d.equipo, ordenPropietarios, (f, c) =>
+    c === "propietario" ? f.propietario : c === "conversion" ? pct(f.oportunidades, f.asignados) : Number(f[c as keyof typeof f] ?? 0)
+  );
+  const origenes = ordenar(d.origenes, ordenOrigenes, (f, c) =>
+    c === "origen" ? f.origen : c === "conversion" ? pct(f.oportunidades, f.n) : Number(f[c as keyof typeof f] ?? 0)
+  );
   const variacion = k.nuevos_ant > 0 ? Math.round(((k.nuevos_mes - k.nuevos_ant) / k.nuevos_ant) * 100) : null;
   const origenesColor = new Map<string, string>(d.origenes_top.map((o, i) => [o, COLORES[i] ?? COLOR_OTROS]));
   const totalLinea = Object.values(d.linea).reduce((a, b) => a + b, 0);
@@ -163,26 +184,30 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
           <table className="w-full text-[11px]">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
-                <th className="text-left px-2.5 py-1.5">Propietario</th>
-                <th className="text-right px-2.5 py-1.5">Asignados</th>
-                <th className="text-right px-2.5 py-1.5">Nuevos del mes</th>
-                <th className="text-right px-2.5 py-1.5">Sin contactar</th>
-                <th className="text-right px-2.5 py-1.5">Contactados</th>
-                <th className="text-right px-2.5 py-1.5">Oportunidades</th>
-                <th className="text-right px-2.5 py-1.5">Sin seguimiento</th>
-                <th className="text-right px-2.5 py-1.5">Compromisos vencidos</th>
-                <th className="text-right px-2.5 py-1.5">Conversion</th>
+                {PROPIETARIOS.columnas.map((c) => (
+                  <TituloOrden
+                    key={c.campo}
+                    qs={qs}
+                    param={PROPIETARIOS.param}
+                    campo={c.campo}
+                    actual={ordenPropietarios}
+                    inicial={c.inicial}
+                    alineacion={c.campo === "propietario" ? "left" : "right"}
+                  >
+                    {c.texto}
+                  </TituloOrden>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {d.equipo.length === 0 && (
+              {equipo.length === 0 && (
                 <tr>
                   <td colSpan={9} className="text-center text-gray-400 py-5">
                     Sin leads en este mercado.
                   </td>
                 </tr>
               )}
-              {d.equipo.map((f) => (
+              {equipo.map((f) => (
                 <tr key={f.propietario} className="border-t border-gray-100">
                   <td className="px-2.5 py-1.5 font-semibold text-verde">{f.propietario}</td>
                   <td className="px-2.5 py-1.5 text-right tabular-nums">{n(f.asignados)}</td>
@@ -243,14 +268,24 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
             <table className="w-full text-[11px]">
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="text-left px-2.5 py-1">Origen</th>
-                  <th className="text-right px-2.5 py-1">Leads</th>
-                  <th className="text-right px-2.5 py-1">Oportunidades</th>
-                  <th className="text-left px-2.5 py-1 w-[40%]">Conversion</th>
+                  {ORIGENES.columnas.map((c) => (
+                    <TituloOrden
+                      key={c.campo}
+                      qs={qs}
+                      param={ORIGENES.param}
+                      campo={c.campo}
+                      actual={ordenOrigenes}
+                      inicial={c.inicial}
+                      alineacion={c.campo === "origen" || c.campo === "conversion" ? "left" : "right"}
+                      ancho={c.campo === "conversion" ? "w-[40%]" : undefined}
+                    >
+                      {c.texto}
+                    </TituloOrden>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {d.origenes.slice(0, 8).map((o) => {
+                {origenes.slice(0, 8).map((o) => {
                   const p = pct(o.oportunidades, o.n);
                   return (
                     <tr key={o.origen} className="border-t border-gray-100">

@@ -3,6 +3,10 @@ import { BanderaDe } from "@/components/Bandera";
 import PildoraLinea from "@/components/PildoraLinea";
 import { estadoLegible } from "@/lib/leads";
 import { antiguedad, diasEntre, type Gestion, type LeadEnBandeja } from "@/components/inicio/tipos";
+import { BarraOrden } from "@/components/TituloOrden";
+import FiltroRangos from "@/components/FiltroRangos";
+import { FRIOS, NUEVOS } from "@/components/inicio/orden";
+import type { Orden } from "@/lib/ordenTabla";
 
 // Los leads que esperan sin fecha: los nuevos que nadie ha contactado y los
 // vivos que se estan enfriando sin nada comprometido. Las dos listas van del
@@ -13,20 +17,35 @@ export default function BandejaLeads({
   verPropietario,
   hrefSinContactar,
   hrefSinSeguimiento,
+  qs,
+  ordenNuevos,
+  ordenFrios,
 }: {
   g: Gestion;
   verPropietario: boolean;
   hrefSinContactar: string;
   hrefSinSeguimiento: string;
+  qs: string;
+  ordenNuevos: Orden;
+  ordenFrios: Orden;
 }) {
   return (
     <div className="grid gap-2 lg:grid-cols-2">
       <Lista
         titulo="Por contactar"
-        explicacion="Leads nuevos que nadie ha contactado todavia. Los mas recientes arriba."
-        total={g.sin_contactar.n}
+        explicacion="Leads nuevos que nadie ha contactado todavia."
+        total={g.sin_contactar.n_filtrado ?? g.sin_contactar.n}
         filas={g.sin_contactar.lista}
         href={hrefSinContactar}
+        barra={<BarraOrden qs={qs} param={NUEVOS.param} actual={ordenNuevos} opciones={NUEVOS.columnas} />}
+        filtro={
+          <FiltroRangos
+            campos={[{ param: "rg_nuevos", texto: "Fecha de entrada", tipo: "fecha" }]}
+            nFiltrado={g.sin_contactar.n_filtrado ?? g.sin_contactar.n}
+            nTotal={g.sin_contactar.n}
+            unidad="leads"
+          />
+        }
         vacio="No hay leads esperando el primer contacto."
         verPropietario={verPropietario}
         hoy={g.hoy}
@@ -41,10 +60,19 @@ export default function BandejaLeads({
       />
       <Lista
         titulo="Sin seguimiento"
-        explicacion="Leads vivos (contactados, calientes u oportunidades) sin ningun compromiso por delante. Los de contacto mas reciente arriba."
-        total={g.sin_seguimiento.n}
+        explicacion="Leads vivos (contactados, calientes u oportunidades) sin ningun compromiso por delante."
+        total={g.sin_seguimiento.n_filtrado ?? g.sin_seguimiento.n}
         filas={g.sin_seguimiento.lista}
         href={hrefSinSeguimiento}
+        barra={<BarraOrden qs={qs} param={FRIOS.param} actual={ordenFrios} opciones={FRIOS.columnas} />}
+        filtro={
+          <FiltroRangos
+            campos={[{ param: "rg_frios", texto: "Ultimo contacto", tipo: "fecha" }]}
+            nFiltrado={g.sin_seguimiento.n_filtrado ?? g.sin_seguimiento.n}
+            nTotal={g.sin_seguimiento.n}
+            unidad="leads"
+          />
+        }
         vacio="Todos los leads vivos tienen algo comprometido."
         verPropietario={verPropietario}
         hoy={g.hoy}
@@ -72,6 +100,8 @@ function Lista({
   verPropietario,
   dato,
   detalle,
+  barra,
+  filtro,
 }: {
   titulo: string;
   explicacion: string;
@@ -83,6 +113,8 @@ function Lista({
   hoy: string;
   dato: (l: LeadEnBandeja) => { texto: string; alerta: boolean };
   detalle: (l: LeadEnBandeja) => string;
+  barra: React.ReactNode;
+  filtro: React.ReactNode;
 }) {
   return (
     <section className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col">
@@ -91,7 +123,11 @@ function Lista({
           Leads {titulo.toLowerCase()} · {total.toLocaleString("es-CL")}
         </h2>
       </div>
-      <p className="px-3 pt-1.5 text-[10px] text-gray-500">{explicacion}</p>
+      {filtro}
+      <div className="px-3 pt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="text-[10px] text-gray-500">{explicacion}</p>
+        {barra}
+      </div>
       {filas.length === 0 ? (
         <p className="px-3 py-5 text-center text-xs text-gray-500">{vacio}</p>
       ) : (
