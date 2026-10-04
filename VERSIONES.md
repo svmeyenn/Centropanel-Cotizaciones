@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0090-20261004**
+Version vigente: **v0091-20261004**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0091-20261004 | 04-10-2026 | Leads: estados No contactado y Contactado (antes frío y tibio), cambio masivo de propietario en la lista; valores sobre las barras del gráfico del tablero | d766873 |
 | v0090-20261004 | 04-10-2026 | Leads: propietario editable (dato del lead); banderas de país en el tablero y en los listados | fbcbe2d |
 | v0089-20261004 | 04-10-2026 | Perú con céntimos (cálculo en la base, editores, documentos, pedidos, facturas, finanzas y enlace público con su moneda); Leads sin referencias a Clientify salvo el botón de importar (ruta /leads); importación de la planilla .xlsx de contactos | d46dcb4 |
 | v0088-20261004 | 04-10-2026 | Leads: contactos de Clientify y de Meta con su estado, linea (paneles o casas), compromisos y conversaciones, datos corregibles con historial y acceso por pais; tablero por mercado; correcciones de Peru (WhatsApp, moneda, RUC, fechas); vistas que estaban abiertas de mas quedan cerradas | 8390efc |
