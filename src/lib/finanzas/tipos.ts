@@ -201,6 +201,8 @@ export type FilaCartola = {
   id_cuenta: number | null;
   cuenta: string | null;
   banco: string | null;
+  // Pais de la cuenta; lo completa el cargador, la funcion de la base no lo trae.
+  id_pais?: number;
   id_proyecto: number | null;
   proyecto: string | null;
   cliente: string | null;
@@ -214,6 +216,8 @@ export type FilaCartola = {
 // --ver `fin_resumen_proyecto`-- y no el navegador.
 export type FilaResumenProyecto = {
   id_proyecto: number;
+  // Pais del proyecto; lo completa el cargador.
+  id_pais?: number;
   proyecto: string;
   cliente: string | null;
   ingresos: number;

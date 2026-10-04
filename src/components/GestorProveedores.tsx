@@ -1,5 +1,7 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
+
 import BotonExportar from "@/components/BotonExportar";
 
 import { useMemo, useState, useTransition } from "react";
@@ -315,6 +317,7 @@ export default function GestorProveedores({
               {filtrados.map((p) => (
                 <tr key={p.id} className="border-t border-gray-100 hover:bg-crema">
                   <td className="px-3 py-2">
+                    <BanderaDe idPais={p.id_pais} />
                     <button
                       onClick={() => abrirFicha(p)}
                       className="text-verde font-semibold underline text-left"

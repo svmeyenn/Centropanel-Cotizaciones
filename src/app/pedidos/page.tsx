@@ -6,7 +6,7 @@ import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { ESTADOS_PEDIDO } from "@/lib/estados";
 import { nombreImpuesto } from "@/lib/impuesto";
-import Bandera from "@/components/Bandera";
+import Bandera, { BanderaDe } from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
 import { fecha as fmtFecha, importe, monedaDelPais, coincideTelefono } from "@/lib/formato";
 
@@ -260,6 +260,7 @@ export default async function Pagina({
                       className="border-t border-gray-100 hover:bg-crema"
                     >
                       <td className="px-3 py-2">
+                        {!verPais && <BanderaDe idPais={p.id_pais as number} />}
                         <Link
                           href={`/pedidos/${p.id}`}
                           className="text-verde font-semibold underline"

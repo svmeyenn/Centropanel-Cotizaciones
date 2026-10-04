@@ -22,6 +22,7 @@ export interface DatosFicha {
   origen: string | null;
   campana: string | null;
   propietario: string | null;
+  propietario_email: string | null;
   creado_clientify: string | null;
   estado: string | null;
   estado_efectivo: string | null;
@@ -64,6 +65,7 @@ export default function FichaLead({
   lead,
   codigoPais,
   paises,
+  propietarios,
   puedeEditar,
   puedeCambiarPais,
 }: {
@@ -71,6 +73,8 @@ export default function FichaLead({
   codigoPais: "CL" | "PE";
   // Los mercados entre los que quien administra puede mover un lead.
   paises: { id: number; nombre: string }[];
+  // A quien se le puede asignar el lead.
+  propietarios: { email: string; nombre: string }[];
   puedeEditar: boolean;
   puedeCambiarPais: boolean;
 }) {
@@ -79,6 +83,13 @@ export default function FichaLead({
   const [error, setError] = useState("");
   const [pendiente, comenzar] = useTransition();
   const geo = ROTULOS_GEO[codigoPais];
+
+  // El propietario actual siempre se puede elegir, aunque ya no figure en la lista.
+  const emailProp = (lead.propietario_email ?? "").toLowerCase();
+  const opcionesPropietario =
+    emailProp && !propietarios.some((p) => p.email.toLowerCase() === emailProp)
+      ? [{ email: emailProp, nombre: lead.propietario ?? emailProp }, ...propietarios]
+      : propietarios;
 
   const tels = (lead.telefonos ?? []).filter((t) => t.phone);
   const mails = (lead.emails ?? []).filter((e) => e.email);
@@ -96,6 +107,7 @@ export default function FichaLead({
     region: lead.region ?? "",
     origen: lead.origen ?? "",
     campana: lead.campana ?? "",
+    propietario: (lead.propietario_email ?? "").toLowerCase(),
     id_pais: lead.id_pais,
   });
   const poner = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -116,6 +128,7 @@ export default function FichaLead({
       region: lead.region ?? "",
       origen: lead.origen ?? "",
       campana: lead.campana ?? "",
+      propietario: (lead.propietario_email ?? "").toLowerCase(),
       id_pais: lead.id_pais,
     });
     setEditando(true);
@@ -322,9 +335,20 @@ export default function FichaLead({
               <span className={ROTULO}>Origen</span>
               <input className={CAMPO} value={form.origen} onChange={poner("origen")} maxLength={200} />
             </label>
-            <label className="lg:col-span-2">
+            <label>
               <span className={ROTULO}>Campana</span>
               <input className={CAMPO} value={form.campana} onChange={poner("campana")} maxLength={200} />
+            </label>
+            <label>
+              <span className={ROTULO}>Propietario</span>
+              <select className={CAMPO} value={form.propietario} onChange={poner("propietario")}>
+                <option value="">Sin propietario</option>
+                {opcionesPropietario.map((p) => (
+                  <option key={p.email} value={p.email}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <p className="text-[10px] text-gray-500">

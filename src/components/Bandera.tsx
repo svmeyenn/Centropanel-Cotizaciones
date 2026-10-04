@@ -32,6 +32,17 @@ export default function Bandera({
   return null;
 }
 
+// La bandera de un dato, a partir del pais que trae (1 Chile, 2 Peru). Va en cada
+// fila de los listados para no confundir los datos de un mercado con los de otro.
+export function BanderaDe({ idPais, className = "h-3 w-auto" }: { idPais: number | null | undefined; className?: string }) {
+  const codigo = idPais === 2 ? "PE" : "CL";
+  return (
+    <span className="inline-flex shrink-0 align-middle mr-1.5" title={codigo === "PE" ? "Peru" : "Chile"}>
+      <Bandera codigo={codigo} className={className} />
+    </span>
+  );
+}
+
 // Color que identifica cada mercado en la franja de la cabecera.
 export function colorMercado(codigo: string | null) {
   if (codigo === "CL") return "#0039A6";

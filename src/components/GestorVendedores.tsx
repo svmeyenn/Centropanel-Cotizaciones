@@ -1,5 +1,6 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
 import { useMemo, useState, useTransition } from "react";
 import {
   actualizarVendedor,
@@ -467,7 +468,13 @@ export default function GestorVendedores({
                   <td className="px-3 py-2 text-gray-600">{v.cargo}</td>
                   <td className="px-3 py-2 text-gray-600">{v.email}</td>
                   <td className="px-3 py-2">{v.rol}</td>
-                  <td className="px-3 py-2 text-gray-600">{v.mercado}</td>
+                  <td className="px-3 py-2 text-gray-600">
+                    <span className="inline-flex items-center gap-1">
+                      {v.mercado !== "Peru" && <BanderaDe idPais={1} />}
+                      {v.mercado !== "Chile" && <BanderaDe idPais={2} />}
+                      {v.mercado}
+                    </span>
+                  </td>
                   <td className="px-3 py-2 text-center text-xs text-gray-600">
                     {[
                       v.puede_ver && "Ver",

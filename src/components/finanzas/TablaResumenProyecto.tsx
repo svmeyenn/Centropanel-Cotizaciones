@@ -1,5 +1,6 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
 import { Fragment, useState } from "react";
 import { pesosConCentimos as pesos } from "@/lib/formato";
 import type { FilaResumenProyecto } from "@/lib/finanzas/tipos";
@@ -114,6 +115,7 @@ export default function TablaResumenProyecto({
                 <Fragment key={g.nombre}>
                   <tr className="border-t border-gray-100 hover:bg-crema">
                     <td className="px-3 py-2">
+                      <BanderaDe idPais={g.filas[0]?.id_pais} />
                       {varios ? (
                         <button
                           type="button"

@@ -139,7 +139,11 @@ export async function cargarCartola(filtro: Filtro, idPais: number | null) {
     p_pais: idPais,
   });
 
-  return (data ?? []) as FilaCartola[];
+  const filas = (data ?? []) as FilaCartola[];
+  // La funcion no devuelve el pais; se lo da la cuenta de cada fila.
+  const { data: ctas } = await supabase.from("cuentas").select("id_cuenta, id_pais");
+  const paisCuenta = new Map((ctas ?? []).map((c) => [c.id_cuenta as number, c.id_pais as number]));
+  return filas.map((f) => ({ ...f, id_pais: f.id_cuenta != null ? paisCuenta.get(f.id_cuenta) : undefined }));
 }
 
 // Lo que entro y salio en cada proyecto, en el periodo que se pida. La suma la
@@ -157,7 +161,10 @@ export async function cargarResumenProyecto(
     p_pais: idPais,
   });
 
-  return (data ?? []) as FilaResumenProyecto[];
+  const filas = (data ?? []) as FilaResumenProyecto[];
+  const { data: proys } = await supabase.from("proyectos").select("id_proyecto, id_pais");
+  const paisProyecto = new Map((proys ?? []).map((p) => [p.id_proyecto as number, p.id_pais as number]));
+  return filas.map((f) => ({ ...f, id_pais: paisProyecto.get(f.id_proyecto) }));
 }
 
 // Un enlace por movimiento --el primer respaldo cargado-- resuelto de una vez

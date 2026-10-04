@@ -5,6 +5,7 @@ import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
+import { BanderaDe } from "@/components/Bandera";
 import { importe, monedaDelPais, resumenMontos, fecha as fmtFecha } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,7 @@ export default async function Pagina({
       iva: Number(f.iva),
       total: Number(f.total),
       moneda: monedaDelPais(ped?.id_pais),
+      idPais: ped?.id_pais,
       tieneArchivo: Boolean(f.archivo),
       idPedido: ped ? Number(ped.id) : null,
       numPedido: ped?.num_pedido ?? "",
@@ -217,6 +219,7 @@ export default async function Pagina({
                       className="border-t border-gray-100 hover:bg-crema"
                     >
                       <td className="px-3 py-2 font-semibold text-verde">
+                        <BanderaDe idPais={f.idPais} />
                         {f.numero}
                       </td>
                       {/* La nota de credito viaja en negativo, asi que los

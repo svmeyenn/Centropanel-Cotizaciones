@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BanderaDe } from "@/components/Bandera";
 import { caducarAccion, marcarAccionHecha } from "@/app/cotizaciones/actividad";
 
 export type Tarea = {
+  id_pais: number;
   id: number;
   id_cotizacion: number;
   num_cotizacion: string | null;
@@ -182,6 +184,7 @@ export default function TareasPendientes({
                     className="border-t border-gray-100 hover:bg-crema"
                   >
                     <td className="px-3 py-1 whitespace-nowrap">
+                      <BanderaDe idPais={t.id_pais} />
                       <span
                         className={vencida ? "text-red-700 font-semibold" : ""}
                       >

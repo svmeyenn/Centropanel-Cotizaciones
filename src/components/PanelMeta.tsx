@@ -1,5 +1,6 @@
 "use client";
 
+import { BanderaDe } from "@/components/Bandera";
 import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -148,7 +149,10 @@ function TarjetaMeta({ f }: { f: FilaMeta }) {
   return (
     <article className="bg-white border border-gray-200 rounded overflow-hidden">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-0.5 bg-crema px-3 py-1 border-b border-gray-200">
-        <span className="font-semibold text-[12px]">{f.nombre}</span>
+        <span className="font-semibold text-[12px]">
+          <BanderaDe idPais={f.id_pais} />
+          {f.nombre}
+        </span>
         <span className="text-gray-500">{cuando(f.fecha_meta)}</span>
         {[f.origen_meta, f.canal, f.formulario, f.etapa].filter(Boolean).map((x, i) => (
           <span key={i} className="text-[10px] border border-gray-300 rounded px-1 text-gray-600 bg-white">
