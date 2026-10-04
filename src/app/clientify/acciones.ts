@@ -143,6 +143,7 @@ export async function cerrarCorrida(
     const { data: borrados, error: errBorrar } = await supabase
       .from("clientify_contactos")
       .delete()
+      .eq("fuente", "clientify")
       .lt("sincronizado_en", inicio)
       .select("id_clientify");
     if (errBorrar) {

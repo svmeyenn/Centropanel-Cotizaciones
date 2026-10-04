@@ -46,6 +46,10 @@ export const GRUPOS: Grupo[] = [
     titulo: "Vender",
     nota: "Del presupuesto al pedido en produccion",
     opciones: [
+      // Los contactos del CRM, con sus cotizaciones, conversaciones y compromisos.
+      // Los datos de Clientify se cargan por archivo; lo que se corrige aqui no se
+      // pierde en la carga siguiente.
+      { texto: "Leads", href: "/clientify" },
       { texto: "Nueva cotizacion", href: "/cotizaciones/nueva" },
       { texto: "Cotizaciones", href: "/cotizaciones" },
       { texto: "Pedidos", href: "/pedidos" },
@@ -53,10 +57,6 @@ export const GRUPOS: Grupo[] = [
       // ficha es una sola. Quien vende entra por aqui y la ve filtrada en los
       // clientes; quien maneja la plata entra por alla y ve todas.
       { texto: "Clientes", href: "/clientes" },
-      // Los contactos del CRM, con sus cotizaciones, conversaciones y compromisos.
-      // Los datos de Clientify se cargan por archivo; lo que se corrige aqui no se
-      // pierde en la carga siguiente.
-      { texto: "Leads", href: "/clientify" },
     ],
   },
   {
