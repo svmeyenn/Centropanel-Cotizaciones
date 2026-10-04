@@ -11,6 +11,9 @@ export interface FiltroLeads {
   linea: string;
   // Atajos que vienen del inicio: "sin_contactar" o "sin_seguimiento".
   gestion?: string;
+  // Antiguedad: contra que fecha se mide y cuantos dias. Lo usa la depuracion.
+  campo?: "creado" | "toque";
+  dias?: number;
 }
 
 export const SIN_PROPIETARIO = "__sin__";
@@ -29,6 +32,7 @@ interface Consulta {
   eq(columna: string, valor: string | boolean): Consulta;
   in(columna: string, valores: string[]): Consulta;
   is(columna: string, valor: null): Consulta;
+  lt(columna: string, valor: string): Consulta;
 }
 
 export function aplicarFiltrosLeads<T>(consulta: T, f: FiltroLeads): T {
@@ -52,5 +56,13 @@ export function aplicarFiltrosLeads<T>(consulta: T, f: FiltroLeads): T {
   if (f.gestion === "sin_seguimiento")
     c = c.in("estado_efectivo", ESTADOS_EN_SEGUIMIENTO).eq("con_compromiso", false);
   if (f.linea === "paneles" || f.linea === "casas") c = c.eq("linea", f.linea);
+
+  // Antiguedad. "Creado" mira cuando entro el lead; "toque", cuando se le hizo
+  // caso por ultima vez --y un lead que nunca se toco cuenta desde que entro--.
+  if (f.dias && f.dias > 0) {
+    const limite = new Date(Date.now() - f.dias * 86400000).toISOString();
+    if (f.campo === "creado") c = c.lt("creado_clientify", limite);
+    else c = c.or(`ultimo_toque.lt.${limite},and(ultimo_toque.is.null,creado_clientify.lt.${limite})`);
+  }
   return c as unknown as T;
 }
