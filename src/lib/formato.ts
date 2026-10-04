@@ -246,3 +246,12 @@ export function leerMontoLibre(texto: string): number {
   const entero = (dec >= 0 ? t.slice(0, dec) : t).replace(/[.,]/g, "");
   return Number(dec >= 0 ? entero + "." + t.slice(dec + 1) : entero);
 }
+
+// Un monto para ponerlo sobre un grafico, donde no cabe entero: "12,3 M", "850 mil".
+export function pesosCorto(n: number | string | null | undefined): string {
+  const v = Number(n ?? 0);
+  const a = Math.abs(v);
+  if (a >= 1e6) return (v / 1e6).toLocaleString("es-CL", { maximumFractionDigits: 1 }) + " M";
+  if (a >= 1e3) return Math.round(v / 1e3).toLocaleString("es-CL") + " mil";
+  return Math.round(v).toLocaleString("es-CL");
+}
