@@ -74,7 +74,17 @@ export interface Desempeno {
   facturas_mes: number;
   // Lo que todavia esta en juego, por estado.
   embudo: { estado: string; n: number; monto: number }[];
-  serie: { mes: string; cotizado: number; vendido: number }[];
+  // Cada mes de la serie: lo cotizado, lo vendido y lo facturado, con los
+  // conteos para poder mostrar la conversion mes a mes.
+  serie: {
+    mes: string;
+    cotizado: number;
+    vendido: number;
+    facturado: number;
+    cotizaciones: number;
+    convertidas: number;
+    pedidos: number;
+  }[];
 }
 
 const MESES = [
@@ -104,7 +114,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
   const varVendido = variacion(d.venta.vendido, d.venta.vendido_anterior);
   const tope = Math.max(
     1,
-    ...d.serie.map((s) => Math.max(Number(s.cotizado), Number(s.vendido)))
+    ...d.serie.map((s) => Math.max(Number(s.cotizado), Number(s.vendido), Number(s.facturado ?? 0)))
   );
   const bajoObjetivo =
     d.margen.pct != null && d.margen.objetivo > 0 && d.margen.pct < d.margen.objetivo;
@@ -112,9 +122,9 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xs font-semibold text-verde uppercase tracking-wide">
-          Desempeno
-        </h2>
+        <p className="text-[11px] text-gray-600">
+          Cotizado, vendido, facturado y cobrado en el mes que elija.
+        </p>
         <SelectorMes mes={d.mes} meses={d.meses} />
       </div>
 
@@ -179,7 +189,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
       </div>
 
       <div className="grid lg:grid-cols-[1.3fr_1fr] gap-2.5">
-        <Caja titulo={`Cotizado y vendido, 6 meses hasta ${nombreMes(d.mes)}`}>
+        <Caja titulo={`Cotizado, vendido y facturado, 6 meses hasta ${nombreMes(d.mes)}`}>
           <div className="p-3">
             <div className="flex items-end justify-between gap-2 h-28 mt-3">
               {d.serie.map((s) => (
@@ -187,6 +197,7 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
                   <div className="flex items-end gap-0.5 h-24 w-full justify-center">
                     <Barra valor={Number(s.cotizado)} tope={tope} clase="bg-dorado" />
                     <Barra valor={Number(s.vendido)} tope={tope} clase="bg-verde" />
+                    <Barra valor={Number(s.facturado ?? 0)} tope={tope} clase="bg-[#2F5D8A]" />
                   </div>
                   <span
                     className={`text-[10px] ${
@@ -204,6 +215,9 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
               </span>
               <span className="flex items-center gap-1">
                 <i className="inline-block w-3 h-2 bg-verde rounded-sm" /> Vendido
+              </span>
+              <span className="flex items-center gap-1">
+                <i className="inline-block w-3 h-2 bg-[#2F5D8A] rounded-sm" /> Facturado
               </span>
               <span className="text-gray-400">
                 mayor del periodo {pesos(tope)}
@@ -321,171 +335,6 @@ export default function PanelDesempeno({ d }: { d: Desempeno }) {
           </ul>
         </Caja>
       </div>
-
-      {/* Lo que esta en juego: cotizaciones que todavia se pueden ganar. El
-          borrador es trabajo a medias, la emitida espera envio y la enviada
-          espera respuesta: son tres cosas distintas que hacer. */}
-      <div className="bg-white border border-gray-200 rounded overflow-hidden">
-        <div className="bg-crema text-verde text-[11px] font-semibold px-2.5 py-1.5">
-          COTIZACIONES EN JUEGO
-        </div>
-        <div className="grid grid-cols-3 divide-x divide-gray-100">
-          {["Borrador", "Emitida", "Enviada"].map((estado) => {
-            const fila = (d.embudo ?? []).find((x) => x.estado === estado);
-            return (
-              <Link
-                key={estado}
-                href={`/cotizaciones?estado=${estado}`}
-                className="px-2.5 py-2 hover:bg-crema"
-              >
-                <div className="text-[10px] text-gray-500 uppercase tracking-wide">
-                  {estado}
-                </div>
-                <div className="font-bold text-negro tabular-nums">
-                  {pesos(fila?.monto ?? 0)}
-                </div>
-                <div className="text-[11px] text-gray-600">
-                  {fila?.n ?? 0} cotizacion{(fila?.n ?? 0) === 1 ? "" : "es"}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {(d.entregas?.length ?? 0) > 0 && (
-        <div className="bg-white border border-gray-200 rounded overflow-hidden">
-          <div className="bg-crema text-verde text-[11px] font-semibold px-2.5 py-1.5 flex flex-wrap justify-between gap-2">
-            <span>ENTREGAS: ATRASADAS Y DE LAS PROXIMAS DOS SEMANAS</span>
-            <span>
-              {d.entregas_atrasadas > 0 && (
-                <span className="text-red-700">
-                  {d.entregas_atrasadas} atrasada
-                  {d.entregas_atrasadas > 1 ? "s" : ""}
-                </span>
-              )}
-              {d.entregas_atrasadas > 0 && d.entregas_proximas > 0 ? " · " : ""}
-              {d.entregas_proximas > 0 && (
-                <span>{d.entregas_proximas} por venir</span>
-              )}
-            </span>
-          </div>
-          <p className="px-2.5 pt-1.5 text-[10px] text-gray-500">
-            Sale de la fecha comprometida del pedido. Al anotar la entrega real
-            el pedido deja esta lista, este facturado o no.
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11px]">
-              <thead className="bg-crema text-dorado-osc">
-                <tr>
-                  <th className="text-left px-2.5 py-1 w-24">Pedido</th>
-                  <th className="text-left px-2.5 py-1">Cliente</th>
-                  <th className="text-left px-2.5 py-1 w-28">Comprometida</th>
-                  <th className="text-right px-2.5 py-1 w-32">Total</th>
-                  <th className="text-right px-2.5 py-1 w-36">Plazo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {d.entregas.map((e) => (
-                  <tr key={e.id} className="border-t border-gray-100">
-                    <td className="px-2.5 py-1.5 w-24">
-                      <Link
-                        href={`/pedidos/${e.id}`}
-                        className="text-verde font-semibold underline"
-                      >
-                        {e.num}
-                      </Link>
-                    </td>
-                    <td className="px-2.5 py-1.5">
-                      {e.cliente || "(sin cliente)"}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-gray-600 w-28">
-                      {fmtFecha(e.entrega)}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right w-32">
-                      {pesos(e.total)}
-                    </td>
-                    {/* El numero de dias dice mas que la fecha: "hace 4 dias"
-                        se entiende sin contar en el calendario. */}
-                    <td
-                      className={`px-2.5 py-1.5 text-right w-36 font-semibold ${
-                        e.dias < 0 ? "text-red-700" : "text-gray-700"
-                      }`}
-                    >
-                      {e.dias < 0
-                        ? `atrasada ${-e.dias} dia${-e.dias > 1 ? "s" : ""}`
-                        : e.dias === 0
-                          ? "hoy"
-                          : `en ${e.dias} dia${e.dias > 1 ? "s" : ""}`}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {d.pendientes.length > 0 && (
-        <div className="bg-white border border-dorado rounded overflow-hidden">
-          <div className="bg-crema text-dorado-osc text-[11px] font-semibold px-2.5 py-1.5 flex flex-wrap justify-between gap-2">
-            <span>COTIZACIONES SIN RESPUESTA HACE MAS DE UNA SEMANA</span>
-            <span>
-              {d.pendientes_n} por {pesos(d.pendientes_monto)}
-            </span>
-          </div>
-          {/* Se dice de donde sale la lista: si no, una cotizacion que
-              desaparece de aqui parece un dato perdido. */}
-          <p className="px-2.5 pt-1.5 text-[10px] text-gray-500">
-            No se listan las que ya tienen una tarea por delante: esas se siguen
-            desde la bandeja de tareas.
-          </p>
-          {/* Se desplaza en vez de cortarse: antes solo salian las seis mas
-              viejas y el resto no se veia en ninguna parte. El encabezado
-              queda fijo arriba mientras se recorre. */}
-          <div className="overflow-y-auto max-h-72">
-            <table className="w-full text-[11px]">
-              <thead className="bg-gray-50 text-gray-600 sticky top-0">
-                <tr>
-                  <th className="text-left px-2.5 py-1 font-semibold">Cliente</th>
-                  <th className="text-left px-2.5 py-1 w-28 font-semibold">
-                    Creada el
-                  </th>
-                  <th className="text-right px-2.5 py-1 w-32 font-semibold">
-                    Total
-                  </th>
-                  <th className="text-right px-2.5 py-1 w-24 font-semibold">
-                    Espera
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {d.pendientes.map((p) => (
-                  <tr key={p.id} className="border-t border-gray-100">
-                    <td className="px-2.5 py-1.5">
-                      <Link
-                        href={`/cotizaciones/${p.id}`}
-                        className="text-verde font-semibold underline"
-                      >
-                        {p.cliente || "(sin cliente)"}
-                      </Link>
-                    </td>
-                    <td className="px-2.5 py-1.5 text-gray-600">
-                      {fmtFecha(p.fecha)}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums">
-                      {pesos(p.total)}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right text-dorado-osc font-semibold tabular-nums">
-                      {p.dias} dias
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -506,14 +355,14 @@ function Barra({ valor, tope, clase }: { valor: number; tope: number; clase: str
   // y que no hubo movimiento.
   const alto = Math.max(1, Math.round((valor / tope) * 100));
   return (
-    <div className="relative w-1/2 h-full" title={pesos(valor)}>
+    <div className="relative flex-1 h-full" title={pesos(valor)}>
       <span
         className="absolute inset-x-0 text-center text-[8px] sm:text-[9px] leading-none tabular-nums text-gray-700 whitespace-nowrap"
         style={{ bottom: `calc(${alto}% + 2px)` }}
       >
         {pesosCorto(valor)}
       </span>
-      <div className={`${clase} absolute bottom-0 inset-x-0 rounded-t-sm`} style={{ height: `${alto}%` }} />
+      <div className={`${clase} absolute bottom-0 inset-x-px rounded-t-sm`} style={{ height: `${alto}%` }} />
     </div>
   );
 }

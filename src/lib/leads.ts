@@ -22,7 +22,7 @@ export const estadoLegible = (e: string | null | undefined) =>
   e ? (ESTADOS_LEAD[e] ?? e) : "";
 
 export type Linea = "paneles" | "casas";
-export const LINEAS: Record<Linea, string> = { paneles: "Paneles", casas: "Casas" };
+export const LINEAS: Record<Linea, string> = { paneles: "Paneles", casas: "Proyecto" };
 
 // Deposito de los archivos de los proyectos de casas: uno por copia de datos,
 // por la misma razon que los de finanzas.
