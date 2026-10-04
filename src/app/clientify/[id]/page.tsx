@@ -46,6 +46,8 @@ interface Contacto {
   region: string | null;
   pais: string | null;
   estado: string | null;
+  estado_efectivo: string | null;
+  con_cotizacion_enviada: boolean;
   origen: string | null;
   propietario: string | null;
   creado_clientify: string | null;
@@ -115,9 +117,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   const supabase = await createClient();
 
   const { data: contacto } = await supabase
-    .from("clientify_contactos")
+    .from("v_leads")
     .select(
-      "id_clientify, nombre, apellido, nombre_completo, telefonos, emails, direccion, comuna, ciudad, region, pais, estado, origen, propietario, creado_clientify, empresa, cargo, observaciones"
+      "id_clientify, nombre, apellido, nombre_completo, telefonos, emails, direccion, comuna, ciudad, region, pais, estado, estado_efectivo, con_cotizacion_enviada, origen, propietario, creado_clientify, empresa, cargo, observaciones"
     )
     .eq("id_clientify", idContacto)
     .maybeSingle();
@@ -172,7 +174,12 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           <dl className="grid gap-x-5 gap-y-2 p-3 sm:grid-cols-2 lg:grid-cols-4">
             <Dato etiqueta="Nombre">{c.nombre}</Dato>
             <Dato etiqueta="Apellido">{c.apellido}</Dato>
-            <Dato etiqueta="Estado del lead">{c.estado ? (ESTADOS[c.estado] ?? c.estado) : ""}</Dato>
+            <Dato etiqueta="Estado del lead">
+              {c.estado_efectivo ? (ESTADOS[c.estado_efectivo] ?? c.estado_efectivo) : ""}
+              {c.con_cotizacion_enviada && c.estado !== "in-deal" && (
+                <span className="block text-[10px] text-gray-500">por tener una cotizacion enviada</span>
+              )}
+            </Dato>
             <Dato etiqueta="Origen del lead">{c.origen}</Dato>
             <Dato etiqueta="Telefonos">
               {(c.telefonos ?? []).filter((t) => t.phone).length > 0 && (

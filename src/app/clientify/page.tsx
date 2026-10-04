@@ -38,6 +38,7 @@ interface Fila {
   empresa: string | null;
   cargo: string | null;
   estado: string | null;
+  estado_efectivo: string | null;
   propietario: string | null;
   propietario_email: string | null;
   etiquetas: string[];
@@ -72,9 +73,9 @@ export default async function Pagina({
   const desde = (actual - 1) * POR_PAGINA;
 
   let consulta = supabase
-    .from("clientify_contactos")
+    .from("v_leads")
     .select(
-      "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen, comuna, region",
+      "id_clientify, nombre_completo, email, telefono, empresa, cargo, estado, estado_efectivo, propietario, propietario_email, etiquetas, creado_clientify, ultimo_contacto, id_entidad, observaciones, campos_personalizados, origen, comuna, region",
       { count: "exact" }
     );
 
@@ -87,7 +88,9 @@ export default async function Pagina({
       `nombre_completo.ilike.${patron},email.ilike.${patron},telefono.ilike.${patron},empresa.ilike.${patron}`
     );
   }
-  if (estado) consulta = consulta.eq("estado", estado);
+  // Un lead con una cotizacion enviada ya es una oportunidad, diga lo que diga
+  // Clientify: se filtra y se muestra por el estado efectivo.
+  if (estado) consulta = consulta.eq("estado_efectivo", estado);
   if (dueno) consulta = consulta.eq("propietario_email", dueno);
 
   const [{ data: filas, count }, { data: filtrosData }, { data: ultima }] = await Promise.all([
@@ -301,8 +304,8 @@ export default async function Pagina({
                       </span>
                     </td>
                     <td className="px-3 py-1">
-                      <span className="block truncate" title={estadoLegible(c.estado)}>
-                        {estadoLegible(c.estado)}
+                      <span className="block truncate" title={estadoLegible(c.estado_efectivo)}>
+                        {estadoLegible(c.estado_efectivo)}
                       </span>
                     </td>
                   </tr>
