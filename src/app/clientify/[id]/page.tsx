@@ -321,6 +321,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             hoy={hoyISO()}
             puedeEscribir={v.puede_editar}
             puedeEditarCompromiso={administraUsuarios(v)}
+            puedeAsignarCotizacion={tienePerfilAdmin(v)}
             equipo={equipo}
             yo={v.id}
           />

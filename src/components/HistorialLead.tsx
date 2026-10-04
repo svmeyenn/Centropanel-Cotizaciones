@@ -14,6 +14,13 @@ import {
   revocarCompromiso,
   type Resultado,
 } from "@/app/clientify/actividad-lead";
+import {
+  caducarAccion,
+  marcarAccionHecha,
+  reabrirAccion,
+  reasignarTarea,
+  revocarCaducidad,
+} from "@/app/cotizaciones/actividad";
 
 export type EntradaHistorial = {
   origen: "lead" | "cotizacion";
@@ -55,6 +62,13 @@ const TONO: Record<string, string> = {
 const abierto = (e: EntradaHistorial) =>
   e.estado_proxima === "Vigente" || e.estado_proxima === "Vencida";
 
+// Los numeros de las conversaciones del lead y de las tareas de cotizacion se
+// repiten entre si: cada registro se distingue por su origen.
+const clave = (e: EntradaHistorial) => `${e.origen}-${e.id}`;
+
+const BOTON_ROJO =
+  "border border-red-300 text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded bg-white disabled:opacity-50";
+
 const dia = (f: string) => f.slice(0, 10).split("-").reverse().join("-");
 
 const cuando = (f: string) =>
@@ -76,6 +90,7 @@ export default function HistorialLead({
   hoy,
   puedeEscribir,
   puedeEditarCompromiso,
+  puedeAsignarCotizacion,
   equipo,
   yo,
 }: {
@@ -84,6 +99,8 @@ export default function HistorialLead({
   hoy: string;
   puedeEscribir: boolean;
   puedeEditarCompromiso: boolean;
+  // Pasarle una tarea de cotizacion a otro, o revivir una caduca: quien administra.
+  puedeAsignarCotizacion: boolean;
   equipo: { id: number; nombre: string }[];
   yo: number;
 }) {
@@ -92,13 +109,16 @@ export default function HistorialLead({
   const [enCurso, comenzar] = useTransition();
   const [aviso, setAviso] = useState("");
   const [conCompromiso, setConCompromiso] = useState(false);
-  const [editando, setEditando] = useState<number | null>(null);
+  const [editando, setEditando] = useState<string | null>(null);
+  const [reasignando, setReasignando] = useState<string | null>(null);
+  const [nuevoResponsable, setNuevoResponsable] = useState(yo);
   const [edicion, setEdicion] = useState({ accion: "", fecha: "", responsable: yo });
   // Revocar y caducar piden el motivo escrito: el boton no actua de inmediato,
   // abre el campo y recien despues se confirma.
-  const [conMotivo, setConMotivo] = useState<{ id: number; tipo: "revocar" | "caducar" } | null>(
-    null
-  );
+  const [conMotivo, setConMotivo] = useState<{
+    clave: string;
+    tipo: "revocar" | "caducar" | "caducar_cotizacion";
+  } | null>(null);
   const [motivo, setMotivo] = useState("");
 
   const [estado, enviar, pendiente] = useActionState<Resultado | null, FormData>(
@@ -120,6 +140,7 @@ export default function HistorialLead({
       setAviso(r.mensaje ?? "");
       if (r.ok) {
         setEditando(null);
+        setReasignando(null);
         setConMotivo(null);
         setMotivo("");
         router.refresh();
@@ -128,7 +149,7 @@ export default function HistorialLead({
   }
 
   function abrirEdicion(e: EntradaHistorial) {
-    setEditando(e.id);
+    setEditando(clave(e));
     setEdicion({
       accion: e.proxima_accion ?? "",
       fecha: e.proxima_fecha ?? "",
@@ -272,7 +293,7 @@ export default function HistorialLead({
 
                 <p className="text-gray-800 mt-0.5 whitespace-pre-wrap break-words">{e.comentario}</p>
 
-                {e.proxima_accion && editando !== e.id && (
+                {e.proxima_accion && editando !== clave(e) && (
                   <div className="mt-1 flex flex-wrap items-center gap-2 bg-crema border border-gray-200 rounded px-2 py-1">
                     <span
                       className={`border rounded px-1.5 py-0.5 text-[10px] font-semibold ${
@@ -308,7 +329,7 @@ export default function HistorialLead({
                             disabled={enCurso}
                             onClick={() => {
                               setMotivo("");
-                              setConMotivo({ id: e.id, tipo: "revocar" });
+                              setConMotivo({ clave: clave(e), tipo: "revocar" });
                             }}
                           >
                             Revocar
@@ -326,7 +347,7 @@ export default function HistorialLead({
                           disabled={enCurso}
                           onClick={() => {
                             setMotivo("");
-                            setConMotivo({ id: e.id, tipo: "caducar" });
+                            setConMotivo({ clave: clave(e), tipo: "caducar" });
                           }}
                         >
                           Caducar por incumplimiento
@@ -359,8 +380,67 @@ export default function HistorialLead({
                           Reversar caducidad
                         </button>
                       )}
-                      {!propia && (
-                        <span className="text-gray-400">se gestiona en la cotizacion</span>
+                      {/* Las tareas de las cotizaciones se gestionan igual desde aqui:
+                          las mismas reglas y las mismas acciones que en la cotizacion. */}
+                      {!propia && e.id_cotizacion != null && (
+                        <>
+                          {abierto(e) && puedeEscribir && (
+                            <>
+                              <button
+                                className={BOTON_CLARO}
+                                disabled={enCurso}
+                                onClick={() =>
+                                  correr(() => marcarAccionHecha(e.id, e.id_cotizacion as number))
+                                }
+                              >
+                                Cumplida
+                              </button>
+                              <button
+                                className={BOTON_ROJO}
+                                disabled={enCurso}
+                                onClick={() => {
+                                  setMotivo("");
+                                  setConMotivo({ clave: clave(e), tipo: "caducar_cotizacion" });
+                                }}
+                              >
+                                Caducar
+                              </button>
+                            </>
+                          )}
+                          {abierto(e) && puedeAsignarCotizacion && (
+                            <button
+                              className={BOTON_CLARO}
+                              onClick={() => {
+                                setNuevoResponsable(e.id_responsable ?? yo);
+                                setReasignando(clave(e));
+                              }}
+                            >
+                              Reasignar
+                            </button>
+                          )}
+                          {e.estado_proxima === "Ejecutada" && puedeEscribir && (
+                            <button
+                              className={BOTON_CLARO}
+                              disabled={enCurso}
+                              onClick={() =>
+                                correr(() => reabrirAccion(e.id, e.id_cotizacion as number))
+                              }
+                            >
+                              Reabrir
+                            </button>
+                          )}
+                          {e.estado_proxima === "Caduca" && puedeAsignarCotizacion && (
+                            <button
+                              className={BOTON_CLARO}
+                              disabled={enCurso}
+                              onClick={() =>
+                                correr(() => revocarCaducidad(e.id, e.id_cotizacion as number))
+                              }
+                            >
+                              Reversar caducidad
+                            </button>
+                          )}
+                        </>
                       )}
                     </span>
                   </div>
@@ -379,13 +459,15 @@ export default function HistorialLead({
                   </p>
                 )}
 
-                {conMotivo?.id === e.id && (
+                {conMotivo?.clave === clave(e) && (
                   <div className="mt-1 flex flex-wrap items-end gap-2 bg-crema border border-gray-200 rounded px-2 py-2">
                     <label className="flex-1 min-w-60">
                       <span className={ROTULO}>
                         {conMotivo.tipo === "revocar"
                           ? "Por que se revoca *"
-                          : "Motivo del incumplimiento *"}
+                          : conMotivo.tipo === "caducar"
+                            ? "Motivo del incumplimiento *"
+                            : "Por que ya no se va a hacer *"}
                       </span>
                       <input
                         className={CAMPO}
@@ -395,7 +477,9 @@ export default function HistorialLead({
                         placeholder={
                           conMotivo.tipo === "revocar"
                             ? "El cliente desistio del proyecto"
-                            : "Prometio enviar el plano y no lo hizo"
+                            : conMotivo.tipo === "caducar"
+                              ? "Prometio enviar el plano y no lo hizo"
+                              : "El cliente compro en otro lado"
                         }
                         onChange={(x) => setMotivo(x.target.value)}
                       />
@@ -410,7 +494,9 @@ export default function HistorialLead({
                         correr(() =>
                           conMotivo.tipo === "revocar"
                             ? revocarCompromiso(e.id, idLead, motivo)
-                            : caducarCompromiso(e.id, idLead, motivo)
+                            : conMotivo.tipo === "caducar"
+                              ? caducarCompromiso(e.id, idLead, motivo)
+                              : caducarAccion(e.id, e.id_cotizacion as number, motivo)
                         )
                       }
                     >
@@ -419,7 +505,40 @@ export default function HistorialLead({
                   </div>
                 )}
 
-                {e.proxima_accion && editando === e.id && (
+                {reasignando === clave(e) && e.id_cotizacion != null && (
+                  <div className="mt-1 flex flex-wrap items-end gap-2 bg-crema border border-gray-200 rounded px-2 py-2">
+                    <label className="min-w-48">
+                      <span className={ROTULO}>Pasarsela a</span>
+                      <select
+                        className={CAMPO}
+                        value={nuevoResponsable}
+                        onChange={(x) => setNuevoResponsable(Number(x.target.value))}
+                      >
+                        {equipo.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button className={BOTON_CLARO} onClick={() => setReasignando(null)}>
+                      Cancelar
+                    </button>
+                    <button
+                      className="bg-verde text-white text-[11px] font-semibold px-3 py-0.5 rounded disabled:opacity-50"
+                      disabled={enCurso}
+                      onClick={() =>
+                        correr(() =>
+                          reasignarTarea(e.id, e.id_cotizacion as number, nuevoResponsable)
+                        )
+                      }
+                    >
+                      Reasignar tarea
+                    </button>
+                  </div>
+                )}
+
+                {e.proxima_accion && editando === clave(e) && (
                   <div className="mt-1 grid gap-2 sm:grid-cols-4 items-end bg-crema border border-gray-200 rounded px-2 py-2">
                     <label className="sm:col-span-2">
                       <span className={ROTULO}>Compromiso</span>
