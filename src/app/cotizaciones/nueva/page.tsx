@@ -8,7 +8,12 @@ import { hoyISO } from "@/lib/formato";
 // Alta de cotizacion. Nada se escribe en la base hasta pulsar GRABAR: el
 // borrador vive en el estado del formulario, que es la regla que Stephan fijo
 // para Access (tablas locales) trasladada a la web.
-export default async function Pagina() {
+export default async function Pagina({
+  searchParams,
+}: {
+  searchParams: Promise<{ cliente?: string }>;
+}) {
+  const { cliente } = await searchParams;
   const v = await requerirVendedor();
   const supabase = await createClient();
   const { paises, esAdminGeneral, idPaisActivo, idPaisTrabajo } =
@@ -70,6 +75,22 @@ export default async function Pagina() {
         )?.id ?? null)
       : null;
 
+  // Cliente que llega elegido --por ejemplo desde un lead--: se parte con el
+  // cliente puesto, su forma de pago por defecto y su direccion de despacho.
+  const clienteInicial = cliente
+    ? ((clientes ?? []).find((c) => String(c.id) === cliente) ?? null)
+    : null;
+  const formaDelCliente = clienteInicial
+    ? ((formasPago ?? []).find(
+        (f) => f.por_defecto && Number(f.id_pais) === Number(clienteInicial.id_pais)
+      )?.id ?? null)
+    : null;
+  const direccionDelCliente = clienteInicial
+    ? [clienteInicial.direccion, clienteInicial.comuna, clienteInicial.ciudad]
+        .filter(Boolean)
+        .join(", ")
+    : "";
+
   // Costo de hoy de cada producto del catalogo, para el margen. Va por
   // costo_productos() porque el vendedor no puede leer la tabla de productos
   // y el margen lo ven todos los perfiles.
@@ -117,14 +138,14 @@ export default async function Pagina() {
         verMargen
         costoPorProducto={costoPorProducto}
         inicial={{
-          id_cliente: null,
+          id_cliente: clienteInicial ? Number(clienteInicial.id) : null,
           id_vendedor: v.id,
-          id_forma_pago: formaPorDefecto,
+          id_forma_pago: formaDelCliente ?? formaPorDefecto,
           id_medio_pago: null,
           fecha: hoyISO(),
           validez_dias: pNum(params, "ValidezDias", 7),
           tiempo_entrega: pTxt(params, "TiempoEntregaDefecto"),
-          direccion_despacho: "",
+          direccion_despacho: direccionDelCliente,
           notas: "",
           descuento_tipo: "Monto",
           descuento_pct: 0,

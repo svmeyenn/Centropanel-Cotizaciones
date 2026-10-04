@@ -3,10 +3,10 @@
 import { useActionState, useEffect } from "react";
 import Ventana from "@/components/Ventana";
 import { confirmarIngreso, type Resultado } from "@/app/ingresos/acciones";
-import { pesos } from "@/lib/formato";
+import { hoyISO, pesos } from "@/lib/formato";
 import type { Movimiento } from "@/lib/finanzas/tipos";
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = () => hoyISO();
 
 // Confirma que un ingreso proyectado se recibio. La fecha viene con hoy y es
 // editable, porque lo normal es confirmarlo el mismo dia pero no siempre.

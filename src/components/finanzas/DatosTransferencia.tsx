@@ -78,9 +78,14 @@ export default function DatosTransferencia({
     setTimeout(() => setCopiado((x) => (x === clave ? null : x)), 1500);
   }
 
+  const esPeru = movimiento.id_pais === 2;
+  const idTributario = esPeru ? "RUC" : "RUT";
+
   // Sin puntos y con guion: es el formato que aceptan los formularios de los
-  // bancos. Con puntos varios lo rechazan.
+  // bancos. Con puntos varios lo rechazan. El RUC peruano son once digitos
+  // corridos, sin guion.
   const rutLimpio = (v: string | null) => {
+    if (esPeru) return (v ?? "").replace(/\D/g, "");
     const d = (v ?? "").replace(/[^0-9kK]/gi, "").toUpperCase();
     if (d.length < 2) return d;
     return `${d.slice(0, -1)}-${d.slice(-1)}`;
@@ -93,7 +98,11 @@ export default function DatosTransferencia({
       )
     : (movimiento.origen_destino ?? "");
 
-  const monto = String(Math.round(Number(movimiento.monto)));
+  // El peso chileno no tiene decimales; el sol peruano tiene dos, y copiar el
+  // monto redondeado haria transferir de menos o de mas.
+  const monto = esPeru
+    ? Number(movimiento.monto).toFixed(2)
+    : String(Math.round(Number(movimiento.monto)));
 
   return (
     <Ventana
@@ -111,8 +120,8 @@ export default function DatosTransferencia({
           copiar={copiar}
         />
         <Dato
-          rotulo="RUT"
-          muestra={interlocutor?.rut ?? "sin RUT"}
+          rotulo={idTributario}
+          muestra={interlocutor?.rut ?? `sin ${idTributario}`}
           copia={rutLimpio(interlocutor?.rut ?? null)}
           copiado={copiado}
           copiar={copiar}

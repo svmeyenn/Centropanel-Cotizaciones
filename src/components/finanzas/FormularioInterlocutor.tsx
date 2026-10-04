@@ -86,6 +86,18 @@ export default function FormularioInterlocutor({
       );
   }, [estado, alGuardar]);
 
+  // RUT en Chile, RUC en Peru. Si todavia no se sabe de que pais es la ficha,
+  // se dicen los dos.
+  const idPaisFicha =
+    interlocutor?.id_pais ?? mercadoActivo ?? (mercados.length === 1 ? mercados[0].id : null);
+  const etiquetaId =
+    idPaisFicha == null
+      ? "RUT / RUC"
+      : (mercados.find((m) => m.id === idPaisFicha)?.codigo ?? (idPaisFicha === 2 ? "PE" : "CL")) ===
+          "PE"
+        ? "RUC"
+        : "RUT";
+
   const cambiar = (i: number, campo: keyof FilaCuenta, valor: string) =>
     setFilas((f) => f.map((c, j) => (j === i ? { ...c, [campo]: valor } : c)));
 
@@ -124,7 +136,7 @@ export default function FormularioInterlocutor({
       </div>
 
       <div>
-        <label className={ROTULO}>RUT</label>
+        <label className={ROTULO}>{etiquetaId}</label>
         <input
           name="rut"
           className={CAMPO}

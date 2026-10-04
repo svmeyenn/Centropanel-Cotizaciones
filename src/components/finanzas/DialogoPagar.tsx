@@ -3,11 +3,11 @@
 import { useActionState, useEffect } from "react";
 import Ventana from "@/components/Ventana";
 import { guardarPago, type Resultado } from "@/app/egresos/acciones";
-import { pesos } from "@/lib/formato";
+import { hoyISO, pesos } from "@/lib/formato";
 import type { Movimiento } from "@/lib/finanzas/tipos";
 import ListaAdjuntos from "./ListaAdjuntos";
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = () => hoyISO();
 
 // Marca un egreso como pagado, o corrige la fecha de uno ya pagado. La fecha
 // viene con hoy y siempre es editable. El respaldo se muestra sin poder

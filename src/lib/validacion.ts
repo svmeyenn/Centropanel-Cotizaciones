@@ -23,7 +23,7 @@ export function faltantesCliente(d: DatosObligatoriosCliente): string[] {
   // llamar desde el otro mercado, y ya se cotiza en los dos.
   if (!d.telefono.trim()) faltan.push("Telefono");
   else if (!telefonoValido(d.telefono))
-    faltan.push("Telefono con codigo de pais (+56 9 1234 5678)");
+    faltan.push("Telefono con codigo de pais (+56 9 1234 5678 o +51 987 654 321)");
   if (!d.ciudad.trim()) faltan.push("Ciudad");
   return faltan;
 }

@@ -9,14 +9,17 @@ import {
 } from "@/lib/finanzas/consultas";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { hoyISO } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
 
 // Mes corrido por defecto: es el recorte con el que llega la cartola.
 function mesActual() {
-  const hoy = new Date();
-  const primero = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), 1));
-  const ultimo = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth() + 1, 0));
+  // El mes de Chile: el servidor corre en UTC y a fin de mes, de noche, ya
+  // estaria en el siguiente.
+  const [anio, mes] = hoyISO().split("-").map(Number);
+  const primero = new Date(Date.UTC(anio, mes - 1, 1));
+  const ultimo = new Date(Date.UTC(anio, mes, 0));
   return {
     desde: primero.toISOString().slice(0, 10),
     hasta: ultimo.toISOString().slice(0, 10),

@@ -8,7 +8,7 @@ import {
   guardarIngreso,
   type Resultado,
 } from "@/app/ingresos/acciones";
-import { pesos } from "@/lib/formato";
+import { hoyISO, pesos } from "@/lib/formato";
 import {
   etiquetaProyecto,
   type Categoria,
@@ -19,7 +19,7 @@ import {
 } from "@/lib/finanzas/tipos";
 import SelectorInterlocutor from "./SelectorInterlocutor";
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = () => hoyISO();
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 const ROTULO = "block text-xs font-semibold text-dorado-osc mb-0.5";
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { hoyISO } from "@/lib/formato";
+
 // Descarga lo que se esta viendo (ya filtrado) a una planilla que Excel abre
 // directo. Es CSV con BOM y punto y coma, que es lo que Excel en español
 // espera; un .xlsx de verdad obligaria a sumar una libreria para lo mismo.
@@ -31,7 +33,7 @@ export function descargarPlanilla<T>(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = hoyISO();
   a.download = `${nombre}-${hoy}.csv`;
   a.click();
   URL.revokeObjectURL(url);

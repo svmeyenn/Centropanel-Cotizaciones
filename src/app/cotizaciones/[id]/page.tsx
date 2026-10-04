@@ -36,7 +36,7 @@ export default async function Pagina({
   const { data: gente } = tienePerfilAdmin(v)
     ? await supabase
         .from("vendedores")
-        .select("id, nombre")
+        .select("id, nombre, mercado")
         .eq("activo", true)
         .neq("rol", "Consulta")
         .order("nombre")
@@ -87,6 +87,20 @@ export default async function Pagina({
 
   // Textos de correo y WhatsApp del mercado de la cotizacion.
   const parametros = await leerParametros(Number(cot.id_pais));
+
+  // El pais de la cotizacion fija su codigo telefonico, y quienes pueden recibir
+  // una tarea son los que trabajan ese mercado.
+  const { data: paisCot } = await supabase
+    .from("paises")
+    .select("codigo, nombre, prefijo_telefono")
+    .eq("id", cot.id_pais)
+    .single();
+  const prefijoTelefono = String(paisCot?.prefijo_telefono ?? "+56").replace(/\D/g, "");
+  const mercadoCot = paisCot?.codigo === "PE" ? "Peru" : "Chile";
+  const zonaCot = paisCot?.codigo === "PE" ? "America/Lima" : "America/Santiago";
+  const gentePais = ((gente ?? []) as { id: number; nombre: string; mercado: string }[]).filter(
+    (g) => g.mercado === "Ambos" || g.mercado === mercadoCot
+  );
 
   // El pedido, si ya se genero: es lo que explica por que la cotizacion esta
   // congelada, asi que se muestra en la misma pantalla.
@@ -196,8 +210,9 @@ export default async function Pagina({
           actividad={(bitacora ?? []) as Actividad[]}
           puedeEscribir={v.puede_editar}
           puedeAsignar={tienePerfilAdmin(v)}
-          equipo={(gente ?? []) as { id: number; nombre: string }[]}
+          equipo={gentePais}
           yo={v.id}
+          zona={zonaCot}
         />
       </div>
 
@@ -228,6 +243,8 @@ export default async function Pagina({
             contacto: cli?.contacto ?? null,
             emailCliente: cli?.email ?? null,
             telefonoCliente: cli?.telefono ?? null,
+            moneda: (cot.moneda as string | null) ?? (paisCot?.codigo === "PE" ? "PEN" : "CLP"),
+            prefijoTelefono,
             vendedor: ven?.nombre ?? "",
             cargoVendedor: ven?.cargo ?? null,
             emailVendedor: ven?.email ?? null,

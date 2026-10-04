@@ -38,11 +38,17 @@ export function fecha(s: string | null | undefined): string {
   return `${d}-${m}-${a}`;
 }
 
-export function hoyISO(): string {
-  const d = new Date();
-  const mes = String(d.getMonth() + 1).padStart(2, "0");
-  const dia = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${mes}-${dia}`;
+// El dia de hoy, AAAA-MM-DD, en la hora de Chile. Sin fijar la zona, el servidor
+// (que corre en UTC) cambia de dia a las nueve de la noche de Chile y las fechas
+// que se proponen por omision salen con la de manana. La base de datos cuenta
+// los dias igual (America/Santiago).
+export function hoyISO(zona = "America/Santiago"): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: zona,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 // Fecha de vencimiento = fecha + validez, en dias corridos.
@@ -129,4 +135,26 @@ export function coincideTelefono(
   if (!g || !b) return false;
   const sinCodigo = b.replace(/^(?:56|51)/, "");
   return g.includes(b) || (sinCodigo !== b && g.includes(sinCodigo));
+}
+
+// Un monto en su moneda. Cada moneda se escribe como la lee quien la usa:
+// pesos y UF a la chilena (1.234,56), soles y dolares a la peruana (1,234.56),
+// con los decimales que le corresponden --el peso no tiene, la UF y el sol dos--.
+const MONEDAS: Record<string, { prefijo: string; decimales: number; locale: string }> = {
+  CLP: { prefijo: "$", decimales: 0, locale: "es-CL" },
+  UF: { prefijo: "UF ", decimales: 2, locale: "es-CL" },
+  PEN: { prefijo: "S/ ", decimales: 2, locale: "es-PE" },
+  USD: { prefijo: "US$ ", decimales: 2, locale: "es-PE" },
+};
+
+export function dinero(n: number | string | null | undefined, moneda: string | null | undefined): string {
+  const m = MONEDAS[(moneda ?? "CLP").toUpperCase()] ?? MONEDAS.CLP;
+  const v = Number(n ?? 0);
+  return (
+    m.prefijo +
+    v.toLocaleString(m.locale, {
+      minimumFractionDigits: m.decimales,
+      maximumFractionDigits: m.decimales,
+    })
+  );
 }

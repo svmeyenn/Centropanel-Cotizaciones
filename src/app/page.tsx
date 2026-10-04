@@ -38,21 +38,27 @@ export default async function Home({
     }))
   );
   const supabase = await createClient();
-  const { data: panel } = await supabase.rpc("panel_desempeno", {
-    p_pais: idPaisActivo,
-    // Llega como AAAA-MM desde el selector; la base espera una fecha.
-    p_mes: /^\d{4}-\d{2}$/.test(mes ?? "") ? `${mes}-01` : null,
-  });
-  const desempeno = panel as Desempeno | null;
+  // Llega como AAAA-MM desde el selector; la base espera una fecha.
+  const mesBase = /^\d{4}-\d{2}$/.test(mes ?? "") ? `${mes}-01` : null;
 
-  // Si el seguimiento se esta haciendo. Va en una consulta aparte de la del
-  // desempeno porque mide otra cosa --no cuanto se vendio, sino si lo que se
-  // promete se cumple-- y porque asi el tablero de ventas no carga con ella.
-  const { data: seg } = await supabase.rpc("panel_seguimiento", {
-    p_pais: idPaisActivo,
-    p_mes: /^\d{4}-\d{2}$/.test(mes ?? "") ? `${mes}-01` : null,
-  });
-  const seguimiento = seg as Seguimiento | null;
+  // Un tablero por mercado: los montos de Chile son pesos y los de Peru soles, y
+  // sumarlos no daria ninguna cifra. Con un mercado activo es uno solo.
+  const tableros = await Promise.all(
+    mercadosEnBanda.map(async (p) => {
+      const [{ data: panel }, { data: seg }] = await Promise.all([
+        supabase.rpc("panel_desempeno", { p_pais: p.id, p_mes: mesBase }),
+        // Si el seguimiento se esta haciendo. Va aparte del desempeno porque mide
+        // otra cosa --no cuanto se vendio, sino si lo que se promete se cumple--.
+        supabase.rpc("panel_seguimiento", { p_pais: p.id, p_mes: mesBase }),
+      ]);
+      return {
+        pais: p,
+        desempeno: panel as Desempeno | null,
+        seguimiento: seg as Seguimiento | null,
+      };
+    })
+  );
+  const variosMercados = tableros.length > 1;
 
   // Lo comprometido en las bitacoras y todavia no hecho. Un vendedor ve lo
   // suyo; quien dirige ve lo del equipo, que es lo que necesita para saber que
@@ -85,13 +91,23 @@ export default async function Home({
           Sesion: <span className="font-semibold">{v.nombre}</span> ({v.rol})
         </p>
 
-        {desempeno ? (
-          <PanelDesempeno d={desempeno} />
-        ) : (
-          <p className="text-sm text-gray-500">
-            No se pudo cargar el tablero. Use el menu de la izquierda.
-          </p>
-        )}
+        {tableros.map(({ pais, desempeno }) => (
+          <div key={pais.codigo} className="space-y-3">
+            {variosMercados && (
+              <h2 className="text-xs font-semibold text-verde border-b border-verde pb-0.5">
+                {pais.nombre.toUpperCase()} · montos en{" "}
+                {pais.moneda_base === "PEN" ? "soles" : "pesos chilenos"}
+              </h2>
+            )}
+            {desempeno ? (
+              <PanelDesempeno d={desempeno} />
+            ) : (
+              <p className="text-sm text-gray-500">
+                No se pudo cargar el tablero. Use el menu de la izquierda.
+              </p>
+            )}
+          </div>
+        ))}
 
         <TareasPendientes
           tareas={(tareas ?? []) as Tarea[]}
@@ -99,7 +115,19 @@ export default async function Home({
           soloMias={soloMias}
         />
 
-        {seguimiento && <PanelSeguimiento s={seguimiento} />}
+        {tableros.map(
+          ({ pais, seguimiento }) =>
+            seguimiento && (
+              <div key={pais.codigo} className="space-y-3">
+                {variosMercados && (
+                  <h2 className="text-xs font-semibold text-verde border-b border-verde pb-0.5">
+                    SEGUIMIENTO · {pais.nombre.toUpperCase()}
+                  </h2>
+                )}
+                <PanelSeguimiento s={seguimiento} />
+              </div>
+            )
+        )}
 
         {/* Version vigente: sube con cada entrega a produccion (VERSIONES.md).
             En pruebas se aclara que hay cambios que aun no estan en ella. */}

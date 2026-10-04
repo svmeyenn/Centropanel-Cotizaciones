@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { pesos, fecha as fmtFecha, primerNombre } from "@/lib/formato";
+import { dinero, fecha as fmtFecha, primerNombre } from "@/lib/formato";
 import { cambiarEstado } from "@/app/cotizaciones/acciones";
 import { enviarCotizacionPorCorreo } from "@/app/cotizaciones/envio";
 
@@ -14,6 +14,9 @@ export interface DatosEnvio {
   contacto: string | null;
   emailCliente: string | null;
   telefonoCliente: string | null;
+  // Moneda del documento (CLP o PEN) y codigo telefonico de su pais (56 o 51).
+  moneda: string;
+  prefijoTelefono: string;
   vendedor: string;
   cargoVendedor: string | null;
   emailVendedor: string | null;
@@ -40,22 +43,27 @@ function aplicar(plantilla: string, d: DatosEnvio, enlace: string): string {
     .replace(/\{CARGOVENDEDOR\}/g, d.cargoVendedor ?? "Ejecutivo Comercial")
     .replace(/\{EMAILVENDEDOR\}/g, d.emailVendedor ?? "")
     .replace(/\{FONOVENDEDOR\}/g, d.telefonoVendedor ?? "")
-    .replace(/\{TOTAL\}/g, `$${pesos(d.total)}`)
+    .replace(/\{TOTAL\}/g, dinero(d.total, d.moneda))
     .replace(/\{CADUCA\}/g, fmtFecha(d.vence))
     // En la plantilla el salto de linea viene como "|" (Access no guardaba
     // saltos reales en el parametro).
     .replace(/\|/g, "\n");
 }
 
-// Deja solo digitos y antepone 56 si el numero viene en formato local. wa.me
-// exige el numero sin +, sin espacios y con codigo de pais.
-function normalizarFono(fono: string | null): string | null {
+// Deja solo digitos y antepone el codigo del pais del documento si el numero
+// viene en formato local. wa.me exige el numero sin +, sin espacios y con codigo
+// de pais. Un celular de nueve digitos que empieza con 9 es igual en Chile y en
+// Peru: solo el pais de la cotizacion dice cual es.
+function normalizarFono(fono: string | null, prefijo: string): string | null {
   if (!fono) return null;
-  let n = fono.replace(/\D/g, "");
+  const n = fono.replace(/\D/g, "");
   if (!n) return null;
-  if (n.startsWith("56")) return n;
-  if (n.startsWith("9") && n.length === 9) return "56" + n;
-  if (n.length === 8) return "569" + n;
+  // Con "+" o "00" el numero ya trae su codigo de pais.
+  if (/^\s*(\+|00)/.test(fono)) return n.replace(/^00/, "");
+  if (n.startsWith(prefijo) && n.length >= prefijo.length + 8) return n;
+  if (n.startsWith("9") && n.length === 9) return prefijo + n;
+  // Los fijos y moviles antiguos de Chile traian ocho digitos.
+  if (n.length === 8 && prefijo === "56") return "569" + n;
   return n;
 }
 
@@ -116,7 +124,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
     aplicar(datos.mensajeWhatsApp, datos, enlace),
     datos.mensajeWhatsApp
   );
-  const fono = normalizarFono(datos.telefonoCliente);
+  const fono = normalizarFono(datos.telefonoCliente, datos.prefijoTelefono);
 
   // Al enviar, la cotizacion pasa a Enviada. Aceptada y Rechazada no se pisan:
   // son estados manuales, misma regla que en Access.

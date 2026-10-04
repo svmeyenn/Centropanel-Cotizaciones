@@ -46,9 +46,9 @@ const TONO: Record<string, string> = {
 
 // Fecha y hora en que quedo escrito, en hora de Chile: el registro se guarda
 // en UTC y a las nueve de la noche ya seria mañana.
-const cuando = (f: string) =>
+const cuando = (f: string, zona: string) =>
   new Intl.DateTimeFormat("es-CL", {
-    timeZone: "America/Santiago",
+    timeZone: zona,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -68,6 +68,7 @@ export default function BitacoraCotizacion({
   puedeAsignar,
   equipo,
   yo,
+  zona = "America/Santiago",
 }: {
   idCotizacion: number;
   actividad: Actividad[];
@@ -76,6 +77,8 @@ export default function BitacoraCotizacion({
   puedeAsignar: boolean;
   equipo: { id: number; nombre: string }[];
   yo: number;
+  // Hora en que se muestra lo escrito: la del pais de la cotizacion.
+  zona?: string;
 }) {
   const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
@@ -228,7 +231,7 @@ export default function BitacoraCotizacion({
             <li key={a.id} className="px-3 py-2 text-xs">
               <div className="flex flex-wrap items-baseline gap-x-2">
                 <span className="font-semibold">{a.vendedor_nombre}</span>
-                <span className="text-gray-500">{cuando(a.fecha_registro)}</span>
+                <span className="text-gray-500">{cuando(a.fecha_registro, zona)}</span>
               </div>
 
               <p className="text-gray-800 mt-0.5">{a.comentario}</p>
