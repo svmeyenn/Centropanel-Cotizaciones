@@ -208,7 +208,7 @@ export default function ProyectoCasa({
     <>
       <section className="bg-white border border-gray-200 rounded overflow-hidden">
         <h2 className={TITULO}>
-          <span>PROYECTO DE CASA</span>
+          <span>PROYECTO</span>
           <span className="font-normal">{esPeru ? "Peru: dolares y soles" : "Chile: UF y pesos"}</span>
         </h2>
         <form onSubmit={enviarDatos} className="p-3 space-y-3">

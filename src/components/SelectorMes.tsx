@@ -33,7 +33,7 @@ export default function SelectorMes({
         value={mes}
         disabled={pendiente}
         onChange={(e) =>
-          empezar(() => router.push(`/?mes=${e.target.value}`, { scroll: false }))
+          empezar(() => router.push(`/?vista=desempeno&mes=${e.target.value}`, { scroll: false }))
         }
         className="border border-gray-300 rounded bg-white px-2 py-0.5 text-xs disabled:opacity-60"
       >

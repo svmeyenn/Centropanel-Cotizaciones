@@ -93,7 +93,7 @@ const CAMPOS_CAMBIO: Record<string, string> = {
 function legible(campo: string, v: string | null) {
   if (v == null || v === "") return "(vacio)";
   if (campo === "estado") return ESTADOS_LEGIBLES[v] ?? v;
-  if (campo === "linea") return v === "casas" ? "Casas" : v === "paneles" ? "Paneles" : v;
+  if (campo === "linea") return v === "casas" ? "Proyecto" : v === "paneles" ? "Paneles" : v;
   if (campo === "emails" || campo === "telefonos") {
     try {
       const lista = JSON.parse(v) as { email?: string; phone?: string }[];

@@ -3,7 +3,8 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import { BanderaDe } from "@/components/Bandera";
 import AsignarPropietarioMasivo from "@/components/AsignarPropietarioMasivo";
-import { aplicarFiltrosLeads } from "@/lib/filtrosLeads";
+import PildoraLinea from "@/components/PildoraLinea";
+import { GESTIONES, SIN_PROPIETARIO, aplicarFiltrosLeads } from "@/lib/filtrosLeads";
 import CargarContactosClientify from "@/components/CargarContactosClientify";
 import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
@@ -59,10 +60,11 @@ export default async function Pagina({
     estado?: string;
     dueno?: string;
     linea?: string;
+    gestion?: string;
     pagina?: string;
   }>;
 }) {
-  const { q = "", estado = "", dueno = "", linea = "", pagina = "1" } = await searchParams;
+  const { q = "", estado = "", dueno = "", linea = "", gestion = "", pagina = "1" } = await searchParams;
   const v = await requerirVendedor();
   const supabase = await createClient();
   const { activo, idPaisActivo } = await contextoMercado(v);
@@ -86,7 +88,7 @@ export default async function Pagina({
   );
 
   const busqueda = q.replace(/[,()%*]/g, " ").trim();
-  consulta = aplicarFiltrosLeads(consulta, { q, estado, dueno, linea });
+  consulta = aplicarFiltrosLeads(consulta, { q, estado, dueno, linea, gestion });
 
   const [{ data: filas, count }, { data: filtrosData }, { data: posibles }, { data: ultima }] = await Promise.all([
     consulta
@@ -115,6 +117,7 @@ export default async function Pagina({
     if (estado) s.set("estado", estado);
     if (dueno) s.set("dueno", dueno);
     if (linea) s.set("linea", linea);
+    if (gestion) s.set("gestion", gestion);
     if (p > 1) s.set("pagina", String(p));
     const t = s.toString();
     return `/leads${t ? `?${t}` : ""}`;
@@ -212,6 +215,8 @@ export default async function Pagina({
               className="border border-gray-300 rounded px-2 py-1"
             >
               <option value="">Todos</option>
+              {dueno.includes(",") && <option value={dueno}>Mis leads (desde el inicio)</option>}
+              <option value={SIN_PROPIETARIO}>Sin propietario</option>
               {filtros.propietarios.map((p) => (
                 <option key={p.email} value={p.email}>
                   {p.nombre}
@@ -234,8 +239,21 @@ export default async function Pagina({
               <option value="casas">{LINEAS.casas}</option>
             </select>
           </div>
+          {gestion && GESTIONES[gestion] && (
+            <span className="inline-flex items-center gap-1 bg-crema border border-dorado rounded px-2 py-1">
+              <input type="hidden" name="gestion" value={gestion} />
+              {GESTIONES[gestion]}
+              <Link
+                href={`/leads?${new URLSearchParams({ ...(busqueda ? { q: busqueda } : {}), ...(estado ? { estado } : {}), ...(dueno ? { dueno } : {}), ...(linea ? { linea } : {}) })}`}
+                className="text-gray-500 hover:text-red-700 font-bold"
+                aria-label="Quitar este filtro"
+              >
+                ×
+              </Link>
+            </span>
+          )}
           <button className="bg-verde text-white font-semibold px-3 py-1 rounded">Filtrar</button>
-          {(busqueda || estado || dueno || linea) && (
+          {(busqueda || estado || dueno || linea || gestion) && (
             <Link href="/leads" className="text-verde underline py-1">
               Quitar filtros
             </Link>
@@ -249,26 +267,28 @@ export default async function Pagina({
           <AsignarPropietarioMasivo
             propietarios={(posibles ?? []) as { email: string; nombre: string }[]}
             total={total}
-            filtro={{ q, estado, dueno, linea }}
+            filtro={{ q, estado, dueno, linea, gestion }}
           />
         )}
 
         {/* Diez columnas que caben en el ancho de la pantalla: sin barra lateral.
-            El ancho se reparte por porcentaje y el texto largo se corta con "..."
-            --el completo se ve al dejar el cursor encima--. */}
+            El nombre y los datos de control (fecha, telefono, propietario,
+            estado) se ven completos; si falta espacio ceden la campana y el
+            origen, que se cortan con "..." y se leen completos al dejar el
+            cursor encima. */}
         <div className="bg-white border border-gray-200 rounded">
           <table className="w-full table-fixed text-[11px]">
             <colgroup>
               {puedeAsignar && <col className="w-[3%]" />}
-              <col className="w-[7%]" />
-              <col className="w-[14%]" />
+              <col className="w-[6%]" />
+              <col className="w-[19%]" />
               <col className="w-[9%]" />
               <col className="w-[13%]" />
-              <col className="w-[13%]" />
               <col className="w-[9%]" />
-              <col className="w-[8%]" />
               <col className="w-[10%]" />
               <col className="w-[8%]" />
+              <col className="w-[8%]" />
+              <col className="w-[9%]" />
               <col className="w-[6%]" />
             </colgroup>
             <thead className="bg-verde text-white">
@@ -311,20 +331,12 @@ export default async function Pagina({
                     )}
                     <td className="px-2 py-1 whitespace-nowrap">{dia(c.creado_clientify)}</td>
                     <td className="px-2 py-1 font-semibold">
-                      <div className="flex items-center gap-1 min-w-0">
+                      <div className="flex items-start gap-1 min-w-0">
                         <BanderaDe idPais={c.id_pais} />
-                        {c.linea === "casas" && (
-                          <span
-                            className="shrink-0 text-[9px] font-semibold text-dorado-osc border border-dorado-osc rounded px-1"
-                            title="Lead de casas"
-                          >
-                            Casas
-                          </span>
-                        )}
+                        <PildoraLinea linea={c.linea} />
                         <Link
                           href={`/leads/${c.id_clientify}`}
-                          className="block truncate text-verde underline"
-                          title={c.nombre_completo}
+                          className="min-w-0 break-words text-verde underline"
                         >
                           {c.nombre_completo || "(sin nombre)"}
                         </Link>
@@ -341,10 +353,8 @@ export default async function Pagina({
                         {c.campana}
                       </span>
                     </td>
-                    <td className="px-2 py-1">
-                      <span className="block truncate" title={c.propietario ?? ""}>
-                        {c.propietario}
-                      </span>
+                    <td className="px-2 py-1 break-words">
+                      {c.propietario ?? <span className="text-gray-400">Sin propietario</span>}
                     </td>
                     <td className="px-2 py-1">
                       <span className="block truncate" title={c.comuna ?? ""}>
@@ -356,11 +366,7 @@ export default async function Pagina({
                         {c.region}
                       </span>
                     </td>
-                    <td className="px-2 py-1">
-                      <span className="block truncate" title={estadoLegible(c.estado_efectivo)}>
-                        {estadoLegible(c.estado_efectivo)}
-                      </span>
-                    </td>
+                    <td className="px-2 py-1 break-words">{estadoLegible(c.estado_efectivo)}</td>
                     <td className="px-2 py-1">
                       <span className="block truncate" title={c.origen ?? ""}>
                         {c.origen}

@@ -249,7 +249,7 @@ export default function FichaLead({
                   { valor: "casas", texto: LINEAS.casas },
                 ]}
                 aviso={(desde, hasta) =>
-                  `Va a pasar el lead de «${desde}» a «${hasta}». Cambia la pantalla: Casas lleva archivos y el valor del proyecto en lugar de cotizaciones de paneles.`
+                  `Va a pasar el lead de «${desde}» a «${hasta}». Cambia la pantalla: Proyecto lleva archivos y el valor del proyecto en lugar de cotizaciones de paneles.`
                 }
                 accion={(v) => fijarLineaLead(lead.id_clientify, v === "auto" ? null : (v as Linea))}
               />
