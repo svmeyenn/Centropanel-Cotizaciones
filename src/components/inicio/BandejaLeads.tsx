@@ -4,9 +4,10 @@ import PildoraLinea from "@/components/PildoraLinea";
 import { estadoLegible } from "@/lib/leads";
 import { antiguedad, diasEntre, type Gestion, type LeadEnBandeja } from "@/components/inicio/tipos";
 
-// Los leads que esperan sin fecha: los nuevos que nadie ha contactado (los mas
-// recientes primero: un lead fresco se gana mas facil) y los vivos que se estan
-// enfriando sin nada comprometido (los mas olvidados primero).
+// Los leads que esperan sin fecha: los nuevos que nadie ha contactado y los
+// vivos que se estan enfriando sin nada comprometido. Las dos listas van del
+// mas nuevo al mas antiguo, como todas las del inicio; lo que no cabe en las
+// quince filas se busca en la lista de leads, que filtra y ordena.
 export default function BandejaLeads({
   g,
   verPropietario,
@@ -40,7 +41,7 @@ export default function BandejaLeads({
       />
       <Lista
         titulo="Sin seguimiento"
-        explicacion="Leads vivos (contactados, calientes u oportunidades) sin ningun compromiso por delante. Los mas olvidados arriba."
+        explicacion="Leads vivos (contactados, calientes u oportunidades) sin ningun compromiso por delante. Los de contacto mas reciente arriba."
         total={g.sin_seguimiento.n}
         filas={g.sin_seguimiento.lista}
         href={hrefSinSeguimiento}

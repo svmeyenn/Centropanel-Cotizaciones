@@ -109,7 +109,7 @@ export default function CotizacionesEnJuego({ g, verEjecutivo }: { g: Gestion; v
           </table>
           {c.sin_accion_n > c.sin_accion.length && (
             <p className="px-3 py-1 text-[10px] text-gray-500">
-              Se muestran las {c.sin_accion.length} mas antiguas de {c.sin_accion_n}.
+              Se muestran las {c.sin_accion.length} mas recientes de {c.sin_accion_n}. Las demas, en la lista de cotizaciones.
             </p>
           )}
         </div>
