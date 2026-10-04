@@ -2,11 +2,13 @@ import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import { BanderaDe } from "@/components/Bandera";
+import AsignarPropietarioMasivo from "@/components/AsignarPropietarioMasivo";
+import { aplicarFiltrosLeads } from "@/lib/filtrosLeads";
 import CargarContactosClientify from "@/components/CargarContactosClientify";
 import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { ESTADOS_LEAD, LINEAS, estadoLegible, puedeCargarLeads } from "@/lib/leads";
+import { ESTADOS_LEAD, LINEAS, estadoLegible, puedeCargarLeads, puedeEscribirLeads } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
 // La sincronizacion corre dentro de esta pantalla y lee unas 65 paginas de la
@@ -66,6 +68,7 @@ export default async function Pagina({
   const { activo, idPaisActivo } = await contextoMercado(v);
   const esPeru = activo?.codigo === "PE";
   const puedeSincronizar = puedeCargarLeads(v);
+  const puedeAsignar = puedeEscribirLeads(v);
 
   const actual = Math.max(1, Number.parseInt(pagina, 10) || 1);
   const desde = (actual - 1) * POR_PAGINA;
@@ -82,26 +85,15 @@ export default async function Pagina({
     idPaisActivo
   );
 
-  // Los caracteres que usa el filtro para separar condiciones se sacan del
-  // texto buscado: si no, "Perez, Juan" rompe la consulta.
   const busqueda = q.replace(/[,()%*]/g, " ").trim();
-  if (busqueda) {
-    const patron = `%${busqueda}%`;
-    consulta = consulta.or(
-      `nombre_completo.ilike.${patron},email.ilike.${patron},telefono.ilike.${patron},empresa.ilike.${patron},campana.ilike.${patron}`
-    );
-  }
-  // Un lead con una cotizacion enviada ya es una oportunidad, diga lo que diga
-  // Clientify: se filtra y se muestra por el estado efectivo.
-  if (estado) consulta = consulta.eq("estado_efectivo", estado);
-  if (dueno) consulta = consulta.eq("propietario_email", dueno);
-  if (linea === "paneles" || linea === "casas") consulta = consulta.eq("linea", linea);
+  consulta = aplicarFiltrosLeads(consulta, { q, estado, dueno, linea });
 
-  const [{ data: filas, count }, { data: filtrosData }, { data: ultima }] = await Promise.all([
+  const [{ data: filas, count }, { data: filtrosData }, { data: posibles }, { data: ultima }] = await Promise.all([
     consulta
       .order("creado_clientify", { ascending: false, nullsFirst: false })
       .range(desde, desde + POR_PAGINA - 1),
     supabase.rpc("clientify_filtros"),
+    puedeAsignar ? supabase.rpc("lead_propietarios") : Promise.resolve({ data: [] }),
     supabase
       .from("clientify_sincronizaciones")
       .select("inicio, fin, estado, leidos, quitados, error")
@@ -253,17 +245,26 @@ export default async function Pagina({
           </span>
         </form>
 
+        {puedeAsignar && (
+          <AsignarPropietarioMasivo
+            propietarios={(posibles ?? []) as { email: string; nombre: string }[]}
+            total={total}
+            filtro={{ q, estado, dueno, linea }}
+          />
+        )}
+
         {/* Diez columnas que caben en el ancho de la pantalla: sin barra lateral.
             El ancho se reparte por porcentaje y el texto largo se corta con "..."
             --el completo se ve al dejar el cursor encima--. */}
         <div className="bg-white border border-gray-200 rounded">
           <table className="w-full table-fixed text-[11px]">
             <colgroup>
+              {puedeAsignar && <col className="w-[3%]" />}
               <col className="w-[7%]" />
               <col className="w-[14%]" />
               <col className="w-[9%]" />
-              <col className="w-[15%]" />
-              <col className="w-[14%]" />
+              <col className="w-[13%]" />
+              <col className="w-[13%]" />
               <col className="w-[9%]" />
               <col className="w-[8%]" />
               <col className="w-[10%]" />
@@ -272,6 +273,11 @@ export default async function Pagina({
             </colgroup>
             <thead className="bg-verde text-white">
               <tr>
+                {puedeAsignar && (
+                  <th className="px-2 py-1.5">
+                    <input type="checkbox" data-sel-todos aria-label="Marcar todos los de esta pagina" />
+                  </th>
+                )}
                 <th className="text-left px-2 py-1.5">Fecha de creacion</th>
                 <th className="text-left px-2 py-1.5">Nombre</th>
                 <th className="text-left px-2 py-1.5">Telefono</th>
@@ -289,7 +295,7 @@ export default async function Pagina({
             <tbody>
               {contactos.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={11} className="px-3 py-8 text-center text-gray-400">
                     {totalMercado === 0
                       ? "Todavia no hay leads. Importe el archivo de leads."
                       : "Ningun contacto coincide con la busqueda."}
@@ -298,6 +304,11 @@ export default async function Pagina({
               ) : (
                 contactos.map((c) => (
                   <tr key={c.id_clientify} className="border-t border-gray-100 hover:bg-crema">
+                    {puedeAsignar && (
+                      <td className="px-2 py-1">
+                        <input type="checkbox" data-sel-lead value={c.id_clientify} aria-label={`Marcar ${c.nombre_completo ?? "lead"}`} />
+                      </td>
+                    )}
                     <td className="px-2 py-1 whitespace-nowrap">{dia(c.creado_clientify)}</td>
                     <td className="px-2 py-1 font-semibold">
                       <div className="flex items-center gap-1 min-w-0">
