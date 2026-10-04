@@ -69,7 +69,7 @@ export default function CambioConfirmado({
 
   return (
     <div>
-      <div className="text-[10px] font-semibold text-dorado-osc uppercase tracking-wide">
+      <div className="text-[9px] font-semibold text-dorado-osc uppercase tracking-wide">
         {etiqueta}
       </div>
       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">

@@ -42,16 +42,18 @@ const ROTULOS_GEO = {
   PE: { comuna: "Distrito", ciudad: "Provincia", region: "Departamento" },
 } as const;
 
+const SUBTITULO =
+  "text-[9px] font-semibold text-verde uppercase tracking-wider border-b border-gray-200 mb-1 pb-px";
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[11px] w-full bg-white";
 const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
 
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-[10px] font-semibold text-dorado-osc uppercase tracking-wide">
+      <dt className="text-[9px] font-semibold text-dorado-osc uppercase tracking-wide">
         {etiqueta}
       </dt>
-      <dd className="text-[11px] mt-0.5 break-words">
+      <dd className="text-[11px] leading-tight break-words">
         {children || <span className="text-gray-400">—</span>}
       </dd>
     </div>
@@ -141,7 +143,7 @@ export default function FichaLead({
 
   return (
     <section className="bg-white border border-gray-200 rounded overflow-hidden">
-      <h2 className="bg-verde text-white text-[10px] font-semibold px-3 py-0.5 flex justify-between items-center">
+      <h2 className="bg-verde text-white text-[10px] font-semibold px-2.5 py-px flex justify-between items-center">
         <span>
           DATOS PERSONALES
           {lead.editado && (
@@ -160,84 +162,96 @@ export default function FichaLead({
       </h2>
 
       {!editando ? (
-        <dl className="grid gap-x-5 gap-y-2 p-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Dato etiqueta="Nombre">{lead.nombre}</Dato>
-          <Dato etiqueta="Apellido">{lead.apellido}</Dato>
-          <CambioConfirmado
-            etiqueta="Estado del lead"
-            actual={estadoLegible(lead.estado_efectivo)}
-            nota={notaEstado}
-            claveActual={lead.estado_manual ?? "auto"}
-            puedeEditar={puedeEditar}
-            resultadoAuto={estadoLegible(lead.con_cotizacion_enviada ? "in-deal" : lead.estado)}
-            opciones={[
-              { valor: "auto", texto: "Automatico (segun Clientify y cotizaciones)" },
-              ...ORDEN_ESTADOS.map((e) => ({ valor: e, texto: ESTADOS_LEAD[e] })),
-            ]}
-            aviso={(desde, hasta) =>
-              `Va a cambiar el estado de «${desde}» a «${hasta}». El cambio es solo de este sistema: Clientify no se modifica.`
-            }
-            accion={(v) => fijarEstadoLead(lead.id_clientify, v === "auto" ? null : v)}
-          />
-          <Dato etiqueta="Origen del lead">{lead.origen}</Dato>
-          <Dato etiqueta="Telefonos">
-            {tels.length > 0 && (
-              <ul className="space-y-0.5">
-                {tels.map((t, i) => (
-                  <li key={i}>
-                    {t.phone}
-                    {t.whatsapp && (
-                      <span className="ml-1.5 text-[9px] text-green-700 border border-green-300 rounded px-1">
-                        WhatsApp
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Dato>
-          <Dato etiqueta="Emails">
-            {mails.length > 0 && (
-              <ul className="space-y-0.5">
-                {mails.map((e, i) => (
-                  <li key={i}>{e.email}</li>
-                ))}
-              </ul>
-            )}
-          </Dato>
-          <Dato etiqueta="Propietario">{lead.propietario}</Dato>
-          <Dato etiqueta="Creado en Clientify">
-            {lead.creado_clientify ? fecha(lead.creado_clientify.slice(0, 10)) : ""}
-          </Dato>
-          <Dato etiqueta="Empresa">{lead.empresa}</Dato>
-          <Dato etiqueta="Cargo">{lead.cargo}</Dato>
-          <Dato etiqueta="Campana">{lead.campana}</Dato>
-          <CambioConfirmado
-            etiqueta="Linea"
-            actual={LINEAS[lead.linea]}
-            nota={lead.linea_manual ? "Fijada a mano." : "Segun la campana y el servicio que pidio."}
-            claveActual={lead.linea_manual ?? "auto"}
-            puedeEditar={puedeEditar}
-            resultadoAuto={LINEAS[lead.linea_auto]}
-            opciones={[
-              { valor: "auto", texto: "Automatica (segun la campana)" },
-              { valor: "paneles", texto: LINEAS.paneles },
-              { valor: "casas", texto: LINEAS.casas },
-            ]}
-            aviso={(desde, hasta) =>
-              `Va a pasar el lead de «${desde}» a «${hasta}». Cambia la pantalla: Casas lleva archivos y el valor del proyecto en lugar de cotizaciones de paneles.`
-            }
-            accion={(v) => fijarLineaLead(lead.id_clientify, v === "auto" ? null : (v as Linea))}
-          />
-          <Dato etiqueta="Direccion">{lead.direccion}</Dato>
-          <Dato etiqueta={geo.comuna}>{lead.comuna}</Dato>
-          <Dato etiqueta={geo.ciudad}>{lead.ciudad}</Dato>
-          <Dato etiqueta={geo.region}>{lead.region}</Dato>
-          <Dato etiqueta="Pais">{lead.pais}</Dato>
-        </dl>
+        // Dos grupos lado a lado: quien es la persona, y en que va el lead.
+        <div className="grid lg:grid-cols-[3fr_2fr]">
+          <div className="px-2.5 py-1.5">
+            <h3 className={SUBTITULO}>La persona</h3>
+            <dl className="grid gap-x-4 gap-y-1 grid-cols-2 sm:grid-cols-3">
+              <Dato etiqueta="Nombre">{lead.nombre}</Dato>
+              <Dato etiqueta="Apellido">{lead.apellido}</Dato>
+              <Dato etiqueta="Empresa">{lead.empresa}</Dato>
+              <Dato etiqueta="Cargo">{lead.cargo}</Dato>
+              <Dato etiqueta="Telefonos">
+                {tels.length > 0 && (
+                  <ul>
+                    {tels.map((t, i) => (
+                      <li key={i}>
+                        {t.phone}
+                        {t.whatsapp && (
+                          <span className="ml-1 text-[9px] text-green-700 border border-green-300 rounded px-1">
+                            WhatsApp
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Dato>
+              <Dato etiqueta="Emails">
+                {mails.length > 0 && (
+                  <ul>
+                    {mails.map((e, i) => (
+                      <li key={i}>{e.email}</li>
+                    ))}
+                  </ul>
+                )}
+              </Dato>
+              <Dato etiqueta="Direccion">{lead.direccion}</Dato>
+              <Dato etiqueta={geo.comuna}>{lead.comuna}</Dato>
+              <Dato etiqueta={geo.ciudad}>{lead.ciudad}</Dato>
+              <Dato etiqueta={geo.region}>{lead.region}</Dato>
+              <Dato etiqueta="Pais">{lead.pais}</Dato>
+            </dl>
+          </div>
+
+          <div className="px-2.5 py-1.5 border-t lg:border-t-0 lg:border-l border-gray-200 bg-crema/40">
+            <h3 className={SUBTITULO}>El lead</h3>
+            <dl className="grid gap-x-4 gap-y-1 grid-cols-2">
+              <CambioConfirmado
+                etiqueta="Estado"
+                actual={estadoLegible(lead.estado_efectivo)}
+                nota={notaEstado}
+                claveActual={lead.estado_manual ?? "auto"}
+                puedeEditar={puedeEditar}
+                resultadoAuto={estadoLegible(lead.con_cotizacion_enviada ? "in-deal" : lead.estado)}
+                opciones={[
+                  { valor: "auto", texto: "Automatico (segun Clientify y cotizaciones)" },
+                  ...ORDEN_ESTADOS.map((e) => ({ valor: e, texto: ESTADOS_LEAD[e] })),
+                ]}
+                aviso={(desde, hasta) =>
+                  `Va a cambiar el estado de «${desde}» a «${hasta}». El cambio es solo de este sistema: Clientify no se modifica.`
+                }
+                accion={(v) => fijarEstadoLead(lead.id_clientify, v === "auto" ? null : v)}
+              />
+              <CambioConfirmado
+                etiqueta="Linea"
+                actual={LINEAS[lead.linea]}
+                nota={lead.linea_manual ? "Fijada a mano." : "Segun la campana y el servicio."}
+                claveActual={lead.linea_manual ?? "auto"}
+                puedeEditar={puedeEditar}
+                resultadoAuto={LINEAS[lead.linea_auto]}
+                opciones={[
+                  { valor: "auto", texto: "Automatica (segun la campana)" },
+                  { valor: "paneles", texto: LINEAS.paneles },
+                  { valor: "casas", texto: LINEAS.casas },
+                ]}
+                aviso={(desde, hasta) =>
+                  `Va a pasar el lead de «${desde}» a «${hasta}». Cambia la pantalla: Casas lleva archivos y el valor del proyecto en lugar de cotizaciones de paneles.`
+                }
+                accion={(v) => fijarLineaLead(lead.id_clientify, v === "auto" ? null : (v as Linea))}
+              />
+              <Dato etiqueta="Origen">{lead.origen}</Dato>
+              <Dato etiqueta="Campana">{lead.campana}</Dato>
+              <Dato etiqueta="Propietario">{lead.propietario}</Dato>
+              <Dato etiqueta="Creado en Clientify">
+                {lead.creado_clientify ? fecha(lead.creado_clientify.slice(0, 10)) : ""}
+              </Dato>
+            </dl>
+          </div>
+        </div>
       ) : (
-        <form onSubmit={guardar} className="p-3 space-y-3">
-          <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
+        <form onSubmit={guardar} className="p-2.5 space-y-2">
+          <div className="grid gap-x-3 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-4">
             <label>
               <span className={ROTULO}>Nombre</span>
               <input className={CAMPO} value={form.nombre} onChange={poner("nombre")} maxLength={120} autoFocus />
