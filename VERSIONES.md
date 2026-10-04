@@ -10,6 +10,7 @@ Version vigente: **v0092-20261004**
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
 | v0092-20261004 | 04-10-2026 | Inicio en dos vistas: Mi gestión (agenda de dos semanas, leads por contactar y sin seguimiento, cotizaciones en juego) y Desempeño (ventas, leads y cumplimiento); gráfico de ventas suma lo facturado a lo cotizado y vendido; línea Proyecto y píldora de Paneles | cadd9a3 |
+| v0092-20261004 | 04-10-2026 | Inicio en dos vistas: Desempeno (entrada, con el mes en curso y lo facturado en el grafico) y Mi gestion (agenda de dos semanas, leads por contactar y sin seguimiento, cotizaciones en juego); desempeno de leads por mercado; la linea pasa a llamarse Proyecto; la vista de leads vuelve a filtrar por pais | cadd9a3 |
 | v0091-20261004 | 04-10-2026 | Leads: estados No contactado y Contactado (antes frío y tibio), cambio masivo de propietario en la lista; valores sobre las barras del gráfico del tablero | d766873 |
 | v0090-20261004 | 04-10-2026 | Leads: propietario editable (dato del lead); banderas de país en el tablero y en los listados | fbcbe2d |
 | v0089-20261004 | 04-10-2026 | Perú con céntimos (cálculo en la base, editores, documentos, pedidos, facturas, finanzas y enlace público con su moneda); Leads sin referencias a Clientify salvo el botón de importar (ruta /leads); importación de la planilla .xlsx de contactos | d46dcb4 |
