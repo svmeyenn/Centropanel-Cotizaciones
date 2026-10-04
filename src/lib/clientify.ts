@@ -46,11 +46,11 @@ const texto = (x: unknown): string | null => {
   return s ? s : null;
 };
 
-// Los formularios traen un "Seleccione una Region" cuando la persona no eligio:
-// eso no es un dato.
+// Los formularios traen un "Seleccione una Region" cuando la persona no eligio, y
+// a veces un "Si" o un "No" que respondia otra pregunta: eso no es un dato.
 const dato = (x: unknown): string | null => {
   const s = texto(x);
-  return s && !/^seleccione/i.test(s) ? s : null;
+  return s && !/^seleccione/i.test(s) && !/^(s[ií]|no)$/i.test(s) ? s : null;
 };
 
 // Clientify responde con pequenas variaciones segun el punto de la API

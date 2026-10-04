@@ -124,7 +124,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   const { data: contacto } = await supabase
     .from("v_leads")
     .select(
-      "id_clientify, nombre, apellido, nombre_completo, telefonos, emails, direccion, comuna, ciudad, region, pais, id_pais, estado, estado_efectivo, estado_manual, con_cotizacion_enviada, origen, campana, linea, linea_manual, editado, propietario, creado_clientify, empresa, cargo, observaciones"
+      "id_clientify, nombre, apellido, nombre_completo, telefonos, emails, direccion, comuna, ciudad, region, pais, id_pais, estado, estado_efectivo, estado_manual, con_cotizacion_enviada, origen, campana, linea, linea_manual, linea_auto, editado, propietario, creado_clientify, empresa, cargo, observaciones"
     )
     .eq("id_clientify", idContacto)
     .maybeSingle();

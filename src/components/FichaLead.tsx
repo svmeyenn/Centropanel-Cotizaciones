@@ -29,6 +29,7 @@ export interface DatosFicha {
   con_cotizacion_enviada: boolean;
   linea: Linea;
   linea_manual: Linea | null;
+  linea_auto: Linea;
   editado: boolean;
   id_pais: number;
   pais: string | null;
@@ -168,6 +169,7 @@ export default function FichaLead({
             nota={notaEstado}
             claveActual={lead.estado_manual ?? "auto"}
             puedeEditar={puedeEditar}
+            resultadoAuto={estadoLegible(lead.con_cotizacion_enviada ? "in-deal" : lead.estado)}
             opciones={[
               { valor: "auto", texto: "Automatico (segun Clientify y cotizaciones)" },
               ...ORDEN_ESTADOS.map((e) => ({ valor: e, texto: ESTADOS_LEAD[e] })),
@@ -216,6 +218,7 @@ export default function FichaLead({
             nota={lead.linea_manual ? "Fijada a mano." : "Segun la campana y el servicio que pidio."}
             claveActual={lead.linea_manual ?? "auto"}
             puedeEditar={puedeEditar}
+            resultadoAuto={LINEAS[lead.linea_auto]}
             opciones={[
               { valor: "auto", texto: "Automatica (segun la campana)" },
               { valor: "paneles", texto: LINEAS.paneles },

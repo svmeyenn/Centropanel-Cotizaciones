@@ -14,6 +14,7 @@ export default function CambioConfirmado({
   claveActual,
   opciones,
   puedeEditar,
+  resultadoAuto,
   aviso,
   accion,
 }: {
@@ -26,6 +27,8 @@ export default function CambioConfirmado({
   claveActual: string;
   opciones: { valor: string; texto: string }[];
   puedeEditar: boolean;
+  // Que valor quedaria si se vuelve al modo automatico ("auto"), ya en palabras.
+  resultadoAuto?: string;
   // Lo que se le dice a quien va a confirmar.
   aviso: (desde: string, hasta: string) => string;
   accion: (valor: string) => Promise<Resultado>;
@@ -37,7 +40,13 @@ export default function CambioConfirmado({
   const [pendiente, comenzar] = useTransition();
 
   const cambia = elegido !== claveActual;
-  const textoDe = (valor: string) => opciones.find((o) => o.valor === valor)?.texto ?? valor;
+  // "Automatico" no dice nada por si solo: se aclara a que valor llevaria. Y el
+  // valor vigente se nombra con lo que se lee hoy, no con el nombre de la opcion.
+  const textoDe = (valor: string) => {
+    if (valor === claveActual) return actual;
+    if (valor === "auto" && resultadoAuto) return `automatico (hoy: ${resultadoAuto})`;
+    return opciones.find((o) => o.valor === valor)?.texto ?? valor;
+  };
 
   function cerrar() {
     setAbierto(false);
