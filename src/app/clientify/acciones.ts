@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { administraUsuarios, requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor } from "@/lib/sesion";
+import { puedeCargarLeads } from "@/lib/leads";
 import {
   contactosClientify,
   hayClaveClientify,
@@ -27,7 +28,11 @@ export interface ResultadoCorrida {
 
 async function exigirAdmin(): Promise<string | null> {
   const v = await requerirVendedor();
-  return administraUsuarios(v) ? null : "Solo el Administrador puede cargar contactos.";
+  // El archivo trae los contactos de los dos paises: lo carga el Administrador
+  // que trabaja los dos mercados.
+  return puedeCargarLeads(v)
+    ? null
+    : "Solo el Administrador de los dos mercados puede cargar contactos.";
 }
 
 // Una carga --por la API o por archivo-- es una "corrida": se abre, se le van

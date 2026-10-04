@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 
 export interface ResultadoCotizar {
   ok?: boolean;
@@ -25,9 +25,9 @@ export async function prepararCotizacionDesdeLead(idLead: number): Promise<Resul
 
   const supabase = await createClient();
   const { data: lead } = await supabase
-    .from("clientify_contactos")
+    .from("v_leads")
     .select(
-      "id_clientify, nombre_completo, email, telefono, empresa, direccion, comuna, ciudad, region, id_entidad"
+      "id_clientify, nombre_completo, email, telefono, empresa, direccion, comuna, ciudad, region, id_entidad, id_pais"
     )
     .eq("id_clientify", idLead)
     .maybeSingle();
@@ -43,11 +43,13 @@ export async function prepararCotizacionDesdeLead(idLead: number): Promise<Resul
     if (ficha?.activo) return { ok: true, id_entidad: ficha.id_entidad };
   }
 
-  // Una ficha que ya sea esta persona.
+  // Una ficha que ya sea esta persona --del mismo pais: un numero de Peru no
+  // es el de un cliente de Chile aunque terminen igual--.
   const { data: fichas } = await supabase
     .from("entidades")
     .select("id_entidad, email, telefono")
-    .eq("activo", true);
+    .eq("activo", true)
+    .eq("id_pais", lead.id_pais);
   const correo = (lead.email ?? "").trim().toLowerCase();
   const tel = cola(lead.telefono);
   const igual = (fichas ?? []).find(
@@ -65,9 +67,8 @@ export async function prepararCotizacionDesdeLead(idLead: number): Promise<Resul
   }
 
   // Si no hay, se crea con lo que se sabe del lead.
-  const { accesibles, idPaisActivo } = await contextoMercado(v);
-  const idPais = idPaisActivo ?? accesibles[0]?.id ?? null;
-  if (!idPais) return { error: "No se pudo determinar el pais del cliente." };
+  // El cliente nace en el pais del lead, no en el mercado que se esta mirando.
+  const idPais = lead.id_pais as number;
 
   const nombre = (lead.nombre_completo ?? "").trim();
   if (!nombre && !lead.empresa) return { error: "El lead no tiene nombre ni empresa." };

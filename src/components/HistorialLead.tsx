@@ -71,9 +71,9 @@ const BOTON_ROJO =
 
 const dia = (f: string) => f.slice(0, 10).split("-").reverse().join("-");
 
-const cuando = (f: string) =>
+const cuando = (f: string, zona: string) =>
   new Intl.DateTimeFormat("es-CL", {
-    timeZone: "America/Santiago",
+    timeZone: zona,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -93,6 +93,7 @@ export default function HistorialLead({
   puedeAsignarCotizacion,
   equipo,
   yo,
+  zona = "America/Santiago",
 }: {
   idLead: number;
   entradas: EntradaHistorial[];
@@ -103,6 +104,8 @@ export default function HistorialLead({
   puedeAsignarCotizacion: boolean;
   equipo: { id: number; nombre: string }[];
   yo: number;
+  // Hora en que se muestra lo escrito: la del pais del lead.
+  zona?: string;
 }) {
   const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
@@ -309,7 +312,7 @@ export default function HistorialLead({
                     )}
                     {e.ejecutada_en && (
                       <span className="text-gray-500">
-                        · hecha {cuando(e.ejecutada_en)}
+                        · hecha {cuando(e.ejecutada_en, zona)}
                         {e.ejecutor_nombre ? ` por ${e.ejecutor_nombre}` : ""}
                       </span>
                     )}
@@ -448,13 +451,13 @@ export default function HistorialLead({
 
                 {e.revocada_en && (
                   <p className="mt-1 text-gray-600">
-                    <span className="font-semibold">Revocada</span> {cuando(e.revocada_en)}
+                    <span className="font-semibold">Revocada</span> {cuando(e.revocada_en, zona)}
                     {e.revocador_nombre ? ` por ${e.revocador_nombre}` : ""}. Motivo: {e.motivo_revoca}
                   </p>
                 )}
                 {e.caducada_en && (
                   <p className="mt-1 text-gray-600">
-                    <span className="font-semibold">Caduca por incumplimiento</span> {cuando(e.caducada_en)}
+                    <span className="font-semibold">Caduca por incumplimiento</span> {cuando(e.caducada_en, zona)}
                     {e.caducador_nombre ? ` por ${e.caducador_nombre}` : ""}. Motivo: {e.motivo_caduca}
                   </p>
                 )}
