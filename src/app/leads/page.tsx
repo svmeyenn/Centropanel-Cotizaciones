@@ -10,7 +10,9 @@ import CargarContactosClientify from "@/components/CargarContactosClientify";
 import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { ESTADOS_LEAD, LINEAS, estadoLegible, puedeCargarLeads, puedeEscribirLeads } from "@/lib/leads";
+import { LINEAS, puedeCargarLeads, puedeEscribirLeads } from "@/lib/leads";
+import { etiquetaDe, estadosParaFiltros } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 
 export const dynamic = "force-dynamic";
 // La sincronizacion corre dentro de esta pantalla y lee unas 65 paginas de la
@@ -104,9 +106,11 @@ export default async function Pagina({
     idPaisActivo
   );
 
+  const cat = await catalogoEstados();
+  const nombreEstado = (e: string | null) => etiquetaDe(cat.lead, e);
   const busqueda = q.replace(/[,()%*]/g, " ").trim();
   const filtroActual = { q, estado, dueno, linea, gestion, campo: campoEdad, dias: diasEdad };
-  consulta = aplicarFiltrosLeads(consulta, filtroActual);
+  consulta = aplicarFiltrosLeads(consulta, filtroActual, estadosParaFiltros(cat));
 
   const [{ data: filas, count }, { data: filtrosData }, { data: posibles }, { data: ultima }] = await Promise.all([
     consulta
@@ -221,7 +225,7 @@ export default async function Pagina({
               <option value="">Todos</option>
               {filtros.estados.map((e) => (
                 <option key={e} value={e}>
-                  {estadoLegible(e)}
+                  {nombreEstado(e)}
                 </option>
               ))}
             </select>
@@ -335,7 +339,7 @@ export default async function Pagina({
                 c.propietario,
                 c.comuna,
                 c.region,
-                estadoLegible(c.estado_efectivo),
+                nombreEstado(c.estado_efectivo),
                 c.origen,
                 c.linea === "casas" ? LINEAS.casas : LINEAS.paneles,
                 dia(c.creado_clientify),
@@ -453,7 +457,7 @@ export default async function Pagina({
                         {c.region}
                       </span>
                     </td>
-                    <td className="px-2 py-1 break-words">{estadoLegible(c.estado_efectivo)}</td>
+                    <td className="px-2 py-1 break-words">{nombreEstado(c.estado_efectivo)}</td>
                     <td className="px-2 py-1">
                       <span className="block truncate" title={c.origen ?? ""}>
                         {c.origen}

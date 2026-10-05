@@ -4,6 +4,8 @@ import SelectorMes from "@/components/SelectorMes";
 import TituloOrden, { BarraOrden } from "@/components/TituloOrden";
 import { CLIENTES, EQUIPO } from "@/components/inicio/orden";
 import { ordenar, type Orden } from "@/lib/ordenTabla";
+import { conMarca, etiquetaDe } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 
 // Tablero de la portada. Todo lo calcula panel_desempeno() en la base; aqui
 // solo se pinta. Dos reglas: el mes en curso se compara siempre con el
@@ -112,10 +114,6 @@ function variacion(actual: number, anterior: number) {
   };
 }
 
-// Los tres estados de una cotizacion que todavia se puede ganar, en el orden en
-// que avanza.
-const ENJUEGO = ["Borrador", "Emitida", "Enviada"];
-
 // El ancho de cada columna del equipo, que antes estaba en cada <th>.
 const ANCHO: Record<string, string | undefined> = {
   cotizado: "w-28",
@@ -124,7 +122,7 @@ const ANCHO: Record<string, string | undefined> = {
   conversion: "w-24",
 };
 
-export default function PanelDesempeno({
+export default async function PanelDesempeno({
   d,
   qs,
   ordenEquipo,
@@ -135,6 +133,10 @@ export default function PanelDesempeno({
   ordenEquipo: Orden;
   ordenClientes: Orden;
 }) {
+  // Los estados de una cotizacion que todavia se puede ganar, en el orden en que
+  // avanza: los que tengan esa marca, sean cuales sean.
+  const cat = await catalogoEstados();
+  const ENJUEGO = conMarca(cat.cotizacion, "en_juego");
   // Las dos llegan completas: se ordenan aqui, en el servidor, con el criterio
   // que dice la direccion web.
   const ranking = ordenar(d.ranking, ordenEquipo, (r, c) =>
@@ -356,11 +358,11 @@ export default function PanelDesempeno({
               return (
                 <Link
                   key={estado}
-                  href={`/cotizaciones?estado=${estado}`}
+                  href={`/cotizaciones?estado=${encodeURIComponent(estado)}`}
                   className="block hover:bg-crema rounded px-1 py-0.5"
                 >
                   <span className="flex items-baseline justify-between gap-2">
-                    <span className="font-semibold">{estado}</span>
+                    <span className="font-semibold">{etiquetaDe(cat.cotizacion, estado)}</span>
                     <span className="tabular-nums">
                       {pesos(monto)}
                       <span className="text-gray-500"> · {e?.n ?? 0} cot.</span>

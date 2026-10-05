@@ -1,25 +1,7 @@
 import { ES_SANDBOX } from "@/lib/supabase/esquema";
 
-// Los estados llegan de Clientify en su propio idioma. Los conocidos se dicen en
-// castellano; uno nuevo se muestra tal cual llega.
-export const ESTADOS_LEAD: Record<string, string> = {
-  "cold-lead": "No contactado",
-  "warm-lead": "Contactado",
-  "hot-lead": "Lead caliente",
-  "in-deal": "Oportunidad",
-  client: "Cliente",
-  "lost-client": "Cliente perdido",
-  "lost-lead": "Lead perdido",
-  "not-qualified-lead": "Lead no calificado",
-  visitor: "Visitante",
-  other: "Otro",
-};
-
-// El orden en que se ofrecen al elegir.
-export const ORDEN_ESTADOS = Object.keys(ESTADOS_LEAD);
-
-export const estadoLegible = (e: string | null | undefined) =>
-  e ? (ESTADOS_LEAD[e] ?? e) : "";
+// Los estados de los leads --sus nombres, su orden y lo que significan-- se
+// configuran en Configuracion > Estados; ver catalogoEstados.ts.
 
 export type Linea = "paneles" | "casas";
 export const LINEAS: Record<Linea, string> = { paneles: "Paneles", casas: "Proyecto" };

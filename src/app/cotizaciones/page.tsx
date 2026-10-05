@@ -5,7 +5,8 @@ import FiltrosDocumentos, { type ValoresFiltro } from "@/components/FiltrosDocum
 import BotonEliminarFila from "@/components/BotonEliminarFila";
 import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
-import { ESTADOS_COTIZACION } from "@/lib/estados";
+import { etiquetaDe, ordenados } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import Bandera, { BanderaDe } from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
 import { importe, monedaDelPais, fecha as fmtFecha, coincideTelefono } from "@/lib/formato";
@@ -19,6 +20,7 @@ export default async function Pagina({
   searchParams: Promise<ValoresFiltro>;
 }) {
   const v = await requerirVendedor();
+  const cat = await catalogoEstados();
   const f = await searchParams;
   const limpio = (x?: string) => (x ?? "").trim();
   const q = limpio(f.q);
@@ -120,7 +122,7 @@ export default async function Pagina({
       cli?.contacto ?? "",
       cli?.comuna ?? "",
       ven?.nombre ?? "",
-      c.estado as string,
+      etiquetaDe(cat.cotizacion, c.estado as string),
       totalPorId.get(c.id as number) ?? 0,
     ] as (string | number | null)[];
   });
@@ -142,7 +144,8 @@ export default async function Pagina({
           base="/cotizaciones"
           etiquetaFolio="N cotizacion"
           etiquetaId={etiquetaId}
-          estados={ESTADOS_COTIZACION}
+          // Todos, tambien los que ya no se ofrecen: hay cotizaciones viejas en ellos.
+          estados={ordenados(cat.cotizacion).map((x) => ({ valor: x.codigo, texto: x.etiqueta }))}
           valores={{ q, desde, hasta, rut, razon, contacto, fono, estado }}
           hayFiltro={hayFiltro}
           extra={
@@ -229,7 +232,7 @@ export default async function Pagina({
                       <td className="px-3 py-2">{fmtFecha(c.fecha as string)}</td>
                       <td className="px-3 py-2">{ven?.nombre ?? ""}</td>
                       <td className="px-3 py-2">
-                        {c.estado as string}
+                        {etiquetaDe(cat.cotizacion, c.estado as string)}
                       </td>
                       <td className="px-3 py-2 text-right font-semibold">
                         {importe(totalPorId.get(c.id as number) ?? 0, monedaDelPais(c.id_pais as number))}

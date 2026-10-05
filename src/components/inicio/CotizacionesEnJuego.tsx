@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { dinero, importe } from "@/lib/formato";
 import { antiguedad, type Gestion } from "@/components/inicio/tipos";
+import { ordenados } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 
 // Montos de varias monedas no se suman: con una sola se escribe como siempre,
 // con varias cada una con su simbolo.
@@ -8,22 +10,25 @@ function montos(m: Record<string, number>) {
   const e = Object.entries(m ?? {});
   if (e.length === 0) return importe(0, "CLP");
   if (e.length === 1) return importe(e[0][1], e[0][0]);
-  return e.map(([mon, v]) => dinero(v, mon)).join(" · ");
+  return e.map(([mon, v]) => dinero(v, mon)).join(" \u00b7 ");
 }
 
-const ORDEN = ["Borrador", "Emitida", "Enviada"];
+// Lo que falta hacer con una cotizacion segun el papel que cumple su estado. Un
+// estado que se agrego y esta en juego no tiene una tarea propia: se le da
+// seguimiento.
 const QUE_HACER: Record<string, string> = {
-  Borrador: "terminarla y emitirla",
-  Emitida: "enviarla al cliente",
-  Enviada: "conseguir respuesta",
+  borrador: "terminarla y emitirla",
+  emitida: "enviarla al cliente",
+  enviada: "conseguir respuesta",
 };
 
 // Las cotizaciones que todavia se pueden ganar, por lo que falta hacer con cada
 // una. Las que ademas no tienen a nadie a cargo van en el listado unico de
 // seguimiento, no aqui.
-export default function CotizacionesEnJuego({ g }: { g: Gestion }) {
+export default async function CotizacionesEnJuego({ g }: { g: Gestion }) {
   const c = g.cotizaciones;
-  const embudo = ORDEN.map((e) => c.embudo.find((x) => x.estado === e)).filter(Boolean) as Gestion["cotizaciones"]["embudo"];
+  const cat = await catalogoEstados();
+  const enJuego = ordenados(cat.cotizacion).filter((x) => x.marcas.includes("en_juego"));
 
   return (
     <section id="cotizaciones" aria-labelledby="titulo-cot" className="bg-white border border-gray-200 rounded overflow-hidden scroll-mt-4">
@@ -32,12 +37,19 @@ export default function CotizacionesEnJuego({ g }: { g: Gestion }) {
           Cotizaciones en juego
         </h2>
       </div>
-      <div className="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100">
-        {ORDEN.map((estado) => {
-          const e = embudo.find((x) => x.estado === estado);
+      <div
+        className="grid divide-x divide-gray-100 border-b border-gray-100"
+        style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(enJuego.length, 1), 4)}, minmax(0, 1fr))` }}
+      >
+        {enJuego.map((estado) => {
+          const e = c.embudo.find((x) => x.estado === estado.codigo);
           return (
-            <Link key={estado} href={`/cotizaciones?estado=${estado}`} className="px-3 py-2 hover:bg-crema">
-              <span className="block text-[10px] uppercase tracking-wide text-gray-500">{estado}</span>
+            <Link
+              key={estado.codigo}
+              href={`/cotizaciones?estado=${encodeURIComponent(estado.codigo)}`}
+              className="px-3 py-2 hover:bg-crema"
+            >
+              <span className="block text-[10px] uppercase tracking-wide text-gray-500">{estado.etiqueta}</span>
               {/* Una linea por moneda: pesos y soles juntos no caben ni se suman. */}
               {e && Object.keys(e.montos ?? {}).length > 1 ? (
                 Object.entries(e.montos).map(([mon, v]) => (
@@ -57,7 +69,9 @@ export default function CotizacionesEnJuego({ g }: { g: Gestion }) {
                   </>
                 )}
               </span>
-              <span className="block text-[10px] text-dorado-osc">Falta: {QUE_HACER[estado]}</span>
+              <span className="block text-[10px] text-dorado-osc">
+                Falta: {(estado.rol && QUE_HACER[estado.rol]) || "darle seguimiento"}
+              </span>
             </Link>
           );
         })}

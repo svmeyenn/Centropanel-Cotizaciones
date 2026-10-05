@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { EtiquetaEstado } from "@/components/ProveedorEstados";
 import { useRouter } from "next/navigation";
 import BuscadorProducto from "@/components/BuscadorProducto";
 import BotonDuplicar from "@/components/BotonDuplicar";
@@ -431,7 +432,7 @@ export default function EditorCotizacion(p: Props) {
               {p.id ? (
                 <SelectorEstado id={p.id} estado={p.estado} puedeEditar={p.puedeEditar} />
               ) : (
-                <span className="font-semibold">{p.estado}</span>
+                <span className="font-semibold"><EtiquetaEstado tipo="cotizacion" codigo={p.estado} /></span>
               )}
             </span>
           )}

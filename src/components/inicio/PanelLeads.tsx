@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { ESTADOS_LEAD, LINEAS } from "@/lib/leads";
+import { LINEAS } from "@/lib/leads";
+import { conMarca, etiquetaDe, ordenados } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import { diaCorto, periodo, type PanelLeadsDatos } from "@/components/inicio/tipos";
 import TituloOrden from "@/components/TituloOrden";
 import { ORIGENES, PROPIETARIOS } from "@/components/inicio/orden";
@@ -14,10 +16,6 @@ import { ordenar, type Orden } from "@/lib/ordenTabla";
 // propia ventana, y los compromisos se cuentan por su fecha de vencimiento.
 // Cada recuadro dice de que periodo habla: un numero sin periodo se malinterpreta.
 
-// Los estados en el orden del embudo; los que salieron del camino van aparte.
-const CAMINO = ["cold-lead", "warm-lead", "hot-lead", "in-deal", "client"];
-const FUERA = ["lost-lead", "not-qualified-lead", "lost-client", "visitor", "other"];
-
 // Colores para los origenes: los cuatro principales y el resto.
 const COLORES = ["#1D4E4A", "#C9A84C", "#2F5D8A", "#B5654A"];
 const COLOR_OTROS = "#B8B4A8";
@@ -25,7 +23,7 @@ const COLOR_OTROS = "#B8B4A8";
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 const n = (x: number) => x.toLocaleString("es-CL");
 
-export default function PanelLeads({
+export default async function PanelLeads({
   d,
   qs,
   ordenPropietarios,
@@ -38,6 +36,13 @@ export default function PanelLeads({
 }) {
   const k = d.kpi;
   const rango = periodo(d.desde, d.hasta);
+  const cat = await catalogoEstados();
+  const CAMINO = conMarca(cat.lead, "en_camino");
+  const conocidos = new Set(cat.lead.map((x) => x.codigo));
+  const FUERA = [
+    ...ordenados(cat.lead).filter((x) => !x.marcas.includes("en_camino")).map((x) => x.codigo),
+    ...Object.keys(d.embudo).filter((c) => !conocidos.has(c)),
+  ];
   // Estas dos tablas llegan completas, asi que se ordenan aqui, en el servidor,
   // y no en el navegador: el orden queda en la direccion web como en el resto.
   const equipo = ordenar(d.equipo, ordenPropietarios, (f, c) =>
@@ -109,11 +114,11 @@ export default function PanelLeads({
         <Caja titulo={`Cartera por estado · ${n(k.total)} leads de ${rango}`}>
           <ul className="p-3 space-y-1 text-[11px]">
             {CAMINO.map((e) => (
-              <BarraEstado key={e} estado={e} valor={d.embudo[e] ?? 0} total={k.total} max={maxCamino} vivo />
+              <BarraEstado key={e} estado={e} nombre={etiquetaDe(cat.lead, e)} valor={d.embudo[e] ?? 0} total={k.total} max={maxCamino} vivo />
             ))}
             <li className="pt-1 text-[10px] uppercase tracking-wide text-gray-500">Fuera del camino</li>
             {FUERA.filter((e) => (d.embudo[e] ?? 0) > 0).map((e) => (
-              <BarraEstado key={e} estado={e} valor={d.embudo[e] ?? 0} total={k.total} max={maxCamino} />
+              <BarraEstado key={e} estado={e} nombre={etiquetaDe(cat.lead, e)} valor={d.embudo[e] ?? 0} total={k.total} max={maxCamino} />
             ))}
           </ul>
           <p className="px-3 pb-2 text-[10px] text-gray-500">
@@ -358,12 +363,14 @@ function Razones({
 
 function BarraEstado({
   estado,
+  nombre,
   valor,
   total,
   max,
   vivo = false,
 }: {
   estado: string;
+  nombre: string;
   valor: number;
   total: number;
   max: number;
@@ -373,8 +380,8 @@ function BarraEstado({
   return (
     <li>
       <Link href={`/leads?estado=${estado}`} className="grid grid-cols-[7.5rem_1fr_auto] items-center gap-2 hover:bg-crema rounded px-1">
-        <span className="truncate" title={ESTADOS_LEAD[estado] ?? estado}>
-          {ESTADOS_LEAD[estado] ?? estado}
+        <span className="truncate" title={nombre}>
+          {nombre}
         </span>
         <span className="h-3 bg-gray-100 rounded-sm overflow-hidden">
           <span className={`block h-full ${vivo ? "bg-verde" : "bg-gray-400"}`} style={{ width: `${ancho}%` }} />

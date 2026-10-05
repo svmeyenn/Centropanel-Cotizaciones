@@ -4,7 +4,9 @@ import PildoraLinea from "@/components/PildoraLinea";
 import { BarraOrden } from "@/components/TituloOrden";
 import FiltrosCuadro from "@/components/FiltrosCuadro";
 import { importe } from "@/lib/formato";
-import { estadoLegible, LINEAS } from "@/lib/leads";
+import { LINEAS } from "@/lib/leads";
+import { etiquetaDe, type Catalogo } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import { antiguedad, type FilaSeguimiento, type Gestion } from "@/components/inicio/tipos";
 import { SEGUIMIENTO } from "@/components/inicio/orden";
 import type { Orden } from "@/lib/ordenTabla";
@@ -24,7 +26,7 @@ const TIPOS = {
   cotizacion: { texto: "Cotizacion", clase: "text-dorado-osc border-dorado-osc" },
 } as const;
 
-export default function SinSeguimiento({
+export default async function SinSeguimiento({
   g,
   verResponsable,
   qs,
@@ -39,6 +41,10 @@ export default function SinSeguimiento({
   hrefLeads: string;
 }) {
   const s = g.seguimiento;
+  const cat = await catalogoEstados();
+  // Un codigo de lead y uno de cotizacion no se pisan: se reconoce a cual pertenece.
+  const nombreEstado = (e: string) =>
+    cat.lead.some((x) => x.codigo === e) ? etiquetaDe(cat.lead, e) : etiquetaDe(cat.cotizacion, e);
   const o = g.opciones;
   const nFiltrado = s.n_filtrado ?? s.n;
 
@@ -64,7 +70,7 @@ export default function SinSeguimiento({
       // de leads son codigos y los de cotizaciones, nombres.
       param: "f_seg_estado",
       texto: "Estado",
-      opciones: (o?.seg_estado ?? []).map((e) => ({ valor: e, texto: estadoLegible(e) })),
+      opciones: (o?.seg_estado ?? []).map((e) => ({ valor: e, texto: nombreEstado(e) })),
     },
     ...(verResponsable
       ? [
@@ -118,7 +124,7 @@ export default function SinSeguimiento({
       ) : (
         <ul className="divide-y divide-gray-100 flex-1">
           {s.lista.map((f) => (
-            <Fila key={f.clave} f={f} verResponsable={verResponsable} />
+            <Fila key={f.clave} f={f} verResponsable={verResponsable} cat={cat} />
           ))}
         </ul>
       )}
@@ -140,7 +146,7 @@ export default function SinSeguimiento({
   );
 }
 
-function Fila({ f, verResponsable }: { f: FilaSeguimiento; verResponsable: boolean }) {
+function Fila({ f, verResponsable, cat }: { f: FilaSeguimiento; verResponsable: boolean; cat: Catalogo }) {
   const t = TIPOS[f.tipo];
   // El lead se abre en su ficha; una cotizacion sin lead, en la suya.
   const href = f.tipo === "lead" && f.id_lead ? `/leads/${f.id_lead}` : f.cot ? `/cotizaciones/${f.cot.id}` : "#";
@@ -166,7 +172,7 @@ function Fila({ f, verResponsable }: { f: FilaSeguimiento; verResponsable: boole
           {f.nombre}
         </Link>
         <p className="text-[10px] text-gray-500">
-          {f.tipo === "lead" ? estadoLegible(f.estado) : f.estado}
+          {f.tipo === "lead" ? etiquetaDe(cat.lead, f.estado) : etiquetaDe(cat.cotizacion, f.estado)}
           {verResponsable && <span className="text-gray-600"> · {f.responsable}</span>}
         </p>
         {f.cot && f.tipo === "lead" && (
@@ -176,7 +182,7 @@ function Fila({ f, verResponsable }: { f: FilaSeguimiento; verResponsable: boole
             </Link>
             <span className="text-gray-600">
               {" "}
-              · {f.cot.estado} · {importe(f.cot.total, f.cot.moneda)}
+              · {etiquetaDe(cat.cotizacion, f.cot.estado)} · {importe(f.cot.total, f.cot.moneda)}
               {verResponsable && f.cot.ejecutivo && <> · {f.cot.ejecutivo}</>}
             </span>
           </p>

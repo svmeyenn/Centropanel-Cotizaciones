@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import CambioConfirmado from "@/components/CambioConfirmado";
 import { fecha } from "@/lib/formato";
-import { ESTADOS_LEAD, LINEAS, ORDEN_ESTADOS, estadoLegible, type Linea } from "@/lib/leads";
+import { LINEAS, type Linea } from "@/lib/leads";
+import { codigoDeRol, etiquetaDe, ordenados } from "@/lib/catalogoEstados";
+import { useCatalogoEstados } from "@/components/ProveedorEstados";
 import { fijarEstadoLead, fijarLineaLead, guardarDatosLead } from "@/app/leads/edicion-lead";
 
 export interface DatosFicha {
@@ -148,9 +150,15 @@ export default function FichaLead({
     });
   }
 
+  // Los estados vigentes: la lista de opciones, los nombres y a cual pasa un
+  // lead cuando se le envia una cotizacion salen del catalogo.
+  const catalogo = useCatalogoEstados();
+  const nombreEstado = (e: string | null | undefined) => etiquetaDe(catalogo.lead, e);
+  const estadoAlEnviar = codigoDeRol(catalogo.lead, "al_enviar_cotizacion") ?? "in-deal";
+
   const notaEstado = lead.estado_manual
     ? "Fijado a mano: no cambia con las importaciones ni con las cotizaciones."
-    : lead.con_cotizacion_enviada && lead.estado !== "in-deal"
+    : lead.con_cotizacion_enviada && lead.estado !== estadoAlEnviar
       ? "Oportunidad por tener una cotizacion enviada."
       : "Segun el archivo importado.";
 
@@ -222,14 +230,16 @@ export default function FichaLead({
             <dl className="grid gap-x-4 gap-y-1 grid-cols-2">
               <CambioConfirmado
                 etiqueta="Estado"
-                actual={estadoLegible(lead.estado_efectivo)}
+                actual={nombreEstado(lead.estado_efectivo)}
                 nota={notaEstado}
                 claveActual={lead.estado_manual ?? "auto"}
                 puedeEditar={puedeEditar}
-                resultadoAuto={estadoLegible(lead.con_cotizacion_enviada ? "in-deal" : lead.estado)}
+                resultadoAuto={nombreEstado(lead.con_cotizacion_enviada ? estadoAlEnviar : lead.estado)}
                 opciones={[
                   { valor: "auto", texto: "Automatico (segun el archivo importado y las cotizaciones)" },
-                  ...ORDEN_ESTADOS.map((e) => ({ valor: e, texto: ESTADOS_LEAD[e] })),
+                  ...ordenados(catalogo.lead)
+                    .filter((e) => e.activo || e.codigo === lead.estado_manual)
+                    .map((e) => ({ valor: e.codigo, texto: e.etiqueta })),
                 ]}
                 aviso={(desde, hasta) =>
                   `Va a cambiar el estado de «${desde}» a «${hasta}». El cambio queda registrado en la ficha.`

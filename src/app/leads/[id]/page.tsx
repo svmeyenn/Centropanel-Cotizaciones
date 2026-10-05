@@ -10,7 +10,9 @@ import { administraUsuarios, contextoMercado, requerirVendedor, tienePerfilAdmin
 import { createClient } from "@/lib/supabase/server";
 import { ESTADOS_OPORTUNIDAD, ETAPAS } from "@/lib/clientify";
 import { dinero, fecha, hoyISO } from "@/lib/formato";
-import { ESTADOS_LEAD as ESTADOS_LEGIBLES, puedeEscribirLeads } from "@/lib/leads";
+import { puedeEscribirLeads } from "@/lib/leads";
+import { etiquetaDe, type Estado } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 
 export const dynamic = "force-dynamic";
 
@@ -94,9 +96,9 @@ const CAMPOS_CAMBIO: Record<string, string> = {
 
 // Un dato corregido a mano se guarda tal como se anoto; las listas (emails,
 // telefonos) vienen como texto JSON y se leen mejor sin llaves.
-function legible(campo: string, v: string | null) {
+function legible(campo: string, v: string | null, estados: Estado[]) {
   if (v == null || v === "") return "(vacio)";
-  if (campo === "estado") return ESTADOS_LEGIBLES[v] ?? v;
+  if (campo === "estado") return etiquetaDe(estados, v);
   if (campo === "linea") return v === "casas" ? "Proyecto" : v === "paneles" ? "Paneles" : v;
   if (campo === "emails" || campo === "telefonos") {
     try {
@@ -123,6 +125,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   const v = await requerirVendedor();
   const supabase = await createClient();
+  const cat = await catalogoEstados();
 
   // La base solo entrega los leads del mercado de quien mira: uno de otro pais
   // no existe para esta persona.
@@ -448,7 +451,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
                     <span className="font-semibold text-verde">
                       {CAMPOS_CAMBIO[x.campo] ?? x.campo}
                     </span>
-                    : {legible(x.campo, x.antes)} → {legible(x.campo, x.despues)}
+                    : {legible(x.campo, x.antes, cat.lead)} → {legible(x.campo, x.despues, cat.lead)}
                   </div>
                 </li>
               ))}
