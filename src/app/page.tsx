@@ -8,6 +8,7 @@ import ResumenGestion from "@/components/inicio/ResumenGestion";
 import Agenda from "@/components/inicio/Agenda";
 import BandejaLeads from "@/components/inicio/BandejaLeads";
 import CotizacionesEnJuego from "@/components/inicio/CotizacionesEnJuego";
+import EnEsperaCliente from "@/components/inicio/EnEsperaCliente";
 import PanelLeads from "@/components/inicio/PanelLeads";
 import Cumplimiento from "@/components/inicio/Cumplimiento";
 import type { CumplimientoFila, Gestion, PanelLeadsDatos } from "@/components/inicio/tipos";
@@ -231,6 +232,8 @@ async function VistaGestion({
         ordenNuevos={oNuevos}
         ordenSeguimiento={oSeg}
       />
+
+      <EnEsperaCliente g={g} verResponsable={verEquipo} puedeEditar={v.puede_editar} />
 
       <CotizacionesEnJuego g={g} />
     </>

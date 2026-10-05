@@ -97,10 +97,31 @@ export type Gestion = {
     n_filtrado: number;
     lista: FilaSeguimiento[];
   };
+  // Ausente mientras la base no tenga el cuadro.
+  en_espera?: { n: number; lista: FilaEspera[] };
   sin_propietario: number | null;
   cotizaciones: {
     embudo: EstadoEnJuego[];
   };
+};
+
+// Un lead o una cotizacion que el cliente pidio no seguir molestando: sale de los
+// pendientes y espera su respuesta.
+export type FilaEspera = {
+  id: number;
+  tipo: "lead" | "cotizacion";
+  id_lead: number | null;
+  id_cot: number | null;
+  nombre: string;
+  estado: string;
+  folio: string | null;
+  monto: number | null;
+  moneda: string | null;
+  desde: string;
+  dias: number;
+  motivo: string | null;
+  quien: string | null;
+  id_pais: number;
 };
 
 export type FilaEquipoLeads = {
