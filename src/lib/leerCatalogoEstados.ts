@@ -2,7 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { CATALOGO_POR_DEFECTO, type Catalogo, type Estado } from "@/lib/catalogoEstados";
 
-const COLUMNAS = "codigo, etiqueta, orden, activo, es_sistema, rol, marcas";
+const COLUMNAS = "codigo, etiqueta, orden, activo, es_sistema, rol, marcas, protegido, motivo_proteccion";
 
 const limpiar = (filas: unknown): Estado[] =>
   ((filas ?? []) as Record<string, unknown>[]).map((f) => ({
@@ -13,6 +13,8 @@ const limpiar = (filas: unknown): Estado[] =>
     es_sistema: Boolean(f.es_sistema),
     rol: (f.rol as string | null) ?? null,
     marcas: Array.isArray(f.marcas) ? (f.marcas as string[]) : [],
+    protegido: Boolean(f.protegido),
+    motivo: (f.motivo_proteccion as string | null) ?? null,
   }));
 
 // Los estados vigentes, leidos una vez por solicitud. Si no se pueden leer --la

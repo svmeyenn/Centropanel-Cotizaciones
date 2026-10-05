@@ -6,7 +6,7 @@ import GestorEstados from "@/components/GestorEstados";
 import { puedeVerRuta } from "@/lib/menu";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { ordenados, type TipoEstado } from "@/lib/catalogoEstados";
+import { CATALOGO_POR_DEFECTO, ordenados, type TipoEstado } from "@/lib/catalogoEstados";
 import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 
 export const metadata = { title: "Estados" };
@@ -19,7 +19,8 @@ const TIPOS: Record<TipoEstado, { titulo: string; unidad: string; intro: string 
     intro:
       "Los estados de un lead vienen de Clientify: su codigo no cambia, pero el nombre con que se leen aqui si. " +
       "Lo que marque en \"Que significa\" decide en que cuentas entra cada estado --\"Sin seguimiento\", los " +
-      "contactados del tablero, la conversion, el embudo--. Los del sistema se renombran y se reordenan; no se eliminan.",
+      "contactados del tablero, la conversion, el embudo--. Un estado que ya no usa puede dejar de ofrecerse, y si nadie " +
+      "lo tiene, eliminarse. Los que el sistema necesita para funcionar estan protegidos y dicen por que.",
   },
   cotizacion: {
     titulo: "Cotizaciones",
@@ -27,7 +28,8 @@ const TIPOS: Record<TipoEstado, { titulo: string; unidad: string; intro: string 
     intro:
       "El estado de una cotizacion dice en que va: lo que todavia se puede ganar, lo que espera respuesta, lo que ya " +
       "termino. Lo que marque en \"Que significa\" decide en que cuentas entra cada estado --cotizaciones en juego, " +
-      "pendientes de cierre, sin seguimiento--. Los del sistema se renombran y se reordenan; no se eliminan.",
+      "pendientes de cierre, sin seguimiento--. Un estado que ya no usa puede dejar de ofrecerse, y si nadie lo tiene, " +
+      "eliminarse. Los que el sistema necesita para funcionar estan protegidos y dicen por que.",
   },
 };
 
@@ -53,6 +55,8 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
     })
   );
   const usos = Object.fromEntries(cuentas);
+  // Los de origen que se eliminaron: se pueden restaurar.
+  const faltantes = CATALOGO_POR_DEFECTO[tipo].filter((x) => !todos.some((y) => y.codigo === x.codigo)).map((x) => x.etiqueta);
 
   return (
     <div className="min-h-screen">
@@ -77,7 +81,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
 
         <p className="bg-white border border-gray-200 rounded px-3 py-2 text-[12px] text-gray-700">{cual.intro}</p>
 
-        <GestorEstados tipo={tipo} estados={todos} usos={usos} unidad={cual.unidad} />
+        <GestorEstados tipo={tipo} estados={todos} usos={usos} unidad={cual.unidad} faltantes={faltantes} />
       </div>
     </div>
   );

@@ -17,6 +17,10 @@ export interface Estado {
   es_sistema: boolean;
   rol: string | null;
   marcas: string[];
+  // El sistema lo necesita para funcionar: no se desactiva ni se elimina. El
+  // motivo esta escrito para quien lo lea.
+  protegido: boolean;
+  motivo: string | null;
 }
 
 export interface Catalogo {
@@ -53,35 +57,38 @@ export const ROLES: Record<string, string> = {
   rechazada: "Una cotizacion que el cliente no acepto.",
 };
 
+const DEPURACION = "Lo usan las reglas de depuracion de leads (Leads > Depurar).";
+
 const e = (
   codigo: string,
   etiqueta: string,
   orden: number,
   rol: string | null,
-  marcas: string[]
-): Estado => ({ codigo, etiqueta, orden, activo: true, es_sistema: true, rol, marcas });
+  marcas: string[],
+  motivo: string | null = null
+): Estado => ({ codigo, etiqueta, orden, activo: true, es_sistema: true, rol, marcas, protegido: motivo !== null, motivo });
 
 // Lo que hay desde el origen. Se usa cuando la lista no se puede leer --antes de
 // aplicar la migracion, o sin sesion-- para que ninguna pantalla se quede sin
 // nombres.
 export const CATALOGO_POR_DEFECTO: Catalogo = {
   lead: [
-    e("cold-lead", "No contactado", 10, "nuevo", ["en_camino"]),
-    e("warm-lead", "Contactado", 20, null, ["en_seguimiento", "contactado", "en_camino"]),
-    e("hot-lead", "Lead caliente", 30, null, ["en_seguimiento", "contactado", "en_camino"]),
-    e("in-deal", "Oportunidad", 40, "al_enviar_cotizacion", ["en_seguimiento", "oportunidad", "en_camino"]),
+    e("cold-lead", "No contactado", 10, "nuevo", ["en_camino"], ROLES.nuevo),
+    e("warm-lead", "Contactado", 20, null, ["en_seguimiento", "contactado", "en_camino"], DEPURACION),
+    e("hot-lead", "Lead caliente", 30, null, ["en_seguimiento", "contactado", "en_camino"], DEPURACION),
+    e("in-deal", "Oportunidad", 40, "al_enviar_cotizacion", ["en_seguimiento", "oportunidad", "en_camino"], ROLES.al_enviar_cotizacion),
     e("client", "Cliente", 50, null, ["oportunidad", "en_camino"]),
     e("lost-client", "Cliente perdido", 60, null, ["perdido"]),
-    e("lost-lead", "Lead perdido", 70, null, ["perdido"]),
-    e("not-qualified-lead", "Lead no calificado", 80, null, ["perdido"]),
+    e("lost-lead", "Lead perdido", 70, null, ["perdido"], DEPURACION),
+    e("not-qualified-lead", "Lead no calificado", 80, null, ["perdido"], DEPURACION),
     e("visitor", "Visitante", 90, null, []),
     e("other", "Otro", 100, null, []),
   ],
   cotizacion: [
-    e("Borrador", "Borrador", 10, "borrador", ["en_juego"]),
-    e("Emitida", "Emitida", 20, "emitida", ["en_juego", "espera_respuesta"]),
-    e("Enviada", "Enviada", 30, "enviada", ["en_juego", "espera_respuesta"]),
-    e("Aceptada", "Aceptada", 40, "aceptada", ["cerrada"]),
+    e("Borrador", "Borrador", 10, "borrador", ["en_juego"], ROLES.borrador),
+    e("Emitida", "Emitida", 20, "emitida", ["en_juego", "espera_respuesta"], ROLES.emitida),
+    e("Enviada", "Enviada", 30, "enviada", ["en_juego", "espera_respuesta"], ROLES.enviada),
+    e("Aceptada", "Aceptada", 40, "aceptada", ["cerrada"], ROLES.aceptada),
     e("Rechazada", "Rechazada", 50, "rechazada", ["cerrada"]),
   ],
 };

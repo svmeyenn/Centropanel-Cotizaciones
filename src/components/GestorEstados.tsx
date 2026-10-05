@@ -2,22 +2,29 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { crearEstado, eliminarEstado, guardarEstado, moverEstado } from "@/app/estados/acciones";
+import { crearEstado, eliminarEstado, guardarEstado, moverEstado, restaurarEstados } from "@/app/estados/acciones";
 import { MARCAS, ROLES, type Estado, type TipoEstado } from "@/lib/catalogoEstados";
 
 type Aviso = { ok: boolean; texto: string } | null;
+type Ejecutar = (accion: () => Promise<{ ok: boolean; mensaje?: string }>, alTerminar?: () => void) => void;
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[12px] bg-white";
 
-// Mantenedor de los estados de leads o de cotizaciones. Un estado del sistema
-// --el que el sistema usa para algo-- se renombra y se reordena; lo que significa
-// no se toca. Uno que se agrega elige sus significados, y con ellos entra solo a
-// los tableros, a los filtros y a los listados.
+// Mantenedor de los estados de leads o de cotizaciones.
+//
+//  - Dejar de ofrecer un estado lo saca de las listas donde se elige, pero lo que
+//    ya lo tiene lo conserva y sigue contando en los tableros.
+//  - Eliminarlo solo se puede si nadie lo tiene.
+//  - Los estados que el sistema necesita para funcionar --donde nace una
+//    cotizacion, a donde va un lead al enviarle una, lo que usa la depuracion--
+//    estan protegidos: no se desactivan ni se eliminan, y dicen por que.
+// Todas las reglas las vuelve a exigir la base; aqui solo se explican.
 export default function GestorEstados({
   tipo,
   estados,
   usos,
   unidad,
+  faltantes,
 }: {
   tipo: TipoEstado;
   estados: Estado[];
@@ -25,12 +32,14 @@ export default function GestorEstados({
   usos: Record<string, number>;
   // "leads" o "cotizaciones".
   unidad: string;
+  // Nombres de los estados de origen que se eliminaron y se pueden restaurar.
+  faltantes: string[];
 }) {
   const router = useRouter();
   const [aviso, setAviso] = useState<Aviso>(null);
   const [pendiente, empezar] = useTransition();
 
-  function ejecutar(accion: () => Promise<{ ok: boolean; mensaje?: string }>, alTerminar?: () => void) {
+  const ejecutar: Ejecutar = (accion, alTerminar) => {
     setAviso(null);
     empezar(async () => {
       const r = await accion();
@@ -40,7 +49,7 @@ export default function GestorEstados({
         router.refresh();
       }
     });
-  }
+  };
 
   return (
     <div className="space-y-2">
@@ -66,10 +75,10 @@ export default function GestorEstados({
               <th scope="col" className="text-left px-2 py-1.5 min-w-[18rem]">
                 Que significa
               </th>
-              <th scope="col" className="text-center px-2 py-1.5 w-24">
+              <th scope="col" className="text-left px-2 py-1.5 w-44">
                 Se ofrece
               </th>
-              <th scope="col" className="text-right px-2 py-1.5 w-40">
+              <th scope="col" className="text-right px-2 py-1.5 w-44">
                 <span className="sr-only">Acciones</span>
               </th>
             </tr>
@@ -91,6 +100,8 @@ export default function GestorEstados({
           </tbody>
         </table>
       </div>
+
+      {faltantes.length > 0 && <Restaurar tipo={tipo} faltantes={faltantes} bloqueado={pendiente} ejecutar={ejecutar} />}
 
       <Nuevo tipo={tipo} bloqueado={pendiente} ejecutar={ejecutar} />
     </div>
@@ -114,7 +125,7 @@ function Fila({
   primero: boolean;
   ultimo: boolean;
   bloqueado: boolean;
-  ejecutar: (accion: () => Promise<{ ok: boolean; mensaje?: string }>, alTerminar?: () => void) => void;
+  ejecutar: Ejecutar;
 }) {
   const [etiqueta, setEtiqueta] = useState(e.etiqueta);
   const [activo, setActivo] = useState(e.activo);
@@ -123,154 +134,230 @@ function Fila({
 
   const sucio =
     etiqueta.trim() !== e.etiqueta || activo !== e.activo || [...marcas].sort().join() !== [...e.marcas].sort().join();
+  // Se va a dejar de ofrecer: aun no esta guardado, pero ya hay que avisar.
+  const porDesactivar = e.activo && !activo;
 
   const alternar = (m: string) => setMarcas((x) => (x.includes(m) ? x.filter((y) => y !== m) : [...x, m]));
 
   function guardar() {
-    // Uno del sistema solo manda el nombre: lo demas lo protege la base.
+    // Uno que viene con el sistema no cambia de significado: manda solo el nombre
+    // y, si no esta protegido, si se ofrece.
     ejecutar(() =>
-      guardarEstado(tipo, e.codigo, e.es_sistema ? { etiqueta } : { etiqueta, activo, marcas })
+      guardarEstado(
+        tipo,
+        e.codigo,
+        e.es_sistema ? { etiqueta, ...(e.protegido ? {} : { activo }) } : { etiqueta, activo, marcas }
+      )
     );
   }
 
+  // Lo que se explica antes de eliminar, segun de donde viene el estado.
+  const advertenciaEliminar = e.es_sistema
+    ? tipo === "lead"
+      ? `«${e.etiqueta}» viene con el sistema y con Clientify. Hoy no lo tiene ningun lead, pero si el CRM vuelve a mandarlo esos leads se veran con su codigo («${e.codigo}») y no con un nombre. Si lo elimina por error, «Restaurar estados originales» lo recupera. Dejar de ofrecerlo es lo mas seguro.`
+      : `«${e.etiqueta}» viene con el sistema. Hoy no la tiene ninguna cotizacion. Si lo elimina por error, «Restaurar estados originales» lo recupera. Dejar de ofrecerlo es lo mas seguro.`
+    : `Se eliminara «${e.etiqueta}» para siempre. Hoy no lo tiene ningun registro. No se puede deshacer.`;
+
   return (
-    <tr className={`border-t border-gray-100 align-top ${activo ? "" : "bg-gray-50 text-gray-500"}`}>
-      <td className="px-2 py-1.5 whitespace-nowrap">
-        <button
-          type="button"
-          onClick={() => ejecutar(() => moverEstado(tipo, e.codigo, "subir"))}
-          disabled={bloqueado || primero}
-          aria-label={`Subir ${e.etiqueta}`}
-          title="Subir"
-          className="border border-gray-300 rounded px-1.5 disabled:opacity-30"
-        >
-          {"▲"}
-        </button>{" "}
-        <button
-          type="button"
-          onClick={() => ejecutar(() => moverEstado(tipo, e.codigo, "bajar"))}
-          disabled={bloqueado || ultimo}
-          aria-label={`Bajar ${e.etiqueta}`}
-          title="Bajar"
-          className="border border-gray-300 rounded px-1.5 disabled:opacity-30"
-        >
-          {"▼"}
-        </button>
-      </td>
+    <>
+      <tr className={`border-t border-gray-100 align-top ${activo ? "" : "bg-gray-50 text-gray-500"}`}>
+        <td className="px-2 py-1.5 whitespace-nowrap">
+          <button
+            type="button"
+            onClick={() => ejecutar(() => moverEstado(tipo, e.codigo, "subir"))}
+            disabled={bloqueado || primero}
+            aria-label={`Subir ${e.etiqueta}`}
+            title="Subir"
+            className="border border-gray-300 rounded px-1.5 disabled:opacity-30"
+          >
+            {"▲"}
+          </button>{" "}
+          <button
+            type="button"
+            onClick={() => ejecutar(() => moverEstado(tipo, e.codigo, "bajar"))}
+            disabled={bloqueado || ultimo}
+            aria-label={`Bajar ${e.etiqueta}`}
+            title="Bajar"
+            className="border border-gray-300 rounded px-1.5 disabled:opacity-30"
+          >
+            {"▼"}
+          </button>
+        </td>
 
-      <td className="px-2 py-1.5">
-        <input
-          value={etiqueta}
-          onChange={(x) => setEtiqueta(x.target.value)}
-          maxLength={40}
-          aria-label={`Nombre del estado ${e.codigo}`}
-          className={`${CAMPO} w-full min-w-[9rem]`}
-        />
-        <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-gray-500">
-          <code className="font-mono">{e.codigo}</code>
-          {e.es_sistema && (
-            <span className="border border-gray-300 rounded px-1" title="Lo usa el sistema: se renombra y se reordena, no se elimina">
-              del sistema
-            </span>
+        <td className="px-2 py-1.5">
+          <input
+            value={etiqueta}
+            onChange={(x) => setEtiqueta(x.target.value)}
+            maxLength={40}
+            aria-label={`Nombre del estado ${e.codigo}`}
+            className={`${CAMPO} w-full min-w-[9rem]`}
+          />
+          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-gray-500">
+            <code className="font-mono">{e.codigo}</code>
+            {e.es_sistema && (
+              <span className="border border-gray-300 rounded px-1" title="Viene con el sistema: se renombra y se reordena, pero no cambia lo que significa">
+                del sistema
+              </span>
+            )}
+            {e.protegido && (
+              <span className="border border-dorado rounded px-1 text-dorado-osc" title={e.motivo ?? "El sistema lo necesita"}>
+                protegido
+              </span>
+            )}
+          </span>
+        </td>
+
+        <td className="px-2 py-1.5 text-right tabular-nums">{uso.toLocaleString("es-CL")}</td>
+
+        <td className="px-2 py-1.5">
+          {e.es_sistema ? (
+            <div className="space-y-1">
+              {e.protegido ? (
+                <p className="text-[11px] text-dorado-osc">{e.motivo}</p>
+              ) : (
+                e.rol && <p className="text-[11px] text-dorado-osc">{ROLES[e.rol]}</p>
+              )}
+              <p className="flex flex-wrap gap-1">
+                {e.marcas.length === 0 && !e.rol && !e.protegido && (
+                  <span className="text-[11px] text-gray-500">Sin efecto en los tableros.</span>
+                )}
+                {MARCAS[tipo]
+                  .filter((m) => e.marcas.includes(m.marca))
+                  .map((m) => (
+                    <span key={m.marca} title={m.ayuda} className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700">
+                      {m.texto}
+                    </span>
+                  ))}
+              </p>
+            </div>
+          ) : (
+            <ul className="space-y-0.5">
+              {MARCAS[tipo].map((m) => (
+                <li key={m.marca}>
+                  <label className="flex items-start gap-1.5 cursor-pointer" title={m.ayuda}>
+                    <input type="checkbox" checked={marcas.includes(m.marca)} onChange={() => alternar(m.marca)} className="mt-0.5" />
+                    <span>{m.texto}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
           )}
-        </span>
-      </td>
+        </td>
 
-      <td className="px-2 py-1.5 text-right tabular-nums">{uso.toLocaleString("es-CL")}</td>
-
-      <td className="px-2 py-1.5">
-        {e.es_sistema ? (
-          <div className="space-y-1">
-            {e.rol && <p className="text-[11px] text-dorado-osc">{ROLES[e.rol]}</p>}
-            <p className="flex flex-wrap gap-1">
-              {e.marcas.length === 0 && !e.rol && <span className="text-[11px] text-gray-500">Sin efecto en los tableros.</span>}
-              {MARCAS[tipo]
-                .filter((m) => e.marcas.includes(m.marca))
-                .map((m) => (
-                  <span key={m.marca} title={m.ayuda} className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700">
-                    {m.texto}
-                  </span>
-                ))}
+        <td className="px-2 py-1.5">
+          <label
+            className={`flex items-center gap-1.5 ${e.protegido ? "cursor-not-allowed" : "cursor-pointer"}`}
+            title={e.protegido ? `No se puede dejar de ofrecer: ${e.motivo}` : "Si se desmarca, deja de ofrecerse al elegir un estado"}
+          >
+            <input
+              type="checkbox"
+              checked={activo}
+              disabled={e.protegido}
+              onChange={(x) => setActivo(x.target.checked)}
+              aria-label={`${e.etiqueta} se ofrece al elegir un estado`}
+            />
+            <span>{activo ? "Si" : "No, no se ofrece"}</span>
+          </label>
+          {porDesactivar && (
+            <p className="mt-1 text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-1" role="note">
+              Dejara de ofrecerse al elegir un estado.{" "}
+              {uso > 0
+                ? `Los ${uso.toLocaleString("es-CL")} ${unidad} que ya lo tienen lo conservan y siguen contando igual en los tableros.`
+                : "Nadie lo tiene hoy."}{" "}
+              Pulse Guardar para aplicarlo.
             </p>
-          </div>
-        ) : (
-          <ul className="space-y-0.5">
-            {MARCAS[tipo].map((m) => (
-              <li key={m.marca}>
-                <label className="flex items-start gap-1.5 cursor-pointer" title={m.ayuda}>
-                  <input type="checkbox" checked={marcas.includes(m.marca)} onChange={() => alternar(m.marca)} className="mt-0.5" />
-                  <span>{m.texto}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
-      </td>
+          )}
+          {!e.activo && !porDesactivar && (
+            <p className="mt-1 text-[10px] text-gray-500">Los registros que lo tienen lo conservan.</p>
+          )}
+        </td>
 
-      <td className="px-2 py-1.5 text-center">
-        <input
-          type="checkbox"
-          checked={activo}
-          disabled={e.es_sistema}
-          onChange={(x) => setActivo(x.target.checked)}
-          aria-label={`${e.etiqueta} se ofrece al elegir un estado`}
-          title={
-            e.es_sistema
-              ? "Lo usa el sistema: siempre se ofrece"
-              : "Si se desactiva deja de ofrecerse, pero lo que ya lo tiene lo conserva"
-          }
-        />
-      </td>
-
-      <td className="px-2 py-1.5 text-right whitespace-nowrap">
-        <button
-          type="button"
-          onClick={guardar}
-          disabled={bloqueado || !sucio || etiqueta.trim().length < 2}
-          className="bg-verde text-white font-semibold px-2.5 py-1 rounded disabled:opacity-40"
-        >
-          Guardar
-        </button>
-        {!e.es_sistema &&
-          (confirmando ? (
-            <span className="ml-1 inline-flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => ejecutar(() => eliminarEstado(tipo, e.codigo))}
-                disabled={bloqueado}
-                className="border border-red-300 text-red-700 font-semibold px-2 py-1 rounded"
-              >
-                Si, eliminar
-              </button>
-              <button type="button" onClick={() => setConfirmando(false)} className="underline text-gray-600">
-                No
-              </button>
+        <td className="px-2 py-1.5 text-right whitespace-nowrap">
+          <button
+            type="button"
+            onClick={guardar}
+            disabled={bloqueado || !sucio || etiqueta.trim().length < 2}
+            className="bg-verde text-white font-semibold px-2.5 py-1 rounded disabled:opacity-40"
+          >
+            Guardar
+          </button>
+          {e.protegido ? (
+            <span className="ml-1 inline-block text-[10px] text-gray-500 align-middle" title={e.motivo ?? undefined}>
+              no se elimina
             </span>
           ) : (
             <button
               type="button"
               onClick={() => setConfirmando(true)}
-              disabled={bloqueado || uso > 0}
-              title={uso > 0 ? `Hay ${uso} ${unidad} con este estado: desactivelo en vez de eliminarlo` : "Eliminar este estado"}
+              disabled={bloqueado || confirmando || uso > 0}
+              title={
+                uso > 0
+                  ? `Hay ${uso.toLocaleString("es-CL")} ${unidad} con este estado: dejelo de ofrecer, o cambie antes esos registros`
+                  : "Eliminar este estado"
+              }
               className="ml-1 border border-gray-300 text-gray-700 px-2 py-1 rounded disabled:opacity-40"
             >
               Eliminar
             </button>
-          ))}
-      </td>
-    </tr>
+          )}
+        </td>
+      </tr>
+
+      {confirmando && (
+        <tr className="bg-red-50/60 border-t border-red-200">
+          <td colSpan={6} className="px-3 py-2" role="alert">
+            <p className="text-[12px] text-red-900">{advertenciaEliminar}</p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => ejecutar(() => eliminarEstado(tipo, e.codigo), () => setConfirmando(false))}
+                disabled={bloqueado}
+                className="border border-red-400 text-red-800 bg-white font-semibold px-3 py-1 rounded disabled:opacity-40"
+              >
+                Si, eliminar
+              </button>
+              <button type="button" onClick={() => setConfirmando(false)} disabled={bloqueado} className="underline text-gray-700">
+                No, conservarlo
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
-function Nuevo({
+// Volver a crear los estados de origen que se eliminaron.
+function Restaurar({
   tipo,
+  faltantes,
   bloqueado,
   ejecutar,
 }: {
   tipo: TipoEstado;
+  faltantes: string[];
   bloqueado: boolean;
-  ejecutar: (accion: () => Promise<{ ok: boolean; mensaje?: string }>, alTerminar?: () => void) => void;
+  ejecutar: Ejecutar;
 }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded px-3 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px]">
+      <p className="text-gray-700">
+        Se eliminaron {faltantes.length === 1 ? "este estado" : "estos estados"} de origen:{" "}
+        <b>{faltantes.join(", ")}</b>. Se pueden volver a crear con su codigo y su significado de siempre.
+      </p>
+      <button
+        type="button"
+        onClick={() => ejecutar(() => restaurarEstados(tipo))}
+        disabled={bloqueado}
+        className="border border-gray-300 font-semibold px-2.5 py-1 rounded bg-white disabled:opacity-40"
+      >
+        Restaurar estados originales
+      </button>
+    </div>
+  );
+}
+
+function Nuevo({ tipo, bloqueado, ejecutar }: { tipo: TipoEstado; bloqueado: boolean; ejecutar: Ejecutar }) {
   const [nombre, setNombre] = useState("");
   const [marcas, setMarcas] = useState<string[]>([]);
   const alternar = (m: string) => setMarcas((x) => (x.includes(m) ? x.filter((y) => y !== m) : [...x, m]));

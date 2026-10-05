@@ -9,7 +9,7 @@ import type { Vendedor } from "@/types/database";
 export type Resultado = { ok: boolean; mensaje?: string };
 
 const TABLAS: Record<TipoEstado, string> = { lead: "estados_lead", cotizacion: "estados_cotizacion" };
-const COLUMNAS = "codigo, etiqueta, orden, activo, es_sistema, rol, marcas";
+const COLUMNAS = "codigo, etiqueta, orden, activo, es_sistema, rol, marcas, protegido, motivo_proteccion";
 
 // Los estados son los mismos en Chile y en Peru, asi que los cambia solo quien
 // administra los dos mercados. La base vuelve a exigirlo: esto solo da un
@@ -37,7 +37,7 @@ function refrescar() {
 async function leerTodos(tipo: TipoEstado): Promise<Estado[]> {
   const supabase = await createClient();
   const { data } = await supabase.from(TABLAS[tipo]).select(COLUMNAS);
-  return ordenados((data ?? []) as Estado[]);
+  return ordenados(((data ?? []) as Record<string, unknown>[]).map((f) => ({ ...f, motivo: f.motivo_proteccion ?? null })) as unknown as Estado[]);
 }
 
 // El mensaje de la base cuando algo no se puede: ya viene escrito para quien lo lee.
@@ -73,8 +73,9 @@ export async function crearEstado(tipo: string, etiqueta: string, marcas: string
   return { ok: true, mensaje: `Estado "${nombre}" agregado.` };
 }
 
-// Cambiar un estado. Uno del sistema solo se renombra: lo que significa y si se
-// ofrece lo protege la base. Uno agregado puede cambiar todo menos su codigo.
+// Cambiar un estado. Uno del sistema se renombra y se deja de ofrecer --salvo los
+// protegidos, que el sistema necesita--, pero no cambia de significado. Uno
+// agregado puede cambiar todo menos su codigo. La base protege cada regla.
 export async function guardarEstado(
   tipo: string,
   codigo: string,
@@ -145,4 +146,19 @@ export async function moverEstado(tipo: string, codigo: string, direccion: "subi
   }
   refrescar();
   return { ok: true };
+}
+
+// Volver a crear los estados originales que se eliminaron, con su codigo y su
+// significado de origen. Solo agrega los que faltan.
+export async function restaurarEstados(tipo: string): Promise<Resultado> {
+  const p = await exigirAdminGeneral();
+  if (!p.ok) return p;
+  if (!tipoValido(tipo)) return { ok: false, mensaje: "Ese tipo de estado no existe." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("estados_restaurar", { p_tipo: tipo });
+  if (error) return { ok: false, mensaje: mensajeDe(error) };
+  refrescar();
+  const n = Number(data ?? 0);
+  return { ok: true, mensaje: n === 0 ? "No faltaba ninguno." : n === 1 ? "Se restauro 1 estado." : `Se restauraron ${n} estados.` };
 }
