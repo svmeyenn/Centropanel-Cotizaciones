@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { puedeEscribirLeads } from "@/lib/leads";
 import { aplicarFiltrosLeads, type FiltroLeads } from "@/lib/filtrosLeads";
+import { estadosParaFiltros } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import type { Resultado } from "@/app/leads/actividad-lead";
 
 const LOTE = 500;
@@ -23,11 +25,13 @@ async function idsDelAlcance(
 
   const supabase = await createClient();
   const { idPaisActivo } = await contextoMercado(v);
+  const estados = estadosParaFiltros(await catalogoEstados());
   const lista: number[] = [];
   for (let desde = 0; desde < TOPE + 1; desde += 1000) {
     const { data, error } = await aplicarFiltrosLeads(
       conPais(supabase.from("v_leads").select("id_clientify"), idPaisActivo),
-      alcance.filtro
+      alcance.filtro,
+      estados
     )
       .order("id_clientify")
       .range(desde, desde + 999);

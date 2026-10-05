@@ -27,7 +27,9 @@ export default function FiltrosDocumentos({
   etiquetaFolio: string;
   // RUT en Chile, RUC en Peru; viendo los dos mercados juntos, "RUT / RUC".
   etiquetaId: string;
-  estados: string[];
+  // Cada estado con el valor que se busca y el nombre que se lee; una lista de
+  // textos sirve cuando son iguales (los pedidos).
+  estados: (string | { valor: string; texto: string })[];
   valores: ValoresFiltro;
   hayFiltro: boolean;
   // Acciones que acompanan a los filtros, como bajar a Excel lo filtrado.
@@ -88,11 +90,15 @@ export default function FiltrosDocumentos({
       <Campo rotulo="Estado">
         <select name="estado" defaultValue={valores.estado ?? ""} className={campo}>
           <option value="">Todos</option>
-          {estados.map((e) => (
-            <option key={e} value={e}>
-              {e}
-            </option>
-          ))}
+          {estados.map((e) => {
+            const valor = typeof e === "string" ? e : e.valor;
+            const texto = typeof e === "string" ? e : e.texto;
+            return (
+              <option key={valor} value={valor}>
+                {texto}
+              </option>
+            );
+          })}
         </select>
       </Campo>
       <div className="flex items-end gap-2">

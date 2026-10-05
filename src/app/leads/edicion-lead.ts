@@ -1,5 +1,7 @@
 "use server";
 
+import { ofrecidos } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
@@ -7,7 +9,6 @@ import { telefonoValido } from "@/lib/formato";
 import {
   BUCKET_LEADS,
   EXTENSIONES_PROHIBIDAS,
-  ORDEN_ESTADOS,
   TOPE_ARCHIVO_LEAD,
   puedeEscribirLeads,
 } from "@/lib/leads";
@@ -193,8 +194,11 @@ export async function fijarEstadoLead(idLead: number, estado: string | null): Pr
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v))
     return { ok: false, mensaje: "Su perfil no permite cambiar el estado de un lead." };
-  if (estado !== null && !ORDEN_ESTADOS.includes(estado))
-    return { ok: false, mensaje: "Ese estado no es valido." };
+  if (estado !== null) {
+    const cat = await catalogoEstados();
+    if (!ofrecidos(cat.lead).some((x) => x.codigo === estado))
+      return { ok: false, mensaje: "Ese estado no es valido." };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("lead_fijar_estado", { p_lead: idLead, p_estado: estado });

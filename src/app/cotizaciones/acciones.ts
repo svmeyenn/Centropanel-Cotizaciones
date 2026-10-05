@@ -1,5 +1,7 @@
 "use server";
 
+import { codigoDeRol, ofrecidos } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
@@ -95,6 +97,10 @@ export async function crearCotizacion(d: DatosCotizacion) {
   const sinPrecio = await precioFaltante(supabase, d);
   if (sinPrecio) return { error: sinPrecio };
 
+  // El estado en que nace una cotizacion es el que tiene ese rol: lo normal,
+  // "Emitida", salvo que se le haya cambiado el nombre.
+  const emitida = codigoDeRol((await catalogoEstados()).cotizacion, "emitida") ?? "Emitida";
+
   // El folio lo asigna el trigger trg_asignar_folio con una secuencia: nunca se
   // calcula en el cliente, asi dos personas grabando a la vez no lo repiten.
   // Nace 'Emitida' porque en web no hay borrador en la base -- el borrador vive
@@ -111,7 +117,7 @@ export async function crearCotizacion(d: DatosCotizacion) {
       tiempo_entrega: d.tiempo_entrega,
       direccion_despacho: d.direccion_despacho,
       notas: d.notas,
-      estado: "Emitida",
+      estado: emitida,
       descuento_tipo: d.descuento_tipo,
       descuento_pct: d.descuento_pct,
       descuento_monto: d.descuento_monto,
@@ -220,6 +226,11 @@ export async function cambiarEstado(id: number, estado: string) {
   const v = await requerirVendedor();
   if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar cotizaciones." };
+  }
+  // Solo se puede pasar a un estado que se ofrece: uno desactivado no.
+  const cat = await catalogoEstados();
+  if (!ofrecidos(cat.cotizacion).some((x) => x.codigo === estado)) {
+    return { error: "Ese estado no es valido." };
   }
   const supabase = await createClient();
   const { error } = await supabase

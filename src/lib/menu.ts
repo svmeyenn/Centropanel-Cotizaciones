@@ -142,6 +142,12 @@ export const GRUPOS: Grupo[] = [
         ve: (v) => v.fin_mantenedores,
       },
       { texto: "Parametros", href: "/parametros", soloAdmin: true },
+      // Los mismos en Chile y en Peru: los cambia solo quien administra ambos.
+      {
+        texto: "Estados de leads y cotizaciones",
+        href: "/estados",
+        ve: (v) => tienePerfilAdmin(v) && v.mercado === "Ambos",
+      },
       { texto: "Vendedores y accesos", href: "/vendedores", soloUsuarios: true },
     ],
   },

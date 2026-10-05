@@ -3,6 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { dinero, fecha as fmtFecha, primerNombre } from "@/lib/formato";
 import { cambiarEstado } from "@/app/cotizaciones/acciones";
+import { codigoDeRol, tieneMarca } from "@/lib/catalogoEstados";
+import { useCatalogoEstados } from "@/components/ProveedorEstados";
 import { enviarCotizacionPorCorreo } from "@/app/cotizaciones/envio";
 
 export interface DatosEnvio {
@@ -79,6 +81,9 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
   const [abierto, setAbierto] = useState(false);
   const [pendiente, empezar] = useTransition();
   const [estado, setEstado] = useState(datos.estado);
+  // A que estado pasa al enviarla, y cuales son estados cerrados que no se pisan.
+  const { cotizacion: estadosCot } = useCatalogoEstados();
+  const enviada = codigoDeRol(estadosCot, "enviada") ?? "Enviada";
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
 
@@ -126,13 +131,13 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
   );
   const fono = normalizarFono(datos.telefonoCliente, datos.prefijoTelefono);
 
-  // Al enviar, la cotizacion pasa a Enviada. Aceptada y Rechazada no se pisan:
-  // son estados manuales, misma regla que en Access.
+  // Al enviar, la cotizacion pasa a "enviada". Las cerradas --ganadas o
+  // perdidas-- no se pisan: son estados manuales, misma regla que en Access.
   function marcarEnviada() {
-    if (estado === "Aceptada" || estado === "Rechazada") return;
+    if (tieneMarca(estadosCot, estado, "cerrada")) return;
     empezar(async () => {
-      const r = await cambiarEstado(datos.id, "Enviada");
-      if (!r?.error) setEstado("Enviada");
+      const r = await cambiarEstado(datos.id, enviada);
+      if (!r?.error) setEstado(enviada);
     });
   }
 
@@ -188,7 +193,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
       >
         <span className="text-sm font-semibold text-verde">
           Enviar al cliente
-          {estado === "Enviada" && (
+          {estado === enviada && (
             <span className="ml-2 text-xs font-normal text-green-700">
               (ya enviada)
             </span>

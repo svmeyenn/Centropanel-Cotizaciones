@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { asignarPropietarioMasivo, cambiarEstadoMasivo } from "@/app/leads/asignacion-masiva";
-import { ESTADOS_LEAD, ORDEN_ESTADOS, estadoLegible } from "@/lib/leads";
+import { etiquetaDe, ofrecidos } from "@/lib/catalogoEstados";
+import { useCatalogoEstados } from "@/components/ProveedorEstados";
 import type { FiltroLeads } from "@/lib/filtrosLeads";
 
 const SIN_PROPIETARIO = "__sin__";
@@ -22,6 +23,7 @@ export default function AsignarPropietarioMasivo({
   filtro: FiltroLeads;
 }) {
   const router = useRouter();
+  const { lead: estadosLead } = useCatalogoEstados();
   const [marcados, setMarcados] = useState(0);
   const [todos, setTodos] = useState(false);
   const [elegido, setElegido] = useState("");
@@ -49,7 +51,7 @@ export default function AsignarPropietarioMasivo({
   const cantidad = todos ? total : marcados;
   const nombreElegido =
     que === "estado"
-      ? estadoLegible(elegido)
+      ? etiquetaDe(estadosLead, elegido)
       : elegido === SIN_PROPIETARIO
         ? "sin propietario"
         : (propietarios.find((p) => p.email === elegido)?.nombre ?? "");
@@ -128,9 +130,9 @@ export default function AsignarPropietarioMasivo({
         >
           <option value="">{que === "estado" ? "Nuevo estado..." : "Nuevo propietario..."}</option>
           {que === "estado"
-            ? ORDEN_ESTADOS.map((e) => (
-                <option key={e} value={e}>
-                  {ESTADOS_LEAD[e]}
+            ? ofrecidos(estadosLead).map((e) => (
+                <option key={e.codigo} value={e.codigo}>
+                  {e.etiqueta}
                 </option>
               ))
             : [

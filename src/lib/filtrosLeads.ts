@@ -2,6 +2,8 @@
 // cambio masivo de propietario, que tiene que alcanzar exactamente los mismos
 // leads que el usuario esta viendo.
 
+import { CATALOGO_POR_DEFECTO, estadosParaFiltros } from "@/lib/catalogoEstados";
+
 export interface FiltroLeads {
   q: string;
   estado: string;
@@ -18,9 +20,15 @@ export interface FiltroLeads {
 
 export const SIN_PROPIETARIO = "__sin__";
 
-// Lo que un lead vivo puede estar esperando: si no tiene nada comprometido por
-// delante, nadie lo esta siguiendo.
-export const ESTADOS_EN_SEGUIMIENTO = ["warm-lead", "hot-lead", "in-deal"];
+
+// Lo que depende de los estados que se configuran: donde entra un lead nuevo y
+// cuales cuentan como vivos. Quien llama lo saca del catalogo; sin el valen los
+// de origen.
+export interface EstadosParaFiltros {
+  nuevo: string;
+  enSeguimiento: string[];
+}
+const POR_DEFECTO: EstadosParaFiltros = estadosParaFiltros(CATALOGO_POR_DEFECTO);
 
 export const GESTIONES: Record<string, string> = {
   sin_contactar: "Sin contactar",
@@ -35,7 +43,7 @@ interface Consulta {
   lt(columna: string, valor: string): Consulta;
 }
 
-export function aplicarFiltrosLeads<T>(consulta: T, f: FiltroLeads): T {
+export function aplicarFiltrosLeads<T>(consulta: T, f: FiltroLeads, estados: EstadosParaFiltros = POR_DEFECTO): T {
   let c = consulta as unknown as Consulta;
   // Los caracteres que usa el filtro para separar condiciones se sacan del
   // texto buscado: si no, "Perez, Juan" rompe la consulta.
@@ -52,9 +60,9 @@ export function aplicarFiltrosLeads<T>(consulta: T, f: FiltroLeads): T {
   if (f.dueno === SIN_PROPIETARIO) c = c.is("propietario_email", null);
   else if (f.dueno.includes(",")) c = c.in("propietario_email", f.dueno.split(",").filter(Boolean));
   else if (f.dueno) c = c.eq("propietario_email", f.dueno);
-  if (f.gestion === "sin_contactar") c = c.eq("estado_efectivo", "cold-lead");
+  if (f.gestion === "sin_contactar") c = c.eq("estado_efectivo", estados.nuevo);
   if (f.gestion === "sin_seguimiento")
-    c = c.in("estado_efectivo", ESTADOS_EN_SEGUIMIENTO).eq("con_compromiso", false);
+    c = c.in("estado_efectivo", estados.enSeguimiento).eq("con_compromiso", false);
   if (f.linea === "paneles" || f.linea === "casas") c = c.eq("linea", f.linea);
 
   // Antiguedad. "Creado" mira cuando entro el lead; "toque", cuando se le hizo

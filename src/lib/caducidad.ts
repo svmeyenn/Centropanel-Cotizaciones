@@ -22,7 +22,9 @@ export interface ReglaCaducidad {
   campo: "creado" | "toque";
   explicacion: string;
   // Lo que se propone hacer con ese grupo, y el estado al que se lleva.
-  propuesta: string;
+  // Lo que se hace con el grupo; el estado de destino se nombra aparte, con su
+  // nombre vigente.
+  verbo: string;
   destino: string;
   dias: number;
 }
@@ -34,7 +36,7 @@ export const REGLAS: Omit<ReglaCaducidad, "dias">[] = [
     titulo: "No contactados que nunca contestaron",
     campo: "creado",
     explicacion: "Entraron hace mas de {dias} dias y nunca se logro hablar con ellos.",
-    propuesta: "Pasarlos a Lead no calificado",
+    verbo: "Pasarlos a",
     destino: "not-qualified-lead",
   },
   {
@@ -43,7 +45,7 @@ export const REGLAS: Omit<ReglaCaducidad, "dias">[] = [
     titulo: "Contactados que se enfriaron",
     campo: "toque",
     explicacion: "Se les hablo alguna vez, pero no hay ninguna actividad hace mas de {dias} dias.",
-    propuesta: "Pasarlos a Lead perdido",
+    verbo: "Pasarlos a",
     destino: "lost-lead",
   },
   {
@@ -52,7 +54,7 @@ export const REGLAS: Omit<ReglaCaducidad, "dias">[] = [
     titulo: "Calientes que ya no lo son",
     campo: "toque",
     explicacion: "Marcados como calientes y sin actividad hace mas de {dias} dias.",
-    propuesta: "Bajarlos a Contactado",
+    verbo: "Bajarlos a",
     destino: "warm-lead",
   },
   {
@@ -62,7 +64,7 @@ export const REGLAS: Omit<ReglaCaducidad, "dias">[] = [
     campo: "toque",
     explicacion:
       "Son los de mas valor: conviene mirarlos uno a uno antes de cerrarlos. Sin actividad hace mas de {dias} dias.",
-    propuesta: "Revisar uno a uno",
+    verbo: "Revisar uno a uno",
     destino: "",
   },
 ];

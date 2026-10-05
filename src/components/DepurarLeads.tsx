@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cambiarEstadoMasivo } from "@/app/leads/asignacion-masiva";
 import { guardarDiasCaducidad } from "@/app/leads/depuracion";
-import { estadoLegible } from "@/lib/leads";
+import { etiquetaDe } from "@/lib/catalogoEstados";
+import { useCatalogoEstados } from "@/components/ProveedorEstados";
 import { enlaceDeRegla, filtroDeRegla, textoRegla, type ReglaCaducidad } from "@/lib/caducidad";
 
 export interface GrupoCaduco extends ReglaCaducidad {
@@ -29,6 +30,8 @@ export default function DepurarLeads({
   mercado: string;
 }) {
   const router = useRouter();
+  const { lead: estadosLead } = useCatalogoEstados();
+  const estadoLegible = (e: string | null | undefined) => etiquetaDe(estadosLead, e);
   const [dias, setDias] = useState<Record<string, number>>(
     Object.fromEntries(grupos.map((g) => [g.clave, g.dias]))
   );
@@ -139,7 +142,7 @@ export default function DepurarLeads({
               {!cambiado(g) && g.n > 0 && (
                 <div className="flex flex-wrap items-center gap-2 pt-0.5">
                   <span className="text-gray-700">
-                    Propuesta: <b>{g.propuesta}</b>
+                    Propuesta: <b>{g.destino ? `${g.verbo} ${estadoLegible(g.destino)}` : g.verbo}</b>
                   </span>
                   {puedeEditar && g.destino && confirmando !== g.clave && (
                     <button

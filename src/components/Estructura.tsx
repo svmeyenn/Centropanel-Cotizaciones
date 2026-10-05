@@ -1,4 +1,6 @@
 import MenuLateral from "@/components/MenuLateral";
+import { ProveedorEstados } from "@/components/ProveedorEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import RecordatorioDatos from "@/components/RecordatorioDatos";
 import { menuDe } from "@/lib/menu";
 import { clientesIncompletos } from "@/lib/recordatorio";
@@ -16,6 +18,7 @@ export default async function Estructura({
 }) {
   const v = await requerirVendedor();
   const incompletos = await clientesIncompletos(v);
+  const catalogo = await catalogoEstados();
 
   return (
     <div className="flex min-h-screen">
@@ -29,7 +32,9 @@ export default async function Estructura({
         version={VERSION}
         sandbox={ES_SANDBOX}
       />
-      <div className="flex-1 min-w-0">{children}</div>
+      <div className="flex-1 min-w-0">
+        <ProveedorEstados catalogo={catalogo}>{children}</ProveedorEstados>
+      </div>
     </div>
   );
 }

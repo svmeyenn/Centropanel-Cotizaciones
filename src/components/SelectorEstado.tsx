@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cambiarEstado } from "@/app/cotizaciones/acciones";
-import { ESTADOS_COTIZACION } from "@/lib/estados";
+import { etiquetaDe, ordenados } from "@/lib/catalogoEstados";
+import { useCatalogoEstados } from "@/components/ProveedorEstados";
 
 // Estado de una cotizacion, cambiable solo dentro de la cotizacion, junto al
 // rotulo "Estado". Elegir un estado no lo graba: pide confirmarlo antes, para
@@ -18,18 +19,18 @@ export default function SelectorEstado({
   puedeEditar: boolean;
 }) {
   const router = useRouter();
+  const { cotizacion } = useCatalogoEstados();
   const [actual, setActual] = useState(estado);
   const [propuesto, setPropuesto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
-  if (!puedeEditar) return <span className="font-semibold">{actual}</span>;
+  const nombre = (e: string) => etiquetaDe(cotizacion, e);
+  if (!puedeEditar) return <span className="font-semibold">{nombre(actual)}</span>;
 
-  // Un estado viejo que ya no esta en la lista se ofrece igual, para no
-  // cambiarlo sin querer al abrir el desplegable.
-  const opciones = ESTADOS_COTIZACION.includes(actual)
-    ? ESTADOS_COTIZACION
-    : [actual, ...ESTADOS_COTIZACION];
+  // Los que se ofrecen, y el actual aunque ya no se ofrezca, para no cambiarlo
+  // sin querer al abrir el desplegable.
+  const opciones = ordenados(cotizacion).filter((x) => x.activo || x.codigo === actual);
 
   function confirmar() {
     if (!propuesto) return;
@@ -60,15 +61,15 @@ export default function SelectorEstado({
         title="Cambiar el estado de la cotizacion"
       >
         {opciones.map((o) => (
-          <option key={o} value={o}>
-            {o}
+          <option key={o.codigo} value={o.codigo}>
+            {o.etiqueta}
           </option>
         ))}
       </select>
       {propuesto && (
         <span className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 text-xs text-gray-700">
           <span>
-            Cambiar de <b>{actual}</b> a <b>{propuesto}</b>?
+            Cambiar de <b>{nombre(actual)}</b> a <b>{nombre(propuesto)}</b>?
           </span>
           <button
             onClick={confirmar}

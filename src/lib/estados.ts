@@ -1,14 +1,5 @@
-// Estados de cada documento, en un solo lugar: los usan el editor --donde se
-// cambian-- y el filtro de los listados --donde se buscan--. Separados, una
-// lista terminaba ofreciendo estados que la otra no conocia.
-
-export const ESTADOS_COTIZACION = [
-  "Borrador",
-  "Emitida",
-  "Enviada",
-  "Aceptada",
-  "Rechazada",
-];
+// Estados de los pedidos. Los de las cotizaciones y los de los leads se
+// configuran en Configuracion > Estados; ver catalogoEstados.ts.
 
 export const ESTADOS_PEDIDO = [
   "Emitido",

@@ -6,6 +6,8 @@ import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/
 import { createClient } from "@/lib/supabase/server";
 import { puedeEscribirLeads } from "@/lib/leads";
 import { aplicarFiltrosLeads } from "@/lib/filtrosLeads";
+import { estadosParaFiltros } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import { DIAS_POR_DEFECTO, REGLAS, filtroDeRegla, type ClaveCaducidad } from "@/lib/caducidad";
 
 export const metadata = { title: "Depurar leads" };
@@ -30,6 +32,8 @@ export default async function Depurar() {
     return n != null && Number.isFinite(n) ? n : DIAS_POR_DEFECTO[clave];
   };
 
+  const estados = estadosParaFiltros(await catalogoEstados());
+
   // Un conteo por regla, todos a la vez.
   const grupos: GrupoCaduco[] = await Promise.all(
     REGLAS.map(async (r) => {
@@ -39,7 +43,8 @@ export default async function Depurar() {
           supabase.from("v_leads").select("id_clientify", { count: "exact", head: true }),
           idPaisActivo
         ),
-        filtroDeRegla(r, dias)
+        filtroDeRegla(r, dias),
+        estados
       );
       return { ...r, dias, n: count ?? 0 };
     })
