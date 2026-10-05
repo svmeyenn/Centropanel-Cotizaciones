@@ -10,6 +10,8 @@ import BitacoraCotizacion, {
 } from "@/components/BitacoraCotizacion";
 import BotonGenerarPedido from "@/components/BotonGenerarPedido";
 import { sumarDias } from "@/lib/formato";
+import LeadDeCotizacion from "@/components/LeadDeCotizacion";
+import { leadsDeCotizacion } from "@/lib/leadsDeCotizacion";
 
 // Ver / modificar una cotizacion existente. Abre en solo lectura (equivalente
 // al modo Visualizar de Access) y recien al pulsar Modificar se habilita.
@@ -110,6 +112,12 @@ export default async function Pagina({
     .eq("id_cotizacion", id)
     .maybeSingle();
 
+  // El lead que la gesto, para volver a el desde aqui.
+  const origen = await leadsDeCotizacion(supabase, {
+    num_cotizacion: (cot.num_cotizacion as string | null) ?? null,
+    id_cliente: cot.id_cliente != null ? Number(cot.id_cliente) : null,
+  });
+
   const supabaseTot = await createClient();
   const { data: tot } = await supabaseTot
     .from("v_cotizacion_totales")
@@ -150,6 +158,9 @@ export default async function Pagina({
         titulo="Detalle de cotizacion"
         subtitulo="Datos del cliente, items y valorizacion"
       />
+      <div className="max-w-screen-2xl mx-auto px-4 pt-3">
+        <LeadDeCotizacion leads={origen.leads} omitidos={origen.omitidos} />
+      </div>
       <EditorCotizacion
         modo="ver"
         id={id}
