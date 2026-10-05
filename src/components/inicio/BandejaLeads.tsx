@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { BanderaDe } from "@/components/Bandera";
 import PildoraLinea from "@/components/PildoraLinea";
-import { estadoLegible, LINEAS } from "@/lib/leads";
+import { LINEAS } from "@/lib/leads";
 import { antiguedad, diasEntre, type Gestion, type LeadEnBandeja } from "@/components/inicio/tipos";
 import { BarraOrden } from "@/components/TituloOrden";
 import FiltrosCuadro from "@/components/FiltrosCuadro";
-import { FRIOS, NUEVOS } from "@/components/inicio/orden";
+import { NUEVOS } from "@/components/inicio/orden";
+import SinSeguimiento from "@/components/inicio/SinSeguimiento";
 import type { Orden } from "@/lib/ordenTabla";
 
-// Los leads que esperan sin fecha: los nuevos que nadie ha contactado y los
-// vivos que se estan enfriando sin nada comprometido. Las dos listas van del
-// mas nuevo al mas antiguo, como todas las del inicio; lo que no cabe en las
-// quince filas se busca en la lista de leads, que filtra y ordena.
+// Lo que espera sin fecha, en dos cuadros: los leads nuevos que nadie ha
+// contactado, y todo lo vivo que nadie tiene comprometido --leads y
+// cotizaciones juntos, porque el seguimiento de una cotizacion equivale al de un
+// lead--. Ambos van del mas nuevo al mas antiguo; lo que no cabe en las quince
+// filas se busca con los filtros o en las listas completas.
 export default function BandejaLeads({
   g,
   verPropietario,
@@ -19,7 +21,7 @@ export default function BandejaLeads({
   hrefSinSeguimiento,
   qs,
   ordenNuevos,
-  ordenFrios,
+  ordenSeguimiento,
 }: {
   g: Gestion;
   verPropietario: boolean;
@@ -27,7 +29,7 @@ export default function BandejaLeads({
   hrefSinSeguimiento: string;
   qs: string;
   ordenNuevos: Orden;
-  ordenFrios: Orden;
+  ordenSeguimiento: Orden;
 }) {
   const lineas = [
     { valor: "paneles", texto: LINEAS.paneles },
@@ -70,42 +72,12 @@ export default function BandejaLeads({
         }}
         detalle={(l) => [l.origen, l.campana].filter(Boolean).join(" · ")}
       />
-      <Lista
-        titulo="Sin seguimiento"
-        explicacion="Leads vivos (contactados, calientes u oportunidades) sin ningun compromiso por delante."
-        total={g.sin_seguimiento.n_filtrado ?? g.sin_seguimiento.n}
-        filas={g.sin_seguimiento.lista}
-        href={hrefSinSeguimiento}
-        barra={<BarraOrden qs={qs} param={FRIOS.param} actual={ordenFrios} opciones={FRIOS.columnas} />}
-        filtro={
-          <FiltrosCuadro
-            selecciones={[
-              { param: "f_frios_linea", texto: "Linea", opciones: lineas },
-              {
-                param: "f_frios_estado",
-                texto: "Estado",
-                opciones: (o?.frios_estado ?? []).map((e) => ({ valor: e, texto: estadoLegible(e) })),
-              },
-              { param: "f_frios_prop", texto: "Propietario", opciones: lista(o?.frios_propietario ?? []) },
-            ]}
-            rangos={[{ param: "rg_frios", texto: "Ultimo contacto", tipo: "fecha" }]}
-            nFiltrado={g.sin_seguimiento.n_filtrado ?? g.sin_seguimiento.n}
-            nTotal={g.sin_seguimiento.n}
-            unidad="leads"
-          />
-        }
-        vacio="Todos los leads vivos tienen algo comprometido."
-        verPropietario={verPropietario}
-        hoy={g.hoy}
-        dato={(l) => {
-          const ref = l.ultimo_toque ?? null;
-          const d = ref ? diasEntre(ref.slice(0, 10), g.hoy) : null;
-          return {
-            texto: d == null ? "sin contacto registrado" : `ultimo contacto hace ${antiguedad(d)}`,
-            alerta: d == null || d > 14,
-          };
-        }}
-        detalle={(l) => estadoLegible(l.estado_efectivo)}
+      <SinSeguimiento
+        g={g}
+        verResponsable={verPropietario}
+        qs={qs}
+        orden={ordenSeguimiento}
+        hrefLeads={hrefSinSeguimiento}
       />
     </div>
   );

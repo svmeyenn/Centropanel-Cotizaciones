@@ -30,22 +30,14 @@ export const NUEVOS = spec("ord_nuevos", "creado", "desc", [
   { campo: "propietario", texto: "Propietario", inicial: "asc" },
 ]);
 
-export const FRIOS = spec("ord_frios", "toque", "desc", [
-  { campo: "toque", texto: "Ultimo contacto" },
-  { campo: "creado", texto: "Fecha de entrada" },
-  { campo: "nombre", texto: "Nombre", inicial: "asc" },
-  { campo: "estado", texto: "Estado", inicial: "asc" },
-  { campo: "propietario", texto: "Propietario", inicial: "asc" },
-]);
-
-export const COTIZACIONES = spec("ord_cot", "fecha", "desc", [
-  { campo: "folio", texto: "Folio", inicial: "asc" },
-  { campo: "cliente", texto: "Cliente", inicial: "asc" },
-  { campo: "estado", texto: "Estado", inicial: "asc" },
-  { campo: "vendedor", texto: "Ejecutivo", inicial: "asc" },
+// Un solo listado de seguimiento: leads y cotizaciones sin nada comprometido.
+// "Fecha" es el ultimo contacto del lead, o la fecha de la cotizacion si va sola.
+export const SEGUIMIENTO = spec("ord_seg", "fecha", "desc", [
   { campo: "fecha", texto: "Fecha" },
-  { campo: "dias", texto: "Sin tocar" },
-  { campo: "total", texto: "Total" },
+  { campo: "nombre", texto: "Nombre", inicial: "asc" },
+  { campo: "responsable", texto: "Responsable", inicial: "asc" },
+  { campo: "estado", texto: "Estado", inicial: "asc" },
+  { campo: "monto", texto: "Monto" },
 ]);
 
 // Desempeno: estas tablas llegan completas, asi que el orden se aplica en el
