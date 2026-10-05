@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0095-20261004**
+Version vigente: **v0096-20261005**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0096-20261005 | 05-10-2026 | Inicio: el desempeno de leads mira el mes elegido y los dos anteriores; las listas van del mas nuevo al mas antiguo; los cuadros se ordenan pinchando el titulo de la columna; Mi gestion se filtra por linea, origen, propietario, estado, ejecutivo y rangos de fecha y monto, y la agenda por responsable y texto | 6a09f24 |
 | v0095-20261004 | 04-10-2026 | Depuracion de leads: pantalla con los grupos caducos y sus plazos por mercado, cambio masivo de estado en la lista y filtro por antiguedad del lead | ce9e00d |
 | v0094-20261004 | 04-10-2026 | El icono del sistema pasa a ser el mismo del sistema de finanzas, y se agrega favicon.ico | a62bc30 |
 | v0093-20261004 | 04-10-2026 | Oportunidades con etapa, proceso y razon de ganada o perdida, importables desde la misma planilla del CRM; ventas suma conversion mes a mes, cotizaciones en juego y barras de participacion; el tablero de leads dice por que se pierde y por que se gana | da47d12 |
