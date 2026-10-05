@@ -100,7 +100,7 @@ export default function PanelLeads({
         <Kpi
           titulo="Compromisos vencidos"
           valor={n(k.compromisos_vencidos)}
-          pie="con leads, sin cumplir"
+          pie="de leads y cotizaciones, sin cumplir"
           signo={k.compromisos_vencidos > 0 ? -1 : 0}
         />
       </div>

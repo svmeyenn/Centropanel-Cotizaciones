@@ -1,11 +1,6 @@
 import Link from "next/link";
-import { BanderaDe } from "@/components/Bandera";
-import { dinero, fecha as fmtFecha, importe } from "@/lib/formato";
+import { dinero, importe } from "@/lib/formato";
 import { antiguedad, type Gestion } from "@/components/inicio/tipos";
-import TituloOrden from "@/components/TituloOrden";
-import FiltrosCuadro from "@/components/FiltrosCuadro";
-import { COTIZACIONES } from "@/components/inicio/orden";
-import type { Orden } from "@/lib/ordenTabla";
 
 // Montos de varias monedas no se suman: con una sola se escribe como siempre,
 // con varias cada una con su simbolo.
@@ -23,22 +18,11 @@ const QUE_HACER: Record<string, string> = {
   Enviada: "conseguir respuesta",
 };
 
-// Las cotizaciones que todavia se pueden ganar, por lo que falta hacer con
-// cada una, y las que estan vivas sin que nadie haya quedado de hacer nada.
-export default function CotizacionesEnJuego({
-  g,
-  verEjecutivo,
-  qs,
-  orden,
-}: {
-  g: Gestion;
-  verEjecutivo: boolean;
-  qs: string;
-  orden: Orden;
-}) {
+// Las cotizaciones que todavia se pueden ganar, por lo que falta hacer con cada
+// una. Las que ademas no tienen a nadie a cargo van en el listado unico de
+// seguimiento, no aqui.
+export default function CotizacionesEnJuego({ g }: { g: Gestion }) {
   const c = g.cotizaciones;
-  const nFiltrado = c.sin_accion_n_filtrado ?? c.sin_accion_n;
-  const col = (campo: string) => COTIZACIONES.columnas.find((x) => x.campo === campo)!;
   const embudo = ORDEN.map((e) => c.embudo.find((x) => x.estado === e)).filter(Boolean) as Gestion["cotizaciones"]["embudo"];
 
   return (
@@ -79,96 +63,13 @@ export default function CotizacionesEnJuego({
         })}
       </div>
 
-      <div className="px-3 pt-2 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-[11px] font-semibold text-dorado-osc uppercase">
-          Sin proxima accion · {nFiltrado}
-          {nFiltrado > 0 && <span className="font-normal normal-case text-gray-600"> por {montos(c.sin_accion_montos)}</span>}
-        </h3>
-        <span className="text-[10px] text-gray-500">Vivas y sin nada comprometido: anote que sigue en cada una.</span>
-      </div>
-      <FiltrosCuadro
-        selecciones={[
-          {
-            param: "f_cot_estado",
-            texto: "Estado",
-            opciones: (g.opciones?.cot_estado ?? []).map((e) => ({ valor: e, texto: e })),
-          },
-          ...(verEjecutivo
-            ? [
-                {
-                  param: "f_cot_vendedor",
-                  texto: "Ejecutivo",
-                  opciones: (g.opciones?.cot_vendedor ?? []).map((e) => ({ valor: e, texto: e })),
-                },
-              ]
-            : []),
-        ]}
-        rangos={[
-          { param: "rg_cot_fecha", texto: "Fecha", tipo: "fecha" },
-          { param: "rg_cot_dias", texto: "Dias sin tocar", tipo: "numero" },
-          { param: "rg_cot_total", texto: "Total", tipo: "numero", nota: "en la moneda de cada cotizacion" },
-        ]}
-        nFiltrado={nFiltrado}
-        nTotal={c.sin_accion_n}
-        unidad="cotizaciones"
-      />
-      {c.sin_accion.length === 0 ? (
-        <p className="px-3 py-4 text-center text-xs text-gray-500">Todas las cotizaciones en juego tienen una proxima accion.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-[11px]">
-            <thead className="text-gray-600 bg-gray-50">
-              <tr>
-                {(["folio", "cliente", "estado"] as const).map((k) => (
-                  <TituloOrden key={k} qs={qs} param={COTIZACIONES.param} campo={k} actual={orden} inicial={col(k).inicial}>
-                    {col(k).texto}
-                  </TituloOrden>
-                ))}
-                {verEjecutivo && (
-                  <TituloOrden qs={qs} param={COTIZACIONES.param} campo="vendedor" actual={orden} inicial="asc">
-                    Ejecutivo
-                  </TituloOrden>
-                )}
-                <TituloOrden qs={qs} param={COTIZACIONES.param} campo="fecha" actual={orden}>
-                  Fecha
-                </TituloOrden>
-                <TituloOrden qs={qs} param={COTIZACIONES.param} campo="dias" actual={orden} alineacion="right">
-                  Sin tocar
-                </TituloOrden>
-                <TituloOrden qs={qs} param={COTIZACIONES.param} campo="total" actual={orden} alineacion="right">
-                  Total
-                </TituloOrden>
-              </tr>
-            </thead>
-            <tbody>
-              {c.sin_accion.map((x) => (
-                <tr key={x.id} className="border-t border-gray-100 hover:bg-crema">
-                  <td className="px-3 py-1 whitespace-nowrap">
-                    <BanderaDe idPais={x.id_pais} />
-                    <Link href={`/cotizaciones/${x.id}`} className="text-verde font-semibold underline">
-                      {x.num_cotizacion ?? x.id}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-1 break-words">{x.cliente ?? "(sin cliente)"}</td>
-                  <td className="px-3 py-1">{x.estado}</td>
-                  {verEjecutivo && <td className="px-3 py-1">{x.vendedor}</td>}
-                  <td className="px-3 py-1 whitespace-nowrap">{fmtFecha(x.fecha)}</td>
-                  <td className={`px-3 py-1 text-right whitespace-nowrap ${x.dias >= 30 ? "text-red-700 font-semibold" : ""}`}>
-                    {antiguedad(x.dias)}
-                  </td>
-                  <td className="px-3 py-1 text-right tabular-nums whitespace-nowrap">{importe(x.total, x.moneda)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {nFiltrado > c.sin_accion.length && (
-            <p className="px-3 py-1 text-[10px] text-gray-500">
-              Se muestran {c.sin_accion.length} de {nFiltrado}, por el orden elegido. Las demas, en la lista de
-              cotizaciones.
-            </p>
-          )}
-        </div>
-      )}
+      <p className="px-3 py-1.5 text-[10px] text-gray-500">
+        Las cotizaciones que nadie tiene comprometidas salen en{" "}
+        <a href="#seguimiento" className="text-verde underline">
+          Sin seguimiento
+        </a>
+        , junto con los leads.
+      </p>
     </section>
   );
 }

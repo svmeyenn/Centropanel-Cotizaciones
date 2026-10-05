@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Gestion } from "@/components/inicio/tipos";
 
 // La primera mirada del dia, en dos grupos: lo comprometido con fecha (agenda)
-// y lo que espera sin fecha (leads y cotizaciones que nadie esta moviendo).
+// y lo que espera sin fecha (leads y cotizaciones que nadie esta moviendo). El
+// seguimiento de una cotizacion equivale al de un lead: una sola cifra.
 // Cada cifra lleva a la lista donde se resuelve.
 export default function ResumenGestion({
   g,
@@ -30,7 +31,7 @@ export default function ResumenGestion({
         <h2 id="res-espera" className="text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-1.5">
           Esperando que alguien lo mueva
         </h2>
-        <div className={`grid grid-cols-2 gap-1.5 ${g.sin_propietario != null ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
+        <div className={`grid grid-cols-2 gap-1.5 ${g.sin_propietario != null ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
           <Cifra
             href={hrefLeads("sin_contactar")}
             titulo="Leads sin contactar"
@@ -39,18 +40,11 @@ export default function ResumenGestion({
             pie={`${g.sin_contactar.n7.toLocaleString("es-CL")} llegaron esta semana`}
           />
           <Cifra
-            href={hrefLeads("sin_seguimiento")}
-            titulo="Leads sin seguimiento"
-            n={g.sin_seguimiento.n}
-            tono={g.sin_seguimiento.n > 0 ? "aviso" : "neutro"}
-            pie="vivos, sin nada comprometido"
-          />
-          <Cifra
-            href="#cotizaciones"
-            titulo="Cotizaciones sin accion"
-            n={g.cotizaciones.sin_accion_n}
-            tono={g.cotizaciones.sin_accion_n > 0 ? "aviso" : "neutro"}
-            pie="en juego, sin proxima accion"
+            href="#seguimiento"
+            titulo="Sin seguimiento"
+            n={g.seguimiento.n}
+            tono={g.seguimiento.n > 0 ? "aviso" : "neutro"}
+            pie={`${g.seguimiento.n_leads.toLocaleString("es-CL")} leads · ${g.seguimiento.n_cotizaciones.toLocaleString("es-CL")} con cotizacion`}
           />
           {g.sin_propietario != null && (
             <Cifra

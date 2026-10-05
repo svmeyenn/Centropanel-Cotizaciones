@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0096-20261005**
+Version vigente: **v0097-20261005**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0097-20261005 | 05-10-2026 | Seguimiento unificado: leads y cotizaciones en un solo listado, con el lead y su cotizacion en una fila, y los compromisos vencidos de cotizaciones en el panel de leads; la cotizacion enlaza al lead que la gesto; las vistas v_cartola y v_cotizacion_lead dejan de ser legibles sin iniciar sesion | 9fc1b40 |
 | v0096-20261005 | 05-10-2026 | Inicio: el desempeno de leads mira el mes elegido y los dos anteriores; las listas van del mas nuevo al mas antiguo; los cuadros se ordenan pinchando el titulo de la columna; Mi gestion se filtra por linea, origen, propietario, estado, ejecutivo y rangos de fecha y monto, y la agenda por responsable y texto | 6a09f24 |
 | v0095-20261004 | 04-10-2026 | Depuracion de leads: pantalla con los grupos caducos y sus plazos por mercado, cambio masivo de estado en la lista y filtro por antiguedad del lead | ce9e00d |
 | v0094-20261004 | 04-10-2026 | El icono del sistema pasa a ser el mismo del sistema de finanzas, y se agrega favicon.ico | a62bc30 |

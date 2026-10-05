@@ -38,17 +38,31 @@ export type EstadoEnJuego = {
   dias_maximo: number;
 };
 
-export type CotizacionSinAccion = {
+// La cotizacion de un hilo de seguimiento.
+export type CotSeguimiento = {
   id: number;
-  num_cotizacion: string | null;
+  folio: string | null;
   estado: string;
-  fecha: string;
-  dias: number;
   total: number;
   moneda: string;
-  cliente: string | null;
-  vendedor: string | null;
+  dias: number;
+  ejecutivo: string | null;
+};
+
+// Una fila del listado unico de seguimiento: un lead --con su cotizacion pegada
+// si la tiene-- o una cotizacion cuyo lead no esta en la lista.
+export type FilaSeguimiento = {
+  clave: string;
+  tipo: "lead" | "cotizacion";
+  id_lead: number | null;
+  nombre: string;
+  estado: string;
+  fecha_ref: string | null;
+  dias: number | null;
+  linea: string | null;
+  responsable: string;
   id_pais: number;
+  cot: CotSeguimiento | null;
 };
 
 // Lo que hay para elegir en cada filtro de Mi gestion, sacado de los datos que
@@ -56,10 +70,10 @@ export type CotizacionSinAccion = {
 export type OpcionesGestion = {
   nuevos_origen: string[];
   nuevos_propietario: string[];
-  frios_estado: string[];
-  frios_propietario: string[];
-  cot_estado: string[];
-  cot_vendedor: string[];
+  // Estados de leads y de cotizaciones juntos: no se pisan, los de leads son
+  // codigos y los de cotizaciones, nombres.
+  seg_estado: string[];
+  seg_responsable: string[];
 };
 
 export type Gestion = {
@@ -74,14 +88,18 @@ export type Gestion = {
   // n es el total del mercado, para el resumen de arriba; n_filtrado es lo que
   // deja ver el rango que puso la pantalla, y es lo que dice cada caja.
   sin_contactar: { n: number; n7: number; n_filtrado: number; lista: LeadEnBandeja[] };
-  sin_seguimiento: { n: number; n_filtrado: number; lista: LeadEnBandeja[] };
+  // Todo lo vivo que nadie tiene comprometido, leads y cotizaciones en un solo
+  // listado. n cuenta hilos: un lead y su cotizacion son uno.
+  seguimiento: {
+    n: number;
+    n_leads: number;
+    n_cotizaciones: number;
+    n_filtrado: number;
+    lista: FilaSeguimiento[];
+  };
   sin_propietario: number | null;
   cotizaciones: {
     embudo: EstadoEnJuego[];
-    sin_accion_n: number;
-    sin_accion_n_filtrado: number;
-    sin_accion_montos: Record<string, number>;
-    sin_accion: CotizacionSinAccion[];
   };
 };
 

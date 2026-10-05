@@ -142,13 +142,10 @@ async function VistaGestion({
   // Orden y rangos viajan a la base: estas tres listas muestran quince filas de
   // miles, asi que es el orden el que decide cuales quince llegan.
   const oNuevos = orden(Cuadro.NUEVOS);
-  const oFrios = orden(Cuadro.FRIOS);
-  const oCot = orden(Cuadro.COTIZACIONES);
+  const oSeg = orden(Cuadro.SEGUIMIENTO);
   const [nvD, nvH] = partes(rango("rg_nuevos"));
-  const [frD, frH] = partes(rango("rg_frios"));
-  const [ctD, ctH] = partes(rango("rg_cot_fecha"));
-  const [diD, diH] = partes(rango("rg_cot_dias"));
-  const [toD, toH] = partes(rango("rg_cot_total"));
+  const [sgD, sgH] = partes(rango("rg_seg"));
+  const [moD, moH] = partes(rango("rg_seg_monto"));
 
   const [{ data, error }, { data: equipoDb }] = await Promise.all([
     supabase.rpc("inicio_gestion", {
@@ -156,25 +153,21 @@ async function VistaGestion({
       p_quien: pQuien,
       p_orden: {
         nuevos: `${oNuevos.campo}:${oNuevos.dir}`,
-        frios: `${oFrios.campo}:${oFrios.dir}`,
-        cot: `${oCot.campo}:${oCot.dir}`,
+        seg: `${oSeg.campo}:${oSeg.dir}`,
       },
       p_rangos: {
         nuevos_desde: nvD, nuevos_hasta: nvH,
-        frios_desde: frD, frios_hasta: frH,
-        cot_desde: ctD, cot_hasta: ctH,
-        cot_dias_min: diD, cot_dias_max: diH,
-        cot_total_min: toD, cot_total_max: toH,
+        seg_desde: sgD, seg_hasta: sgH,
+        seg_monto_min: moD, seg_monto_max: moH,
       },
       p_filtros: {
         nuevos_linea: rango("f_nuevos_linea") ?? "",
         nuevos_origen: rango("f_nuevos_origen") ?? "",
         nuevos_propietario: rango("f_nuevos_prop") ?? "",
-        frios_linea: rango("f_frios_linea") ?? "",
-        frios_estado: rango("f_frios_estado") ?? "",
-        frios_propietario: rango("f_frios_prop") ?? "",
-        cot_estado: rango("f_cot_estado") ?? "",
-        cot_vendedor: rango("f_cot_vendedor") ?? "",
+        seg_tipo: rango("f_seg_tipo") ?? "",
+        seg_linea: rango("f_seg_linea") ?? "",
+        seg_estado: rango("f_seg_estado") ?? "",
+        seg_responsable: rango("f_seg_resp") ?? "",
       },
     }),
     esJefe
@@ -236,10 +229,10 @@ async function VistaGestion({
         hrefSinSeguimiento={hrefLeads("sin_seguimiento")}
         qs={qs}
         ordenNuevos={oNuevos}
-        ordenFrios={oFrios}
+        ordenSeguimiento={oSeg}
       />
 
-      <CotizacionesEnJuego g={g} verEjecutivo={verEquipo} qs={qs} orden={oCot} />
+      <CotizacionesEnJuego g={g} />
     </>
   );
 }
