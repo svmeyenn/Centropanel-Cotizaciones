@@ -16,6 +16,9 @@ export interface FiltroLeads {
   // Antiguedad: contra que fecha se mide y cuantos dias. Lo usa la depuracion.
   campo?: "creado" | "toque";
   dias?: number;
+  // Leads en espera del cliente: no cuentan en los pendientes del inicio, y por
+  // eso tampoco en estos atajos.
+  enEspera?: number[];
 }
 
 export const SIN_PROPIETARIO = "__sin__";
@@ -41,6 +44,7 @@ interface Consulta {
   in(columna: string, valores: string[]): Consulta;
   is(columna: string, valor: null): Consulta;
   lt(columna: string, valor: string): Consulta;
+  not(columna: string, operador: string, valor: string): Consulta;
 }
 
 export function aplicarFiltrosLeads<T>(consulta: T, f: FiltroLeads, estados: EstadosParaFiltros = POR_DEFECTO): T {
@@ -63,6 +67,8 @@ export function aplicarFiltrosLeads<T>(consulta: T, f: FiltroLeads, estados: Est
   if (f.gestion === "sin_contactar") c = c.eq("estado_efectivo", estados.nuevo);
   if (f.gestion === "sin_seguimiento")
     c = c.in("estado_efectivo", estados.enSeguimiento).eq("con_compromiso", false);
+  if (f.gestion && f.enEspera && f.enEspera.length > 0)
+    c = c.not("id_clientify", "in", `(${f.enEspera.join(",")})`);
   if (f.linea === "paneles" || f.linea === "casas") c = c.eq("linea", f.linea);
 
   // Antiguedad. "Creado" mira cuando entro el lead; "toque", cuando se le hizo

@@ -11,6 +11,8 @@ import BitacoraCotizacion, {
 import BotonGenerarPedido from "@/components/BotonGenerarPedido";
 import { sumarDias } from "@/lib/formato";
 import LeadDeCotizacion from "@/components/LeadDeCotizacion";
+import ControlEspera from "@/components/ControlEspera";
+import { leerEspera } from "@/lib/espera";
 import { leadsDeCotizacion } from "@/lib/leadsDeCotizacion";
 
 // Ver / modificar una cotizacion existente. Abre en solo lectura (equivalente
@@ -112,6 +114,8 @@ export default async function Pagina({
     .eq("id_cotizacion", id)
     .maybeSingle();
 
+  const espera = await leerEspera(supabase, null, id);
+
   // El lead que la gesto, para volver a el desde aqui.
   const origen = await leadsDeCotizacion(supabase, {
     num_cotizacion: (cot.num_cotizacion as string | null) ?? null,
@@ -160,6 +164,11 @@ export default async function Pagina({
       />
       <div className="max-w-screen-2xl mx-auto px-4 pt-3">
         <LeadDeCotizacion leads={origen.leads} omitidos={origen.omitidos} />
+        {espera !== undefined && (
+          <div className="mt-2">
+            <ControlEspera idLead={null} idCot={id} vigente={espera} puedeEditar={v.puede_editar} zona={zonaCot} />
+          </div>
+        )}
       </div>
       <EditorCotizacion
         modo="ver"

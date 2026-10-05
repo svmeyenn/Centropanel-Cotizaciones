@@ -109,7 +109,9 @@ export default async function Pagina({
   const cat = await catalogoEstados();
   const nombreEstado = (e: string | null) => etiquetaDe(cat.lead, e);
   const busqueda = q.replace(/[,()%*]/g, " ").trim();
-  const filtroActual = { q, estado, dueno, linea, gestion, campo: campoEdad, dias: diasEdad };
+  // Los que esperan respuesta del cliente no cuentan en los atajos del inicio.
+  const enEspera = gestion ? (((await supabase.rpc("espera_leads")).data ?? []) as number[]) : [];
+  const filtroActual = { q, estado, dueno, linea, gestion, campo: campoEdad, dias: diasEdad, enEspera };
   consulta = aplicarFiltrosLeads(consulta, filtroActual, estadosParaFiltros(cat));
 
   const [{ data: filas, count }, { data: filtrosData }, { data: posibles }, { data: ultima }] = await Promise.all([

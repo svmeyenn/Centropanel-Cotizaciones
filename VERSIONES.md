@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0098-20261005**
+Version vigente: **v0099-20261005**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0099-20261005 | 05-10-2026 | En espera del cliente: un lead o una cotizacion que pidio no ser molestado se deja en espera, sale de los pendientes --agenda, por contactar, sin seguimiento y sus cuentas-- y queda en su propio cuadro del inicio con el motivo y los dias; se retoma con un boton o al agendar un compromiso nuevo | 746e112 |
 | v0098-20261005 | 05-10-2026 | Estados de leads y de cotizaciones parametrizables: mantenedor en Configuracion > Estados (renombrar, reordenar, agregar, dejar de ofrecer, eliminar y restaurar), con los estados que el sistema necesita protegidos; cada estado dice que significa --en juego, en seguimiento, oportunidad, perdido...-- y asi entra solo a los tableros, filtros y listados | 5b14732 |
 | v0097-20261005 | 05-10-2026 | Seguimiento unificado: leads y cotizaciones en un solo listado, con el lead y su cotizacion en una fila, y los compromisos vencidos de cotizaciones en el panel de leads; la cotizacion enlaza al lead que la gesto; las vistas v_cartola y v_cotizacion_lead dejan de ser legibles sin iniciar sesion | 9fc1b40 |
 | v0096-20261005 | 05-10-2026 | Inicio: el desempeno de leads mira el mes elegido y los dos anteriores; las listas van del mas nuevo al mas antiguo; los cuadros se ordenan pinchando el titulo de la columna; Mi gestion se filtra por linea, origen, propietario, estado, ejecutivo y rangos de fecha y monto, y la agenda por responsable y texto | 6a09f24 |

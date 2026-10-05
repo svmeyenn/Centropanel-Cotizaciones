@@ -4,6 +4,8 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonCotizarLead from "@/components/BotonCotizarLead";
 import FichaLead, { type DatosFicha } from "@/components/FichaLead";
+import ControlEspera from "@/components/ControlEspera";
+import { leerEspera } from "@/lib/espera";
 import HistorialLead, { type EntradaHistorial } from "@/components/HistorialLead";
 import ProyectoCasa, { type ArchivoLead, type DatosCasaGuardados } from "@/components/ProyectoCasa";
 import { administraUsuarios, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
@@ -220,6 +222,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   })[]).map((a) => ({ ...a, vendedor: a.vendedores?.nombre ?? null })) as ArchivoLead[];
 
   const puedeEscribir = puedeEscribirLeads(v);
+  const espera = await leerEspera(supabase, c.id_clientify, null);
   const puedeCotizar = v.puede_crear || tienePerfilAdmin(v);
 
   return (
@@ -247,6 +250,10 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             </span>
           )}
         </BarraNavegacion>
+
+        {espera !== undefined && (
+          <ControlEspera idLead={c.id_clientify} idCot={null} vigente={espera} puedeEditar={puedeEscribir} zona={zona} />
+        )}
 
         {/* Datos personales */}
         <FichaLead
