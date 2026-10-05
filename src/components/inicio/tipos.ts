@@ -51,20 +51,35 @@ export type CotizacionSinAccion = {
   id_pais: number;
 };
 
+// Lo que hay para elegir en cada filtro de Mi gestion, sacado de los datos que
+// existen y no de una lista escrita a mano.
+export type OpcionesGestion = {
+  nuevos_origen: string[];
+  nuevos_propietario: string[];
+  frios_estado: string[];
+  frios_propietario: string[];
+  cot_estado: string[];
+  cot_vendedor: string[];
+};
+
 export type Gestion = {
   hoy: string;
   lunes: string;
   quien: number | null;
   jefe: boolean;
   mis_emails: string[];
+  opciones: OpcionesGestion;
   agenda: ItemAgenda[];
   conteos: { atrasado: number; hoy: number; semana: number; proxima: number };
-  sin_contactar: { n: number; n7: number; lista: LeadEnBandeja[] };
-  sin_seguimiento: { n: number; lista: LeadEnBandeja[] };
+  // n es el total del mercado, para el resumen de arriba; n_filtrado es lo que
+  // deja ver el rango que puso la pantalla, y es lo que dice cada caja.
+  sin_contactar: { n: number; n7: number; n_filtrado: number; lista: LeadEnBandeja[] };
+  sin_seguimiento: { n: number; n_filtrado: number; lista: LeadEnBandeja[] };
   sin_propietario: number | null;
   cotizaciones: {
     embudo: EstadoEnJuego[];
     sin_accion_n: number;
+    sin_accion_n_filtrado: number;
     sin_accion_montos: Record<string, number>;
     sin_accion: CotizacionSinAccion[];
   };
@@ -94,6 +109,9 @@ export type CumplimientoFila = {
 
 export type PanelLeadsDatos = {
   mes: string;
+  // La cartera que se mira: el mes elegido y los dos anteriores, nada mas atras.
+  desde: string;
+  hasta: string;
   kpi: {
     total: number;
     nuevos_mes: number;
@@ -110,7 +128,7 @@ export type PanelLeadsDatos = {
   semanas_desde: string;
   origenes_top: string[];
   equipo: FilaEquipoLeads[];
-  // Por que se cierra una oportunidad, segun lo que anota el CRM. Del ultimo ano.
+  // Por que se cierra una oportunidad, segun lo que anota el CRM. Del periodo.
   razones_perdida: { razon: string; n: number; monto: number }[];
   razones_ganada: { razon: string; n: number; monto: number }[];
   origenes: { origen: string; n: number; oportunidades: number }[];
@@ -144,6 +162,14 @@ export function diaSemana(iso: string): string {
 export function diaCorto(iso: string): string {
   const [, m, d] = iso.slice(0, 10).split("-").map(Number);
   return `${d} ${MESES[m - 1]}`;
+}
+
+// "ago a oct 2026": el periodo de tres meses que mira el desempeno de leads.
+export function periodo(desde: string, hasta: string): string {
+  const [a1, m1] = desde.slice(0, 10).split("-").map(Number);
+  const [a2, m2] = hasta.slice(0, 10).split("-").map(Number);
+  const uno = `${MESES[m1 - 1]}${a1 === a2 ? "" : ` ${a1}`}`;
+  return `${uno} a ${MESES[m2 - 1]} ${a2}`;
 }
 
 // "hace 3 dias", "hoy", "en 2 dias": se entiende sin contar en el calendario.

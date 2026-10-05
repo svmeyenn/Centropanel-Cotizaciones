@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { ESTADOS_LEAD, LINEAS } from "@/lib/leads";
-import { diaCorto, type PanelLeadsDatos } from "@/components/inicio/tipos";
+import { diaCorto, periodo, type PanelLeadsDatos } from "@/components/inicio/tipos";
+import TituloOrden from "@/components/TituloOrden";
+import { ORIGENES, PROPIETARIOS } from "@/components/inicio/orden";
+import { ordenar, type Orden } from "@/lib/ordenTabla";
 
 // Desempeno de los leads de un mercado: cuantos llegan y de donde, en que estado
 // esta la cartera, como la trabaja cada propietario y que origen convierte.
 // Todos los graficos llevan su valor escrito: no hay que adivinarlo por el alto.
+//
+// Se mira el mes elegido y los dos anteriores, nada mas atras: la cartera vieja
+// se trabaja en Depurar leads, no aqui. Lo que se abre por semana mantiene su
+// propia ventana, y los compromisos se cuentan por su fecha de vencimiento.
+// Cada recuadro dice de que periodo habla: un numero sin periodo se malinterpreta.
 
 // Los estados en el orden del embudo; los que salieron del camino van aparte.
 const CAMINO = ["cold-lead", "warm-lead", "hot-lead", "in-deal", "client"];
@@ -17,8 +25,27 @@ const COLOR_OTROS = "#B8B4A8";
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 const n = (x: number) => x.toLocaleString("es-CL");
 
-export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
+export default function PanelLeads({
+  d,
+  qs,
+  ordenPropietarios,
+  ordenOrigenes,
+}: {
+  d: PanelLeadsDatos;
+  qs: string;
+  ordenPropietarios: Orden;
+  ordenOrigenes: Orden;
+}) {
   const k = d.kpi;
+  const rango = periodo(d.desde, d.hasta);
+  // Estas dos tablas llegan completas, asi que se ordenan aqui, en el servidor,
+  // y no en el navegador: el orden queda en la direccion web como en el resto.
+  const equipo = ordenar(d.equipo, ordenPropietarios, (f, c) =>
+    c === "propietario" ? f.propietario : c === "conversion" ? pct(f.oportunidades, f.asignados) : Number(f[c as keyof typeof f] ?? 0)
+  );
+  const origenes = ordenar(d.origenes, ordenOrigenes, (f, c) =>
+    c === "origen" ? f.origen : c === "conversion" ? pct(f.oportunidades, f.n) : Number(f[c as keyof typeof f] ?? 0)
+  );
   const variacion = k.nuevos_ant > 0 ? Math.round(((k.nuevos_mes - k.nuevos_ant) / k.nuevos_ant) * 100) : null;
   const origenesColor = new Map<string, string>(d.origenes_top.map((o, i) => [o, COLORES[i] ?? COLOR_OTROS]));
   const totalLinea = Object.values(d.linea).reduce((a, b) => a + b, 0);
@@ -34,6 +61,15 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
 
   return (
     <div className="space-y-2.5">
+      <p className="text-[10px] text-gray-500">
+        Cartera de <b className="text-gray-700">{rango}</b>: el mes elegido y los dos anteriores. Los leads mas
+        antiguos no se cuentan aqui; se trabajan en{" "}
+        <Link href="/leads/depurar" className="underline text-verde">
+          Depurar leads
+        </Link>
+        .
+      </p>
+
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
         <Kpi
           titulo="Leads nuevos del mes"
@@ -70,7 +106,7 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
       </div>
 
       <div className="grid gap-2.5 lg:grid-cols-2">
-        <Caja titulo={`Cartera por estado · ${n(k.total)} leads`}>
+        <Caja titulo={`Cartera por estado · ${n(k.total)} leads de ${rango}`}>
           <ul className="p-3 space-y-1 text-[11px]">
             {CAMINO.map((e) => (
               <BarraEstado key={e} estado={e} valor={d.embudo[e] ?? 0} total={k.total} max={maxCamino} vivo />
@@ -81,7 +117,7 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
             ))}
           </ul>
           <p className="px-3 pb-2 text-[10px] text-gray-500">
-            Pulse un estado para ver esos leads.
+            Pulse un estado para ver esos leads. La lista los trae todos, tambien los que entraron antes.
           </p>
         </Caja>
 
@@ -139,35 +175,39 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
       </div>
 
       <div className="grid gap-2.5 lg:grid-cols-2">
-        <Razones titulo="Por que se pierde" filas={d.razones_perdida ?? []} clase="bg-[#B5654A]" />
-        <Razones titulo="Por que se gana" filas={d.razones_ganada ?? []} clase="bg-verde" />
+        <Razones titulo="Por que se pierde" filas={d.razones_perdida ?? []} clase="bg-[#B5654A]" rango={rango} />
+        <Razones titulo="Por que se gana" filas={d.razones_ganada ?? []} clase="bg-verde" rango={rango} />
       </div>
 
-      <Caja titulo="Como trabaja la cartera cada propietario">
+      <Caja titulo={`Como trabaja la cartera cada propietario · ${rango}`}>
         <div className="overflow-x-auto">
           <table className="w-full text-[11px]">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
-                <th className="text-left px-2.5 py-1.5">Propietario</th>
-                <th className="text-right px-2.5 py-1.5">Asignados</th>
-                <th className="text-right px-2.5 py-1.5">Nuevos del mes</th>
-                <th className="text-right px-2.5 py-1.5">Sin contactar</th>
-                <th className="text-right px-2.5 py-1.5">Contactados</th>
-                <th className="text-right px-2.5 py-1.5">Oportunidades</th>
-                <th className="text-right px-2.5 py-1.5">Sin seguimiento</th>
-                <th className="text-right px-2.5 py-1.5">Compromisos vencidos</th>
-                <th className="text-right px-2.5 py-1.5">Conversion</th>
+                {PROPIETARIOS.columnas.map((c) => (
+                  <TituloOrden
+                    key={c.campo}
+                    qs={qs}
+                    param={PROPIETARIOS.param}
+                    campo={c.campo}
+                    actual={ordenPropietarios}
+                    inicial={c.inicial}
+                    alineacion={c.campo === "propietario" ? "left" : "right"}
+                  >
+                    {c.texto}
+                  </TituloOrden>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {d.equipo.length === 0 && (
+              {equipo.length === 0 && (
                 <tr>
                   <td colSpan={9} className="text-center text-gray-400 py-5">
                     Sin leads en este mercado.
                   </td>
                 </tr>
               )}
-              {d.equipo.map((f) => (
+              {equipo.map((f) => (
                 <tr key={f.propietario} className="border-t border-gray-100">
                   <td className="px-2.5 py-1.5 font-semibold text-verde">{f.propietario}</td>
                   <td className="px-2.5 py-1.5 text-right tabular-nums">{n(f.asignados)}</td>
@@ -191,12 +231,16 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
         </div>
         <p className="px-2.5 py-1.5 text-[10px] text-gray-500">
           Conversion: oportunidades y clientes sobre el total asignado. Sin seguimiento: contactados, calientes u
-          oportunidades sin compromiso ni accion pendiente.
+          oportunidades sin compromiso ni accion pendiente. Los compromisos vencidos se cuentan por su fecha, de toda
+          la cartera de la persona.
+          <Link href="/leads/depurar" className="underline text-verde ml-1">
+            Depurar leads anteriores
+          </Link>
         </p>
       </Caja>
 
       <div className="grid gap-2.5 lg:grid-cols-[1fr_1.4fr]">
-        <Caja titulo="Paneles y proyecto">
+        <Caja titulo={`Paneles y proyecto · ${rango}`}>
           <div className="p-3 space-y-2 text-[11px]">
             <div className="flex h-6 w-full overflow-hidden rounded" role="img" aria-label={`Paneles ${paneles}, proyecto ${proyecto}`}>
               <div className="bg-verde text-white text-[10px] font-semibold flex items-center justify-center" style={{ width: `${pct(paneles, totalLinea)}%` }}>
@@ -217,21 +261,31 @@ export default function PanelLeads({ d }: { d: PanelLeadsDatos }) {
           </div>
         </Caja>
 
-        <Caja titulo="Que origen convierte · leads de los ultimos 90 dias">
+        <Caja titulo={`Que origen convierte · leads de ${rango}`}>
           {d.origenes.length === 0 ? (
-            <p className="px-3 py-5 text-center text-xs text-gray-400">Sin leads en los ultimos 90 dias.</p>
+            <p className="px-3 py-5 text-center text-xs text-gray-400">Sin leads en este periodo.</p>
           ) : (
             <table className="w-full text-[11px]">
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="text-left px-2.5 py-1">Origen</th>
-                  <th className="text-right px-2.5 py-1">Leads</th>
-                  <th className="text-right px-2.5 py-1">Oportunidades</th>
-                  <th className="text-left px-2.5 py-1 w-[40%]">Conversion</th>
+                  {ORIGENES.columnas.map((c) => (
+                    <TituloOrden
+                      key={c.campo}
+                      qs={qs}
+                      param={ORIGENES.param}
+                      campo={c.campo}
+                      actual={ordenOrigenes}
+                      inicial={c.inicial}
+                      alineacion={c.campo === "origen" || c.campo === "conversion" ? "left" : "right"}
+                      ancho={c.campo === "conversion" ? "w-[40%]" : undefined}
+                    >
+                      {c.texto}
+                    </TituloOrden>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {d.origenes.slice(0, 8).map((o) => {
+                {origenes.slice(0, 8).map((o) => {
                   const p = pct(o.oportunidades, o.n);
                   return (
                     <tr key={o.origen} className="border-t border-gray-100">
@@ -261,23 +315,25 @@ function sumar(iso: string, dias: number) {
   return new Date(Date.UTC(a, m - 1, dd + dias)).toISOString().slice(0, 10);
 }
 
-// Las razones que anota el CRM al cerrar una oportunidad. Sin esto no se puede
-// responder por que se pierde.
+// Las razones que anota el CRM al cerrar una oportunidad, por su fecha de
+// cierre. Sin esto no se puede responder por que se pierde.
 function Razones({
   titulo,
   filas,
   clase,
+  rango,
 }: {
   titulo: string;
   filas: { razon: string; n: number; monto: number }[];
   clase: string;
+  rango: string;
 }) {
   const total = filas.reduce((a, b) => a + b.n, 0);
   return (
-    <Caja titulo={`${titulo} · oportunidades cerradas en el ultimo ano`}>
+    <Caja titulo={`${titulo} · oportunidades cerradas en ${rango}`}>
       {filas.length === 0 ? (
         <p className="px-3 py-5 text-center text-xs text-gray-400">
-          Sin oportunidades cerradas con razon anotada. La razon viene de la planilla del CRM.
+          Sin oportunidades cerradas en {rango}. La razon viene de la planilla del CRM.
         </p>
       ) : (
         <ul className="p-3 space-y-1.5 text-[11px]">

@@ -52,6 +52,10 @@ export default function Agenda({
 }) {
   const [tipo, setTipo] = useState<TipoAgenda | "todos">("todos");
   const [filtro, setFiltro] = useState<Filtro>("todo");
+  // De quien y sobre que. La agenda llega completa --son dos semanas-- asi que
+  // filtrar aqui es instantaneo y no hay que volver a la base.
+  const [quien, setQuien] = useState("");
+  const [busca, setBusca] = useState("");
   const [hechos, setHechos] = useState<Record<string, boolean>>({});
   const [error, setError] = useState("");
   const [pendiente, empezar] = useTransition();
@@ -82,7 +86,18 @@ export default function Agenda({
     return f === filtro;
   };
 
-  const porTipo = items.filter((x) => tipo === "todos" || x.tipo === tipo);
+  const responsables = useMemo(
+    () => [...new Set(items.map((x) => x.responsable).filter(Boolean) as string[])].sort(),
+    [items]
+  );
+  const texto = busca.trim().toLowerCase();
+  const porTipo = items.filter(
+    (x) =>
+      (tipo === "todos" || x.tipo === tipo) &&
+      (!quien || x.responsable === quien) &&
+      (!texto ||
+        [x.sujeto, x.detalle, x.accion, x.comentario].some((c) => (c ?? "").toLowerCase().includes(texto)))
+  );
   const visibles = porTipo.filter((x) => pasaFiltro(x.fecha));
   const cuenta = (t: TipoAgenda) => items.filter((x) => x.tipo === t).length;
   const antes = porTipo.filter((x) => x.fecha < lunes).length;
@@ -169,8 +184,41 @@ export default function Agenda({
               {{ atrasado: "Atrasado", hoy: "Hoy", semana: "Resto de la semana", proxima: "Proxima semana" }[f]}
             </button>
           ))}
-          {filtro !== "todo" && (
-            <button type="button" onClick={() => setFiltro("todo")} className="underline text-verde">
+          {verResponsable && responsables.length > 1 && (
+            <label className="flex items-center gap-1">
+              <span className="sr-only">Responsable</span>
+              <select
+                value={quien}
+                onChange={(e) => setQuien(e.target.value)}
+                className="border border-gray-300 rounded px-1.5 py-0.5 bg-white"
+              >
+                <option value="">Todo el equipo</option>
+                {responsables.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar un nombre o una accion"
+            aria-label="Buscar en la agenda"
+            className="border border-gray-300 rounded px-1.5 py-0.5 bg-white w-48"
+          />
+          {(filtro !== "todo" || quien || texto) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFiltro("todo");
+                setQuien("");
+                setBusca("");
+              }}
+              className="underline text-verde"
+            >
               Ver todo
             </button>
           )}

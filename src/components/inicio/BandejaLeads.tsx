@@ -1,31 +1,63 @@
 import Link from "next/link";
 import { BanderaDe } from "@/components/Bandera";
 import PildoraLinea from "@/components/PildoraLinea";
-import { estadoLegible } from "@/lib/leads";
+import { estadoLegible, LINEAS } from "@/lib/leads";
 import { antiguedad, diasEntre, type Gestion, type LeadEnBandeja } from "@/components/inicio/tipos";
+import { BarraOrden } from "@/components/TituloOrden";
+import FiltrosCuadro from "@/components/FiltrosCuadro";
+import { FRIOS, NUEVOS } from "@/components/inicio/orden";
+import type { Orden } from "@/lib/ordenTabla";
 
-// Los leads que esperan sin fecha: los nuevos que nadie ha contactado (los mas
-// recientes primero: un lead fresco se gana mas facil) y los vivos que se estan
-// enfriando sin nada comprometido (los mas olvidados primero).
+// Los leads que esperan sin fecha: los nuevos que nadie ha contactado y los
+// vivos que se estan enfriando sin nada comprometido. Las dos listas van del
+// mas nuevo al mas antiguo, como todas las del inicio; lo que no cabe en las
+// quince filas se busca en la lista de leads, que filtra y ordena.
 export default function BandejaLeads({
   g,
   verPropietario,
   hrefSinContactar,
   hrefSinSeguimiento,
+  qs,
+  ordenNuevos,
+  ordenFrios,
 }: {
   g: Gestion;
   verPropietario: boolean;
   hrefSinContactar: string;
   hrefSinSeguimiento: string;
+  qs: string;
+  ordenNuevos: Orden;
+  ordenFrios: Orden;
 }) {
+  const lineas = [
+    { valor: "paneles", texto: LINEAS.paneles },
+    { valor: "casas", texto: LINEAS.casas },
+  ];
+  const lista = (vs: string[]) => vs.map((v) => ({ valor: v, texto: v }));
+  const o = g.opciones;
+
   return (
     <div className="grid gap-2 lg:grid-cols-2">
       <Lista
         titulo="Por contactar"
-        explicacion="Leads nuevos que nadie ha contactado todavia. Los mas recientes arriba."
-        total={g.sin_contactar.n}
+        explicacion="Leads nuevos que nadie ha contactado todavia."
+        total={g.sin_contactar.n_filtrado ?? g.sin_contactar.n}
         filas={g.sin_contactar.lista}
         href={hrefSinContactar}
+        barra={<BarraOrden qs={qs} param={NUEVOS.param} actual={ordenNuevos} opciones={NUEVOS.columnas} />}
+        filtro={
+          <FiltrosCuadro
+            selecciones={[
+              { param: "f_nuevos_linea", texto: "Linea", opciones: lineas },
+              { param: "f_nuevos_origen", texto: "Origen", opciones: lista(o?.nuevos_origen ?? []) },
+              { param: "f_nuevos_prop", texto: "Propietario", opciones: lista(o?.nuevos_propietario ?? []) },
+            ]}
+            rangos={[{ param: "rg_nuevos", texto: "Fecha de entrada", tipo: "fecha" }]}
+            nFiltrado={g.sin_contactar.n_filtrado ?? g.sin_contactar.n}
+            nTotal={g.sin_contactar.n}
+            unidad="leads"
+          />
+        }
         vacio="No hay leads esperando el primer contacto."
         verPropietario={verPropietario}
         hoy={g.hoy}
@@ -40,10 +72,28 @@ export default function BandejaLeads({
       />
       <Lista
         titulo="Sin seguimiento"
-        explicacion="Leads vivos (contactados, calientes u oportunidades) sin ningun compromiso por delante. Los mas olvidados arriba."
-        total={g.sin_seguimiento.n}
+        explicacion="Leads vivos (contactados, calientes u oportunidades) sin ningun compromiso por delante."
+        total={g.sin_seguimiento.n_filtrado ?? g.sin_seguimiento.n}
         filas={g.sin_seguimiento.lista}
         href={hrefSinSeguimiento}
+        barra={<BarraOrden qs={qs} param={FRIOS.param} actual={ordenFrios} opciones={FRIOS.columnas} />}
+        filtro={
+          <FiltrosCuadro
+            selecciones={[
+              { param: "f_frios_linea", texto: "Linea", opciones: lineas },
+              {
+                param: "f_frios_estado",
+                texto: "Estado",
+                opciones: (o?.frios_estado ?? []).map((e) => ({ valor: e, texto: estadoLegible(e) })),
+              },
+              { param: "f_frios_prop", texto: "Propietario", opciones: lista(o?.frios_propietario ?? []) },
+            ]}
+            rangos={[{ param: "rg_frios", texto: "Ultimo contacto", tipo: "fecha" }]}
+            nFiltrado={g.sin_seguimiento.n_filtrado ?? g.sin_seguimiento.n}
+            nTotal={g.sin_seguimiento.n}
+            unidad="leads"
+          />
+        }
         vacio="Todos los leads vivos tienen algo comprometido."
         verPropietario={verPropietario}
         hoy={g.hoy}
@@ -71,6 +121,8 @@ function Lista({
   verPropietario,
   dato,
   detalle,
+  barra,
+  filtro,
 }: {
   titulo: string;
   explicacion: string;
@@ -82,6 +134,8 @@ function Lista({
   hoy: string;
   dato: (l: LeadEnBandeja) => { texto: string; alerta: boolean };
   detalle: (l: LeadEnBandeja) => string;
+  barra: React.ReactNode;
+  filtro: React.ReactNode;
 }) {
   return (
     <section className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col">
@@ -90,7 +144,11 @@ function Lista({
           Leads {titulo.toLowerCase()} · {total.toLocaleString("es-CL")}
         </h2>
       </div>
-      <p className="px-3 pt-1.5 text-[10px] text-gray-500">{explicacion}</p>
+      {filtro}
+      <div className="px-3 pt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="text-[10px] text-gray-500">{explicacion}</p>
+        {barra}
+      </div>
       {filas.length === 0 ? (
         <p className="px-3 py-5 text-center text-xs text-gray-500">{vacio}</p>
       ) : (
