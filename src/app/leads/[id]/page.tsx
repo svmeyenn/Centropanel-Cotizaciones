@@ -5,13 +5,15 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonCotizarLead from "@/components/BotonCotizarLead";
 import FichaLead, { type DatosFicha } from "@/components/FichaLead";
 import ControlEspera from "@/components/ControlEspera";
+import MensajeLead from "@/components/MensajeLead";
+import type { Plantilla } from "@/lib/mensajes";
 import { leerEspera } from "@/lib/espera";
 import HistorialLead, { type EntradaHistorial } from "@/components/HistorialLead";
 import ProyectoCasa, { type ArchivoLead, type DatosCasaGuardados } from "@/components/ProyectoCasa";
 import { administraUsuarios, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { ESTADOS_OPORTUNIDAD, ETAPAS } from "@/lib/clientify";
-import { dinero, fecha, hoyISO } from "@/lib/formato";
+import { dinero, fecha, hoyISO, primerNombre } from "@/lib/formato";
 import { puedeEscribirLeads } from "@/lib/leads";
 import { etiquetaDe, type Estado } from "@/lib/catalogoEstados";
 import { catalogoEstados } from "@/lib/leerCatalogoEstados";
@@ -223,6 +225,11 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   const puedeEscribir = puedeEscribirLeads(v);
   const espera = await leerEspera(supabase, c.id_clientify, null);
+  // Los mensajes que se pueden escribir al contacto; si la base aun no los tiene, no se ofrece.
+  const { data: plantillasDb, error: errPlantillas } = puedeEscribir
+    ? await supabase.from("plantillas_mensaje").select("id, canal, nombre, asunto, cuerpo, orden, activo").eq("activo", true).order("orden").order("nombre")
+    : { data: null, error: null };
+  const plantillas = (errPlantillas ? [] : (plantillasDb ?? [])) as Plantilla[];
   const puedeCotizar = v.puede_crear || tienePerfilAdmin(v);
 
   return (
@@ -253,6 +260,26 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
         {espera !== undefined && (
           <ControlEspera idLead={c.id_clientify} idCot={null} vigente={espera} puedeEditar={puedeEscribir} zona={zona} />
+        )}
+
+        {puedeEscribir && plantillas.length > 0 && (
+          <MensajeLead
+            idLead={c.id_clientify}
+            plantillas={plantillas}
+            emails={(c.emails ?? []).map((e) => e.email ?? "").filter(Boolean)}
+            telefonos={(c.telefonos ?? []).filter((t) => t.phone).map((t) => ({ phone: t.phone as string, whatsapp: t.whatsapp }))}
+            prefijoTelefono={codigoPais === "PE" ? "51" : "56"}
+            cotizaciones={cotizaciones.filter((q) => q.folio).map((q) => ({ id: q.id_cotizacion, folio: q.folio }))}
+            datos={{
+              nombre: primerNombre(c.nombre) || primerNombre(c.nombre_completo),
+              nombreCompleto: c.nombre_completo ?? "",
+              empresa: c.empresa ?? "",
+              vendedor: v.nombre,
+              cargoVendedor: v.cargo,
+              emailVendedor: v.email,
+              fonoVendedor: v.telefono,
+            }}
+          />
         )}
 
         {/* Datos personales */}
