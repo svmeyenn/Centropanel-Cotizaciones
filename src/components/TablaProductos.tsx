@@ -109,12 +109,16 @@ export default function TablaProductos({
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
+    // El SKU se encuentra tal como esta escrito (PR-00004) o sin guion ni espacios (pr00004, 00004).
+    const qSku = q.replace(/[\s-]/g, "");
     return productos.filter(
       (p) =>
         (!soloActivos || p.activo) &&
         (!familia || (p.familia ?? "Otros") === familia) &&
         (!q ||
           p.descripcion.toLowerCase().includes(q) ||
+          (p.sku ?? "").toLowerCase().includes(q) ||
+          (qSku !== "" && (p.sku ?? "").toLowerCase().replace(/[\s-]/g, "").includes(qSku)) ||
           (p.familia ?? "").toLowerCase().includes(q) ||
           (p.subfamilia ?? "").toLowerCase().includes(q)),
     );
@@ -208,7 +212,7 @@ export default function TablaProductos({
       <div className="flex flex-wrap gap-3 items-center">
         <input
           className="border border-gray-300 rounded px-3 py-1.5 text-sm w-72"
-          placeholder="Buscar por descripcion"
+          placeholder="Buscar por descripcion o SKU"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />

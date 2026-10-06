@@ -122,7 +122,11 @@ export default function Configurador({
       );
       if (r.error) setError(r.error);
       else if (r.aviso) setAviso(r.aviso);
-      else if (r.ok) setExito("Panel guardado en el catalogo.");
+      else if (r.ok) {
+        setExito(`Panel guardado en el catalogo${r.sku ? ` con el SKU ${r.sku}` : ""}.`);
+        // Ahora el panel existe: el resultado pasa a mostrar su SKU.
+        setRes((prev) => (prev ? { ...prev, existe_id: r.id ?? null, misma_config: true, sku_existente: r.sku ?? null } : prev));
+      }
     });
   }
 
@@ -259,6 +263,14 @@ export default function Configurador({
                   Espesor total: {unidades(res.espesor_total)} mm
                 </div>
               )}
+              <div className="text-xs text-gray-500">
+                SKU:{" "}
+                {yaExiste && res.misma_config && res.sku_existente ? (
+                  <span className="font-semibold text-negro tabular-nums">{res.sku_existente}</span>
+                ) : (
+                  <span>se asigna al guardarlo en el catalogo</span>
+                )}
+              </div>
             </div>
 
             {yaExiste && (
@@ -277,7 +289,7 @@ export default function Configurador({
                 ) : (
                   <>
                     <strong>Ojo:</strong> ya existe un panel llamado igual (
-                    {res.descripcion_existente}) pero hecho con otras materias
+                    {res.descripcion_existente}{res.sku_existente ? `, SKU ${res.sku_existente}` : ""}) pero hecho con otras materias
                     primas. Guardarlo cambiaria el costo de ese producto.
                   </>
                 )}
