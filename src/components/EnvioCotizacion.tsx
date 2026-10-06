@@ -5,7 +5,7 @@ import { dinero, fecha as fmtFecha, primerNombre } from "@/lib/formato";
 import { cambiarEstado } from "@/app/cotizaciones/acciones";
 import { codigoDeRol, tieneMarca } from "@/lib/catalogoEstados";
 import { useCatalogoEstados } from "@/components/ProveedorEstados";
-import { enviarCotizacionPorCorreo } from "@/app/cotizaciones/envio";
+import { enviarCotizacionPorCorreo, registrarEnvioCotizacion } from "@/app/cotizaciones/envio";
 
 export interface DatosEnvio {
   id: number;
@@ -166,6 +166,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
     if (archivo) {
       try {
         await navigator.share({ files: [archivo], text: mensajeWA });
+        void registrarEnvioCotizacion(datos.id, "whatsapp", datos.telefonoCliente ?? "", "", mensajeWA);
         marcarEnviada();
         return;
       } catch (e) {
@@ -174,6 +175,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
       }
     }
     window.open(wa, "_blank", "noopener,noreferrer");
+    void registrarEnvioCotizacion(datos.id, "whatsapp", datos.telefonoCliente ?? "", "", mensajeWA);
     marcarEnviada();
   }
 
@@ -277,7 +279,14 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               {!aviso.ok && datos.emailCliente && (
                 <>
                   {" "}
-                  <a href={mailto} onClick={marcarEnviada} className="underline">
+                  <a
+                    href={mailto}
+                    onClick={() => {
+                      void registrarEnvioCotizacion(datos.id, "email", datos.emailCliente ?? "", asunto, cuerpo);
+                      marcarEnviada();
+                    }}
+                    className="underline"
+                  >
                     Abrir en mi programa de correo (sin adjunto)
                   </a>
                 </>

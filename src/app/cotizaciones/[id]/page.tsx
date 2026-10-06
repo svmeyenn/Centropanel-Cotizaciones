@@ -119,6 +119,7 @@ export default async function Pagina({
 
   // El lead que la gesto, para volver a el desde aqui.
   const origen = await leadsDeCotizacion(supabase, {
+    id,
     num_cotizacion: (cot.num_cotizacion as string | null) ?? null,
     id_cliente: cot.id_cliente != null ? Number(cot.id_cliente) : null,
   });
@@ -167,7 +168,7 @@ export default async function Pagina({
         <div className="mb-2 flex justify-end">
           <EnlacesInicio />
         </div>
-        <LeadDeCotizacion leads={origen.leads} omitidos={origen.omitidos} />
+        <LeadDeCotizacion leads={origen.leads} omitidos={origen.omitidos} idCotizacion={id} puedeVincular={v.puede_editar || tienePerfilAdmin(v)} />
         {espera !== undefined && (
           <div className="mt-2">
             <ControlEspera idLead={null} idCot={id} vigente={espera} puedeEditar={v.puede_editar} zona={zonaCot} />

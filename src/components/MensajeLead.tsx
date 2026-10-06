@@ -64,7 +64,7 @@ export default function MensajeLead({
   const [editado, setEditado] = useState(false);
   const [aviso, setAviso] = useState<Aviso>(null);
   const [ocupado, setOcupado] = useState(false);
-  const [registrados, setRegistrados] = useState<string[]>([]);
+  const ultimo = useRef({ clave: "", cuando: 0 });
   // Si el lead paso de "no contactado" a "contactado", la base lo dice al registrar.
   const nota = useRef("");
   const [archivos, setArchivos] = useState<Record<number, File>>({});
@@ -119,14 +119,15 @@ export default function MensajeLead({
   const faltaPreparar = compartible && canal === "whatsapp" && elegidas.some((id) => !archivos[id]);
 
   async function anotar() {
-    const clave = `${canal}|${destino}|${plantilla?.id ?? 0}|${folios.join(",")}`;
-    if (registrados.includes(clave)) return true;
-    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas);
+    // Cada envio queda anotado; solo se ignora el mismo toque repetido a los pocos segundos.
+    const clave = `${canal}|${destino}|${asunto}|${cuerpo}|${folios.join(",")}`;
+    if (ultimo.current.clave === clave && Date.now() - ultimo.current.cuando < 15000) return true;
+    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas, canal === "email" ? asunto : "", cuerpo);
     if (!r.ok) {
       setAviso({ ok: false, texto: r.mensaje ?? "No se pudo anotar en el lead." });
       return false;
     }
-    setRegistrados((x) => [...x, clave]);
+    ultimo.current = { clave, cuando: Date.now() };
     nota.current = (r.mensaje ?? "").replace(/^Anotado en el lead, con seguimiento en 3 dias\.\s*/, "");
     setAviso({ ok: true, texto: r.mensaje ?? "Anotado en el lead." });
     return true;
