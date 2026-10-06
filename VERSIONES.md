@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0104-20261006**
+Version vigente: **v0105-20261006**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0105-20261006 | 06-10-2026 | Al enviar una cotizacion --desde el lead con el PDF adjunto o desde la cotizacion-- ella pasa a Enviada y el lead a Oportunidad, aunque tuviera un estado puesto a mano; las cerradas y los leads que ya son Oportunidad o Cliente no se tocan | a397b51 |
 | v0104-20261006 | 06-10-2026 | Mensajes a leads por linea: cada linea --Paneles, Proyecto y las que vengan-- tiene su propio juego de correos y WhatsApp, se elige en el mantenedor y el lead ofrece los de su linea; se agrega el juego inicial de Proyecto | c0560c5 |
 | v0103-20261006 | 06-10-2026 | Cada accion dice quien la anoto, distinto de quien la tiene a cargo: rotulo Anoto en las conversaciones, en la bitacora de la cotizacion y en la agenda del inicio, y en las anotaciones de cotizacion del lead quien genero la cotizacion; vale tambien para lo ya registrado | 4544c6e |
 | v0102-20261006 | 06-10-2026 | Fusion de leads duplicados: desde la ficha, quien administra fusiona un duplicado en el lead que se conserva; pasan conversaciones, compromisos, oportunidades, cotizaciones, archivos y datos, y el duplicado queda oculto y registrado | 4649f39 |
