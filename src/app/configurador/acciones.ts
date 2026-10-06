@@ -25,6 +25,8 @@ export interface ResultadoPanel {
   existe_id: number | null;
   misma_config: boolean;
   descripcion_existente: string | null;
+  // SKU del panel que ya esta en el catalogo --null si es nuevo: se asigna al guardarlo--.
+  sku_existente: string | null;
   // Desglose de como se llego al costo, equivalente a CfgDesglose en Access.
   // Solo se arma para el administrador: detalla el costo de cada insumo.
   costeo: LineaCosteo[] | null;
@@ -125,6 +127,7 @@ export async function calcularPanel(
   const existeId = rExiste.data ? Number(rExiste.data) : null;
   let mismaConfig = false;
   let descExistente: string | null = null;
+  let skuExistente: string | null = null;
 
   if (existeId) {
     const [rMisma, rProd] = await Promise.all([
@@ -136,12 +139,13 @@ export async function calcularPanel(
       }),
       supabase
         .from("v_catalogo_venta")
-        .select("descripcion")
+        .select("descripcion, sku")
         .eq("id", existeId)
         .single(),
     ]);
     mismaConfig = Boolean(rMisma.data);
     descExistente = rProd.data?.descripcion ?? null;
+    skuExistente = (rProd.data?.sku as string | null) ?? null;
   }
 
   // Desglose: EPS + cara A + cara B + adhesivo prorrateado. El balde rinde 30
@@ -175,6 +179,7 @@ export async function calcularPanel(
     existe_id: existeId,
     misma_config: mismaConfig,
     descripcion_existente: descExistente,
+    sku_existente: skuExistente,
     costeo,
   };
 }
@@ -186,7 +191,7 @@ export async function guardarPanel(
   c: Combinacion,
   precioManual?: number | null,
   idPais?: number | null
-): Promise<{ ok?: true; id?: number; error?: string; aviso?: string }> {
+): Promise<{ ok?: true; id?: number; sku?: string | null; error?: string; aviso?: string }> {
   const v = await requerirVendedor();
   if (!v.puede_crear && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite crear productos." };
@@ -243,5 +248,7 @@ export async function guardarPanel(
 
   revalidatePath("/productos");
   revalidatePath("/configurador");
-  return { ok: true, id: Number(r.id) };
+  // El SKU lo asigna la base al crear el producto.
+  const { data: creado } = await supabase.from("v_catalogo_venta").select("sku").eq("id", Number(r.id)).maybeSingle();
+  return { ok: true, id: Number(r.id), sku: (creado?.sku as string | null) ?? null };
 }
