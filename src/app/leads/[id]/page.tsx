@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonCotizarLead from "@/components/BotonCotizarLead";
 import FichaLead, { type DatosFicha } from "@/components/FichaLead";
 import ControlEspera from "@/components/ControlEspera";
 import MensajeLead from "@/components/MensajeLead";
+import FusionLead from "@/components/FusionLead";
 import type { Plantilla } from "@/lib/mensajes";
 import { leerEspera } from "@/lib/espera";
 import HistorialLead, { type EntradaHistorial } from "@/components/HistorialLead";
@@ -140,7 +141,12 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     )
     .eq("id_clientify", idContacto)
     .maybeSingle();
-  if (!contacto) notFound();
+  if (!contacto) {
+    // Un lead fusionado en otro ya no existe por su cuenta: se abre el que lo recibio.
+    const { data: fusion } = await supabase.from("lead_fusiones").select("id_destino").eq("id_origen", idContacto).maybeSingle();
+    if (fusion?.id_destino) redirect(`/leads/${fusion.id_destino}`);
+    notFound();
+  }
   const c = contacto as Contacto;
 
   const { accesibles, activo } = await contextoMercado(v);
@@ -257,6 +263,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             </span>
           )}
         </BarraNavegacion>
+
+        {tienePerfilAdmin(v) && <FusionLead idLead={c.id_clientify} estados={cat.lead} />}
 
         {espera !== undefined && (
           <ControlEspera idLead={c.id_clientify} idCot={null} vigente={espera} puedeEditar={puedeEscribir} zona={zona} />
