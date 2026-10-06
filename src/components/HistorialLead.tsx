@@ -297,6 +297,7 @@ export default function HistorialLead({
                     </Link>
                   )}
                   <span className="text-gray-500">{dia(e.fecha_hecho)}</span>
+                  <span className="text-gray-500">Anotó</span>
                   <span className="font-semibold">{e.vendedor_nombre}</span>
                 </div>
 
@@ -349,7 +350,7 @@ export default function HistorialLead({
                     <span className="font-semibold">{e.proxima_accion}</span>
                     <span className="text-gray-600">para el {dia(e.proxima_fecha ?? "")}</span>
                     {e.responsable_nombre && (
-                      <span className="text-gray-600">· {e.responsable_nombre}</span>
+                      <span className="text-gray-600">· a cargo de {e.responsable_nombre}</span>
                     )}
                     {e.ejecutada_en && (
                       <span className="text-gray-500">

@@ -230,6 +230,7 @@ export default function BitacoraCotizacion({
           {actividad.map((a) => (
             <li key={a.id} className="px-3 py-2 text-xs">
               <div className="flex flex-wrap items-baseline gap-x-2">
+                <span className="text-gray-500">Anotó</span>
                 <span className="font-semibold">{a.vendedor_nombre}</span>
                 <span className="text-gray-500">{cuando(a.fecha_registro, zona)}</span>
               </div>
