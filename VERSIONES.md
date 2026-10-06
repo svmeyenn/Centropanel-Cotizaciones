@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0101-20261006**
+Version vigente: **v0102-20261006**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0102-20261006 | 06-10-2026 | Fusion de leads duplicados: desde la ficha, quien administra fusiona un duplicado en el lead que se conserva; pasan conversaciones, compromisos, oportunidades, cotizaciones, archivos y datos, y el duplicado queda oculto y registrado | 4649f39 |
 | v0101-20261006 | 06-10-2026 | Mensajes a leads: el registro en Conversaciones y compromisos se crea apenas se genera el mensaje, se puede borrar --solo estos registros, con su seguimiento-- y un lead No contactado pasa a Contactado al escribirle | a853320 |
 | v0100-20261005 | 05-10-2026 | Mensajes a leads: desde la ficha del lead se arma un correo o WhatsApp a partir de plantillas editables (Configuracion > Mensajes a leads), con el PDF de las cotizaciones elegidas --borrador .eml para Outlook de escritorio, Gmail o WhatsApp--, sin enviarse solo; queda anotado en Conversaciones y compromisos con seguimiento a 3 dias | 6457460 |
 | v0099-20261005 | 05-10-2026 | En espera del cliente: un lead o una cotizacion que pidio no ser molestado se deja en espera, sale de los pendientes --agenda, por contactar, sin seguimiento y sus cuentas-- y queda en su propio cuadro del inicio con el motivo y los dias; se retoma con un boton o al agendar un compromiso nuevo | 746e112 |
