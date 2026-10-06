@@ -11,13 +11,6 @@ type Aviso = { ok: boolean; texto: string } | null;
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[11px] w-full bg-white";
 const ROTULO = "block text-[11px] font-semibold text-dorado-osc mb-0.5";
 
-// El menu de compartir del sistema acepta archivos en celulares; en la mayoria de
-// los computadores no, y ahi se baja el PDF para adjuntarlo en WhatsApp.
-function puedeCompartirArchivos(): boolean {
-  if (typeof navigator === "undefined" || !navigator.canShare) return false;
-  return navigator.canShare({ files: [new File([""], "prueba.pdf", { type: "application/pdf" })] });
-}
-
 function descargar(nombre: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -67,8 +60,6 @@ export default function MensajeLead({
   const ultimo = useRef({ clave: "", cuando: 0 });
   // Si el lead paso de "no contactado" a "contactado", la base lo dice al registrar.
   const nota = useRef("");
-  const [archivos, setArchivos] = useState<Record<number, File>>({});
-  const [compartible, setCompartible] = useState(false);
 
   const folios = cotizaciones.filter((c) => elegidas.includes(c.id)).map((c) => c.folio);
   const plantilla = delCanal.find((p) => p.id === idPlantilla) ?? null;
@@ -94,29 +85,6 @@ export default function MensajeLead({
     setCuerpo(plantilla ? aplicarPlantilla(plantilla.cuerpo, d) : "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plantilla, folios.join("|"), editado]);
-
-  // En el celular los PDF se bajan apenas se eligen: el telefono solo deja abrir
-  // el menu de compartir justo despues del toque, y esperar la descarga en ese
-  // momento lo haria fallar.
-  useEffect(() => {
-    if (!abierto || canal !== "whatsapp" || !puedeCompartirArchivos()) return;
-    setCompartible(true);
-    let vigente = true;
-    for (const c of cotizaciones.filter((x) => elegidas.includes(x.id))) {
-      if (archivos[c.id]) continue;
-      fetch(`/cotizaciones/${c.id}/pdf/archivo`)
-        .then((r) => (r.ok ? r.blob() : Promise.reject()))
-        .then((b) => {
-          if (vigente) setArchivos((a) => ({ ...a, [c.id]: new File([b], `${c.folio}.pdf`, { type: "application/pdf" }) }));
-        })
-        .catch(() => {});
-    }
-    return () => {
-      vigente = false;
-    };
-  }, [abierto, canal, elegidas, cotizaciones, archivos]);
-
-  const faltaPreparar = compartible && canal === "whatsapp" && elegidas.some((id) => !archivos[id]);
 
   async function anotar() {
     // Cada envio queda anotado; solo se ignora el mismo toque repetido a los pocos segundos.
@@ -185,22 +153,12 @@ export default function MensajeLead({
     }
   }
 
+  // El WhatsApp no sale del sistema: se abre la aplicacion de WhatsApp con el chat del
+  // contacto y el mensaje ya escrito, y se revisa y se envia desde alli. El PDF no
+  // puede viajar en el enlace: se baja para adjuntarlo en el chat.
   async function whatsapp() {
     setAviso(null);
     const fono = normalizarFono(destino, prefijoTelefono);
-    const lista = elegidas.map((id) => archivos[id]).filter(Boolean);
-    // Compartir con archivos: el celular abre su menu y la persona elige WhatsApp
-    // y el contacto.
-    if (compartible && lista.length > 0 && lista.length === elegidas.length) {
-      try {
-        await navigator.share({ files: lista, text: cuerpo });
-        if (await anotar())
-          setAviso({ ok: true, texto: "Elija WhatsApp y el contacto en el menu. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "") });
-      } catch (e) {
-        if ((e as Error).name !== "AbortError") setAviso({ ok: false, texto: "No se pudo abrir el menu de compartir." });
-      }
-      return;
-    }
     setOcupado(true);
     try {
       if (!(await anotar())) return;
@@ -213,9 +171,11 @@ export default function MensajeLead({
       setAviso({
         ok: true,
         texto:
-          elegidas.length > 0
-            ? "Se abrio WhatsApp con el mensaje y se bajaron los PDF: adjuntelos en el chat antes de enviar. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "")
-            : "Se abrio WhatsApp con el mensaje para revisarlo. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : ""),
+          (elegidas.length > 0
+            ? "Se abrio WhatsApp con el mensaje escrito y se bajaron los PDF: adjuntelos en el chat y envie desde WhatsApp."
+            : "Se abrio WhatsApp con el mensaje escrito: revíselo y envíelo desde WhatsApp.") +
+          " Quedo anotado en el lead con seguimiento en 3 dias." +
+          (nota.current ? ` ${nota.current}` : ""),
       });
     } catch (e) {
       setAviso({ ok: false, texto: (e as Error).message });
@@ -381,10 +341,10 @@ export default function MensajeLead({
                 <button
                   type="button"
                   onClick={whatsapp}
-                  disabled={ocupado || sinContacto || !cuerpo.trim() || faltaPreparar}
+                  disabled={ocupado || sinContacto || !cuerpo.trim()}
                   className="bg-[#25D366] text-white font-semibold px-2.5 py-1 rounded disabled:opacity-50"
                 >
-                  {faltaPreparar ? "Preparando PDF…" : "Abrir WhatsApp"}
+                  Abrir WhatsApp
                 </button>
               )}
             </div>

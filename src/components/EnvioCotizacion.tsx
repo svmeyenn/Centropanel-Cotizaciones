@@ -69,14 +69,6 @@ function normalizarFono(fono: string | null, prefijo: string): string | null {
   return n;
 }
 
-// El menu de compartir del sistema acepta archivos en celulares; en la mayoria
-// de los computadores no, y ahi se sigue usando wa.me con el enlace.
-function puedeCompartirArchivos(): boolean {
-  if (typeof navigator === "undefined" || !navigator.canShare) return false;
-  const prueba = new File([""], "prueba.pdf", { type: "application/pdf" });
-  return navigator.canShare({ files: [prueba] });
-}
-
 export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
   const [abierto, setAbierto] = useState(false);
   const [pendiente, empezar] = useTransition();
@@ -92,28 +84,6 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
   const [origen, setOrigen] = useState("");
   useEffect(() => setOrigen(window.location.origin), []);
   const enlace = origen ? `${origen}/c/${datos.token}` : "";
-
-  // En el celular el PDF se baja apenas se abre el panel: el telefono solo
-  // deja abrir el menu de compartir justo despues del toque, y esperar la
-  // descarga en ese momento lo haria fallar.
-  const [archivo, setArchivo] = useState<File | null>(null);
-  const [compartible, setCompartible] = useState(false);
-  useEffect(() => {
-    if (!abierto || archivo || !puedeCompartirArchivos()) return;
-    setCompartible(true);
-    let vigente = true;
-    fetch(`/cotizaciones/${datos.id}/pdf/archivo`)
-      .then((r) => (r.ok ? r.blob() : Promise.reject()))
-      .then((b) => {
-        if (vigente) setArchivo(new File([b], `${datos.num}.pdf`, { type: "application/pdf" }));
-      })
-      .catch(() => {
-        if (vigente) setCompartible(false);
-      });
-    return () => {
-      vigente = false;
-    };
-  }, [abierto, archivo, datos.id, datos.num]);
 
   // Si la plantilla no trae {ENLACE}, el enlace se agrega al final: asi el
   // cliente siempre recibe como llegar al documento, sin tener que editar las
@@ -162,18 +132,9 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
     marcarEnviada();
   }
 
+  // El WhatsApp no sale del sistema: se abre la aplicacion de WhatsApp con el chat del
+  // cliente y el mensaje ya escrito, y se revisa y se envia desde alli.
   async function enviarWhatsApp() {
-    if (archivo) {
-      try {
-        await navigator.share({ files: [archivo], text: mensajeWA });
-        void registrarEnvioCotizacion(datos.id, "whatsapp", datos.telefonoCliente ?? "", "", mensajeWA);
-        marcarEnviada();
-        return;
-      } catch (e) {
-        // Cerrar el menu sin elegir no es un error ni debe abrir otra cosa.
-        if ((e as Error).name === "AbortError") return;
-      }
-    }
     window.open(wa, "_blank", "noopener,noreferrer");
     void registrarEnvioCotizacion(datos.id, "whatsapp", datos.telefonoCliente ?? "", "", mensajeWA);
     marcarEnviada();
@@ -212,9 +173,9 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               queda en sus Enviados.
             </div>
             <div>
-              <strong>WhatsApp:</strong> en el celular se abre el menu de
-              compartir con el PDF; elija WhatsApp y el contacto. En el
-              computador se abre WhatsApp con el enlace a la cotizacion.
+              <strong>WhatsApp:</strong> se abre la aplicacion de WhatsApp con
+              el mensaje ya escrito en el chat del cliente; usted lo revisa y lo
+              envia desde alli. El sistema no lo envia.
             </div>
           </div>
 
@@ -255,10 +216,9 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
             </button>
             <button
               onClick={enviarWhatsApp}
-              disabled={compartible && !archivo}
-              className="bg-[#25D366] text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-60"
+              className="bg-[#25D366] text-white text-xs font-semibold px-2.5 py-1 rounded"
             >
-              {compartible && !archivo ? "Preparando PDF..." : "Enviar por WhatsApp"}
+              Abrir WhatsApp con el mensaje
             </button>
             <a
               href={`/cotizaciones/${datos.id}/pdf`}
