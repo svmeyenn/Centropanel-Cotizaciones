@@ -24,7 +24,9 @@ export async function registrarEnvioLead(
   plantilla: string,
   destino: string,
   folios: string[],
-  idsCotizacion: number[] = []
+  idsCotizacion: number[] = [],
+  asunto: string = "",
+  cuerpo: string = ""
 ): Promise<Resultado> {
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite escribirle a los leads." };
@@ -61,6 +63,8 @@ export async function registrarEnvioLead(
     p_folios: folios,
     p_extra: porEnviar.length > 0 ? `Cotizacion pasada a Enviada: ${porEnviar.map((c) => c.num_cotizacion ?? c.id).join(", ")}.` : null,
     p_oportunidad: idsCotizacion.length > 0,
+    p_asunto: asunto.trim().slice(0, 300) || null,
+    p_cuerpo: cuerpo.trim().slice(0, 4500) || null,
   });
   if (error) return { ok: false, mensaje: error.message };
 

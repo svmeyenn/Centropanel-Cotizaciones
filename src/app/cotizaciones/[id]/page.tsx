@@ -12,6 +12,7 @@ import BotonGenerarPedido from "@/components/BotonGenerarPedido";
 import { sumarDias } from "@/lib/formato";
 import LeadDeCotizacion from "@/components/LeadDeCotizacion";
 import ControlEspera from "@/components/ControlEspera";
+import EnlacesInicio from "@/components/EnlacesInicio";
 import { leerEspera } from "@/lib/espera";
 import { leadsDeCotizacion } from "@/lib/leadsDeCotizacion";
 
@@ -118,6 +119,7 @@ export default async function Pagina({
 
   // El lead que la gesto, para volver a el desde aqui.
   const origen = await leadsDeCotizacion(supabase, {
+    id,
     num_cotizacion: (cot.num_cotizacion as string | null) ?? null,
     id_cliente: cot.id_cliente != null ? Number(cot.id_cliente) : null,
   });
@@ -163,7 +165,10 @@ export default async function Pagina({
         subtitulo="Datos del cliente, items y valorizacion"
       />
       <div className="max-w-screen-2xl mx-auto px-4 pt-3">
-        <LeadDeCotizacion leads={origen.leads} omitidos={origen.omitidos} />
+        <div className="mb-2 flex justify-end">
+          <EnlacesInicio />
+        </div>
+        <LeadDeCotizacion leads={origen.leads} omitidos={origen.omitidos} idCotizacion={id} puedeVincular={v.puede_editar || tienePerfilAdmin(v)} />
         {espera !== undefined && (
           <div className="mt-2">
             <ControlEspera idLead={null} idCot={id} vigente={espera} puedeEditar={v.puede_editar} zona={zonaCot} />

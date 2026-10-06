@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0106-20261006**
+Version vigente: **v0107-20261006**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0107-20261006 | 06-10-2026 | Vinculo manual cotizacion-lead (desde la cotizacion y desde el lead, manda sobre lo deducido); archivos en todos los leads; los envios de correo y WhatsApp --desde el lead y desde la cotizacion-- dejan en Conversaciones y compromisos el mensaje enviado; atajos a Mi gestion y Desempeno desde el lead y la cotizacion | 77548b4 |
 | v0106-20261006 | 06-10-2026 | Propietarios: un correo pertenece a una sola persona y cada persona tiene un solo correo --manda el del usuario del sistema--; elegir a Gianfranco ya no asigna a Alexa por un correo mezclado en Clientify, y la gestion de una persona ya no trae los leads de otra. Solo base de datos (migracion 200) | c9ebddc |
 | v0105-20261006 | 06-10-2026 | Al enviar una cotizacion --desde el lead con el PDF adjunto o desde la cotizacion-- ella pasa a Enviada y el lead a Oportunidad, aunque tuviera un estado puesto a mano; las cerradas y los leads que ya son Oportunidad o Cliente no se tocan | a397b51 |
 | v0104-20261006 | 06-10-2026 | Mensajes a leads por linea: cada linea --Paneles, Proyecto y las que vengan-- tiene su propio juego de correos y WhatsApp, se elige en el mantenedor y el lead ofrece los de su linea; se agrega el juego inicial de Proyecto | c0560c5 |

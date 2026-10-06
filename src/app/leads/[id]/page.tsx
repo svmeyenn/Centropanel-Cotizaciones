@@ -7,10 +7,13 @@ import FichaLead, { type DatosFicha } from "@/components/FichaLead";
 import ControlEspera from "@/components/ControlEspera";
 import MensajeLead from "@/components/MensajeLead";
 import FusionLead from "@/components/FusionLead";
+import EnlacesInicio from "@/components/EnlacesInicio";
 import type { Plantilla } from "@/lib/mensajes";
 import { leerEspera } from "@/lib/espera";
 import HistorialLead, { type EntradaHistorial } from "@/components/HistorialLead";
-import ProyectoCasa, { type ArchivoLead, type DatosCasaGuardados } from "@/components/ProyectoCasa";
+import ProyectoCasa, { type DatosCasaGuardados } from "@/components/ProyectoCasa";
+import ArchivosLead, { type ArchivoLead } from "@/components/ArchivosLead";
+import { QuitarVinculo, VincularCotizacionALead } from "@/components/VincularLead";
 import { administraUsuarios, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { ESTADOS_OPORTUNIDAD, ETAPAS } from "@/lib/clientify";
@@ -41,7 +44,7 @@ interface CotizacionVinculada {
   fecha: string;
   estado: string;
   total: number | null;
-  via: "oportunidad" | "ficha";
+  via: "manual" | "oportunidad" | "ficha";
   oportunidad: string | null;
   monto_oportunidad: number | null;
   moneda: string | null;
@@ -208,13 +211,11 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           .eq("id_clientify", idContacto)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    esCasas
-      ? supabase
-          .from("lead_archivos")
-          .select("id, nombre, tamano, creado_en, id_vendedor, vendedores(nombre)")
-          .eq("id_clientify", idContacto)
-          .order("creado_en", { ascending: false })
-      : Promise.resolve({ data: [] }),
+    supabase
+      .from("lead_archivos")
+      .select("id, nombre, tamano, creado_en, id_vendedor, vendedores(nombre)")
+      .eq("id_clientify", idContacto)
+      .order("creado_en", { ascending: false }),
     // A quien se le puede asignar el lead: solo se pide si se puede editar.
     puedeEscribirLeads(v) ? supabase.rpc("lead_propietarios") : Promise.resolve({ data: [] }),
   ]);
@@ -254,6 +255,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
       />
       <div className="max-w-screen-xl mx-auto p-4 space-y-3 text-[11px]">
         <BarraNavegacion volverA="/leads">
+          <EnlacesInicio />
           <Link
             href="/leads"
             className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
@@ -325,6 +327,11 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
               <span>COTIZACIONES VINCULADAS</span>
               <span className="font-normal">{cotizaciones.length}</span>
             </h2>
+            {puedeEscribir && (
+              <div className="px-3 py-1.5 border-b border-gray-100">
+                <VincularCotizacionALead idLead={c.id_clientify} estadosCotizacion={cat.cotizacion} />
+              </div>
+            )}
             {cotizaciones.length === 0 ? (
               <p className="px-3 py-4 text-center text-[11px] text-gray-400">
                 Este lead no tiene cotizaciones vinculadas. Use &quot;Crear cotizacion&quot; para
@@ -363,9 +370,16 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
                           {dinero(q.total ?? 0, q.moneda ?? monedaBase)}
                         </td>
                         <td className="px-3 py-0.5 text-gray-600">
-                          {q.via === "oportunidad"
-                            ? `Oportunidad "${q.oportunidad ?? ""}"`
-                            : "Ficha de cliente enlazada"}
+                          {q.via === "manual" ? (
+                            <span className="inline-flex flex-wrap items-center gap-2">
+                              Vinculada a mano
+                              {puedeEscribir && <QuitarVinculo idCot={q.id_cotizacion} idLead={c.id_clientify} />}
+                            </span>
+                          ) : q.via === "oportunidad" ? (
+                            `Oportunidad "${q.oportunidad ?? ""}"`
+                          ) : (
+                            "Ficha de cliente enlazada"
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -374,6 +388,16 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
               </div>
             )}
           </section>
+        )}
+
+        {!esCasas && (
+          <ArchivosLead
+            idLead={c.id_clientify}
+            archivos={archivos}
+            puedeEditar={puedeEscribir}
+            esAdmin={tienePerfilAdmin(v)}
+            yo={v.id}
+          />
         )}
 
         {/* Oportunidades del contacto */}
