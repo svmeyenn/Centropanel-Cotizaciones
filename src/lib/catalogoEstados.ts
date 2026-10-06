@@ -50,6 +50,7 @@ export const MARCAS: Record<TipoEstado, { marca: string; texto: string; ayuda: s
 export const ROLES: Record<string, string> = {
   nuevo: "Aqui entran los leads nuevos, los que llegan de Meta.",
   al_enviar_cotizacion: "A este estado pasa un lead cuando se le envia una cotizacion.",
+  al_contactar: "A este estado pasa un lead nuevo cuando se le escribe por correo o WhatsApp desde su ficha.",
   borrador: "Asi nacen las cotizaciones duplicadas y mientras sea borrador el descuento en % se recalcula.",
   emitida: "Asi nace una cotizacion nueva.",
   enviada: "Aqui pasa al mandarla por correo o WhatsApp, y el lead pasa a oportunidad.",
@@ -74,7 +75,7 @@ const e = (
 export const CATALOGO_POR_DEFECTO: Catalogo = {
   lead: [
     e("cold-lead", "No contactado", 10, "nuevo", ["en_camino"], ROLES.nuevo),
-    e("warm-lead", "Contactado", 20, null, ["en_seguimiento", "contactado", "en_camino"], DEPURACION),
+    e("warm-lead", "Contactado", 20, "al_contactar", ["en_seguimiento", "contactado", "en_camino"], `${DEPURACION} Y ${ROLES.al_contactar.charAt(0).toLowerCase()}${ROLES.al_contactar.slice(1)}`),
     e("hot-lead", "Lead caliente", 30, null, ["en_seguimiento", "contactado", "en_camino"], DEPURACION),
     e("in-deal", "Oportunidad", 40, "al_enviar_cotizacion", ["en_seguimiento", "oportunidad", "en_camino"], ROLES.al_enviar_cotizacion),
     e("client", "Cliente", 50, null, ["oportunidad", "en_camino"]),
