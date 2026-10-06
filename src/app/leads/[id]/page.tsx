@@ -230,6 +230,14 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   })[]).map((a) => ({ ...a, vendedor: a.vendedores?.nombre ?? null })) as ArchivoLead[];
 
   const puedeEscribir = puedeEscribirLeads(v);
+  // Quien genero cada cotizacion del lead, para rotular sus anotaciones.
+  const idsCot = cotizaciones.map((q) => q.id_cotizacion);
+  const { data: autoresDb } = idsCot.length > 0 ? await supabase.from("cotizaciones").select("id, vendedores(nombre)").in("id", idsCot) : { data: [] };
+  const autoresCotizacion: Record<number, string> = {};
+  for (const a of (autoresDb ?? []) as unknown as { id: number; vendedores: { nombre: string } | { nombre: string }[] | null }[]) {
+    const nombre = Array.isArray(a.vendedores) ? a.vendedores[0]?.nombre : a.vendedores?.nombre;
+    if (nombre) autoresCotizacion[a.id] = nombre;
+  }
   const espera = await leerEspera(supabase, c.id_clientify, null);
   // Los mensajes que se pueden escribir al contacto; si la base aun no los tiene, no se ofrece.
   const { data: plantillasDb, error: errPlantillas } = puedeEscribir
@@ -433,6 +441,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             equipo={equipo}
             yo={v.id}
             zona={zona}
+            autoresCotizacion={autoresCotizacion}
           />
         </section>
 

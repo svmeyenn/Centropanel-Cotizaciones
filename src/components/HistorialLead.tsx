@@ -98,6 +98,7 @@ export default function HistorialLead({
   equipo,
   yo,
   zona = "America/Santiago",
+  autoresCotizacion = {},
 }: {
   idLead: number;
   entradas: EntradaHistorial[];
@@ -110,6 +111,8 @@ export default function HistorialLead({
   yo: number;
   // Hora en que se muestra lo escrito: la del pais del lead.
   zona?: string;
+  // Quien genero cada cotizacion, por su id: no es lo mismo que quien anoto en ella.
+  autoresCotizacion?: Record<number, string>;
 }) {
   const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
@@ -296,7 +299,11 @@ export default function HistorialLead({
                       Cotizacion {e.folio}
                     </Link>
                   )}
+                  {!propia && e.id_cotizacion != null && autoresCotizacion[e.id_cotizacion] && (
+                    <span className="text-gray-500">de {autoresCotizacion[e.id_cotizacion]}</span>
+                  )}
                   <span className="text-gray-500">{dia(e.fecha_hecho)}</span>
+                  <span className="text-gray-500">Anotó</span>
                   <span className="font-semibold">{e.vendedor_nombre}</span>
                 </div>
 
@@ -349,7 +356,7 @@ export default function HistorialLead({
                     <span className="font-semibold">{e.proxima_accion}</span>
                     <span className="text-gray-600">para el {dia(e.proxima_fecha ?? "")}</span>
                     {e.responsable_nombre && (
-                      <span className="text-gray-600">· {e.responsable_nombre}</span>
+                      <span className="text-gray-600">· a cargo de {e.responsable_nombre}</span>
                     )}
                     {e.ejecutada_en && (
                       <span className="text-gray-500">

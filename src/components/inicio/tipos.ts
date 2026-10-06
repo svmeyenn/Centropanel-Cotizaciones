@@ -15,6 +15,8 @@ export type ItemAgenda = {
   id_pais: number;
   id_responsable: number | null;
   responsable: string | null;
+  // Quien anoto el compromiso; no es lo mismo que quien lo tiene a cargo.
+  autor?: string | null;
 };
 
 export type LeadEnBandeja = {

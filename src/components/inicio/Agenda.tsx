@@ -275,6 +275,7 @@ export default function Agenda({
                             {x.sujeto}
                           </Link>
                           {x.detalle && <span> · {x.detalle}</span>}
+                          {x.autor && <span className="text-gray-500"> · anotó {x.autor}</span>}
                           {verResponsable && x.responsable && <span className="text-gray-500"> · a cargo de {x.responsable}</span>}
                         </p>
                         {x.comentario && <p className="text-[10px] text-gray-500 break-words">{x.comentario}</p>}
