@@ -28,16 +28,20 @@ function limpiar(canal: Canal, nombre: string, asunto: string, cuerpo: string): 
   return { nombre: n, asunto: canal === "email" ? a : null, cuerpo: c };
 }
 
-export async function crearPlantilla(canal: string, nombre: string, asunto: string, cuerpo: string): Promise<Resultado> {
+// La linea es un texto libre --paneles, casas, y las que vengan--: se acepta cualquiera con forma de clave.
+const lineaValida = (l: string) => /^[a-z0-9_-]{1,40}$/.test(l);
+
+export async function crearPlantilla(linea: string, canal: string, nombre: string, asunto: string, cuerpo: string): Promise<Resultado> {
   const no = await exigirAdmin();
   if (no) return no;
   if (canal !== "email" && canal !== "whatsapp") return { ok: false, mensaje: "Ese canal no existe." };
+  if (!lineaValida(linea)) return { ok: false, mensaje: "Esa linea no es valida." };
   const l = limpiar(canal, nombre, asunto, cuerpo);
   if ("error" in l) return { ok: false, mensaje: l.error };
 
   const supabase = await createClient();
-  const { data: ult } = await supabase.from("plantillas_mensaje").select("orden").eq("canal", canal).order("orden", { ascending: false }).limit(1);
-  const { error } = await supabase.from("plantillas_mensaje").insert({ canal, ...l, orden: ((ult?.[0]?.orden as number | undefined) ?? 0) + 10 });
+  const { data: ult } = await supabase.from("plantillas_mensaje").select("orden").eq("canal", canal).eq("linea", linea).order("orden", { ascending: false }).limit(1);
+  const { error } = await supabase.from("plantillas_mensaje").insert({ canal, linea, ...l, orden: ((ult?.[0]?.orden as number | undefined) ?? 0) + 10 });
   if (error) return { ok: false, mensaje: mensajeDe(error) };
   revalidatePath("/mensajes");
   return { ok: true, mensaje: `Mensaje "${l.nombre}" agregado.` };
@@ -75,12 +79,12 @@ export async function eliminarPlantilla(id: number): Promise<Resultado> {
 }
 
 // Subir o bajar en la lista. El orden se vuelve a numerar de diez en diez.
-export async function moverPlantilla(canal: string, id: number, direccion: "subir" | "bajar"): Promise<Resultado> {
+export async function moverPlantilla(linea: string, canal: string, id: number, direccion: "subir" | "bajar"): Promise<Resultado> {
   const no = await exigirAdmin();
   if (no) return no;
   if (canal !== "email" && canal !== "whatsapp") return { ok: false, mensaje: "Ese canal no existe." };
   const supabase = await createClient();
-  const { data } = await supabase.from("plantillas_mensaje").select("id, orden").eq("canal", canal).order("orden").order("id");
+  const { data } = await supabase.from("plantillas_mensaje").select("id, orden").eq("canal", canal).eq("linea", linea).order("orden").order("id");
   const lista = (data ?? []) as { id: number; orden: number }[];
   const i = lista.findIndex((x) => x.id === id);
   const j = direccion === "subir" ? i - 1 : i + 1;

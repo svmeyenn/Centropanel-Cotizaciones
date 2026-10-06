@@ -41,6 +41,7 @@ export default function MensajeLead({
   prefijoTelefono,
   cotizaciones,
   datos,
+  lineaTexto,
 }: {
   idLead: number;
   plantillas: Plantilla[];
@@ -49,6 +50,8 @@ export default function MensajeLead({
   prefijoTelefono: string;
   cotizaciones: CotizacionAdjuntable[];
   datos: Omit<DatosMensaje, "folios">;
+  // La linea del lead: los mensajes son los de esa linea.
+  lineaTexto: string;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [canal, setCanal] = useState<Canal>(emails.length === 0 && telefonos.length > 0 ? "whatsapp" : "email");
@@ -238,7 +241,7 @@ export default function MensajeLead({
           </div>
           <div className="p-3 space-y-2">
             <p className="text-[10px] text-gray-600">
-              El mensaje no se envia solo: queda a la vista para que lo revise y lo envie usted. Se adjunta el PDF de las
+              Mensajes de la linea <strong>{lineaTexto}</strong>. El mensaje no se envia solo: queda a la vista para que lo revise y lo envie usted. Se adjunta el PDF de las
               cotizaciones que elija, no un enlace.
             </p>
 
@@ -288,7 +291,7 @@ export default function MensajeLead({
                     }}
                     className={CAMPO}
                   >
-                    {delCanal.length === 0 && <option value="">(no hay mensajes configurados)</option>}
+                    {delCanal.length === 0 && <option value="">{`(no hay mensajes de la linea ${lineaTexto})`}</option>}
                     {delCanal.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.nombre}

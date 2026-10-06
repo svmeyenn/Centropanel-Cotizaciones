@@ -7,7 +7,7 @@ import type { Canal, Plantilla } from "@/lib/mensajes";
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[12px] w-full bg-white";
 const ROTULO = "block text-[11px] font-semibold text-dorado-osc mb-0.5";
 
-export default function GestorPlantillas({ canal, plantillas }: { canal: Canal; plantillas: Plantilla[] }) {
+export default function GestorPlantillas({ linea, canal, plantillas }: { linea: string; canal: Canal; plantillas: Plantilla[] }) {
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -37,11 +37,12 @@ export default function GestorPlantillas({ canal, plantillas }: { canal: Canal; 
             ocupado={pendiente}
             ejecutar={ejecutar}
             canal={canal}
+            linea={linea}
           />
         ))}
       </ul>
 
-      <Nuevo canal={canal} ocupado={pendiente} ejecutar={ejecutar} />
+      <Nuevo linea={linea} canal={canal} ocupado={pendiente} ejecutar={ejecutar} />
     </div>
   );
 }
@@ -49,6 +50,7 @@ export default function GestorPlantillas({ canal, plantillas }: { canal: Canal; 
 function Fila({
   p,
   canal,
+  linea,
   primero,
   ultimo,
   ocupado,
@@ -56,6 +58,7 @@ function Fila({
 }: {
   p: Plantilla;
   canal: Canal;
+  linea: string;
   primero: boolean;
   ultimo: boolean;
   ocupado: boolean;
@@ -82,10 +85,10 @@ function Fila({
           Se ofrece
         </label>
         <div className="flex gap-1 pb-0.5">
-          <button type="button" aria-label="Subir" disabled={ocupado || primero} onClick={() => ejecutar(() => moverPlantilla(canal, p.id, "subir"))} className="border border-gray-300 rounded px-2 py-0.5 text-[12px] disabled:opacity-40">
+          <button type="button" aria-label="Subir" disabled={ocupado || primero} onClick={() => ejecutar(() => moverPlantilla(linea, canal, p.id, "subir"))} className="border border-gray-300 rounded px-2 py-0.5 text-[12px] disabled:opacity-40">
             ↑
           </button>
-          <button type="button" aria-label="Bajar" disabled={ocupado || ultimo} onClick={() => ejecutar(() => moverPlantilla(canal, p.id, "bajar"))} className="border border-gray-300 rounded px-2 py-0.5 text-[12px] disabled:opacity-40">
+          <button type="button" aria-label="Bajar" disabled={ocupado || ultimo} onClick={() => ejecutar(() => moverPlantilla(linea, canal, p.id, "bajar"))} className="border border-gray-300 rounded px-2 py-0.5 text-[12px] disabled:opacity-40">
             ↓
           </button>
         </div>
@@ -133,7 +136,7 @@ function Fila({
   );
 }
 
-function Nuevo({ canal, ocupado, ejecutar }: { canal: Canal; ocupado: boolean; ejecutar: (f: () => Promise<Resultado>) => void }) {
+function Nuevo({ linea, canal, ocupado, ejecutar }: { linea: string; canal: Canal; ocupado: boolean; ejecutar: (f: () => Promise<Resultado>) => void }) {
   const [abierto, setAbierto] = useState(false);
   const [nombre, setNombre] = useState("");
   const [asunto, setAsunto] = useState("");
@@ -152,7 +155,7 @@ function Nuevo({ canal, ocupado, ejecutar }: { canal: Canal; ocupado: boolean; e
       onSubmit={(e) => {
         e.preventDefault();
         ejecutar(async () => {
-          const r = await crearPlantilla(canal, nombre, asunto, cuerpo);
+          const r = await crearPlantilla(linea, canal, nombre, asunto, cuerpo);
           if (r.ok) {
             setNombre("");
             setAsunto("");

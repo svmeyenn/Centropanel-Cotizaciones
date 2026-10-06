@@ -7,6 +7,8 @@ export type Canal = "email" | "whatsapp";
 export type Plantilla = {
   id: number;
   canal: Canal;
+  // La linea de la que son: Paneles, Proyecto y las que se creen. Cada una tiene su juego.
+  linea: string;
   nombre: string;
   asunto: string | null;
   cuerpo: string;

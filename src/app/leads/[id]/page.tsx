@@ -15,7 +15,7 @@ import { administraUsuarios, contextoMercado, requerirVendedor, tienePerfilAdmin
 import { createClient } from "@/lib/supabase/server";
 import { ESTADOS_OPORTUNIDAD, ETAPAS } from "@/lib/clientify";
 import { dinero, fecha, hoyISO, primerNombre } from "@/lib/formato";
-import { puedeEscribirLeads } from "@/lib/leads";
+import { LINEAS, puedeEscribirLeads, type Linea } from "@/lib/leads";
 import { etiquetaDe, type Estado } from "@/lib/catalogoEstados";
 import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 
@@ -241,7 +241,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   const espera = await leerEspera(supabase, c.id_clientify, null);
   // Los mensajes que se pueden escribir al contacto; si la base aun no los tiene, no se ofrece.
   const { data: plantillasDb, error: errPlantillas } = puedeEscribir
-    ? await supabase.from("plantillas_mensaje").select("id, canal, nombre, asunto, cuerpo, orden, activo").eq("activo", true).order("orden").order("nombre")
+    ? await supabase.from("plantillas_mensaje").select("id, canal, linea, nombre, asunto, cuerpo, orden, activo").eq("activo", true).eq("linea", c.linea ?? "paneles").order("orden").order("nombre")
     : { data: null, error: null };
   const plantillas = (errPlantillas ? [] : (plantillasDb ?? [])) as Plantilla[];
   const puedeCotizar = v.puede_crear || tienePerfilAdmin(v);
@@ -278,8 +278,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           <ControlEspera idLead={c.id_clientify} idCot={null} vigente={espera} puedeEditar={puedeEscribir} zona={zona} />
         )}
 
-        {puedeEscribir && plantillas.length > 0 && (
+        {puedeEscribir && !errPlantillas && (
           <MensajeLead
+            lineaTexto={LINEAS[c.linea as Linea] ?? c.linea ?? "Paneles"}
             idLead={c.id_clientify}
             plantillas={plantillas}
             emails={(c.emails ?? []).map((e) => e.email ?? "").filter(Boolean)}
