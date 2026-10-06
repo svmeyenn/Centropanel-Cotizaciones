@@ -7,19 +7,24 @@ import { puedeEscribirLeads } from "@/lib/leads";
 import { leerCotizacionDoc } from "@/lib/cotizacionDoc";
 import { archivoCotizacionPdf } from "@/lib/pdf/CotizacionPdf";
 import type { Canal } from "@/lib/mensajes";
+import { codigoDeRol, tieneMarca } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
+import { cambiarEstado } from "@/app/cotizaciones/acciones";
 
 export type Resultado = { ok: boolean; mensaje?: string };
 
 // El mensaje se arma en pantalla y lo manda la persona desde su correo o su
 // telefono: el sistema no lo envia. Al generarlo queda anotado en "Conversaciones
 // y compromisos" del lead --quien lo mando, a quien y que se adjunto-- junto con
-// una tarea de seguimiento para tres dias despues.
+// una tarea de seguimiento para tres dias despues. Si lleva cotizaciones, estas
+// pasan a "enviada" y el lead a Oportunidad.
 export async function registrarEnvioLead(
   idLead: number,
   canal: Canal,
   plantilla: string,
   destino: string,
-  folios: string[]
+  folios: string[],
+  idsCotizacion: number[] = []
 ): Promise<Resultado> {
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite escribirle a los leads." };
@@ -29,18 +34,47 @@ export async function registrarEnvioLead(
   // La base arma el registro --con la hora del pais del lead y la marca de envio--
   // y deja el seguimiento a tres dias, a nombre de quien envia.
   const supabase = await createClient();
+
+  // Las cotizaciones que se mandan pasan a "enviada", salvo las que ya estan
+  // cerradas --ganadas o perdidas-- o ya enviadas. Solo las de este lead: la lista
+  // sale de la base con la sesion de quien escribe.
+  const cat = await catalogoEstados();
+  const enviada = codigoDeRol(cat.cotizacion, "enviada");
+  let porEnviar: { id: number; num_cotizacion: string | null }[] = [];
+  if (idsCotizacion.length > 0) {
+    const { data: delLead } = await supabase.rpc("clientify_cotizaciones_de", { p_contacto: idLead });
+    const permitidas = new Set(((delLead ?? []) as { id_cotizacion: number }[]).map((c) => Number(c.id_cotizacion)));
+    if (idsCotizacion.some((i) => !permitidas.has(i))) return { ok: false, mensaje: "Hay una cotizacion que no es de este lead." };
+    const { data: cots } = await supabase.from("cotizaciones").select("id, num_cotizacion, estado").in("id", idsCotizacion);
+    porEnviar = ((cots ?? []) as { id: number; num_cotizacion: string | null; estado: string }[]).filter(
+      (c) => enviada && c.estado !== enviada && !tieneMarca(cat.cotizacion, c.estado, "cerrada")
+    );
+  }
+
+  // La base arma el registro --con la hora del pais del lead y la marca de envio--,
+  // deja el seguimiento a tres dias y mueve el estado del lead.
   const { data, error } = await supabase.rpc("lead_registrar_envio", {
     p_lead: idLead,
     p_canal: canal,
     p_plantilla: plantilla,
     p_destino: destino,
     p_folios: folios,
+    p_extra: porEnviar.length > 0 ? `Cotizacion pasada a Enviada: ${porEnviar.map((c) => c.num_cotizacion ?? c.id).join(", ")}.` : null,
+    p_oportunidad: idsCotizacion.length > 0,
   });
   if (error) return { ok: false, mensaje: error.message };
 
+  let aviso = "";
+  for (const c of porEnviar) {
+    const r = await cambiarEstado(c.id, enviada as string);
+    if (r && "error" in r && r.error) aviso += ` No se pudo pasar ${c.num_cotizacion ?? c.id} a Enviada: ${r.error}`;
+  }
+
   revalidatePath(`/leads/${idLead}`);
   revalidatePath("/");
-  return { ok: true, mensaje: (data as string) ?? "Anotado en el lead, con seguimiento en 3 dias." };
+  revalidatePath("/cotizaciones");
+  const base = (data as string) ?? "Anotado en el lead, con seguimiento en 3 dias.";
+  return { ok: true, mensaje: base + (porEnviar.length > 0 && !aviso ? " La cotizacion quedo como Enviada." : "") + aviso };
 }
 
 // Borrar el registro de un correo o WhatsApp --y su seguimiento--. La base solo

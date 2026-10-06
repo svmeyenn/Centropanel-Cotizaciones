@@ -121,7 +121,7 @@ export default function MensajeLead({
   async function anotar() {
     const clave = `${canal}|${destino}|${plantilla?.id ?? 0}|${folios.join(",")}`;
     if (registrados.includes(clave)) return true;
-    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios);
+    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas);
     if (!r.ok) {
       setAviso({ ok: false, texto: r.mensaje ?? "No se pudo anotar en el lead." });
       return false;
