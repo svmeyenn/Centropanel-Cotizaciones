@@ -12,6 +12,7 @@ import BotonGenerarPedido from "@/components/BotonGenerarPedido";
 import { sumarDias } from "@/lib/formato";
 import LeadDeCotizacion from "@/components/LeadDeCotizacion";
 import ControlEspera from "@/components/ControlEspera";
+import EnlacesInicio from "@/components/EnlacesInicio";
 import { leerEspera } from "@/lib/espera";
 import { leadsDeCotizacion } from "@/lib/leadsDeCotizacion";
 
@@ -163,6 +164,9 @@ export default async function Pagina({
         subtitulo="Datos del cliente, items y valorizacion"
       />
       <div className="max-w-screen-2xl mx-auto px-4 pt-3">
+        <div className="mb-2 flex justify-end">
+          <EnlacesInicio />
+        </div>
         <LeadDeCotizacion leads={origen.leads} omitidos={origen.omitidos} />
         {espera !== undefined && (
           <div className="mt-2">

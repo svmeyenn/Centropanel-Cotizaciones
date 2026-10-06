@@ -48,7 +48,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
               key={l}
               href={`/mensajes?linea=${l}&canal=${canal}`}
               aria-current={l === linea ? "page" : undefined}
-              className={`bg-dorado text-white text-xs font-semibold px-2.5 py-1 rounded ${l === linea ? "ring-2 ring-verde ring-offset-1" : "opacity-70"}`}
+              className={`bg-dorado-osc text-white text-xs font-semibold px-2.5 py-1 rounded ${l === linea ? "ring-2 ring-verde ring-offset-1" : "opacity-70"}`}
             >
               {LINEAS[l as keyof typeof LINEAS] ?? l}
             </Link>

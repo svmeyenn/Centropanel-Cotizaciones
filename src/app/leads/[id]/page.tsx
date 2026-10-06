@@ -7,6 +7,7 @@ import FichaLead, { type DatosFicha } from "@/components/FichaLead";
 import ControlEspera from "@/components/ControlEspera";
 import MensajeLead from "@/components/MensajeLead";
 import FusionLead from "@/components/FusionLead";
+import EnlacesInicio from "@/components/EnlacesInicio";
 import type { Plantilla } from "@/lib/mensajes";
 import { leerEspera } from "@/lib/espera";
 import HistorialLead, { type EntradaHistorial } from "@/components/HistorialLead";
@@ -254,6 +255,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
       />
       <div className="max-w-screen-xl mx-auto p-4 space-y-3 text-[11px]">
         <BarraNavegacion volverA="/leads">
+          <EnlacesInicio />
           <Link
             href="/leads"
             className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
