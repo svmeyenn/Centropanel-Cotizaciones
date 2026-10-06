@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { borrarEnvioLead } from "@/app/leads/mensaje";
 import {
   caducarCompromiso,
   editarCompromiso,
@@ -44,6 +45,9 @@ export type EntradaHistorial = {
   motivo_caduca: string | null;
   estado_proxima: "Vigente" | "Vencida" | "Ejecutada" | "Revocada" | "Caduca" | null;
 };
+
+// Un correo o WhatsApp registrado desde "Escribirle al contacto".
+const esEnvio = (e: EntradaHistorial) => /^(WhatsApp|Correo) enviado por /.test(e.comentario);
 
 const CAMPO = "border border-gray-300 rounded px-2 py-0.5 text-[11px] w-full bg-white";
 const ROTULO = "block text-[11px] font-semibold text-dorado-osc mb-0.5";
@@ -123,6 +127,8 @@ export default function HistorialLead({
     tipo: "revocar" | "caducar" | "caducar_cotizacion";
   } | null>(null);
   const [motivo, setMotivo] = useState("");
+  // Borrar un correo o WhatsApp registrado pide confirmar: se va con su seguimiento.
+  const [borrando, setBorrando] = useState<string | null>(null);
 
   const [estado, enviar, pendiente] = useActionState<Resultado | null, FormData>(
     registrarConversacionLead,
@@ -295,6 +301,41 @@ export default function HistorialLead({
                 </div>
 
                 <p className="text-gray-800 mt-0.5 whitespace-pre-wrap break-words">{e.comentario}</p>
+
+                {/* Los correos y WhatsApp armados desde la ficha se pueden borrar,
+                    con su seguimiento; la base comprueba que lo sea y quien puede. */}
+                {propia && puedeEscribir && esEnvio(e) && e.estado_proxima !== "Ejecutada" && (
+                  <div className="mt-1 text-[11px]">
+                    {borrando !== clave(e) ? (
+                      <button
+                        type="button"
+                        className="text-red-700 underline disabled:opacity-50"
+                        disabled={enCurso}
+                        onClick={() => setBorrando(clave(e))}
+                      >
+                        Borrar este registro
+                      </button>
+                    ) : (
+                      <span className="inline-flex flex-wrap items-center gap-2 text-red-700">
+                        Se borra el registro{e.proxima_accion ? " y su seguimiento" : ""}.
+                        <button
+                          type="button"
+                          className="bg-red-700 text-white font-semibold px-2 py-0.5 rounded disabled:opacity-50"
+                          disabled={enCurso}
+                          onClick={() => {
+                            setBorrando(null);
+                            correr(() => borrarEnvioLead(e.id, idLead));
+                          }}
+                        >
+                          Borrar
+                        </button>
+                        <button type="button" className="underline text-gray-700" onClick={() => setBorrando(null)}>
+                          Cancelar
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {e.proxima_accion && editando !== clave(e) && (
                   <div className="mt-1 flex flex-wrap items-center gap-2 bg-crema border border-gray-200 rounded px-2 py-1">

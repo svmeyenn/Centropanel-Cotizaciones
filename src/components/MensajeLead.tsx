@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { armarBorradorOutlook, registrarEnvioLead } from "@/app/leads/mensaje";
 import { aplicarPlantilla, normalizarFono, type Canal, type DatosMensaje, type Plantilla } from "@/lib/mensajes";
 
@@ -62,6 +62,8 @@ export default function MensajeLead({
   const [aviso, setAviso] = useState<Aviso>(null);
   const [ocupado, setOcupado] = useState(false);
   const [registrados, setRegistrados] = useState<string[]>([]);
+  // Si el lead paso de "no contactado" a "contactado", la base lo dice al registrar.
+  const nota = useRef("");
   const [archivos, setArchivos] = useState<Record<number, File>>({});
   const [compartible, setCompartible] = useState(false);
 
@@ -122,6 +124,7 @@ export default function MensajeLead({
       return false;
     }
     setRegistrados((x) => [...x, clave]);
+    nota.current = (r.mensaje ?? "").replace(/^Anotado en el lead, con seguimiento en 3 dias\.\s*/, "");
     setAviso({ ok: true, texto: r.mensaje ?? "Anotado en el lead." });
     return true;
   }
@@ -138,13 +141,15 @@ export default function MensajeLead({
     setOcupado(true);
     setAviso(null);
     try {
+      // Queda anotado apenas se genera, aunque despues falle algo al armar el
+      // archivo: si no se envio, el registro se borra desde el lead.
+      if (!(await anotar())) return;
       const r = await armarBorradorOutlook(idLead, destino, asunto, cuerpo, elegidas);
-      if (!r.ok) return setAviso({ ok: false, texto: r.mensaje });
+      if (!r.ok) return setAviso({ ok: false, texto: `${r.mensaje} El registro ya quedo en el lead: si no va a enviar, borrelo desde ahi.` });
       const bin = atob(r.base64);
       const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
       descargar(r.nombre, new Blob([bytes], { type: "message/rfc822" }));
-      if (await anotar())
-        setAviso({ ok: true, texto: "Se bajo el borrador: abralo para verlo en Outlook de escritorio, revisarlo y enviarlo. Quedo anotado en el lead con seguimiento en 3 dias." });
+      setAviso({ ok: true, texto: "Se bajo el borrador: abralo para verlo en Outlook de escritorio, revisarlo y enviarlo. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "") });
     } catch (e) {
       setAviso({ ok: false, texto: (e as Error).message });
     } finally {
@@ -156,19 +161,19 @@ export default function MensajeLead({
     setOcupado(true);
     setAviso(null);
     try {
+      if (!(await anotar())) return;
       if (elegidas.length > 0) await bajarPdfs();
       const url =
         `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(destino)}` +
         `&su=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
       window.open(url, "_blank", "noopener,noreferrer");
-      if (await anotar())
-        setAviso({
-          ok: true,
-          texto:
-            elegidas.length > 0
-              ? "Se abrio Gmail con el mensaje y se bajaron los PDF: arrastrelos al correo antes de enviar. Quedo anotado en el lead con seguimiento en 3 dias."
-              : "Se abrio Gmail con el mensaje para revisarlo. Quedo anotado en el lead con seguimiento en 3 dias.",
-        });
+      setAviso({
+        ok: true,
+        texto:
+          elegidas.length > 0
+            ? "Se abrio Gmail con el mensaje y se bajaron los PDF: arrastrelos al correo antes de enviar. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "")
+            : "Se abrio Gmail con el mensaje para revisarlo. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : ""),
+      });
     } catch (e) {
       setAviso({ ok: false, texto: (e as Error).message });
     } finally {
@@ -186,7 +191,7 @@ export default function MensajeLead({
       try {
         await navigator.share({ files: lista, text: cuerpo });
         if (await anotar())
-          setAviso({ ok: true, texto: "Elija WhatsApp y el contacto en el menu. Quedo anotado en el lead con seguimiento en 3 dias." });
+          setAviso({ ok: true, texto: "Elija WhatsApp y el contacto en el menu. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "") });
       } catch (e) {
         if ((e as Error).name !== "AbortError") setAviso({ ok: false, texto: "No se pudo abrir el menu de compartir." });
       }
@@ -194,20 +199,20 @@ export default function MensajeLead({
     }
     setOcupado(true);
     try {
+      if (!(await anotar())) return;
       if (elegidas.length > 0) await bajarPdfs();
       window.open(
         fono ? `https://wa.me/${fono}?text=${encodeURIComponent(cuerpo)}` : `https://wa.me/?text=${encodeURIComponent(cuerpo)}`,
         "_blank",
         "noopener,noreferrer"
       );
-      if (await anotar())
-        setAviso({
-          ok: true,
-          texto:
-            elegidas.length > 0
-              ? "Se abrio WhatsApp con el mensaje y se bajaron los PDF: adjuntelos en el chat antes de enviar. Quedo anotado en el lead con seguimiento en 3 dias."
-              : "Se abrio WhatsApp con el mensaje para revisarlo. Quedo anotado en el lead con seguimiento en 3 dias.",
-        });
+      setAviso({
+        ok: true,
+        texto:
+          elegidas.length > 0
+            ? "Se abrio WhatsApp con el mensaje y se bajaron los PDF: adjuntelos en el chat antes de enviar. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "")
+            : "Se abrio WhatsApp con el mensaje para revisarlo. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : ""),
+      });
     } catch (e) {
       setAviso({ ok: false, texto: (e as Error).message });
     } finally {

@@ -3,19 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
-import { hoyISO } from "@/lib/formato";
 import { puedeEscribirLeads } from "@/lib/leads";
 import { leerCotizacionDoc } from "@/lib/cotizacionDoc";
 import { archivoCotizacionPdf } from "@/lib/pdf/CotizacionPdf";
-import { sumarDias } from "@/components/inicio/tipos";
 import type { Canal } from "@/lib/mensajes";
 
 export type Resultado = { ok: boolean; mensaje?: string };
-
-// Cuantos dias despues se vuelve a hablar con quien recibio el mensaje.
-const DIAS_SEGUIMIENTO = 3;
-
-const ZONAS: Record<string, string> = { CL: "America/Santiago", PE: "America/Lima" };
 
 // El mensaje se arma en pantalla y lo manda la persona desde su correo o su
 // telefono: el sistema no lo envia. Al generarlo queda anotado en "Conversaciones
@@ -33,35 +26,36 @@ export async function registrarEnvioLead(
   if (!Number.isFinite(idLead)) return { ok: false, mensaje: "Falta el lead." };
   if (canal !== "email" && canal !== "whatsapp") return { ok: false, mensaje: "Ese canal no existe." };
 
+  // La base arma el registro --con la hora del pais del lead y la marca de envio--
+  // y deja el seguimiento a tres dias, a nombre de quien envia.
   const supabase = await createClient();
-  // El lead sale de la base con la sesion de quien escribe: uno de otro mercado
-  // no existe para esta persona.
-  const { data: lead } = await supabase.from("v_leads").select("id_clientify, id_pais").eq("id_clientify", idLead).maybeSingle();
-  if (!lead) return { ok: false, mensaje: "No se encontro el lead." };
-  const { data: pais } = await supabase.from("paises").select("codigo").eq("id", lead.id_pais).maybeSingle();
-  const zona = ZONAS[(pais?.codigo as string) ?? "CL"] ?? "America/Santiago";
-
-  const hoy = hoyISO(zona);
-  const esWa = canal === "whatsapp";
-  const adjunto = folios.length > 0 ? ` PDF adjunto: ${folios.join(", ")}.` : " Sin cotizacion adjunta.";
-  const comentario =
-    `${esWa ? "WhatsApp" : "Correo"} enviado por ${v.nombre} ${esWa ? "desde su telefono" : "desde su correo"} ` +
-    `a ${destino}. Mensaje: "${plantilla}".${adjunto}`;
-
-  const { error } = await supabase.from("lead_actividad").insert({
-    id_clientify: idLead,
-    id_vendedor: v.id,
-    fecha_hecho: hoy,
-    comentario: comentario.slice(0, 1000),
-    proxima_accion: `Dar seguimiento al ${esWa ? "WhatsApp" : "correo"} enviado`,
-    proxima_fecha: sumarDias(hoy, DIAS_SEGUIMIENTO),
-    id_responsable: v.id,
+  const { data, error } = await supabase.rpc("lead_registrar_envio", {
+    p_lead: idLead,
+    p_canal: canal,
+    p_plantilla: plantilla,
+    p_destino: destino,
+    p_folios: folios,
   });
   if (error) return { ok: false, mensaje: error.message };
 
   revalidatePath(`/leads/${idLead}`);
   revalidatePath("/");
-  return { ok: true, mensaje: `Anotado en el lead, con seguimiento en ${DIAS_SEGUIMIENTO} dias.` };
+  return { ok: true, mensaje: (data as string) ?? "Anotado en el lead, con seguimiento en 3 dias." };
+}
+
+// Borrar el registro de un correo o WhatsApp --y su seguimiento--. La base solo
+// deja borrar los registros de envio.
+export async function borrarEnvioLead(id: number, idLead: number): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite borrar." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lead_borrar_envio", { p_id: id });
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath(`/leads/${idLead}`);
+  revalidatePath("/");
+  return { ok: true, mensaje: (data as string) ?? "Registro borrado." };
 }
 
 // Cabecera con tildes o enes: codificada segun RFC 2047.
