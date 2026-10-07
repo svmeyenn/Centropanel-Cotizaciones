@@ -32,7 +32,7 @@ export interface Catalogo {
 // administra. La base solo acepta estas.
 export const MARCAS: Record<TipoEstado, { marca: string; texto: string; ayuda: string }[]> = {
   lead: [
-    { marca: "en_seguimiento", texto: "Vivo, hay que moverlo", ayuda: "Sale en \"Sin seguimiento\" cuando nadie tiene nada comprometido con el lead." },
+    { marca: "en_seguimiento", texto: "Vivo, hay que moverlo", ayuda: "Sale en \"Sin seguimiento\" cuando nadie tiene nada comprometido con el lead y lleva mas de 7 dias sin contacto." },
     { marca: "contactado", texto: "Ya se hablo con la persona", ayuda: "Cuenta en \"Contactados\" del tablero de leads." },
     { marca: "oportunidad", texto: "Hay una oportunidad de venta", ayuda: "Cuenta como oportunidad en la conversion y en los origenes que convierten." },
     { marca: "perdido", texto: "Se perdio o no califico", ayuda: "Cuenta como perdido." },

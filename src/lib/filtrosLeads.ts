@@ -23,6 +23,10 @@ export interface FiltroLeads {
 
 export const SIN_PROPIETARIO = "__sin__";
 
+// Dias sin contacto desde los que un lead o una cotizacion entra en "Sin seguimiento". La base usa el
+// mismo numero (inicio_gestion y panel_leads).
+export const DIAS_SIN_SEGUIMIENTO = 7;
+
 
 // Lo que depende de los estados que se configuran: donde entra un lead nuevo y
 // cuales cuentan como vivos. Quien llama lo saca del catalogo; sin el valen los
@@ -35,7 +39,7 @@ const POR_DEFECTO: EstadosParaFiltros = estadosParaFiltros(CATALOGO_POR_DEFECTO)
 
 export const GESTIONES: Record<string, string> = {
   sin_contactar: "Sin contactar",
-  sin_seguimiento: "Sin seguimiento (vivos y sin nada comprometido)",
+  sin_seguimiento: "Sin seguimiento (vivos, sin nada comprometido y sin contacto hace mas de 7 dias)",
 };
 
 interface Consulta {
@@ -65,8 +69,14 @@ export function aplicarFiltrosLeads<T>(consulta: T, f: FiltroLeads, estados: Est
   else if (f.dueno.includes(",")) c = c.in("propietario_email", f.dueno.split(",").filter(Boolean));
   else if (f.dueno) c = c.eq("propietario_email", f.dueno);
   if (f.gestion === "sin_contactar") c = c.eq("estado_efectivo", estados.nuevo);
-  if (f.gestion === "sin_seguimiento")
-    c = c.in("estado_efectivo", estados.enSeguimiento).eq("con_compromiso", false);
+  // Sin seguimiento: vivos, sin nada comprometido y sin contacto hace mas de 7 dias.
+  if (f.gestion === "sin_seguimiento") {
+    const limite7 = new Date(Date.now() - DIAS_SIN_SEGUIMIENTO * 86400000).toISOString();
+    c = c
+      .in("estado_efectivo", estados.enSeguimiento)
+      .eq("con_compromiso", false)
+      .or(`ultimo_toque.is.null,ultimo_toque.lt.${limite7}`);
+  }
   if (f.gestion && f.enEspera && f.enEspera.length > 0)
     c = c.not("id_clientify", "in", `(${f.enEspera.join(",")})`);
   if (f.linea === "paneles" || f.linea === "casas") c = c.eq("linea", f.linea);
