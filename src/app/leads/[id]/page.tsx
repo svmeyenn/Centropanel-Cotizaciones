@@ -11,6 +11,7 @@ import EnlacesInicio from "@/components/EnlacesInicio";
 import type { Plantilla } from "@/lib/mensajes";
 import { leerEspera } from "@/lib/espera";
 import HistorialLead, { type EntradaHistorial } from "@/components/HistorialLead";
+import RegistrosEstado from "@/components/RegistrosEstado";
 import ProyectoCasa, { type DatosCasaGuardados } from "@/components/ProyectoCasa";
 import ArchivosLead, { type ArchivoLead } from "@/components/ArchivosLead";
 import { QuitarVinculo, VincularCotizacionALead } from "@/components/VincularLead";
@@ -469,6 +470,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             autoresCotizacion={autoresCotizacion}
           />
         </section>
+
+        <RegistrosEstado tipo="lead" idRef={c.id_clientify} />
 
         {/* Lo que el equipo dejo anotado antes */}
         {(c.observaciones || notasClientify.length > 0) && (

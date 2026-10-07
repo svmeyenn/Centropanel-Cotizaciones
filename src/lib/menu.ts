@@ -148,6 +148,12 @@ export const GRUPOS: Grupo[] = [
         href: "/estados",
         ve: (v) => tienePerfilAdmin(v) && v.mercado === "Ambos",
       },
+      // Los motivos que se eligen al cambiar un estado; tambien iguales en los dos mercados.
+      {
+        texto: "Motivos de estado",
+        href: "/motivos",
+        ve: (v) => tienePerfilAdmin(v) && v.mercado === "Ambos",
+      },
       // Los correos y WhatsApp que se ofrecen al escribirle a un lead.
       { texto: "Mensajes a leads", href: "/mensajes", soloAdmin: true },
       { texto: "Vendedores y accesos", href: "/vendedores", soloUsuarios: true },

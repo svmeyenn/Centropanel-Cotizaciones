@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Resultado } from "@/app/leads/actividad-lead";
+import MotivoYComentario from "@/components/MotivoYComentario";
+import type { ExtraEstado } from "@/lib/motivosEstado";
 
 // Un valor que se cambia por su cuenta --el estado del lead, su linea--. El
 // cambio no se aplica al elegir: primero se muestra de que a que, y solo se
@@ -17,6 +19,7 @@ export default function CambioConfirmado({
   resultadoAuto,
   aviso,
   accion,
+  tipoMotivo,
 }: {
   etiqueta: string;
   // Lo que se lee hoy, ya en palabras.
@@ -31,13 +34,17 @@ export default function CambioConfirmado({
   resultadoAuto?: string;
   // Lo que se le dice a quien va a confirmar.
   aviso: (desde: string, hasta: string) => string;
-  accion: (valor: string) => Promise<Resultado>;
+  accion: (valor: string, extra?: ExtraEstado) => Promise<Resultado>;
+  // Si es un estado: ofrece el motivo y el comentario al cambiarlo.
+  tipoMotivo?: "lead" | "cotizacion";
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [elegido, setElegido] = useState(claveActual);
   const [error, setError] = useState("");
   const [pendiente, comenzar] = useTransition();
+  const [extra, setExtra] = useState<ExtraEstado>({ motivo: null, comentario: "" });
+  const [faltaMotivo, setFaltaMotivo] = useState(false);
 
   const cambia = elegido !== claveActual;
   // "Automatico" no dice nada por si solo: se aclara a que valor llevaria. Y el
@@ -52,12 +59,13 @@ export default function CambioConfirmado({
     setAbierto(false);
     setElegido(claveActual);
     setError("");
+    setFaltaMotivo(false);
   }
 
   function confirmar() {
     setError("");
     comenzar(async () => {
-      const r = await accion(elegido);
+      const r = await accion(elegido, extra);
       if (!r.ok) {
         setError(r.mensaje ?? "No se pudo cambiar.");
         return;
@@ -117,6 +125,17 @@ export default function CambioConfirmado({
           ) : (
             <p className="text-[10px] text-gray-500">Elija el nuevo valor.</p>
           )}
+          {cambia && tipoMotivo && elegido !== "auto" && (
+            <MotivoYComentario
+              tipo={tipoMotivo}
+              estado={elegido}
+              deshabilitado={pendiente}
+              onChange={(e, falta) => {
+                setExtra(e);
+                setFaltaMotivo(falta);
+              }}
+            />
+          )}
           {error && (
             <p className="text-[11px] text-red-600" role="alert">
               {error}
@@ -134,7 +153,7 @@ export default function CambioConfirmado({
             <button
               type="button"
               onClick={confirmar}
-              disabled={!cambia || pendiente}
+              disabled={!cambia || pendiente || (faltaMotivo && elegido !== "auto")}
               className="bg-verde text-white text-[11px] font-semibold px-2.5 py-0.5 rounded disabled:opacity-50"
             >
               {pendiente ? "Guardando..." : "Confirmar cambio"}

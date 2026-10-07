@@ -244,7 +244,8 @@ export default function FichaLead({
                 aviso={(desde, hasta) =>
                   `Va a cambiar el estado de «${desde}» a «${hasta}». El cambio queda registrado en la ficha.`
                 }
-                accion={(v) => fijarEstadoLead(lead.id_clientify, v === "auto" ? null : v)}
+                tipoMotivo="lead"
+                accion={(v, extra) => fijarEstadoLead(lead.id_clientify, v === "auto" ? null : v, extra)}
               />
               <CambioConfirmado
                 etiqueta="Linea"

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { cambiarEstado } from "@/app/cotizaciones/acciones";
 import { etiquetaDe, ordenados } from "@/lib/catalogoEstados";
 import { useCatalogoEstados } from "@/components/ProveedorEstados";
+import MotivoYComentario from "@/components/MotivoYComentario";
+import type { ExtraEstado } from "@/lib/motivosEstado";
 
 // Estado de una cotizacion, cambiable solo dentro de la cotizacion, junto al
 // rotulo "Estado". Elegir un estado no lo graba: pide confirmarlo antes, para
@@ -24,6 +26,8 @@ export default function SelectorEstado({
   const [propuesto, setPropuesto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
+  const [extra, setExtra] = useState<ExtraEstado>({ motivo: null, comentario: "" });
+  const [faltaMotivo, setFaltaMotivo] = useState(false);
 
   const nombre = (e: string) => etiquetaDe(cotizacion, e);
   if (!puedeEditar) return <span className="font-semibold">{nombre(actual)}</span>;
@@ -37,7 +41,7 @@ export default function SelectorEstado({
     const nuevo = propuesto;
     setError(null);
     empezar(async () => {
-      const r = await cambiarEstado(id, nuevo);
+      const r = await cambiarEstado(id, nuevo, extra);
       if (r?.error) {
         setError(r.error);
         return;
@@ -73,7 +77,7 @@ export default function SelectorEstado({
           </span>
           <button
             onClick={confirmar}
-            disabled={pendiente}
+            disabled={pendiente || faltaMotivo}
             className="bg-verde text-white font-semibold px-2 py-0.5 rounded disabled:opacity-50"
           >
             {pendiente ? "Cambiando..." : "Confirmar"}
@@ -85,6 +89,19 @@ export default function SelectorEstado({
           >
             Cancelar
           </button>
+        </span>
+      )}
+      {propuesto && (
+        <span className="block basis-full max-w-sm">
+          <MotivoYComentario
+            tipo="cotizacion"
+            estado={propuesto}
+            deshabilitado={pendiente}
+            onChange={(e, falta) => {
+              setExtra(e);
+              setFaltaMotivo(falta);
+            }}
+          />
         </span>
       )}
       {error && <span className="text-xs text-red-700">{error}</span>}

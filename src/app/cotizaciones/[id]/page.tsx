@@ -5,6 +5,7 @@ import { contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesio
 import { createClient } from "@/lib/supabase/server";
 import { leerIvaPorPais, leerParametros, pTxt } from "@/lib/parametros";
 import EnvioCotizacion from "@/components/EnvioCotizacion";
+import RegistrosEstado from "@/components/RegistrosEstado";
 import BitacoraCotizacion, {
   type Actividad,
 } from "@/components/BitacoraCotizacion";
@@ -229,7 +230,8 @@ export default async function Pagina({
         }}
       />
 
-      <div className="max-w-screen-2xl mx-auto px-4 pb-2">
+      <div className="max-w-screen-2xl mx-auto px-4 pb-2 space-y-2">
+        <RegistrosEstado tipo="cotizacion" idRef={id} />
         <BitacoraCotizacion
           idCotizacion={id}
           actividad={(bitacora ?? []) as Actividad[]}
