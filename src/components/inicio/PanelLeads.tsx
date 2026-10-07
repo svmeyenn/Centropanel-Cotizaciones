@@ -98,7 +98,7 @@ export default async function PanelLeads({
         <Kpi
           titulo="Sin seguimiento"
           valor={n(k.sin_seguimiento)}
-          pie="vivos y sin nada comprometido"
+          pie="vivos, sin nada comprometido y sin contacto hace mas de 7 dias"
           signo={k.sin_seguimiento > 0 ? -1 : 0}
           href={`/leads?gestion=sin_seguimiento`}
         />
@@ -236,7 +236,7 @@ export default async function PanelLeads({
         </div>
         <p className="px-2.5 py-1.5 text-[10px] text-gray-500">
           Conversion: oportunidades y clientes sobre el total asignado. Sin seguimiento: contactados, calientes u
-          oportunidades sin compromiso ni accion pendiente. Los compromisos vencidos se cuentan por su fecha, de toda
+          oportunidades sin compromiso ni accion pendiente y sin contacto hace mas de 7 dias. Los compromisos vencidos se cuentan por su fecha, de toda
           la cartera de la persona.
           <Link href="/leads/depurar" className="underline text-verde ml-1">
             Depurar leads anteriores
