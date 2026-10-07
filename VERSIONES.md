@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0110-20261007**
+Version vigente: **v0111-20261007**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0111-20261007 | 07-10-2026 | Sin seguimiento: solo leads y cotizaciones sin contacto hace mas de 7 dias, en el inicio, el panel de leads y el atajo de la lista de leads | 48fcebb |
 | v0110-20261007 | 07-10-2026 | Crear un lead a mano desde el listado de leads: formulario con aviso de email o telefono repetido, fuente 'manual' que la sincronizacion con Clientify no quita, y registro de quien lo creo | 24712d5 |
 | v0109-20261006 | 06-10-2026 | SKU en el Configurador de paneles SIP --el del panel que ya existe, o el asignado al guardarlo-- y busqueda por SKU en el Catalogo de productos, con la columna SKU visible para todos los perfiles. Solo codigo | d38233e |
 | v0108-20261006 | 06-10-2026 | WhatsApp: siempre se abre la aplicacion de WhatsApp con el chat del contacto y el mensaje escrito, y se envia desde alli; se quita el menu de compartir del sistema. Solo codigo | d19f3f3 |
