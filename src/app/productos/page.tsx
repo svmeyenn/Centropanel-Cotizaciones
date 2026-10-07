@@ -39,6 +39,11 @@ export default async function Pagina() {
         .order("familia")
         .order("descripcion");
 
+  // Los paneles hechos con una plancha EPS que no calza con sus placas.
+  const { data: malos } = await supabase.rpc("paneles_eps_erroneo");
+  const advertencias: Record<number, string> = {};
+  for (const m of (malos ?? []) as { id: number; mensaje: string }[]) advertencias[Number(m.id)] = m.mensaje;
+
   // Grupo de descuento de cada familia del catalogo.
   const { data: familiasCat } = await supabase
     .from("familias")
@@ -112,6 +117,7 @@ export default async function Pagina() {
           paises={paises}
           esAdminGeneral={esAdminGeneral}
           gruposFamilia={gruposFamilia}
+          advertencias={advertencias}
         />
       </div>
     </div>

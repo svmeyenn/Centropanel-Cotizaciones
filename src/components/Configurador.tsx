@@ -273,6 +273,12 @@ export default function Configurador({
               </div>
             </div>
 
+            {res.advertencia && (
+              <div className="text-sm rounded p-3 border bg-amber-50 border-amber-400 text-amber-900" role="alert">
+                <strong>Advertencia:</strong> {res.advertencia}
+              </div>
+            )}
+
             {yaExiste && (
               <div
                 className={`text-sm rounded p-3 border ${
