@@ -8,6 +8,7 @@ import PildoraLinea from "@/components/PildoraLinea";
 import { GESTIONES, SIN_PROPIETARIO, aplicarFiltrosLeads } from "@/lib/filtrosLeads";
 import CargarContactosClientify from "@/components/CargarContactosClientify";
 import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
+import NuevoLead from "@/components/NuevoLead";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { LINEAS, puedeCargarLeads, puedeEscribirLeads } from "@/lib/leads";
@@ -86,7 +87,7 @@ export default async function Pagina({
   const diasEdad = Math.max(0, Math.min(3650, Number.parseInt(dias, 10) || 0));
   const v = await requerirVendedor();
   const supabase = await createClient();
-  const { activo, idPaisActivo } = await contextoMercado(v);
+  const { activo, idPaisActivo, paises } = await contextoMercado(v);
   const esPeru = activo?.codigo === "PE";
   const puedeSincronizar = puedeCargarLeads(v);
   const puedeAsignar = puedeEscribirLeads(v);
@@ -190,6 +191,12 @@ export default async function Pagina({
           </div>
           {puedeSincronizar ? (
             <div className="flex flex-wrap items-center gap-4">
+              <NuevoLead
+                paises={paises.map((p) => ({ id: p.id, codigo: p.codigo, nombre: p.nombre }))}
+                idPaisInicial={idPaisActivo}
+                propietarios={(posibles ?? []) as { email: string; nombre: string }[]}
+                miEmail={v.email ?? ""}
+              />
               <CargarContactosClientify />
               <Link href="/leads/meta" className="bg-verde text-white font-semibold px-3 py-1 rounded">
                 Subir leads de Meta
@@ -197,7 +204,17 @@ export default async function Pagina({
               <BotonEnlazarClientes />
             </div>
           ) : (
-            <p className="text-gray-500">Los carga el Administrador.</p>
+            <div className="flex flex-wrap items-center gap-4">
+              {puedeAsignar && (
+                <NuevoLead
+                  paises={paises.map((p) => ({ id: p.id, codigo: p.codigo, nombre: p.nombre }))}
+                  idPaisInicial={idPaisActivo}
+                  propietarios={(posibles ?? []) as { email: string; nombre: string }[]}
+                  miEmail={v.email ?? ""}
+                />
+              )}
+              <p className="text-gray-500">Los carga el Administrador.</p>
+            </div>
           )}
         </div>
 
