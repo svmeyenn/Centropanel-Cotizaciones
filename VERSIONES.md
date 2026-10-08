@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0112-20261008**
+Version vigente: **v0113-20261008**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0113-20261008 | 08-10-2026 | Gestiones en fin de semana: al programar un compromiso o una proxima accion para sabado o domingo se consulta antes y se ofrece el viernes o el lunes; el seguimiento automatico a 3 dias de un correo o WhatsApp pasa al lunes si cae en fin de semana | 7e86025 |
 | v0112-20261008 | 08-10-2026 | Agenda de Mi gestion: recuadros de cada dia mas bajos, con el desglose por tipo (leads, cotizaciones, entregas) a la derecha en vertical. Solo codigo | cf1895b |
 | v0111-20261007 | 07-10-2026 | Sin seguimiento: solo leads y cotizaciones sin contacto hace mas de 7 dias, en el inicio, el panel de leads y el atajo de la lista de leads | 48fcebb |
 | v0110-20261007 | 07-10-2026 | Crear un lead a mano desde el listado de leads: formulario con aviso de email o telefono repetido, fuente 'manual' que la sincronizacion con Clientify no quita, y registro de quien lo creo | 24712d5 |
