@@ -91,8 +91,16 @@ export default function TablaIngresos({
         <BanderaDe idPais={m.id_pais} />
         {fechaCorta(m.fecha)}
       </td>
-      <td className="px-3 py-2 truncate" title={etiquetaContraparte(m)}>
-        {etiquetaContraparte(m)}
+      <td className="px-3 py-2" title={etiquetaContraparte(m)}>
+        <span className="block truncate">{etiquetaContraparte(m)}</span>
+        {m.servicio_prestado ? (
+          <span className="block text-[10px] text-verde font-semibold">Servicio prestado</span>
+        ) : (
+          <span className="block text-[10px] text-gray-400">Servicio por prestar</span>
+        )}
+        {m.fecha_pago_acordada && (
+          <span className="block text-[10px] text-gray-600">Pago acordado: {fechaCorta(m.fecha_pago_acordada)}</span>
+        )}
       </td>
       <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
         {pesos(m.monto)}

@@ -48,6 +48,8 @@ function camposComunes(datos: FormData, inter: { id: number; nombre: string }) {
     // rinde, boleta por boleta.
     es_anticipo: datos.get("es_anticipo") === "on",
     documento: textoONulo(datos.get("documento")),
+    servicio_prestado: datos.get("servicio_prestado") === "on",
+    fecha_pago_acordada: textoONulo(datos.get("fecha_pago_acordada")),
     comentario: textoONulo(datos.get("comentario")),
   };
 }

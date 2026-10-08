@@ -60,6 +60,9 @@ export default async function Pagina({
       proyecto ? etiquetaProyecto(proyecto) : "",
       categorias.find((c) => c.id_categoria === m.id_categoria)?.nombre ?? "",
       etiquetaEstado("Ingreso", m.estado_pago),
+      m.documento ?? "",
+      m.servicio_prestado ? "Si" : "No",
+      m.fecha_pago_acordada ? fechaCorta(m.fecha_pago_acordada) : "",
       m.comentario ?? "",
     ] as (string | number | null)[];
   });
@@ -88,6 +91,9 @@ export default async function Pagina({
                 "Proyecto / Cliente",
                 "Categoria",
                 "Estado",
+                "Documento",
+                "Servicio prestado",
+                "Fecha de pago acordada",
                 "Comentario",
               ]}
               filas={filasExcel}

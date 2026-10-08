@@ -72,6 +72,8 @@ export default async function Pagina({
       m.comentario ?? "",
       m.documento ?? "",
       m.estado_pago,
+      m.servicio_prestado ? "Si" : "No",
+      m.fecha_pago_acordada ? fechaCorta(m.fecha_pago_acordada) : "",
       vendedores.find((x) => x.id === m.id_vendedor)?.nombre ?? "",
     ] as (string | number | null)[];
   });
@@ -106,6 +108,8 @@ export default async function Pagina({
                 "Comentario",
                 "Documento",
                 "Estado",
+                "Servicio prestado",
+                "Fecha de pago acordada",
                 "Solicito",
               ]}
               filas={filasExcel}

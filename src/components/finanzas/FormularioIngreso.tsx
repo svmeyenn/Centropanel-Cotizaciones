@@ -215,6 +215,39 @@ export default function FormularioIngreso({
           />
         </div>
 
+        <div>
+          <label className={ROTULO}>N factura o boleta</label>
+          <input
+            name="documento"
+            className={CAMPO}
+            defaultValue={movimiento?.documento ?? ""}
+            maxLength={40}
+          />
+        </div>
+
+        <div>
+          <label className={ROTULO}>Fecha de pago de la factura o boleta</label>
+          <input
+            type="date"
+            name="fecha_pago_acordada"
+            className={CAMPO}
+            defaultValue={movimiento?.fecha_pago_acordada?.slice(0, 10) ?? ""}
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              name="servicio_prestado"
+              defaultChecked={movimiento?.servicio_prestado ?? false}
+            />
+            <span>
+              El servicio ya fue prestado
+            </span>
+          </label>
+        </div>
+
         <div className="sm:col-span-2">
           <label className={ROTULO}>Comentario</label>
           <textarea

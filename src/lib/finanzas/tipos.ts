@@ -177,6 +177,10 @@ export type Movimiento = {
   // sale del resumen por proyecto, porque el gasto se reconoce al rendirlo.
   es_anticipo: boolean;
   documento: string | null;
+  // El servicio de la factura o boleta ya fue prestado.
+  servicio_prestado: boolean;
+  // Cuando se debe o se espera pagar la factura o boleta. No es la fecha del pago real.
+  fecha_pago_acordada: string | null;
   estado_pago: EstadoPago;
   fecha_pago: string | null;
   id_vendedor: number | null;
