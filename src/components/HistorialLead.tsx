@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { borrarEnvioLead } from "@/app/leads/mensaje";
+import { PanelFinDeSemana, esFinDeSemana, useFinDeSemana } from "@/components/ConsultaFinDeSemana";
 import {
   caducarCompromiso,
   editarCompromiso,
@@ -123,6 +124,9 @@ export default function HistorialLead({
   const [reasignando, setReasignando] = useState<string | null>(null);
   const [nuevoResponsable, setNuevoResponsable] = useState(yo);
   const [edicion, setEdicion] = useState({ accion: "", fecha: "", responsable: yo });
+  // Programar para un sabado o domingo pregunta antes, al anotar y al editar un compromiso.
+  const finde = useFinDeSemana();
+  const [findeEdicion, setFindeEdicion] = useState(false);
   // Revocar y caducar piden el motivo escrito: el boton no actua de inmediato,
   // abre el campo y recien despues se confirma.
   const [conMotivo, setConMotivo] = useState<{
@@ -191,6 +195,7 @@ export default function HistorialLead({
         <form
           ref={formulario}
           action={enviar}
+          onSubmit={finde.alEnviar}
           className="border-b border-gray-200 px-3 py-2 grid gap-2 sm:grid-cols-4 items-end bg-gray-50/60"
         >
           <input type="hidden" name="id_clientify" value={idLead} />
@@ -250,6 +255,16 @@ export default function HistorialLead({
                 <p className="text-[11px] text-gray-500 pb-1">Quedara a su nombre.</p>
               )}
             </>
+          )}
+
+          {finde.consulta && (
+            <PanelFinDeSemana
+              className="sm:col-span-4"
+              fecha={finde.consulta.fecha}
+              hoy={hoy}
+              onElegir={finde.elegir}
+              onVolver={finde.volver}
+            />
           )}
 
           <div className={conCompromiso ? "sm:col-span-4 flex justify-end" : "sm:col-span-4 flex justify-end"}>
@@ -625,14 +640,37 @@ export default function HistorialLead({
                         ))}
                       </select>
                     </label>
+                    {findeEdicion && esFinDeSemana(edicion.fecha) && (
+                      <PanelFinDeSemana
+                        className="sm:col-span-4"
+                        fecha={edicion.fecha}
+                        hoy={hoy}
+                        onVolver={() => setFindeEdicion(false)}
+                        onElegir={(f) => {
+                          setFindeEdicion(false);
+                          setEdicion({ ...edicion, fecha: f });
+                          correr(() => editarCompromiso(e.id, idLead, edicion.accion, f, edicion.responsable));
+                        }}
+                      />
+                    )}
                     <div className="sm:col-span-4 flex justify-end gap-2">
-                      <button className={BOTON_CLARO} onClick={() => setEditando(null)}>
+                      <button
+                        className={BOTON_CLARO}
+                        onClick={() => {
+                          setFindeEdicion(false);
+                          setEditando(null);
+                        }}
+                      >
                         Cancelar
                       </button>
                       <button
                         className="bg-verde text-white text-[11px] font-semibold px-3 py-0.5 rounded disabled:opacity-50"
                         disabled={enCurso}
-                        onClick={() =>
+                        onClick={() => {
+                          if (esFinDeSemana(edicion.fecha)) {
+                            setFindeEdicion(true);
+                            return;
+                          }
                           correr(() =>
                             editarCompromiso(
                               e.id,
@@ -641,8 +679,8 @@ export default function HistorialLead({
                               edicion.fecha,
                               edicion.responsable
                             )
-                          )
-                        }
+                          );
+                        }}
                       >
                         Guardar
                       </button>
