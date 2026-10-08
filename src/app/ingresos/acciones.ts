@@ -99,6 +99,8 @@ export async function guardarIngreso(
     id_proyecto: numeroONulo(datos.get("id_proyecto")),
     id_categoria: numeroONulo(datos.get("id_categoria")),
     documento: textoONulo(datos.get("documento")),
+    servicio_prestado: datos.get("servicio_prestado") === "on",
+    fecha_pago_acordada: textoONulo(datos.get("fecha_pago_acordada")),
     estado_pago: estado,
     // Igual que en Access: al marcarlo recibido se registra la fecha si no la
     // pusieron.

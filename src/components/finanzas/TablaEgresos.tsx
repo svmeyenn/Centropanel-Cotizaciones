@@ -122,8 +122,16 @@ export default function TablaEgresos({
       <td className="px-3 py-2 truncate" title={etiquetaContraparte(m)}>
         {etiquetaContraparte(m)}
       </td>
-      <td className="px-3 py-2 tabular-nums truncate" title={m.documento ?? ""}>
-        {m.documento ?? <span className="text-gray-400">—</span>}
+      <td className="px-3 py-2 tabular-nums" title={m.documento ?? ""}>
+        <span className="block truncate">{m.documento ?? <span className="text-gray-400">—</span>}</span>
+        {m.servicio_prestado ? (
+          <span className="block text-[10px] text-verde font-semibold">Servicio prestado</span>
+        ) : (
+          <span className="block text-[10px] text-gray-400">Servicio por prestar</span>
+        )}
+        {m.fecha_pago_acordada && (
+          <span className="block text-[10px] text-gray-600">Pago acordado: {fechaCorta(m.fecha_pago_acordada)}</span>
+        )}
       </td>
       <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
         {pesos(m.monto)}

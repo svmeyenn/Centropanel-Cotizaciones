@@ -13,6 +13,7 @@ import {
   puedeEscribirLeads,
 } from "@/lib/leads";
 import type { Resultado } from "@/app/leads/actividad-lead";
+import { anotarEstado, exigirMotivo, type ExtraEstado } from "@/lib/motivosEstado";
 
 // Editar un lead: sus datos, su estado, su linea, y --en las casas-- el proyecto
 // con sus archivos. Lo corregido a mano queda aparte de lo que trae Clientify:
@@ -190,7 +191,11 @@ export async function guardarDatosLead(idLead: number, d: DatosLead): Promise<Re
 
 // Cambiar el estado del lead. Nulo: que vuelva a calcularse solo --el de
 // Clientify, o Oportunidad si tiene una cotizacion enviada--.
-export async function fijarEstadoLead(idLead: number, estado: string | null): Promise<Resultado> {
+export async function fijarEstadoLead(
+  idLead: number,
+  estado: string | null,
+  extra?: ExtraEstado
+): Promise<Resultado> {
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v))
     return { ok: false, mensaje: "Su perfil no permite cambiar el estado de un lead." };
@@ -201,8 +206,17 @@ export async function fijarEstadoLead(idLead: number, estado: string | null): Pr
   }
 
   const supabase = await createClient();
+  // El motivo y el comentario solo valen con un estado elegido; el modo automatico no los lleva.
+  if (estado !== null) {
+    const falta = await exigirMotivo(supabase, "lead", estado, extra);
+    if (falta) return { ok: false, mensaje: falta };
+  }
   const { data, error } = await supabase.rpc("lead_fijar_estado", { p_lead: idLead, p_estado: estado });
   if (error) return { ok: false, mensaje: error.message };
+  if (estado !== null) {
+    const sinAnotar = await anotarEstado(supabase, "lead", idLead, estado, extra);
+    if (sinAnotar) return { ok: false, mensaje: `El estado cambio, pero no se pudo guardar el motivo: ${sinAnotar}` };
+  }
 
   revalidatePath(`/leads/${idLead}`);
   revalidatePath("/leads");

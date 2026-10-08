@@ -7,6 +7,7 @@ import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { TipoDescuento } from "@/types/database";
+import { anotarEstado, exigirMotivo, type ExtraEstado } from "@/lib/motivosEstado";
 
 export interface ItemBorrador {
   id_producto: number | null;
@@ -222,7 +223,7 @@ export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
 
 // Estados: Emitida -> Enviada al mandar por correo/WhatsApp. Aceptada y
 // Rechazada son manuales y no se pisan solas (misma regla que en Access).
-export async function cambiarEstado(id: number, estado: string) {
+export async function cambiarEstado(id: number, estado: string, extra?: ExtraEstado) {
   const v = await requerirVendedor();
   if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar cotizaciones." };
@@ -233,11 +234,15 @@ export async function cambiarEstado(id: number, estado: string) {
     return { error: "Ese estado no es valido." };
   }
   const supabase = await createClient();
+  const falta = await exigirMotivo(supabase, "cotizacion", estado, extra);
+  if (falta) return { error: falta };
   const { error } = await supabase
     .from("cotizaciones")
     .update({ estado })
     .eq("id", id);
   if (error) return { error: error.message };
+  const sinAnotar = await anotarEstado(supabase, "cotizacion", id, estado, extra);
+  if (sinAnotar) return { error: `El estado cambio, pero no se pudo guardar el motivo: ${sinAnotar}` };
   revalidatePath(`/cotizaciones/${id}`);
   revalidatePath("/cotizaciones");
   return { ok: true };

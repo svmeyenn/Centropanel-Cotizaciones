@@ -57,6 +57,8 @@ const ETIQUETAS: Record<string, string> = {
   estado_pago: "Estado de pago",
   fecha_pago: "Fecha de pago",
   es_anticipo: "Es anticipo",
+  servicio_prestado: "Servicio prestado",
+  fecha_pago_acordada: "Fecha de pago acordada",
   id_cuenta: "Cuenta",
   id_proyecto: "Proyecto",
   id_categoria: "Categoria",

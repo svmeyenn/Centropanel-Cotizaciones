@@ -27,6 +27,8 @@ export interface ResultadoPanel {
   descripcion_existente: string | null;
   // SKU del panel que ya esta en el catalogo --null si es nuevo: se asigna al guardarlo--.
   sku_existente: string | null;
+  // Advertencia de medidas: la plancha EPS no calza con las placas. null si todo esta bien.
+  advertencia: string | null;
   // Desglose de como se llego al costo, equivalente a CfgDesglose en Access.
   // Solo se arma para el administrador: detalla el costo de cada insumo.
   costeo: LineaCosteo[] | null;
@@ -64,6 +66,16 @@ export async function productoParaCotizar(id: number): Promise<{
   };
 }
 
+// La advertencia de medidas de una combinacion: la plancha EPS de 230x115 es para paneles con
+// yeso (240x120) y no calza con placas de 244x122. Es un aviso, no impide guardar.
+export async function advertenciaEps(eps: number | null, placaA: number | null, placaB: number | null): Promise<string | null> {
+  await requerirVendedor();
+  if (!eps || (!placaA && !placaB)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("panel_advertencia_eps", { p_eps: eps, p_placa_a: placaA, p_placa_b: placaB });
+  return (data as string | null) ?? null;
+}
+
 // Calcula el panel a partir de la combinacion elegida. Todo el costeo se
 // resuelve en Postgres (costo_panel, precio_desde_costo, descripcion_panel):
 // no se reimplementa aqui para que la regla valga igual desde cualquier cliente.
@@ -79,7 +91,7 @@ export async function calcularPanel(
   const supabase = await createClient();
   const b = c.id_placa_b ?? null;
 
-  const [rDesc, rEspesor, rCosto, rExiste] = await Promise.all([
+  const [rDesc, rEspesor, rCosto, rExiste, rAdv] = await Promise.all([
     supabase.rpc("descripcion_panel", {
       p_eps: c.id_eps,
       p_placa_a: c.id_placa_a,
@@ -100,6 +112,7 @@ export async function calcularPanel(
       p_placa_a: c.id_placa_a,
       p_placa_b: b,
     }),
+    supabase.rpc("panel_advertencia_eps", { p_eps: c.id_eps, p_placa_a: c.id_placa_a, p_placa_b: b }),
   ]);
 
   if (rCosto.error) return { error: rCosto.error.message };
@@ -180,6 +193,7 @@ export async function calcularPanel(
     misma_config: mismaConfig,
     descripcion_existente: descExistente,
     sku_existente: skuExistente,
+    advertencia: (rAdv.data as string | null) ?? null,
     costeo,
   };
 }

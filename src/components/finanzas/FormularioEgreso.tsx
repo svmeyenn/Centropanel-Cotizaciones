@@ -196,6 +196,30 @@ export default function FormularioEgreso({
           />
         </div>
 
+        <div className="sm:col-span-2">
+          <label className={ROTULO}>Fecha de pago de la factura o boleta</label>
+          <input
+            type="date"
+            name="fecha_pago_acordada"
+            className={CAMPO}
+            defaultValue={movimiento?.fecha_pago_acordada?.slice(0, 10) ?? ""}
+          />
+          <span className="block text-[11px] text-gray-600 mt-0.5">
+            Cuando se debe pagar. La fecha en que se paga de verdad la fija quien paga.
+          </span>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              name="servicio_prestado"
+              defaultChecked={movimiento?.servicio_prestado ?? false}
+            />
+            <span>El servicio ya fue prestado</span>
+          </label>
+        </div>
+
         <div className="sm:col-span-2 bg-crema border border-gray-200 rounded px-3 py-2">
           <label className="flex items-start gap-2 text-xs">
             <input

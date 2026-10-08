@@ -2,7 +2,8 @@
 
 import { BanderaDe } from "@/components/Bandera";
 
-import { Fragment, useMemo, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
+import { advertenciaEps } from "@/app/configurador/acciones";
 import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
 import { nombreImpuesto } from "@/lib/impuesto";
 import {
@@ -50,6 +51,7 @@ export default function TablaProductos({
   paises = [],
   esAdminGeneral = false,
   gruposFamilia = {},
+  advertencias = {},
 }: {
   productos: ProductoFila[];
   esAdmin: boolean;
@@ -59,6 +61,8 @@ export default function TablaProductos({
   esAdminGeneral?: boolean;
   // Grupo de descuento de cada familia del catalogo.
   gruposFamilia?: Record<string, string>;
+  // Paneles con una plancha EPS que no calza con sus placas, por id, con el aviso.
+  advertencias?: Record<number, string>;
 }) {
   const [busca, setBusca] = useState("");
   const [familia, setFamilia] = useState("");
@@ -74,6 +78,8 @@ export default function TablaProductos({
       return n;
     });
   const [soloActivos, setSoloActivos] = useState(true);
+  const [soloAdvertidos, setSoloAdvertidos] = useState(false);
+  const [advComp, setAdvComp] = useState<string | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosProducto | null>(null);
   // Cada producto con el IVA de su mercado.
@@ -114,6 +120,7 @@ export default function TablaProductos({
     return productos.filter(
       (p) =>
         (!soloActivos || p.activo) &&
+        (!soloAdvertidos || advertencias[p.id] != null) &&
         (!familia || (p.familia ?? "Otros") === familia) &&
         (!q ||
           p.descripcion.toLowerCase().includes(q) ||
@@ -122,7 +129,7 @@ export default function TablaProductos({
           (p.familia ?? "").toLowerCase().includes(q) ||
           (p.subfamilia ?? "").toLowerCase().includes(q)),
     );
-  }, [busca, soloActivos, familia, productos]);
+  }, [busca, soloActivos, soloAdvertidos, advertencias, familia, productos]);
 
   // El catalogo se lee en dos niveles: familia (Paneles SIP, Madera,
   // Tornillos...) y dentro de ella subfamilia (APA / Smart, Pino Bruta,
@@ -207,8 +214,33 @@ export default function TablaProductos({
       ? (form.precio_venta - form.costo_unitario) / form.precio_venta
       : null;
 
+  // La advertencia en vivo mientras se cambia la composicion de un panel.
+  useEffect(() => {
+    if (editando == null) return;
+    let vigente = true;
+    advertenciaEps(comp.eps ? Number(comp.eps) : null, comp.a ? Number(comp.a) : null, comp.b ? Number(comp.b) : null).then((m) => {
+      if (vigente) setAdvComp(m);
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [editando, comp.eps, comp.a, comp.b]);
+
+  const nAdvertidos = Object.keys(advertencias).length;
+
   return (
     <div className="space-y-3">
+      {nAdvertidos > 0 && (
+        <div className="bg-amber-50 border border-amber-400 text-amber-900 text-xs rounded p-3 flex flex-wrap items-center gap-x-4 gap-y-1" role="alert">
+          <span>
+            <strong>Advertencia:</strong> {nAdvertidos} {nAdvertidos === 1 ? "panel esta hecho" : "paneles estan hechos"} con la plancha EPS de 230x115, que es para paneles con yeso (volcanita de 240x120) y no calza con placas de 244x122.
+          </span>
+          <label className="flex items-center gap-1.5 font-semibold">
+            <input type="checkbox" checked={soloAdvertidos} onChange={(e) => setSoloAdvertidos(e.target.checked)} />
+            Ver solo esos paneles
+          </label>
+        </div>
+      )}
       <div className="flex flex-wrap gap-3 items-center">
         <input
           className="border border-gray-300 rounded px-3 py-1.5 text-sm w-72"
@@ -349,6 +381,11 @@ export default function TablaProductos({
                   </select>
                 </label>
               </div>
+              {advComp && (
+                <div className="text-[11px] bg-amber-50 border border-amber-400 text-amber-900 rounded p-2" role="alert">
+                  <strong>Advertencia:</strong> {advComp}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2 items-center">
                 <button
                   onClick={() =>
@@ -736,6 +773,14 @@ export default function TablaProductos({
                               </button>
                             ) : (
                               p.descripcion
+                            )}
+                            {advertencias[p.id] && (
+                              <span
+                                className="ml-2 text-[10px] bg-amber-100 text-amber-900 border border-amber-400 px-1.5 py-0.5 rounded"
+                                title={advertencias[p.id]}
+                              >
+                                EPS no calza
+                              </span>
                             )}
                             {p.precio_manual && (
                               <span
