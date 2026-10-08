@@ -292,6 +292,53 @@ export async function guardarProyectoCasa(idLead: number, d: DatosCasa): Promise
   return { ok: true, mensaje: (data as string) ?? "Datos del proyecto guardados." };
 }
 
+// Guarda el proyecto con todas sus valorizaciones: la lista que llega reemplaza a la anterior.
+export interface FilaValorizacion {
+  descripcion: string;
+  uf: string;
+  clp: string;
+  usd: string;
+  pen: string;
+}
+
+export async function guardarProyectoValorizado(
+  idLead: number,
+  metros2: string,
+  filas: FilaValorizacion[]
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite editar leads." };
+  if (!Array.isArray(filas) || filas.length > 30) return { ok: false, mensaje: "Son demasiadas valorizaciones (maximo 30)." };
+
+  const m = numero(metros2, "Los metros cuadrados", 1_000_000);
+  if (typeof m === "string") return { ok: false, mensaje: m };
+
+  const limpias: Record<string, string | number | null>[] = [];
+  for (const [i, f] of filas.entries()) {
+    const campos = [
+      numero(f.uf, `El valor en UF de la valorizacion ${i + 1}`, 10_000_000),
+      numero(f.clp, `El valor en pesos de la valorizacion ${i + 1}`, 1e13),
+      numero(f.usd, `El valor en dolares de la valorizacion ${i + 1}`, 1e10),
+      numero(f.pen, `El valor en soles de la valorizacion ${i + 1}`, 1e11),
+    ];
+    const error = campos.find((c) => typeof c === "string");
+    if (error) return { ok: false, mensaje: error as string };
+    const [uf, clp, usd, pen] = campos as (number | null)[];
+    limpias.push({ descripcion: (f.descripcion ?? "").trim(), uf, clp, usd, pen });
+  }
+
+  const supabase = await createClient();
+  const { data, error: errRpc } = await supabase.rpc("lead_guardar_proyecto", {
+    p_lead: idLead,
+    p_metros2: m,
+    p_filas: limpias,
+  });
+  if (errRpc) return { ok: false, mensaje: errRpc.message };
+
+  revalidatePath(`/leads/${idLead}`);
+  return { ok: true, mensaje: (data as string) ?? "Datos del proyecto guardados." };
+}
+
 // --- Archivos del proyecto --------------------------------------------------
 // El navegador sube el archivo directo al deposito --un plano pesa mas de lo que
 // admite una peticion al servidor-- y despues pide que se anote aqui.
