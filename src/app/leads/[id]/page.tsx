@@ -290,6 +290,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             telefonos={(c.telefonos ?? []).filter((t) => t.phone).map((t) => ({ phone: t.phone as string, whatsapp: t.whatsapp }))}
             prefijoTelefono={codigoPais === "PE" ? "51" : "56"}
             cotizaciones={cotizaciones.filter((q) => q.folio).map((q) => ({ id: q.id_cotizacion, folio: q.folio }))}
+            archivos={archivos.map((a) => ({ id: a.id, nombre: a.nombre, tamano: a.tamano ?? 0 }))}
             datos={{
               nombre: primerNombre(c.nombre) || primerNombre(c.nombre_completo),
               nombreCompleto: c.nombre_completo ?? "",

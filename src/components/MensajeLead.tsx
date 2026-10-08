@@ -2,9 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { armarBorradorOutlook, registrarEnvioLead } from "@/app/leads/mensaje";
+import { urlArchivoLead } from "@/app/leads/edicion-lead";
 import { aplicarPlantilla, normalizarFono, type Canal, type DatosMensaje, type Plantilla } from "@/lib/mensajes";
 
 export type CotizacionAdjuntable = { id: number; folio: string };
+// Un archivo subido al lead.
+export type ArchivoAdjuntable = { id: number; nombre: string; tamano: number };
+
+const mb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
 type Aviso = { ok: boolean; texto: string } | null;
 
@@ -33,6 +38,7 @@ export default function MensajeLead({
   telefonos,
   prefijoTelefono,
   cotizaciones,
+  archivos,
   datos,
   lineaTexto,
 }: {
@@ -42,6 +48,8 @@ export default function MensajeLead({
   telefonos: { phone: string; whatsapp?: boolean }[];
   prefijoTelefono: string;
   cotizaciones: CotizacionAdjuntable[];
+  // Los archivos que ya estan cargados en el lead.
+  archivos: ArchivoAdjuntable[];
   datos: Omit<DatosMensaje, "folios">;
   // La linea del lead: los mensajes son los de esa linea.
   lineaTexto: string;
@@ -52,6 +60,12 @@ export default function MensajeLead({
   const [idPlantilla, setIdPlantilla] = useState<number | null>(null);
   const [destino, setDestino] = useState("");
   const [elegidas, setElegidas] = useState<number[]>([]);
+  const [archivosElegidos, setArchivosElegidos] = useState<number[]>([]);
+  // Los archivos ya traidos, listos para adjuntar: se preparan al elegirlos, para que el
+  // boton de compartir actue dentro del clic, que es lo unico que el navegador deja.
+  const preparados = useRef(new Map<string, File>());
+  const [listos, setListos] = useState("");
+  const [puedeCompartir, setPuedeCompartir] = useState(false);
   const [asunto, setAsunto] = useState("");
   const [cuerpo, setCuerpo] = useState("");
   const [editado, setEditado] = useState(false);
@@ -62,6 +76,10 @@ export default function MensajeLead({
   const nota = useRef("");
 
   const folios = cotizaciones.filter((c) => elegidas.includes(c.id)).map((c) => c.folio);
+  const nombresArchivos = archivos.filter((a) => archivosElegidos.includes(a.id)).map((a) => a.nombre);
+  const claves = [...elegidas.map((i) => `c${i}`), ...archivosElegidos.map((i) => `a${i}`)];
+  const clavesTexto = claves.join(",");
+  const preparando = claves.length > 0 && listos !== clavesTexto;
   const plantilla = delCanal.find((p) => p.id === idPlantilla) ?? null;
 
   // Al abrir o cambiar de canal se elige la primera plantilla y el primer contacto.
@@ -76,6 +94,29 @@ export default function MensajeLead({
     }
   }, [canal, delCanal, emails, telefonos]);
 
+  // Si el navegador sabe compartir archivos --telefono, o Windows con la hoja de compartir--.
+  useEffect(() => {
+    try {
+      const prueba = new File(["x"], "prueba.pdf", { type: "application/pdf" });
+      setPuedeCompartir(typeof navigator !== "undefined" && typeof navigator.canShare === "function" && navigator.canShare({ files: [prueba] }));
+    } catch {
+      setPuedeCompartir(false);
+    }
+  }, []);
+
+  // Trae cada archivo elegido apenas se elige.
+  useEffect(() => {
+    if (claves.length === 0) return;
+    let vigente = true;
+    Promise.all(claves.map((k) => traer(k)))
+      .then(() => vigente && setListos(clavesTexto))
+      .catch((e) => vigente && setAviso({ ok: false, texto: (e as Error).message }));
+    return () => {
+      vigente = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clavesTexto]);
+
   // El texto se rehace con la plantilla, los folios y los datos --salvo que la
   // persona ya lo haya editado a mano--.
   useEffect(() => {
@@ -88,9 +129,9 @@ export default function MensajeLead({
 
   async function anotar() {
     // Cada envio queda anotado; solo se ignora el mismo toque repetido a los pocos segundos.
-    const clave = `${canal}|${destino}|${asunto}|${cuerpo}|${folios.join(",")}`;
+    const clave = `${canal}|${destino}|${asunto}|${cuerpo}|${folios.join(",")}|${nombresArchivos.join(",")}`;
     if (ultimo.current.clave === clave && Date.now() - ultimo.current.cuando < 15000) return true;
-    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas, canal === "email" ? asunto : "", cuerpo);
+    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas, canal === "email" ? asunto : "", cuerpo, nombresArchivos);
     if (!r.ok) {
       setAviso({ ok: false, texto: r.mensaje ?? "No se pudo anotar en el lead." });
       return false;
@@ -101,11 +142,39 @@ export default function MensajeLead({
     return true;
   }
 
+  // Un archivo adjuntable --el PDF de una cotizacion ("c12") o un archivo del lead ("a7")--,
+  // traido una sola vez.
+  async function traer(clave: string): Promise<File> {
+    const guardado = preparados.current.get(clave);
+    if (guardado) return guardado;
+    const id = Number(clave.slice(1));
+    let blob: Blob;
+    let nombre: string;
+    if (clave[0] === "c") {
+      const c = cotizaciones.find((x) => x.id === id);
+      const r = await fetch(`/cotizaciones/${id}/pdf/archivo`);
+      if (!r.ok) throw new Error(`No se pudo generar el PDF de ${c?.folio ?? "la cotizacion"}.`);
+      blob = await r.blob();
+      nombre = `${c?.folio ?? `Cotizacion-${id}`}.pdf`;
+    } else {
+      const a = archivos.find((x) => x.id === id);
+      const u = await urlArchivoLead(id);
+      if (!u.url) throw new Error(u.error ?? `No se pudo abrir ${a?.nombre ?? "el archivo"}.`);
+      const r = await fetch(u.url);
+      if (!r.ok) throw new Error(`No se pudo traer ${a?.nombre ?? "el archivo"}.`);
+      blob = await r.blob();
+      nombre = a?.nombre ?? `archivo-${id}`;
+    }
+    const f = new File([blob], nombre, { type: blob.type || "application/octet-stream" });
+    preparados.current.set(clave, f);
+    return f;
+  }
+
+  // Baja a la carpeta de descargas lo elegido: cotizaciones y archivos del lead.
   async function bajarPdfs() {
-    for (const c of cotizaciones.filter((x) => elegidas.includes(x.id))) {
-      const r = await fetch(`/cotizaciones/${c.id}/pdf/archivo`);
-      if (!r.ok) throw new Error(`No se pudo generar el PDF de ${c.folio}.`);
-      descargar(`${c.folio}.pdf`, await r.blob());
+    for (const k of claves) {
+      const f = await traer(k);
+      descargar(f.name, f);
     }
   }
 
@@ -116,7 +185,7 @@ export default function MensajeLead({
       // Queda anotado apenas se genera, aunque despues falle algo al armar el
       // archivo: si no se envio, el registro se borra desde el lead.
       if (!(await anotar())) return;
-      const r = await armarBorradorOutlook(idLead, destino, asunto, cuerpo, elegidas);
+      const r = await armarBorradorOutlook(idLead, destino, asunto, cuerpo, elegidas, archivosElegidos);
       if (!r.ok) return setAviso({ ok: false, texto: `${r.mensaje} El registro ya quedo en el lead: si no va a enviar, borrelo desde ahi.` });
       const bin = atob(r.base64);
       const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
@@ -134,7 +203,7 @@ export default function MensajeLead({
     setAviso(null);
     try {
       if (!(await anotar())) return;
-      if (elegidas.length > 0) await bajarPdfs();
+      if (claves.length > 0) await bajarPdfs();
       const url =
         `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(destino)}` +
         `&su=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
@@ -142,8 +211,8 @@ export default function MensajeLead({
       setAviso({
         ok: true,
         texto:
-          elegidas.length > 0
-            ? "Se abrio Gmail con el mensaje y se bajaron los PDF: arrastrelos al correo antes de enviar. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "")
+          claves.length > 0
+            ? "Se abrio Gmail con el mensaje y se bajaron los archivos: arrastrelos al correo antes de enviar. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "")
             : "Se abrio Gmail con el mensaje para revisarlo. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : ""),
       });
     } catch (e) {
@@ -162,7 +231,7 @@ export default function MensajeLead({
     setOcupado(true);
     try {
       if (!(await anotar())) return;
-      if (elegidas.length > 0) await bajarPdfs();
+      if (claves.length > 0) await bajarPdfs();
       window.open(
         fono ? `https://wa.me/${fono}?text=${encodeURIComponent(cuerpo)}` : `https://wa.me/?text=${encodeURIComponent(cuerpo)}`,
         "_blank",
@@ -171,8 +240,8 @@ export default function MensajeLead({
       setAviso({
         ok: true,
         texto:
-          (elegidas.length > 0
-            ? "Se abrio WhatsApp con el mensaje escrito y se bajaron los PDF: adjuntelos en el chat y envie desde WhatsApp."
+          (claves.length > 0
+            ? "Se abrio WhatsApp con el mensaje escrito y se bajaron los archivos: adjuntelos en el chat y envie desde WhatsApp. Para que viajen con el mensaje, use \"Compartir con los archivos\"."
             : "Se abrio WhatsApp con el mensaje escrito: revíselo y envíelo desde WhatsApp.") +
           " Quedo anotado en el lead con seguimiento en 3 dias." +
           (nota.current ? ` ${nota.current}` : ""),
@@ -182,6 +251,36 @@ export default function MensajeLead({
     } finally {
       setOcupado(false);
     }
+  }
+
+  // Comparte el mensaje y los archivos con la aplicacion que se elija --WhatsApp--: viajan
+  // juntos, sin ir a buscarlos a una carpeta. El navegador no deja elegir el chat por uno: se
+  // elige en la hoja de compartir. Se anota solo si se alcanzo a compartir.
+  async function compartirWhatsapp() {
+    setAviso(null);
+    const archivosListos = claves.map((k) => preparados.current.get(k));
+    if (archivosListos.some((f) => !f)) return setAviso({ ok: false, texto: "Los archivos todavia se estan preparando: espere un momento y vuelva a pulsar." });
+    const files = archivosListos as File[];
+    if (!navigator.canShare?.({ files })) return setAviso({ ok: false, texto: "Este navegador no puede compartir esos archivos. Use \"Abrir WhatsApp\" y adjunte lo que se bajo." });
+    setOcupado(true);
+    try {
+      // El texto tambien queda copiado, por si la aplicacion elegida no lo recibe junto con los archivos.
+      navigator.clipboard?.writeText(cuerpo).catch(() => {});
+      await navigator.share({ files, text: cuerpo });
+    } catch (e) {
+      setOcupado(false);
+      if ((e as Error).name === "AbortError") return setAviso({ ok: false, texto: "Se cancelo y no quedo anotado en el lead." });
+      return setAviso({ ok: false, texto: `No se pudo compartir: ${(e as Error).message}` });
+    }
+    if (await anotar()) {
+      setAviso({
+        ok: true,
+        texto:
+          "Se compartieron el mensaje y los archivos. Si en el chat falta el texto, esta copiado: peguelo con Ctrl+V. Quedo anotado en el lead con seguimiento en 3 dias." +
+          (nota.current ? ` ${nota.current}` : ""),
+      });
+    }
+    setOcupado(false);
   }
 
   const sinContacto = canal === "email" ? emails.length === 0 : telefonos.length === 0;
@@ -264,7 +363,7 @@ export default function MensajeLead({
             )}
 
             <fieldset>
-              <legend className={ROTULO}>Adjuntar el PDF de</legend>
+              <legend className={ROTULO}>Adjuntar el PDF de las cotizaciones</legend>
               {cotizaciones.length === 0 ? (
                 <p className="text-gray-500">Este lead no tiene cotizaciones vinculadas.</p>
               ) : (
@@ -278,6 +377,30 @@ export default function MensajeLead({
                           onChange={(e) => setElegidas((x) => (e.target.checked ? [...x, c.id] : x.filter((i) => i !== c.id)))}
                         />
                         {c.folio}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </fieldset>
+
+            <fieldset>
+              <legend className={ROTULO}>Adjuntar archivos cargados en el lead</legend>
+              {archivos.length === 0 ? (
+                <p className="text-gray-500">Este lead no tiene archivos cargados.</p>
+              ) : (
+                <ul className="flex flex-wrap gap-x-4 gap-y-1">
+                  {archivos.map((a) => (
+                    <li key={a.id}>
+                      <label className="inline-flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={archivosElegidos.includes(a.id)}
+                          onChange={(e) => setArchivosElegidos((x) => (e.target.checked ? [...x, a.id] : x.filter((i) => i !== a.id)))}
+                        />
+                        <span>
+                          {a.nombre} <span className="text-gray-500">({mb(a.tamano)})</span>
+                        </span>
                       </label>
                     </li>
                   ))}
@@ -338,14 +461,33 @@ export default function MensajeLead({
                   </button>
                 </>
               ) : (
-                <button
-                  type="button"
-                  onClick={whatsapp}
-                  disabled={ocupado || sinContacto || !cuerpo.trim()}
-                  className="bg-[#25D366] text-white font-semibold px-2.5 py-1 rounded disabled:opacity-50"
-                >
-                  Abrir WhatsApp
-                </button>
+                <>
+                  {claves.length > 0 && puedeCompartir && (
+                    <button
+                      type="button"
+                      onClick={compartirWhatsapp}
+                      disabled={ocupado || preparando || !cuerpo.trim()}
+                      className="bg-[#25D366] text-white font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+                    >
+                      {preparando ? "Preparando archivos…" : "Compartir con los archivos"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={whatsapp}
+                    disabled={ocupado || sinContacto || !cuerpo.trim()}
+                    className={`font-semibold px-2.5 py-1 rounded disabled:opacity-50 ${claves.length > 0 && puedeCompartir ? "border border-[#25D366] text-[#128C7E] bg-white" : "bg-[#25D366] text-white"}`}
+                  >
+                    Abrir WhatsApp
+                  </button>
+                  {claves.length > 0 && (
+                    <p className="basis-full text-[10px] text-gray-600">
+                      {puedeCompartir
+                        ? "\"Compartir con los archivos\" manda el texto y los archivos juntos: en la hoja que se abre elija WhatsApp y el chat del contacto. \"Abrir WhatsApp\" abre el chat del contacto con el texto y baja los archivos para adjuntarlos a mano."
+                        : "Este navegador no puede mandar archivos a WhatsApp de una vez: se bajan a la carpeta de descargas para adjuntarlos en el chat. Desde el telefono si se pueden compartir juntos."}
+                    </p>
+                  )}
+                </>
               )}
             </div>
 

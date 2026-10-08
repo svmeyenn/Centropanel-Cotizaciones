@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
-import { puedeEscribirLeads } from "@/lib/leads";
+import { BUCKET_LEADS, puedeEscribirLeads } from "@/lib/leads";
 import { leerCotizacionDoc } from "@/lib/cotizacionDoc";
 import { archivoCotizacionPdf } from "@/lib/pdf/CotizacionPdf";
 import type { Canal } from "@/lib/mensajes";
@@ -26,7 +26,9 @@ export async function registrarEnvioLead(
   folios: string[],
   idsCotizacion: number[] = [],
   asunto: string = "",
-  cuerpo: string = ""
+  cuerpo: string = "",
+  // Nombres de los archivos del lead que se adjuntan, para dejarlos en el registro.
+  archivos: string[] = []
 ): Promise<Resultado> {
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite escribirle a los leads." };
@@ -61,7 +63,13 @@ export async function registrarEnvioLead(
     p_plantilla: plantilla,
     p_destino: destino,
     p_folios: folios,
-    p_extra: porEnviar.length > 0 ? `Cotizacion pasada a Enviada: ${porEnviar.map((c) => c.num_cotizacion ?? c.id).join(", ")}.` : null,
+    p_extra:
+      [
+        porEnviar.length > 0 ? `Cotizacion pasada a Enviada: ${porEnviar.map((c) => c.num_cotizacion ?? c.id).join(", ")}.` : "",
+        archivos.length > 0 ? `Archivos del lead adjuntos: ${archivos.join(", ")}.` : "",
+      ]
+        .filter(Boolean)
+        .join(" ") || null,
     p_oportunidad: idsCotizacion.length > 0,
     p_asunto: asunto.trim().slice(0, 300) || null,
     p_cuerpo: cuerpo.trim().slice(0, 4500) || null,
@@ -112,7 +120,8 @@ export async function armarBorradorOutlook(
   para: string,
   asunto: string,
   cuerpo: string,
-  idsCotizacion: number[]
+  idsCotizacion: number[],
+  idsArchivo: number[] = []
 ): Promise<{ ok: true; nombre: string; base64: string } | { ok: false; mensaje: string }> {
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite escribirle a los leads." };
@@ -124,12 +133,26 @@ export async function armarBorradorOutlook(
   const permitidas = new Set(((cots ?? []) as { id_cotizacion: number }[]).map((c) => Number(c.id_cotizacion)));
   if (idsCotizacion.some((i) => !permitidas.has(i))) return { ok: false, mensaje: "Hay una cotizacion que no es de este lead." };
 
-  const adjuntos: { nombre: string; datos: Buffer }[] = [];
+  const adjuntos: { nombre: string; datos: Buffer; tipo: string }[] = [];
+  // Los archivos subidos al lead: solo los de este lead, que la base deja ver a esta persona.
+  if (idsArchivo.length > 0) {
+    const { data: filas } = await supabase
+      .from("lead_archivos")
+      .select("id, nombre, ruta, tipo_mime")
+      .eq("id_clientify", idLead)
+      .in("id", idsArchivo);
+    if ((filas ?? []).length !== new Set(idsArchivo).size) return { ok: false, mensaje: "Hay un archivo que no es de este lead." };
+    for (const f of filas ?? []) {
+      const { data: blob, error } = await supabase.storage.from(BUCKET_LEADS).download(f.ruta as string);
+      if (error || !blob) return { ok: false, mensaje: `No se pudo leer el archivo ${f.nombre}.` };
+      adjuntos.push({ nombre: f.nombre as string, datos: Buffer.from(await blob.arrayBuffer()), tipo: (f.tipo_mime as string | null) || "application/octet-stream" });
+    }
+  }
   for (const id of idsCotizacion) {
     const doc = await leerCotizacionDoc(id);
     if (!doc) return { ok: false, mensaje: "No se pudo leer una de las cotizaciones." };
     try {
-      adjuntos.push({ nombre: `${doc.d.num_cotizacion ?? `Cotizacion-${id}`}.pdf`, datos: await archivoCotizacionPdf(doc.d, doc.p) });
+      adjuntos.push({ nombre: `${doc.d.num_cotizacion ?? `Cotizacion-${id}`}.pdf`, datos: await archivoCotizacionPdf(doc.d, doc.p), tipo: "application/pdf" });
     } catch (e) {
       return { ok: false, mensaje: `No se pudo generar el PDF: ${(e as Error).message}` };
     }
@@ -153,8 +176,8 @@ export async function armarBorradorOutlook(
   for (const a of adjuntos) {
     partes.push(
       `--${limite}`,
-      `Content-Type: application/pdf; name="${a.nombre}"`,
-      `Content-Disposition: attachment; filename="${a.nombre}"`,
+      `Content-Type: ${a.tipo}; name="${encabezado(a.nombre)}"`,
+      `Content-Disposition: attachment; filename="${encabezado(a.nombre)}"`,
       "Content-Transfer-Encoding: base64",
       "",
       enLineas(a.datos),
