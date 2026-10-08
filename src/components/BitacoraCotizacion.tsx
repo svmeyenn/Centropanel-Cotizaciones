@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Bitacora from "@/components/Bitacora";
+import { PanelFinDeSemana, useFinDeSemana } from "@/components/ConsultaFinDeSemana";
 import {
   caducarAccion,
   marcarAccionHecha,
@@ -85,6 +86,9 @@ export default function BitacoraCotizacion({
   const [enCurso, comenzar] = useTransition();
   const [aviso, setAviso] = useState("");
   const [conAccion, setConAccion] = useState(false);
+  // Programar para un sabado o domingo pregunta antes.
+  const finde = useFinDeSemana();
+  const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: zona }).format(new Date());
   // Caducar pide un motivo escrito, asi que el boton no actua de inmediato:
   // abre el campo para esa accion y recien despues se confirma.
   const [caducando, setCaducando] = useState<number | null>(null);
@@ -136,6 +140,7 @@ export default function BitacoraCotizacion({
         <form
           ref={formulario}
           action={enviar}
+          onSubmit={finde.alEnviar}
           className="border-b border-gray-200 px-3 py-2 grid gap-2 sm:grid-cols-4 items-end"
         >
           <input type="hidden" name="id_cotizacion" value={idCotizacion} />
@@ -195,6 +200,16 @@ export default function BitacoraCotizacion({
                 </label>
               )}
             </>
+          )}
+
+          {finde.consulta && (
+            <PanelFinDeSemana
+              className="sm:col-span-4"
+              fecha={finde.consulta.fecha}
+              hoy={hoy}
+              onElegir={finde.elegir}
+              onVolver={finde.volver}
+            />
           )}
 
           <div className={conAccion ? "" : "sm:col-span-4 flex justify-end"}>
