@@ -5,10 +5,15 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0109-20261006**
+Version vigente: **v0114-20261008**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0114-20261008 | 08-10-2026 | Pasan a produccion los cambios que estaban en pruebas: motivo y comentario al cambiar el estado de leads y cotizaciones, con su mantenedor (Motivos de estado); advertencia de la plancha EPS de 230x115 contra placas de 244x122; servicio prestado y fecha de pago acordada de la factura o boleta en ingresos y egresos; y correccion de la subida de archivos en leads creados a mano o desde Meta (id negativo) | 8968532 |
+| v0113-20261008 | 08-10-2026 | Gestiones en fin de semana: al programar un compromiso o una proxima accion para sabado o domingo se consulta antes y se ofrece el viernes o el lunes; el seguimiento automatico a 3 dias de un correo o WhatsApp pasa al lunes si cae en fin de semana | 7e86025 |
+| v0112-20261008 | 08-10-2026 | Agenda de Mi gestion: recuadros de cada dia mas bajos, con el desglose por tipo (leads, cotizaciones, entregas) a la derecha en vertical. Solo codigo | cf1895b |
+| v0111-20261007 | 07-10-2026 | Sin seguimiento: solo leads y cotizaciones sin contacto hace mas de 7 dias, en el inicio, el panel de leads y el atajo de la lista de leads | 48fcebb |
+| v0110-20261007 | 07-10-2026 | Crear un lead a mano desde el listado de leads: formulario con aviso de email o telefono repetido, fuente 'manual' que la sincronizacion con Clientify no quita, y registro de quien lo creo | 24712d5 |
 | v0109-20261006 | 06-10-2026 | SKU en el Configurador de paneles SIP --el del panel que ya existe, o el asignado al guardarlo-- y busqueda por SKU en el Catalogo de productos, con la columna SKU visible para todos los perfiles. Solo codigo | d38233e |
 | v0108-20261006 | 06-10-2026 | WhatsApp: siempre se abre la aplicacion de WhatsApp con el chat del contacto y el mensaje escrito, y se envia desde alli; se quita el menu de compartir del sistema. Solo codigo | d19f3f3 |
 | v0107-20261006 | 06-10-2026 | Vinculo manual cotizacion-lead (desde la cotizacion y desde el lead, manda sobre lo deducido); archivos en todos los leads; los envios de correo y WhatsApp --desde el lead y desde la cotizacion-- dejan en Conversaciones y compromisos el mensaje enviado; atajos a Mi gestion y Desempeno desde el lead y la cotizacion | 77548b4 |
