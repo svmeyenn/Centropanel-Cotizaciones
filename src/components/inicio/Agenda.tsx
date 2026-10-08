@@ -347,7 +347,7 @@ function Semana({
             onClick={() => alElegir(d)}
             aria-pressed={elegido}
             aria-label={`${diaSemana(d)} ${diaCorto(d)}: ${delDia.length} cosas`}
-            className={`min-h-[3rem] rounded border p-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-verde ${
+            className={`flex items-center justify-between gap-1 min-h-[2.25rem] rounded border px-1 py-0.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-verde ${
               elegido
                 ? "border-verde ring-1 ring-verde"
                 : esHoy
@@ -357,19 +357,29 @@ function Semana({
                     : "border-gray-200 hover:border-verde"
             }`}
           >
-            <span className={`block text-[10px] leading-none ${esHoy ? "font-bold text-verde" : pasado ? "text-gray-400" : "text-gray-600"}`}>
-              {esHoy ? "Hoy" : d.slice(8, 10).replace(/^0/, "")}
-            </span>
-            {delDia.length > 0 && (
-              <span className={`block text-sm font-bold leading-tight tabular-nums ${pasado ? "text-red-700" : "text-negro"}`}>
-                {delDia.length}
+            <span className="min-w-0">
+              <span className={`block text-[10px] leading-none ${esHoy ? "font-bold text-verde" : pasado ? "text-gray-400" : "text-gray-600"}`}>
+                {esHoy ? "Hoy" : d.slice(8, 10).replace(/^0/, "")}
               </span>
-            )}
-            <span className="flex flex-wrap gap-0.5 mt-0.5">
+              {delDia.length > 0 && (
+                <span className={`block text-sm font-bold leading-tight tabular-nums ${pasado ? "text-red-700" : "text-negro"}`}>
+                  {delDia.length}
+                </span>
+              )}
+            </span>
+            {/* El desglose del numero del dia: cuantos de cada tipo, a la derecha y en vertical. */}
+            <span className="flex flex-col items-end gap-px shrink-0">
               {porTipo
                 .filter((p) => p.n > 0)
                 .map((p) => (
-                  <i key={p.t} className={`inline-block w-1.5 h-1.5 rounded-full ${TIPOS[p.t].punto}`} title={`${p.n} ${TIPOS[p.t].texto}`} />
+                  <span
+                    key={p.t}
+                    className="inline-flex items-center gap-0.5 text-[8px] leading-none tabular-nums text-gray-600"
+                    title={`${p.n} ${TIPOS[p.t].texto}`}
+                  >
+                    {p.n}
+                    <i className={`inline-block w-1.5 h-1.5 rounded-full ${TIPOS[p.t].punto}`} />
+                  </span>
                 ))}
             </span>
           </button>
