@@ -100,7 +100,16 @@ export default async function Pagina({
     (totales ?? []).map((t) => [t.id as number, Number(t.total)])
   );
 
-  const columnas = 8 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
+  // De que lead viene cada cotizacion de la lista: la base entrega solo los que esta persona puede ver.
+  const { data: vinculos } =
+    (cots ?? []).length > 0
+      ? await supabase.rpc("cotizaciones_lead", { p_ids: (cots ?? []).map((c) => Number(c.id)) })
+      : { data: [] };
+  const leadDe = new Map(
+    ((vinculos ?? []) as { id_cotizacion: number; id_clientify: number }[]).map((x) => [Number(x.id_cotizacion), Number(x.id_clientify)])
+  );
+
+  const columnas = 9 + (verPais ? 1 : 0) + (puedeBorrar ? 1 : 0);
 
   // Lo mismo que muestra la tabla, para bajarlo a una planilla.
   const uno2 = <T,>(x: unknown): T | null =>
@@ -187,6 +196,7 @@ export default async function Pagina({
                   <th className="text-left px-3 py-2">Ejecutivo</th>
                   <th className="text-left px-3 py-2 w-28">Estado</th>
                   <th className="text-right px-3 py-2 w-32">Total</th>
+                  <th className="text-left px-3 py-2 w-20">Lead</th>
                   {puedeBorrar && <th className="px-3 py-2 w-20" />}
                 </tr>
               </thead>
@@ -236,6 +246,13 @@ export default async function Pagina({
                       </td>
                       <td className="px-3 py-2 text-right font-semibold">
                         {importe(totalPorId.get(c.id as number) ?? 0, monedaDelPais(c.id_pais as number))}
+                      </td>
+                      <td className="px-3 py-2">
+                        {leadDe.has(Number(c.id)) && (
+                          <Link href={`/leads/${leadDe.get(Number(c.id))}`} className="text-verde font-semibold underline">
+                            Ver lead
+                          </Link>
+                        )}
                       </td>
                       {puedeBorrar && (
                         <td className="px-3 py-2 text-right">

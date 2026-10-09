@@ -395,7 +395,7 @@ export default async function Pagina({
             origen, que se cortan con "..." y se leen completos al dejar el
             cursor encima. */}
         <div className="bg-white border border-gray-200 rounded">
-          <table className="w-full table-fixed text-[11px]">
+          <table className="w-full table-fixed text-[10px]">
             <colgroup>
               {puedeAsignar && <col className="w-[3%]" />}
               <col className="w-[6%]" />
