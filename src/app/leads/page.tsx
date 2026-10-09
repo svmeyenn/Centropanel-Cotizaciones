@@ -130,6 +130,12 @@ export default async function Pagina({
   ]);
 
   const contactos = (filas ?? []) as Fila[];
+  // Cuantas cotizaciones tiene vinculadas cada lead de esta pagina; el que no tiene ninguna no sale en la lista.
+  const { data: cuentasCot } =
+    contactos.length > 0
+      ? await supabase.rpc("leads_n_cotizaciones", { p_ids: contactos.map((c) => c.id_clientify) })
+      : { data: [] };
+  const nCot = new Map(((cuentasCot ?? []) as { id_clientify: number; n: number }[]).map((x) => [Number(x.id_clientify), Number(x.n)]));
   const filtros = (filtrosData ?? { estados: [], propietarios: [], total: 0 }) as Filtros;
   const total = count ?? 0;
   // Los que hay en el mercado que se esta mirando, sin filtros.
@@ -340,6 +346,7 @@ export default async function Pagina({
                 "Telefono",
                 "Email",
                 "Campana",
+                "Cotizaciones",
                 "Propietario",
                 "Comuna",
                 "Region",
@@ -355,6 +362,7 @@ export default async function Pagina({
                 c.telefono,
                 c.email,
                 c.campana,
+                nCot.get(c.id_clientify) ?? "",
                 c.propietario,
                 c.comuna,
                 c.region,
@@ -387,19 +395,18 @@ export default async function Pagina({
             origen, que se cortan con "..." y se leen completos al dejar el
             cursor encima. */}
         <div className="bg-white border border-gray-200 rounded">
-          <table className="w-full table-fixed text-[11px]">
+          <table className="w-full table-fixed text-[10px]">
             <colgroup>
               {puedeAsignar && <col className="w-[3%]" />}
               <col className="w-[6%]" />
-              <col className="w-[19%]" />
-              <col className="w-[9%]" />
-              <col className="w-[13%]" />
-              <col className="w-[9%]" />
+              <col className="w-[20%]" />
               <col className="w-[10%]" />
-              <col className="w-[8%]" />
-              <col className="w-[8%]" />
+              <col className="w-[15%]" />
+              <col className="w-[12%]" />
               <col className="w-[9%]" />
-              <col className="w-[6%]" />
+              <col className="w-[9%]" />
+              <col className="w-[9%]" />
+              <col className="w-[7%]" />
             </colgroup>
             <thead className="bg-verde text-white">
               <tr>
@@ -408,24 +415,21 @@ export default async function Pagina({
                     <input type="checkbox" data-sel-todos aria-label="Marcar todos los de esta pagina" />
                   </th>
                 )}
-                <th className="text-left px-2 py-1.5">Fecha de creacion</th>
+                <th className="text-left px-2 py-1.5">Creado</th>
                 <th className="text-left px-2 py-1.5">Nombre</th>
                 <th className="text-left px-2 py-1.5">Telefono</th>
                 <th className="text-left px-2 py-1.5">Email</th>
-                <th className="text-left px-2 py-1.5">Campana</th>
                 <th className="text-left px-2 py-1.5">Propietario</th>
                 <th className="text-left px-2 py-1.5">{esPeru ? "Distrito" : "Comuna"}</th>
-                <th className="text-left px-2 py-1.5">
-                  {esPeru ? "Departamento" : "Region / Provincia"}
-                </th>
+                <th className="text-left px-2 py-1.5">{esPeru ? "Departamento" : "Region"}</th>
                 <th className="text-left px-2 py-1.5">Estado</th>
-                <th className="text-left px-2 py-1.5">Origen</th>
+                <th className="text-center px-2 py-1.5">Cotizaciones</th>
               </tr>
             </thead>
             <tbody>
               {contactos.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={10} className="px-3 py-8 text-center text-gray-400">
                     {totalMercado === 0
                       ? "Todavia no hay leads. Importe el archivo de leads."
                       : "Ningun contacto coincide con la busqueda."}
@@ -458,11 +462,6 @@ export default async function Pagina({
                         {c.email}
                       </span>
                     </td>
-                    <td className="px-2 py-1">
-                      <span className="block truncate" title={c.campana ?? ""}>
-                        {c.campana}
-                      </span>
-                    </td>
                     <td className="px-2 py-1 break-words">
                       {c.propietario ?? <span className="text-gray-400">Sin propietario</span>}
                     </td>
@@ -477,11 +476,7 @@ export default async function Pagina({
                       </span>
                     </td>
                     <td className="px-2 py-1 break-words">{nombreEstado(c.estado_efectivo)}</td>
-                    <td className="px-2 py-1">
-                      <span className="block truncate" title={c.origen ?? ""}>
-                        {c.origen}
-                      </span>
-                    </td>
+                    <td className="px-2 py-1 text-center tabular-nums">{nCot.get(c.id_clientify) || ""}</td>
                   </tr>
                 ))
               )}

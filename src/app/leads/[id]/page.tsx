@@ -12,7 +12,7 @@ import type { Plantilla } from "@/lib/mensajes";
 import { leerEspera } from "@/lib/espera";
 import HistorialLead, { type EntradaHistorial } from "@/components/HistorialLead";
 import RegistrosEstado from "@/components/RegistrosEstado";
-import ProyectoCasa, { type DatosCasaGuardados } from "@/components/ProyectoCasa";
+import ProyectoCasa, { type DatosCasaGuardados, type Valorizacion } from "@/components/ProyectoCasa";
 import ArchivosLead, { type ArchivoLead } from "@/components/ArchivosLead";
 import { QuitarVinculo, VincularCotizacionALead } from "@/components/VincularLead";
 import { administraUsuarios, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
@@ -173,6 +173,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     { data: casaDb },
     { data: archivosDb },
     { data: propietariosDb },
+    { data: valorizDb },
   ] = await Promise.all([
     // Las cotizaciones de paneles no se ven en un lead de casas.
     esCasas
@@ -208,7 +209,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     esCasas
       ? supabase
           .from("lead_casa")
-          .select("metros2, valor_uf, valor_clp, valor_usd, valor_pen")
+          .select("metros2")
           .eq("id_clientify", idContacto)
           .maybeSingle()
       : Promise.resolve({ data: null }),
@@ -219,6 +220,15 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
       .order("creado_en", { ascending: false }),
     // A quien se le puede asignar el lead: solo se pide si se puede editar.
     puedeEscribirLeads(v) ? supabase.rpc("lead_propietarios") : Promise.resolve({ data: [] }),
+    // Las valorizaciones del proyecto, en el orden en que se anotaron.
+    esCasas
+      ? supabase
+          .from("lead_valorizaciones")
+          .select("descripcion, valor_uf, valor_clp, valor_usd, valor_pen")
+          .eq("id_clientify", idContacto)
+          .order("orden")
+          .order("id")
+      : Promise.resolve({ data: [] }),
   ]);
   const cotizaciones = (cots ?? []) as CotizacionVinculada[];
   const oportunidades = (ops ?? []) as Oportunidad[];
@@ -318,6 +328,13 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             idLead={c.id_clientify}
             codigoPais={codigoPais}
             casa={casa}
+            valorizaciones={((valorizDb ?? []) as Record<string, unknown>[]).map((x) => ({
+              descripcion: String(x.descripcion ?? ""),
+              valor_uf: x.valor_uf == null ? null : Number(x.valor_uf),
+              valor_clp: x.valor_clp == null ? null : Number(x.valor_clp),
+              valor_usd: x.valor_usd == null ? null : Number(x.valor_usd),
+              valor_pen: x.valor_pen == null ? null : Number(x.valor_pen),
+            })) as Valorizacion[]}
             archivos={archivos}
             puedeEditar={puedeEscribir}
             esAdmin={tienePerfilAdmin(v)}
