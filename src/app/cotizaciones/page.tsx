@@ -184,20 +184,20 @@ export default async function Pagina({
 
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-[11px]">
               <thead className="bg-verde text-white">
                 <tr>
-                  <th className="text-left px-3 py-2">N cotizacion</th>
-                  {verPais && <th className="text-left px-3 py-2 w-24">Pais</th>}
-                  <th className="text-left px-3 py-2">Razon social</th>
-                  <th className="text-left px-3 py-2">Contacto</th>
-                  <th className="text-left px-3 py-2">Comuna</th>
-                  <th className="text-left px-3 py-2 w-28">Fecha</th>
-                  <th className="text-left px-3 py-2">Ejecutivo</th>
-                  <th className="text-left px-3 py-2 w-28">Estado</th>
-                  <th className="text-right px-3 py-2 w-32">Total</th>
-                  <th className="text-left px-3 py-2 w-20">Lead</th>
-                  {puedeBorrar && <th className="px-3 py-2 w-20" />}
+                  <th className="text-left px-2 py-1.5 whitespace-nowrap">N cotizacion</th>
+                  {verPais && <th className="text-left px-2 py-1.5 whitespace-nowrap">Pais</th>}
+                  <th className="text-left px-2 py-1.5 whitespace-nowrap">Razon social</th>
+                  <th className="text-left px-2 py-1.5 whitespace-nowrap">Contacto</th>
+                  <th className="text-left px-2 py-1.5 whitespace-nowrap">Comuna</th>
+                  <th className="text-left px-2 py-1.5 whitespace-nowrap">Fecha</th>
+                  <th className="text-left px-2 py-1.5 whitespace-nowrap">Ejecutivo</th>
+                  <th className="text-left px-2 py-1.5 whitespace-nowrap">Estado</th>
+                  <th className="text-right px-2 py-1.5 whitespace-nowrap">Total</th>
+                  <th className="text-left px-2 py-1.5 whitespace-nowrap">Lead</th>
+                  {puedeBorrar && <th className="px-2 py-1.5" />}
                 </tr>
               </thead>
               <tbody>
@@ -222,7 +222,7 @@ export default async function Pagina({
                       key={c.id as number}
                       className="border-t border-gray-100 hover:bg-crema"
                     >
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-1.5 whitespace-nowrap">
                         {!verPais && <BanderaDe idPais={c.id_pais as number} />}
                         <Link
                           href={`/cotizaciones/${c.id}`}
@@ -232,22 +232,22 @@ export default async function Pagina({
                         </Link>
                       </td>
                       {verPais && (
-                        <td className="px-3 py-2">
+                        <td className="px-2 py-1.5 whitespace-nowrap">
                           <CeldaPais pais={paisPorId.get(c.id_pais as number)} />
                         </td>
                       )}
-                      <td className="px-3 py-2">{cli?.razon_social ?? ""}</td>
-                      <td className="px-3 py-2 text-gray-600">{cli?.contacto ?? ""}</td>
-                      <td className="px-3 py-2 text-gray-600">{cli?.comuna ?? ""}</td>
-                      <td className="px-3 py-2">{fmtFecha(c.fecha as string)}</td>
-                      <td className="px-3 py-2">{ven?.nombre ?? ""}</td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-1.5 w-full">{cli?.razon_social ?? ""}</td>
+                      <td className="px-2 py-1.5 text-gray-600 whitespace-nowrap">{cli?.contacto ?? ""}</td>
+                      <td className="px-2 py-1.5 text-gray-600 whitespace-nowrap">{cli?.comuna ?? ""}</td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">{fmtFecha(c.fecha as string)}</td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">{ven?.nombre ?? ""}</td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">
                         {etiquetaDe(cat.cotizacion, c.estado as string)}
                       </td>
-                      <td className="px-3 py-2 text-right font-semibold">
+                      <td className="px-2 py-1.5 text-right font-semibold whitespace-nowrap">
                         {importe(totalPorId.get(c.id as number) ?? 0, monedaDelPais(c.id_pais as number))}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-1.5 whitespace-nowrap">
                         {leadDe.has(Number(c.id)) && (
                           <Link href={`/leads/${leadDe.get(Number(c.id))}`} className="text-verde font-semibold underline">
                             Ver lead
@@ -255,7 +255,7 @@ export default async function Pagina({
                         )}
                       </td>
                       {puedeBorrar && (
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-2 py-1.5 text-right whitespace-nowrap">
                           <BotonEliminarFila
                             tipo="cotizacion"
                             id={Number(c.id)}

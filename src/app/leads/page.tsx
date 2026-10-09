@@ -399,14 +399,14 @@ export default async function Pagina({
             <colgroup>
               {puedeAsignar && <col className="w-[3%]" />}
               <col className="w-[6%]" />
-              <col className="w-[21%]" />
+              <col className="w-[20%]" />
               <col className="w-[10%]" />
               <col className="w-[15%]" />
               <col className="w-[12%]" />
               <col className="w-[9%]" />
               <col className="w-[9%]" />
               <col className="w-[9%]" />
-              <col className="w-[6%]" />
+              <col className="w-[7%]" />
             </colgroup>
             <thead className="bg-verde text-white">
               <tr>
@@ -415,15 +415,13 @@ export default async function Pagina({
                     <input type="checkbox" data-sel-todos aria-label="Marcar todos los de esta pagina" />
                   </th>
                 )}
-                <th className="text-left px-2 py-1.5">Fecha de creacion</th>
+                <th className="text-left px-2 py-1.5">Creado</th>
                 <th className="text-left px-2 py-1.5">Nombre</th>
                 <th className="text-left px-2 py-1.5">Telefono</th>
                 <th className="text-left px-2 py-1.5">Email</th>
                 <th className="text-left px-2 py-1.5">Propietario</th>
                 <th className="text-left px-2 py-1.5">{esPeru ? "Distrito" : "Comuna"}</th>
-                <th className="text-left px-2 py-1.5">
-                  {esPeru ? "Departamento" : "Region / Provincia"}
-                </th>
+                <th className="text-left px-2 py-1.5">{esPeru ? "Departamento" : "Region"}</th>
                 <th className="text-left px-2 py-1.5">Estado</th>
                 <th className="text-center px-2 py-1.5">Cotizaciones</th>
               </tr>
