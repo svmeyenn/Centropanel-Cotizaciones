@@ -86,20 +86,27 @@ export default function MenuLateral({
           abierto ? "block" : "hidden"
         } lg:block print:hidden fixed lg:sticky top-0 left-0 z-30 w-56 h-screen shrink-0 bg-verde text-white overflow-y-auto lg:overflow-visible`}
       >
-        <Link
-          href="/"
-          title="Volver al menu principal"
-          className="flex items-center gap-2 bg-white px-3 py-2"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO} alt="Centro Panel" className="h-14 w-auto shrink-0" />
-          {/* El nombre va entero en una linea, al lado del logo. Con "SISTEMA
-              DE GESTION" --mas largo que el nombre anterior-- el cuerpo baja a
-              10px para que siga cabiendo sin partirse. */}
-          <span className="text-[10px] font-bold leading-tight text-verde whitespace-nowrap">
-            SISTEMA DE GESTION
-          </span>
-        </Link>
+        <div className="bg-white px-3 pt-2 pb-1.5">
+          <Link href="/" title="Volver al menu principal" className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={LOGO} alt="Centro Panel" className="h-14 w-auto shrink-0" />
+            {/* El nombre va entero en una linea, al lado del logo. Con "SISTEMA
+                DE GESTION" --mas largo que el nombre anterior-- el cuerpo baja a
+                10px para que siga cabiendo sin partirse. */}
+            <span className="text-[10px] font-bold leading-tight text-verde whitespace-nowrap">
+              SISTEMA DE GESTION
+            </span>
+          </Link>
+          {/* Las dos caras del inicio, a un clic desde cualquier pantalla. */}
+          <div className="mt-1.5 flex gap-1.5 text-[10px] font-semibold">
+            <Link href="/?vista=gestion" className="flex-1 text-center rounded bg-verde text-white px-2 py-0.5 hover:opacity-90">
+              Mi gestion
+            </Link>
+            <Link href="/" className="flex-1 text-center rounded bg-verde text-white px-2 py-0.5 hover:opacity-90">
+              Desempeno
+            </Link>
+          </div>
+        </div>
 
         <div className="px-4 py-3 border-b border-white/15 text-[11px] text-white/80">
           <div className="font-semibold text-white">{nombre}</div>
