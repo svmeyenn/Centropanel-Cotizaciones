@@ -184,7 +184,7 @@ export default async function Pagina({
 
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-[11px]">
+            <table className="w-full text-[10px]">
               <thead className="bg-verde text-white">
                 <tr>
                   <th className="text-left px-2 py-1.5 whitespace-nowrap">N cotizacion</th>
