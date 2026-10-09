@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0115-20261008**
+Version vigente: **v0116-20261009**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0116-20261009 | 09-10-2026 | Leads de proyecto con varias valorizaciones, cada una con su detalle; lista de leads sin Campana ni Origen y con la cantidad de cotizaciones vinculadas; lista de cotizaciones con la columna Lead y los registros en una sola linea; Mi gestion y Desempeno en el recuadro del logo; titulos de las listas siempre completos | e9a877c |
 | v0115-20261008 | 08-10-2026 | Mensajes a leads: ademas de las cotizaciones, se adjuntan los archivos cargados en el lead (correo, Outlook y WhatsApp); en WhatsApp el boton Compartir con los archivos manda el texto y los archivos juntos por la hoja de compartir del equipo. Solo codigo | 5357041 |
 | v0114-20261008 | 08-10-2026 | Pasan a produccion los cambios que estaban en pruebas: motivo y comentario al cambiar el estado de leads y cotizaciones, con su mantenedor (Motivos de estado); advertencia de la plancha EPS de 230x115 contra placas de 244x122; servicio prestado y fecha de pago acordada de la factura o boleta en ingresos y egresos; y correccion de la subida de archivos en leads creados a mano o desde Meta (id negativo) | 8968532 |
 | v0113-20261008 | 08-10-2026 | Gestiones en fin de semana: al programar un compromiso o una proxima accion para sabado o domingo se consulta antes y se ofrece el viernes o el lunes; el seguimiento automatico a 3 dias de un correo o WhatsApp pasa al lunes si cae en fin de semana | 7e86025 |
