@@ -237,7 +237,7 @@ export default function HistorialLead({
           ref={formulario}
           action={enviar}
           onSubmit={alEnviarFormulario}
-          className="border-b border-gray-200 px-3 py-2 grid gap-2 sm:grid-cols-4 items-end bg-gray-50/60"
+          className="border-b border-gray-200 px-3 py-2 grid gap-2 sm:grid-cols-4 items-start bg-gray-50/60"
         >
           <input type="hidden" name="id_clientify" value={idLead} />
 
@@ -714,7 +714,7 @@ export default function HistorialLead({
                 )}
 
                 {e.proxima_accion && editando === clave(e) && (
-                  <div className="mt-1 grid gap-2 sm:grid-cols-4 items-end bg-crema border border-gray-200 rounded px-2 py-2">
+                  <div className="mt-1 grid gap-2 sm:grid-cols-4 items-start bg-crema border border-gray-200 rounded px-2 py-2">
                     <label className="sm:col-span-2">
                       <span className={ROTULO}>Compromiso</span>
                       <textarea
