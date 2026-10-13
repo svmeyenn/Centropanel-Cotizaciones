@@ -182,7 +182,7 @@ export default function BitacoraCotizacion({
           ref={formulario}
           action={enviar}
           onSubmit={alEnviarFormulario}
-          className="border-b border-gray-200 px-3 py-2 grid gap-2 sm:grid-cols-4 items-end"
+          className="border-b border-gray-200 px-3 py-2 grid gap-2 sm:grid-cols-4 items-start"
         >
           <input type="hidden" name="id_cotizacion" value={idCotizacion} />
 
