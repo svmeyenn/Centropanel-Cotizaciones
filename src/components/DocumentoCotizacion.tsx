@@ -278,7 +278,7 @@ export default function DocumentoCotizacion({
       </div>
 
       {d.pago && (
-        <div className="mt-1 text-[10px]">
+        <div className="mt-1.5 text-[13px]">
           <span className="text-dorado-osc font-bold">ESTADO DE PAGO:</span>{" "}
           <span className="font-bold">{d.pago.estado}</span>
           {" \u00b7 "}Total {importe(d.pago.total, d.moneda)}
