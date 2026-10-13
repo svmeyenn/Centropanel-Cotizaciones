@@ -68,6 +68,20 @@ export default async function Pagina() {
       ).order("nombre")
     : { data: [] as unknown[] };
 
+  // Proveedor preferente de cada producto comprado: el que define su costo.
+  const preferentes: Record<number, string> = {};
+  if (esAdmin) {
+    const { data: pref } = await supabase
+      .from("proveedor_items")
+      .select("id_producto, proveedores(razon_social)")
+      .eq("es_preferente", true)
+      .not("id_producto", "is", null);
+    for (const x of pref ?? []) {
+      const pr = Array.isArray(x.proveedores) ? x.proveedores[0] : x.proveedores;
+      preferentes[Number(x.id_producto)] = (pr as { razon_social?: string } | null)?.razon_social ?? "";
+    }
+  }
+
   // Familias ya en uso, para sugerirlas al dar de alta y no acabar con
   // "Tornillos" y "tornillo" como grupos distintos.
   const familias = [
@@ -118,6 +132,7 @@ export default async function Pagina() {
           esAdminGeneral={esAdminGeneral}
           gruposFamilia={gruposFamilia}
           advertencias={advertencias}
+          preferentes={preferentes}
         />
       </div>
     </div>

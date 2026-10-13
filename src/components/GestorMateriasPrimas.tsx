@@ -22,6 +22,8 @@ interface Resumen {
   actualizados: number;
   sinCambio: number;
   noEncontrados: string[];
+  // Insumos cuyo costo lo define el proveedor preferente: la carga no los toco.
+  conProveedor: string[];
   recalculados: number;
   detalle: { nombre: string; antes: number; ahora: number }[];
 }
@@ -34,7 +36,10 @@ export default function GestorMateriasPrimas({
   tipos,
   paises,
   esAdminGeneral,
+  preferentes,
 }: {
+  // Proveedor preferente de cada insumo que lo tiene: el que define su costo.
+  preferentes: Record<number, string>;
   materias: MateriaPrima[];
   // Listas configurables en Parametros de materias primas.
   etiquetas: string[];
@@ -215,6 +220,7 @@ export default function GestorMateriasPrimas({
                   actualizados: 0,
                   sinCambio: 0,
                   noEncontrados: [],
+                  conProveedor: [],
                   recalculados: n,
                   detalle: [],
                 });
@@ -254,6 +260,13 @@ export default function GestorMateriasPrimas({
               No se encontraron en la base ({resumen.noEncontrados.length}):{" "}
               {resumen.noEncontrados.slice(0, 5).join(", ")}
               {resumen.noEncontrados.length > 5 ? "..." : ""}
+            </div>
+          )}
+          {resumen.conProveedor.length > 0 && (
+            <div className="text-amber-800">
+              No se cambio el costo de {resumen.conProveedor.length} insumo(s) porque lo define su
+              proveedor preferente: {resumen.conProveedor.slice(0, 5).join(", ")}
+              {resumen.conProveedor.length > 5 ? "..." : ""}
             </div>
           )}
           {resumen.detalle.length > 0 && (
@@ -403,10 +416,22 @@ export default function GestorMateriasPrimas({
               <span className="block text-dorado-osc font-semibold mb-1">Costo</span>
               <input
                 type="number"
-                className={input}
+                className={`${input} disabled:bg-gray-100`}
                 value={form.costo}
+                disabled={editando != null && preferentes[editando] != null}
                 onChange={(e) => setForm({ ...form, costo: Number(e.target.value) })}
               />
+              {editando != null && preferentes[editando] != null ? (
+                <span className="text-xs text-gray-500">
+                  Lo define el proveedor preferente: {preferentes[editando]}. Se cambia en la
+                  maestra de ese proveedor.
+                </span>
+              ) : (
+                <span className="text-xs text-gray-500">
+                  Sin proveedor preferente: el costo se escribe a mano. Para que lo defina un
+                  proveedor, marquelo como preferente en su maestra.
+                </span>
+              )}
             </label>
             <Lista
               label="Unidad"
@@ -483,6 +508,12 @@ export default function GestorMateriasPrimas({
                   </td>
                   <td className="px-3 py-2 text-right font-semibold">
                     {pesos(m.costo)}
+                    <div
+                      className="text-[10px] font-normal text-gray-500 max-w-[9rem] ml-auto truncate"
+                      title={preferentes[m.id] != null ? `Proveedor preferente: ${preferentes[m.id]}` : "Sin proveedor preferente"}
+                    >
+                      {preferentes[m.id] != null ? preferentes[m.id] : "costo manual"}
+                    </div>
                   </td>
                   <td className="px-3 py-2">
                     {m.activo ? (

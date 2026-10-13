@@ -52,6 +52,7 @@ export default function TablaProductos({
   esAdminGeneral = false,
   gruposFamilia = {},
   advertencias = {},
+  preferentes = {},
 }: {
   productos: ProductoFila[];
   esAdmin: boolean;
@@ -63,6 +64,8 @@ export default function TablaProductos({
   gruposFamilia?: Record<string, string>;
   // Paneles con una plancha EPS que no calza con sus placas, por id, con el aviso.
   advertencias?: Record<number, string>;
+  // Proveedor preferente de cada producto comprado: el que define su costo.
+  preferentes?: Record<number, string>;
 }) {
   const [busca, setBusca] = useState("");
   const [familia, setFamilia] = useState("");
@@ -484,7 +487,7 @@ export default function TablaProductos({
                 type="text"
                 inputMode="numeric"
                 className={`${input} disabled:bg-gray-100`}
-                disabled={esPanel}
+                disabled={esPanel || preferentes[enEdicion?.id ?? -1] != null}
                 value={
                   enFoco === "costo" ? tecleado : pesos(form.costo_unitario)
                 }
@@ -502,6 +505,11 @@ export default function TablaProductos({
               {esPanel && (
                 <span className="text-xs text-gray-500">
                   Sale de las materias primas del panel.
+                </span>
+              )}
+              {!esPanel && preferentes[enEdicion?.id ?? -1] != null && (
+                <span className="text-xs text-gray-500">
+                  Lo define el proveedor preferente: {preferentes[enEdicion?.id ?? -1]}.
                 </span>
               )}
             </label>
@@ -801,6 +809,11 @@ export default function TablaProductos({
                           {esAdmin && (
                             <td className="px-3 py-2 text-right">
                               {pesos(p.costo_unitario)}
+                              {preferentes[p.id] != null && (
+                                <div className="text-[10px] text-gray-500 max-w-[9rem] ml-auto truncate" title={`Proveedor preferente: ${preferentes[p.id]}`}>
+                                  {preferentes[p.id]}
+                                </div>
+                              )}
                             </td>
                           )}
                           <td className="px-3 py-2 text-right font-semibold">

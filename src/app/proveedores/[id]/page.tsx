@@ -26,11 +26,11 @@ export default async function Pagina({
   const supabase = await createClient();
   const [{ data: prov }, { data: items }, { data: materias }, { data: productos }] =
     await Promise.all([
-      supabase.from("proveedores").select("*, paises(etiqueta_id)").eq("id", id).single(),
+      supabase.from("proveedores").select("*, paises(etiqueta_id, moneda_base)").eq("id", id).single(),
       supabase
         .from("proveedor_items")
         .select(
-          "id, codigo, costo, activo, id_materia_prima, id_producto, materias_primas(nombre, tipo), productos(descripcion, familia)"
+          "id, codigo, costo, activo, moneda, es_preferente, id_materia_prima, id_producto, materias_primas(nombre, tipo), productos(descripcion, familia)"
         )
         .eq("id_proveedor", id),
       supabase
@@ -56,6 +56,38 @@ export default async function Pagina({
   const uno = <T,>(x: unknown): T | null =>
     Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
+  const monedaMercado = uno<{ moneda_base: string }>(prov.paises)?.moneda_base ?? "CLP";
+
+  // Los demas proveedores de lo mismo, para ver lado a lado quien es el preferente
+  // y cuanto cobra cada uno.
+  const idsMp = (items ?? []).map((it) => it.id_materia_prima as number | null).filter((x): x is number => x != null);
+  const idsProd = (items ?? []).map((it) => it.id_producto as number | null).filter((x): x is number => x != null);
+  type Otro = {
+    id_materia_prima: number | null;
+    id_producto: number | null;
+    costo: number;
+    moneda: string | null;
+    es_preferente: boolean;
+    proveedores: { razon_social: string } | { razon_social: string }[] | null;
+  };
+  const [{ data: otrosMp }, { data: otrosProd }] = await Promise.all([
+    idsMp.length
+      ? supabase
+          .from("proveedor_items")
+          .select("id_materia_prima, id_producto, costo, moneda, es_preferente, proveedores(razon_social)")
+          .in("id_materia_prima", idsMp)
+          .neq("id_proveedor", id)
+      : Promise.resolve({ data: [] as Otro[] }),
+    idsProd.length
+      ? supabase
+          .from("proveedor_items")
+          .select("id_materia_prima, id_producto, costo, moneda, es_preferente, proveedores(razon_social)")
+          .in("id_producto", idsProd)
+          .neq("id_proveedor", id)
+      : Promise.resolve({ data: [] as Otro[] }),
+  ]);
+  const otros = [...((otrosMp ?? []) as unknown as Otro[]), ...((otrosProd ?? []) as unknown as Otro[])];
+
   const filas: ItemMaestra[] = (items ?? []).map((it) => {
     const mp = uno<{ nombre: string; tipo: string }>(it.materias_primas);
     const pr = uno<{ descripcion: string; familia: string | null }>(it.productos);
@@ -66,6 +98,20 @@ export default async function Pagina({
       codigo: it.codigo as string | null,
       costo: Number(it.costo),
       activo: Boolean(it.activo),
+      moneda: (it.moneda as string | null) ?? null,
+      preferente: Boolean(it.es_preferente),
+      otros: otros
+        .filter((o) =>
+          it.id_materia_prima != null
+            ? o.id_materia_prima === it.id_materia_prima
+            : o.id_producto === it.id_producto
+        )
+        .map((o) => ({
+          proveedor: uno<{ razon_social: string }>(o.proveedores)?.razon_social ?? "",
+          costo: Number(o.costo),
+          moneda: o.moneda ?? monedaMercado,
+          preferente: Boolean(o.es_preferente),
+        })),
     };
   });
 
@@ -116,6 +162,7 @@ export default async function Pagina({
 
         <MaestraProveedor
           idProveedor={id}
+          monedaMercado={monedaMercado}
           items={filas}
           candidatos={candidatos}
         />
