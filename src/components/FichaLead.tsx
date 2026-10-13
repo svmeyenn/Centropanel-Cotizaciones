@@ -29,6 +29,8 @@ export interface DatosFicha {
   estado: string | null;
   estado_efectivo: string | null;
   estado_manual: string | null;
+  // Tiene alguna tarea pendiente (propia o de sus cotizaciones).
+  con_tarea?: boolean;
   con_cotizacion_enviada: boolean;
   linea: Linea;
   linea_manual: Linea | null;
@@ -155,6 +157,8 @@ export default function FichaLead({
   const catalogo = useCatalogoEstados();
   const nombreEstado = (e: string | null | undefined) => etiquetaDe(catalogo.lead, e);
   const estadoAlEnviar = codigoDeRol(catalogo.lead, "al_enviar_cotizacion") ?? "in-deal";
+  // Los estados en que el lead sigue vivo y siempre debe tener una tarea de seguimiento.
+  const estadosConSeguimiento = catalogo.lead.filter((e) => e.marcas.includes("en_seguimiento"));
 
   const notaEstado = lead.estado_manual
     ? "Fijado a mano: no cambia con las importaciones ni con las cotizaciones."
@@ -242,7 +246,10 @@ export default function FichaLead({
                     .map((e) => ({ valor: e.codigo, texto: e.etiqueta })),
                 ]}
                 aviso={(desde, hasta) =>
-                  `Va a cambiar el estado de «${desde}» a «${hasta}». El cambio queda registrado en la ficha.`
+                  `Va a cambiar el estado de «${desde}» a «${hasta}». El cambio queda registrado en la ficha.` +
+                  (!lead.con_tarea && estadosConSeguimiento.some((e) => e.etiqueta === hasta)
+                    ? " Atencion: en ese estado el lead siempre debe tener una tarea de seguimiento y hoy no tiene ninguna; agreguela en Conversaciones y compromisos."
+                    : "")
                 }
                 tipoMotivo="lead"
                 accion={(v, extra) => fijarEstadoLead(lead.id_clientify, v === "auto" ? null : v, extra)}

@@ -16,6 +16,9 @@ import ControlEspera from "@/components/ControlEspera";
 import EnlacesInicio from "@/components/EnlacesInicio";
 import { leerEspera } from "@/lib/espera";
 import { leadsDeCotizacion } from "@/lib/leadsDeCotizacion";
+import { BannerSinTarea } from "@/components/AvisoSinTarea";
+import { etiquetaDe, tieneMarca } from "@/lib/catalogoEstados";
+import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 
 // Ver / modificar una cotizacion existente. Abre en solo lectura (equivalente
 // al modo Visualizar de Access) y recien al pulsar Modificar se habilita.
@@ -125,6 +128,20 @@ export default async function Pagina({
     id_cliente: cot.id_cliente != null ? Number(cot.id_cliente) : null,
   });
 
+  // Una cotizacion que espera respuesta del cliente --Emitida o Enviada-- siempre debe tener una tarea de seguimiento:
+  // una accion pendiente propia, o una tarea abierta del lead al que pertenece.
+  const catEstados = await catalogoEstados();
+  const accionesAbiertas = ((bitacora ?? []) as { estado_proxima: string | null }[]).filter(
+    (a) => a.estado_proxima === "Vigente" || a.estado_proxima === "Vencida"
+  ).length;
+  const idsLeadOrigen = origen.leads.map((l) => l.id_clientify);
+  const { data: leadsConTarea } =
+    idsLeadOrigen.length > 0
+      ? await supabase.from("v_leads").select("id_clientify").in("id_clientify", idsLeadOrigen).eq("con_compromiso", true)
+      : { data: [] };
+  const tareaDelLead = (leadsConTarea ?? []).length > 0;
+  const exigeSeguimiento = tieneMarca(catEstados.cotizacion, cot.estado as string, "espera_respuesta") && !espera;
+
   const supabaseTot = await createClient();
   const { data: tot } = await supabaseTot
     .from("v_cotizacion_totales")
@@ -231,7 +248,11 @@ export default async function Pagina({
       />
 
       <div className="max-w-screen-2xl mx-auto px-4 pb-2 space-y-2">
+        {exigeSeguimiento && accionesAbiertas === 0 && !tareaDelLead && (
+          <BannerSinTarea sujeto="cotizacion" estado={etiquetaDe(catEstados.cotizacion, cot.estado as string)} ancla="bitacora" puedeAgregar={v.puede_editar} />
+        )}
         <RegistrosEstado tipo="cotizacion" idRef={id} />
+        <div id="bitacora" className="scroll-mt-4">
         <BitacoraCotizacion
           idCotizacion={id}
           actividad={(bitacora ?? []) as Actividad[]}
@@ -240,7 +261,11 @@ export default async function Pagina({
           equipo={gentePais}
           yo={v.id}
           zona={zonaCot}
+          exigeSeguimiento={exigeSeguimiento}
+          estadoTexto={etiquetaDe(catEstados.cotizacion, cot.estado as string)}
+          tareaDelLead={tareaDelLead}
         />
+        </div>
       </div>
 
       <div className="max-w-screen-2xl mx-auto px-6 pb-4">

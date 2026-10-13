@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { useRouter } from "next/navigation";
 import Bitacora from "@/components/Bitacora";
 import { PanelFinDeSemana, useFinDeSemana } from "@/components/ConsultaFinDeSemana";
+import { PanelSinTarea } from "@/components/AvisoSinTarea";
 import {
   caducarAccion,
   marcarAccionHecha,
@@ -70,6 +71,9 @@ export default function BitacoraCotizacion({
   equipo,
   yo,
   zona = "America/Santiago",
+  exigeSeguimiento = false,
+  estadoTexto = "",
+  tareaDelLead = false,
 }: {
   idCotizacion: number;
   actividad: Actividad[];
@@ -80,6 +84,11 @@ export default function BitacoraCotizacion({
   yo: number;
   // Hora en que se muestra lo escrito: la del pais de la cotizacion.
   zona?: string;
+  // La cotizacion espera respuesta del cliente: siempre debe tener una tarea pendiente.
+  exigeSeguimiento?: boolean;
+  estadoTexto?: string;
+  // El lead al que pertenece ya tiene una tarea abierta: cuenta como seguimiento.
+  tareaDelLead?: boolean;
 }) {
   const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
@@ -88,6 +97,11 @@ export default function BitacoraCotizacion({
   const [conAccion, setConAccion] = useState(false);
   // Programar para un sabado o domingo pregunta antes.
   const finde = useFinDeSemana();
+  // Una cotizacion que espera respuesta no puede quedar sin tarea: se avisa al anotar sin proxima accion y al
+  // cumplir la ultima que le quedaba.
+  const [sinTarea, setSinTarea] = useState(false);
+  const omitirSinTarea = useRef(false);
+  const [porCumplir, setPorCumplir] = useState<{ accion: () => Promise<Resultado> } | null>(null);
   const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: zona }).format(new Date());
   // Caducar pide un motivo escrito, asi que el boton no actua de inmediato:
   // abre el campo para esa accion y recien despues se confirma.
@@ -121,6 +135,33 @@ export default function BitacoraCotizacion({
     (a) => a.estado_proxima === "Vencida" || a.estado_proxima === "Vigente"
   );
   const vencidas = pendientes.filter((a) => a.estado_proxima === "Vencida");
+  const sinSeguimiento = exigeSeguimiento && pendientes.length === 0 && !tareaDelLead;
+
+  function alEnviarFormulario(ev: React.FormEvent<HTMLFormElement>) {
+    if (omitirSinTarea.current) {
+      omitirSinTarea.current = false;
+    } else if (sinSeguimiento && !conAccion) {
+      ev.preventDefault();
+      setSinTarea(true);
+      return;
+    }
+    finde.alEnviar(ev);
+  }
+
+  function enfocarAccion() {
+    setTimeout(() => {
+      (formulario.current?.elements.namedItem("proxima_accion") as HTMLInputElement | null)?.focus();
+      formulario.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  }
+
+  function pedirCumplir(a: Actividad, accion: () => Promise<Resultado>) {
+    if (exigeSeguimiento && !tareaDelLead && pendientes.length === 1 && pendientes[0].id === a.id) {
+      setPorCumplir({ accion });
+      return;
+    }
+    correr(accion);
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden">
@@ -140,7 +181,7 @@ export default function BitacoraCotizacion({
         <form
           ref={formulario}
           action={enviar}
-          onSubmit={finde.alEnviar}
+          onSubmit={alEnviarFormulario}
           className="border-b border-gray-200 px-3 py-2 grid gap-2 sm:grid-cols-4 items-end"
         >
           <input type="hidden" name="id_cotizacion" value={idCotizacion} />
@@ -202,6 +243,38 @@ export default function BitacoraCotizacion({
             </>
           )}
 
+          {sinTarea && (
+            <PanelSinTarea
+              className="sm:col-span-4"
+              texto={
+                <>
+                  <strong>Esta cotizacion quedaria sin tarea de seguimiento.</strong> Esta en «{estadoTexto}» y no tiene ninguna tarea pendiente: mientras espere respuesta del
+                  cliente, siempre debe tener una.
+                </>
+              }
+              acciones={[
+                {
+                  texto: "Agregar una tarea",
+                  principal: true,
+                  onClick: () => {
+                    setSinTarea(false);
+                    setConAccion(true);
+                    enfocarAccion();
+                  },
+                },
+                {
+                  texto: "Anotar sin tarea",
+                  onClick: () => {
+                    setSinTarea(false);
+                    omitirSinTarea.current = true;
+                    formulario.current?.requestSubmit();
+                  },
+                },
+                { texto: "Volver", onClick: () => setSinTarea(false) },
+              ]}
+            />
+          )}
+
           {finde.consulta && (
             <PanelFinDeSemana
               className="sm:col-span-4"
@@ -228,6 +301,40 @@ export default function BitacoraCotizacion({
             </p>
           )}
         </form>
+      )}
+
+      {porCumplir && (
+        <div className="px-3 py-2 border-b border-gray-200">
+          <PanelSinTarea
+            texto={
+              <>
+                <strong>Es la ultima tarea pendiente de esta cotizacion.</strong> Al cumplirla quedaria sin tarea de seguimiento, y en «{estadoTexto}» siempre debe tener una.
+              </>
+            }
+            acciones={[
+              {
+                texto: "Cumplirla y agregar otra tarea",
+                principal: true,
+                onClick: () => {
+                  const { accion } = porCumplir;
+                  setPorCumplir(null);
+                  correr(accion);
+                  setConAccion(true);
+                  enfocarAccion();
+                },
+              },
+              {
+                texto: "Cumplirla igual",
+                onClick: () => {
+                  const { accion } = porCumplir;
+                  setPorCumplir(null);
+                  correr(accion);
+                },
+              },
+              { texto: "Cancelar", onClick: () => setPorCumplir(null) },
+            ]}
+          />
+        </div>
       )}
 
       {aviso && (
@@ -339,7 +446,7 @@ export default function BitacoraCotizacion({
                             className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded disabled:opacity-50"
                             disabled={enCurso}
                             onClick={() =>
-                              correr(() => marcarAccionHecha(a.id, idCotizacion))
+                              pedirCumplir(a, () => marcarAccionHecha(a.id, idCotizacion))
                             }
                           >
                             Ya esta hecha

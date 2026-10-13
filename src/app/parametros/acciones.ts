@@ -30,6 +30,10 @@ export async function guardarParametro(
     return { error: "La validez debe ser de al menos un dia." };
   }
 
+  if (clave === "DiasSeguimientoEnvio" && (valorNum == null || !Number.isInteger(valorNum) || valorNum < 1 || valorNum > 60)) {
+    return { error: "Los dias del seguimiento van de 1 a 60, sin decimales." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("parametros")

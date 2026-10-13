@@ -131,13 +131,13 @@ export default function MensajeLead({
     // Cada envio queda anotado; solo se ignora el mismo toque repetido a los pocos segundos.
     const clave = `${canal}|${destino}|${asunto}|${cuerpo}|${folios.join(",")}|${nombresArchivos.join(",")}`;
     if (ultimo.current.clave === clave && Date.now() - ultimo.current.cuando < 15000) return true;
-    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas, canal === "email" ? asunto : "", cuerpo, nombresArchivos);
+    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas, canal === "email" ? asunto : "", cuerpo, nombresArchivos, plantilla?.dias_seguimiento ?? null);
     if (!r.ok) {
       setAviso({ ok: false, texto: r.mensaje ?? "No se pudo anotar en el lead." });
       return false;
     }
     ultimo.current = { clave, cuando: Date.now() };
-    nota.current = (r.mensaje ?? "").replace(/^Anotado en el lead, con seguimiento en 3 dias\.\s*/, "");
+    nota.current = (r.mensaje ?? "").replace(/^Anotado en el lead, con seguimiento en \d+ dias?\.\s*/, "");
     setAviso({ ok: true, texto: r.mensaje ?? "Anotado en el lead." });
     return true;
   }
@@ -190,7 +190,7 @@ export default function MensajeLead({
       const bin = atob(r.base64);
       const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
       descargar(r.nombre, new Blob([bytes], { type: "message/rfc822" }));
-      setAviso({ ok: true, texto: "Se bajo el borrador: abralo para verlo en Outlook de escritorio, revisarlo y enviarlo. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "") });
+      setAviso({ ok: true, texto: "Se bajo el borrador: abralo para verlo en Outlook de escritorio, revisarlo y enviarlo. Quedo anotado en el lead, con su tarea de seguimiento." + (nota.current ? ` ${nota.current}` : "") });
     } catch (e) {
       setAviso({ ok: false, texto: (e as Error).message });
     } finally {
@@ -212,8 +212,8 @@ export default function MensajeLead({
         ok: true,
         texto:
           claves.length > 0
-            ? "Se abrio Gmail con el mensaje y se bajaron los archivos: arrastrelos al correo antes de enviar. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : "")
-            : "Se abrio Gmail con el mensaje para revisarlo. Quedo anotado en el lead con seguimiento en 3 dias." + (nota.current ? ` ${nota.current}` : ""),
+            ? "Se abrio Gmail con el mensaje y se bajaron los archivos: arrastrelos al correo antes de enviar. Quedo anotado en el lead, con su tarea de seguimiento." + (nota.current ? ` ${nota.current}` : "")
+            : "Se abrio Gmail con el mensaje para revisarlo. Quedo anotado en el lead, con su tarea de seguimiento." + (nota.current ? ` ${nota.current}` : ""),
       });
     } catch (e) {
       setAviso({ ok: false, texto: (e as Error).message });
@@ -243,7 +243,7 @@ export default function MensajeLead({
           (claves.length > 0
             ? "Se abrio WhatsApp con el mensaje escrito y se bajaron los archivos: adjuntelos en el chat y envie desde WhatsApp. Para que viajen con el mensaje, use \"Compartir con los archivos\"."
             : "Se abrio WhatsApp con el mensaje escrito: revíselo y envíelo desde WhatsApp.") +
-          " Quedo anotado en el lead con seguimiento en 3 dias." +
+          " Quedo anotado en el lead, con su tarea de seguimiento." +
           (nota.current ? ` ${nota.current}` : ""),
       });
     } catch (e) {
@@ -276,7 +276,7 @@ export default function MensajeLead({
       setAviso({
         ok: true,
         texto:
-          "Se compartieron el mensaje y los archivos. Si en el chat falta el texto, esta copiado: peguelo con Ctrl+V. Quedo anotado en el lead con seguimiento en 3 dias." +
+          "Se compartieron el mensaje y los archivos. Si en el chat falta el texto, esta copiado: peguelo con Ctrl+V. Quedo anotado en el lead, con su tarea de seguimiento." +
           (nota.current ? ` ${nota.current}` : ""),
       });
     }

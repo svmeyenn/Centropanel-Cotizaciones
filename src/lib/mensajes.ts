@@ -14,6 +14,8 @@ export type Plantilla = {
   cuerpo: string;
   orden: number;
   activo: boolean;
+  // Dias de la tarea de seguimiento tras enviar este mensaje; vacio, el parametro del mercado.
+  dias_seguimiento: number | null;
 };
 
 // Los marcadores que entienden las plantillas. El enlace a la cotizacion no
