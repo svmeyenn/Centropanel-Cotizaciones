@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0120-20261013**
+Version vigente: **v0121-20261013**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0121-20261013 | 13-10-2026 | PDF del pedido con la estructura de la cotizacion (boton Ver PDF, impresion y archivo) y estado de pago bajo el lugar de despacho. Solo codigo | e809799 |
 | v0120-20261013 | 13-10-2026 | Campos de comentario, fecha y compromiso de leads y cotizaciones alineados arriba. Solo codigo | 66b1d1f |
 | v0119-20261013 | 13-10-2026 | Comentarios y compromisos manuales de leads y cotizaciones aceptan saltos de linea y se muestran respetados. Solo codigo | 09044da |
 | v0118-20261013 | 13-10-2026 | Mantenedor de mensajes: el resultado de guardar se dice junto al boton y cada mensaje muestra los dias de seguimiento que tiene guardados. Solo codigo | d32db33 |
