@@ -150,7 +150,7 @@ export default function BitacoraCotizacion({
 
   function enfocarAccion() {
     setTimeout(() => {
-      (formulario.current?.elements.namedItem("proxima_accion") as HTMLInputElement | null)?.focus();
+      (formulario.current?.elements.namedItem("proxima_accion") as HTMLTextAreaElement | null)?.focus();
       formulario.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 50);
   }
@@ -188,9 +188,10 @@ export default function BitacoraCotizacion({
 
           <label className="sm:col-span-4 text-xs">
             <span className={ROTULO}>Que paso *</span>
-            <input
+            <textarea
               name="comentario"
               className={CAMPO}
+              rows={2}
               placeholder="Llame al cliente, quedo de revisarlo con su arquitecto"
               maxLength={500}
               required
@@ -210,9 +211,10 @@ export default function BitacoraCotizacion({
             <>
               <label className="sm:col-span-2 text-xs">
                 <span className={ROTULO}>Proxima accion *</span>
-                <input
+                <textarea
                   name="proxima_accion"
                   className={CAMPO}
+                  rows={2}
                   placeholder="Llamar para cerrar"
                   maxLength={200}
                   required
@@ -357,7 +359,7 @@ export default function BitacoraCotizacion({
                 <span className="text-gray-500">{cuando(a.fecha_registro, zona)}</span>
               </div>
 
-              <p className="text-gray-800 mt-0.5">{a.comentario}</p>
+              <p className="text-gray-800 mt-0.5 whitespace-pre-wrap break-words">{a.comentario}</p>
 
               {a.proxima_accion && (
                 <div className="mt-1 flex flex-wrap items-center gap-2 bg-crema border border-gray-200 rounded px-2 py-1">
@@ -368,7 +370,7 @@ export default function BitacoraCotizacion({
                   >
                     {a.estado_proxima}
                   </span>
-                  <span className="font-semibold">{a.proxima_accion}</span>
+                  <span className="font-semibold whitespace-pre-wrap break-words">{a.proxima_accion}</span>
                   <span className="text-gray-600">
                     {a.estado_proxima === "Ejecutada" && a.ejecutada_en
                       ? `comprometida para el ${soloDia(a.proxima_fecha!)}, hecha el ${soloDia(a.ejecutada_en)}`
