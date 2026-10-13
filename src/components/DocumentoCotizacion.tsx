@@ -31,7 +31,19 @@ export interface ItemDoc {
   valor_unitario: number;
 }
 
+// Estado de pago de un pedido: lo que se debe, lo abonado y lo que falta.
+export interface PagoDoc {
+  estado: "Pagado" | "Pago parcial" | "Pendiente de pago";
+  total: number;
+  abonado: number;
+  saldo: number;
+}
+
+// El pedido se imprime con el mismo documento que la cotizacion: num_cotizacion
+// lleva su folio, y `pedido` y `pago` ajustan los textos y agregan el estado de pago.
 export interface CotizacionDoc {
+  pedido?: boolean;
+  pago?: PagoDoc | null;
   // CLP o PEN: los importes salen con los decimales y el simbolo de la suya.
   moneda?: string;
   num_cotizacion: string | null;
@@ -87,12 +99,17 @@ export default function DocumentoCotizacion({
           </div>
         </div>
         <div className="bg-verde text-white px-4 py-2.5 text-right min-w-[260px]">
+          {d.pedido && <div className="text-[10px] font-bold text-dorado">PEDIDO</div>}
           <div className="text-xl font-bold leading-tight">{d.num_cotizacion}</div>
           <div className="text-[10px] text-dorado">
             {pTxt(p, "EmpresaNombre")} &nbsp; {pTxt(p, "EtiquetaIdTributario", "RUT")} {pTxt(p, "EmpresaRUT")}
           </div>
           <div className="text-[10px]">
-            Emitida {fmtFecha(d.fecha)} &nbsp; Vence {fmtFecha(vence)}
+            {d.pedido ? (
+              <>Fecha {fmtFecha(d.fecha)}</>
+            ) : (
+              <>Emitida {fmtFecha(d.fecha)} &nbsp; Vence {fmtFecha(vence)}</>
+            )}
           </div>
         </div>
       </div>
@@ -231,10 +248,12 @@ export default function DocumentoCotizacion({
       <div className="grid grid-cols-2 gap-6 text-[10px] leading-relaxed">
         <div>
           <div className="text-dorado-osc font-bold mb-1">CONDICIONES COMERCIALES</div>
-          <p>
-            Validez de la cotizacion: {d.validez_dias} dias corridos (vence el{" "}
-            {fmtFecha(vence)}).
-          </p>
+          {!d.pedido && (
+            <p>
+              Validez de la cotizacion: {d.validez_dias} dias corridos (vence el{" "}
+              {fmtFecha(vence)}).
+            </p>
+          )}
           <p>Medio de pago: {d.medio_pago ?? pTxt(p, "MedioPagoDefecto")}</p>
           {d.forma_pago && <p>Forma de pago: {d.forma_pago}</p>}
           {d.tiempo_entrega && <p>Tiempo de entrega: {d.tiempo_entrega}</p>}
@@ -257,6 +276,16 @@ export default function DocumentoCotizacion({
         <span className="text-dorado-osc font-bold">DESPACHAR A:</span>{" "}
         {d.direccion_despacho}
       </div>
+
+      {d.pago && (
+        <div className="mt-1 text-[10px]">
+          <span className="text-dorado-osc font-bold">ESTADO DE PAGO:</span>{" "}
+          <span className="font-bold">{d.pago.estado}</span>
+          {" \u00b7 "}Total {importe(d.pago.total, d.moneda)}
+          {" \u00b7 "}Abonado {importe(d.pago.abonado, d.moneda)}
+          {" \u00b7 "}Saldo {importe(d.pago.saldo, d.moneda)}
+        </div>
+      )}
     </div>
   );
 }
