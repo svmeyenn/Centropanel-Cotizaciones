@@ -30,7 +30,7 @@ export default function GestorPlantillas({ linea, canal, plantillas }: { linea: 
       <ul className="space-y-2">
         {plantillas.map((p, i) => (
           <Fila
-            key={`${p.id}-${p.nombre}-${p.cuerpo.length}-${p.activo}`}
+            key={`${p.id}-${p.nombre}-${p.cuerpo.length}-${p.activo}-${p.dias_seguimiento ?? "x"}`}
             p={p}
             primero={i === 0}
             ultimo={i === plantillas.length - 1}
@@ -70,6 +70,9 @@ function Fila({
   const [activo, setActivo] = useState(p.activo);
   const [dias, setDias] = useState(p.dias_seguimiento == null ? "" : String(p.dias_seguimiento));
   const [confirmando, setConfirmando] = useState(false);
+  // El resultado de guardar se dice al lado del boton, no arriba de la lista, donde no se ve.
+  const [resultado, setResultado] = useState<{ ok: boolean; texto: string } | null>(null);
+  const [guardando, guardar] = useTransition();
   const cambio =
     nombre !== p.nombre ||
     asunto !== (p.asunto ?? "") ||
@@ -86,6 +89,9 @@ function Fila({
           </label>
           <input id={`n-${p.id}`} value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={60} className={CAMPO} />
         </div>
+        <span className="text-[11px] text-gray-600 pb-1 whitespace-nowrap" title="Lo que hay guardado">
+          Seguimiento guardado: <strong>{p.dias_seguimiento == null ? "los del mercado" : `${p.dias_seguimiento} ${p.dias_seguimiento === 1 ? "dia" : "dias"}`}</strong>
+        </span>
         <label className="inline-flex items-center gap-1.5 text-[12px] pb-1">
           <input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
           Se ofrece
@@ -138,12 +144,23 @@ function Fila({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          disabled={ocupado || !cambio}
-          onClick={() => ejecutar(() => guardarPlantilla(p.id, canal, { nombre, asunto, cuerpo, activo, dias }))}
+          disabled={ocupado || guardando || !cambio}
+          onClick={() => {
+            setResultado(null);
+            guardar(async () => {
+              const r = await guardarPlantilla(p.id, canal, { nombre, asunto, cuerpo, activo, dias });
+              setResultado({ ok: r.ok, texto: r.mensaje ?? (r.ok ? "Guardado." : "No se pudo guardar.") });
+            });
+          }}
           className="bg-verde text-white text-[12px] font-semibold px-2.5 py-1 rounded disabled:opacity-50"
         >
-          Guardar
+          {guardando ? "Guardando..." : "Guardar"}
         </button>
+        {resultado && (
+          <span className={`text-[12px] font-semibold ${resultado.ok ? "text-green-700" : "text-red-700"}`} role={resultado.ok ? "status" : "alert"}>
+            {resultado.texto}
+          </span>
+        )}
         {!confirmando ? (
           <button type="button" disabled={ocupado} onClick={() => setConfirmando(true)} className="text-[12px] text-red-700 underline">
             Eliminar
