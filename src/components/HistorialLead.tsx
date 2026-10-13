@@ -204,7 +204,7 @@ export default function HistorialLead({
 
   function enfocarCompromiso() {
     setTimeout(() => {
-      (formulario.current?.elements.namedItem("proxima_accion") as HTMLInputElement | null)?.focus();
+      (formulario.current?.elements.namedItem("proxima_accion") as HTMLTextAreaElement | null)?.focus();
       formulario.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 50);
   }
@@ -247,9 +247,10 @@ export default function HistorialLead({
           </label>
           <label className="sm:col-span-3 text-[11px]">
             <span className={ROTULO}>Que paso *</span>
-            <input
+            <textarea
               name="comentario"
               className={CAMPO}
+              rows={2}
               placeholder="Hable con el cliente por WhatsApp, pidio cotizar 70 paneles"
               maxLength={1000}
               required
@@ -269,9 +270,10 @@ export default function HistorialLead({
             <>
               <label className="sm:col-span-2 text-[11px]">
                 <span className={ROTULO}>Compromiso *</span>
-                <input
+                <textarea
                   name="proxima_accion"
                   className={CAMPO}
+                  rows={2}
                   placeholder="Enviar la cotizacion con el flete"
                   maxLength={200}
                   required
@@ -475,7 +477,7 @@ export default function HistorialLead({
                     >
                       {e.estado_proxima}
                     </span>
-                    <span className="font-semibold">{e.proxima_accion}</span>
+                    <span className="font-semibold whitespace-pre-wrap break-words">{e.proxima_accion}</span>
                     <span className="text-gray-600">para el {dia(e.proxima_fecha ?? "")}</span>
                     {e.responsable_nombre && (
                       <span className="text-gray-600">· a cargo de {e.responsable_nombre}</span>
@@ -715,8 +717,9 @@ export default function HistorialLead({
                   <div className="mt-1 grid gap-2 sm:grid-cols-4 items-end bg-crema border border-gray-200 rounded px-2 py-2">
                     <label className="sm:col-span-2">
                       <span className={ROTULO}>Compromiso</span>
-                      <input
+                      <textarea
                         className={CAMPO}
+                        rows={2}
                         value={edicion.accion}
                         maxLength={200}
                         onChange={(x) => setEdicion({ ...edicion, accion: x.target.value })}
