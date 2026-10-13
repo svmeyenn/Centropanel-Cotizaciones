@@ -244,7 +244,7 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
           {d.direccion_despacho ?? ""}
         </Text>
         {d.pago ? (
-          <Text style={{ marginTop: 3, fontSize: 7 }}>
+          <Text style={{ marginTop: 5, fontSize: 10 }}>
             <Text style={{ color: DORADO_OSC, fontFamily: "Helvetica-Bold" }}>ESTADO DE PAGO: </Text>
             <Text style={{ fontFamily: "Helvetica-Bold" }}>{d.pago.estado}</Text>
             {`  \u00b7  Total ${importe(d.pago.total, d.moneda)}  \u00b7  Abonado ${importe(d.pago.abonado, d.moneda)}  \u00b7  Saldo ${importe(d.pago.saldo, d.moneda)}`}
