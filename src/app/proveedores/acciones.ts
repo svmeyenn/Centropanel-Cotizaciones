@@ -117,6 +117,13 @@ export interface DatosItemProveedor {
   id_producto: number | null;
   codigo: string;
   costo: number;
+  // null = la moneda del mercado del proveedor; "USD" si cotiza en dolares.
+  moneda: string | null;
+}
+
+// El proveedor cotiza en la moneda de su mercado o en dolares; ninguna otra.
+function monedaValida(m: string | null) {
+  return m == null || m === "" || m === "USD";
 }
 
 export async function agregarItemProveedor(
@@ -128,6 +135,7 @@ export async function agregarItemProveedor(
   if (!d.id_materia_prima && !d.id_producto) {
     return { error: "Elija la materia prima o el producto." };
   }
+  if (!monedaValida(d.moneda)) return { error: "La moneda del costo es la del mercado o USD." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("proveedor_items").insert({
@@ -136,6 +144,7 @@ export async function agregarItemProveedor(
     id_producto: d.id_producto,
     codigo: d.codigo.trim() || null,
     costo: d.costo,
+    moneda: d.moneda || null,
   });
 
   if (error) {
@@ -156,17 +165,62 @@ export async function actualizarItemProveedor(
   idProveedor: number,
   costo: number,
   codigo: string,
-  activo: boolean
+  activo: boolean,
+  moneda: string | null
 ) {
   const err = await soloAdmin();
   if (err) return { error: err };
+  if (!monedaValida(moneda)) return { error: "La moneda del costo es la del mercado o USD." };
   const supabase = await createClient();
+
+  // Un preferente no se desactiva: el insumo se quedaria sin quien le defina el costo.
+  if (!activo) {
+    const { data: actual } = await supabase
+      .from("proveedor_items")
+      .select("es_preferente")
+      .eq("id", id)
+      .single();
+    if (actual?.es_preferente) {
+      return { error: "Este proveedor es el preferente de ese insumo. Quitele la marca antes de desactivarlo." };
+    }
+  }
+
   const { error } = await supabase
     .from("proveedor_items")
-    .update({ costo, codigo: codigo.trim() || null, activo })
+    .update({ costo, codigo: codigo.trim() || null, activo, moneda: moneda || null })
     .eq("id", id);
   if (error) return { error: error.message };
+  revalidarCostos(idProveedor);
+  return { ok: true };
+}
+
+function revalidarCostos(idProveedor: number) {
   revalidatePath(`/proveedores/${idProveedor}`);
+  revalidatePath("/materias-primas");
+  revalidatePath("/productos");
+  revalidatePath("/configurador");
+}
+
+// Este proveedor pasa a definir el costo del insumo o producto: el de los demas
+// queda como referencia. El costo del insumo cambia al instante; los paneles se
+// recostean con "Solo recalcular catalogo", como con cualquier cambio de costo.
+export async function marcarPreferente(idItem: number, idProveedor: number) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("item_marcar_preferente", { p_item: idItem });
+  if (error) return { error: error.message };
+  revalidarCostos(idProveedor);
+  return { ok: true, costo: Number((data as { costo?: number } | null)?.costo ?? 0) };
+}
+
+export async function quitarPreferente(idItem: number, idProveedor: number) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("item_quitar_preferente", { p_item: idItem });
+  if (error) return { error: error.message };
+  revalidarCostos(idProveedor);
   return { ok: true };
 }
 

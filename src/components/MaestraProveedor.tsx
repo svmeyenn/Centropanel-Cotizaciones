@@ -1,12 +1,14 @@
 "use client";
 
 import { Fragment, useMemo, useState, useTransition } from "react";
-import { pesos } from "@/lib/formato";
+import { importe, leerMontoLibre, pesos } from "@/lib/formato";
 import {
   agregarItemProveedor,
   agregarItemsProveedor,
   actualizarItemProveedor,
+  marcarPreferente,
   quitarItemProveedor,
+  quitarPreferente,
 } from "@/app/proveedores/acciones";
 
 export interface Candidato {
@@ -22,6 +24,12 @@ export interface ItemMaestra {
   codigo: string | null;
   costo: number;
   activo: boolean;
+  // null = en la moneda del mercado; "USD" si el proveedor cotiza en dolares.
+  moneda: string | null;
+  // Este proveedor es el que define el costo del insumo o producto.
+  preferente: boolean;
+  // Lo que cobran los demas proveedores de lo mismo.
+  otros: { proveedor: string; costo: number; moneda: string; preferente: boolean }[];
 }
 
 // Que vende este proveedor y a que precio. El costo es suyo: el mismo insumo
@@ -29,19 +37,24 @@ export interface ItemMaestra {
 // que se compara al pedir cotizacion.
 export default function MaestraProveedor({
   idProveedor,
+  monedaMercado,
   items,
   candidatos,
 }: {
   idProveedor: number;
+  monedaMercado: string;
   items: ItemMaestra[];
   candidatos: Candidato[];
 }) {
   const [sel, setSel] = useState("");
   const [codigo, setCodigo] = useState("");
-  const [costo, setCosto] = useState(0);
+  const [costo, setCosto] = useState("");
+  const [moneda, setMoneda] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [edit, setEdit] = useState<number | null>(null);
-  const [editCosto, setEditCosto] = useState(0);
+  const [editCosto, setEditCosto] = useState("");
+  const [editMoneda, setEditMoneda] = useState("");
   const [editCodigo, setEditCodigo] = useState("");
   const [pendiente, empezar] = useTransition();
   // Asignacion en lote: marcar varios y agregarlos de una vez, con el costo
@@ -82,13 +95,15 @@ export default function MaestraProveedor({
         id_materia_prima: tipo === "mp" ? Number(id) : null,
         id_producto: tipo === "prod" ? Number(id) : null,
         codigo,
-        costo,
+        costo: leerMontoLibre(costo),
+        moneda: moneda || null,
       });
       if (r?.error) setError(r.error);
       else {
         setSel("");
         setCodigo("");
-        setCosto(0);
+        setCosto("");
+        setMoneda("");
       }
     });
   }
@@ -196,15 +211,19 @@ export default function MaestraProveedor({
             <span className="block text-dorado-osc font-semibold mb-1">
               Costo neto
             </span>
-            <input
-              type="text"
-              inputMode="numeric"
-              className={`${input} w-32 text-right`}
-              value={pesos(costo)}
-              onChange={(e) =>
-                setCosto(Number(e.target.value.replace(/\D/g, "")) || 0)
-              }
-            />
+            <span className="flex gap-1">
+              <input
+                type="text"
+                inputMode="decimal"
+                className={`${input} w-28 text-right`}
+                value={costo}
+                onChange={(e) => setCosto(e.target.value)}
+              />
+              <select className={input} value={moneda} onChange={(e) => setMoneda(e.target.value)} title="Moneda en que cotiza el proveedor">
+                <option value="">{monedaMercado}</option>
+                <option value="USD">USD</option>
+              </select>
+            </span>
           </label>
           <button
             onClick={agregar}
@@ -294,6 +313,17 @@ export default function MaestraProveedor({
           {error}
         </div>
       )}
+      {aviso && (
+        <div className="bg-green-50 border border-green-200 text-green-900 text-sm rounded p-3">
+          {aviso}
+        </div>
+      )}
+
+      <p className="text-xs text-gray-600">
+        Cuando un insumo o producto tiene varios proveedores, uno es el <strong>preferente</strong>:
+        su costo es el que usa el sistema para costear los paneles y calcular el margen. Los
+        demas quedan como referencia.
+      </p>
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
@@ -303,6 +333,7 @@ export default function MaestraProveedor({
                 <th className="text-left px-3 py-2">Producto</th>
                 <th className="text-left px-3 py-2">Codigo</th>
                 <th className="text-right px-3 py-2">Costo</th>
+                <th className="text-left px-3 py-2">Preferente</th>
                 <th className="text-left px-3 py-2">Estado</th>
                 <th className="px-3" />
               </tr>
@@ -310,7 +341,7 @@ export default function MaestraProveedor({
             <tbody>
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center text-gray-400 py-8">
+                  <td colSpan={6} className="text-center text-gray-400 py-8">
                     Maestra vacia: este proveedor no recibira solicitudes.
                   </td>
                 </tr>
@@ -319,7 +350,7 @@ export default function MaestraProveedor({
                 <Fragment key={grupo}>
                   <tr className="bg-crema border-t border-dorado">
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="px-3 py-1.5 text-[11px] font-semibold text-verde uppercase tracking-wide"
                     >
                       {grupo}
@@ -333,7 +364,20 @@ export default function MaestraProveedor({
                       key={it.id}
                       className="border-t border-gray-100 hover:bg-crema"
                     >
-                      <td className="px-3 py-2 pl-6">{it.descripcion}</td>
+                      <td className="px-3 py-2 pl-6">
+                        {it.descripcion}
+                        {it.otros.length > 0 && (
+                          <div className="text-[10px] text-gray-500 mt-0.5">
+                            Otros proveedores:{" "}
+                            {it.otros
+                              .map(
+                                (o) =>
+                                  `${o.proveedor} ${importe(o.costo, o.moneda)}${o.preferente ? " (preferente)" : ""}`,
+                              )
+                              .join(" · ")}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-gray-600">
                         {edit === it.id ? (
                           <input
@@ -347,19 +391,30 @@ export default function MaestraProveedor({
                       </td>
                       <td className="px-3 py-2 text-right">
                         {edit === it.id ? (
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            className={`${input} w-28 text-right`}
-                            value={pesos(editCosto)}
-                            onChange={(e) =>
-                              setEditCosto(
-                                Number(e.target.value.replace(/\D/g, "")) || 0,
-                              )
-                            }
-                          />
+                          <span className="inline-flex gap-1 justify-end">
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              className={`${input} w-28 text-right`}
+                              value={editCosto}
+                              onChange={(e) => setEditCosto(e.target.value)}
+                            />
+                            <select className={input} value={editMoneda} onChange={(e) => setEditMoneda(e.target.value)}>
+                              <option value="">{monedaMercado}</option>
+                              <option value="USD">USD</option>
+                            </select>
+                          </span>
                         ) : (
-                          pesos(it.costo)
+                          importe(it.costo, it.moneda ?? monedaMercado)
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {it.preferente ? (
+                          <span className="inline-block bg-verde text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                            Preferente
+                          </span>
+                        ) : (
+                          ""
                         )}
                       </td>
                       <td className="px-3 py-2">
@@ -378,9 +433,10 @@ export default function MaestraProveedor({
                                   const r = await actualizarItemProveedor(
                                     it.id,
                                     idProveedor,
-                                    editCosto,
+                                    leerMontoLibre(editCosto),
                                     editCodigo,
                                     it.activo,
+                                    editMoneda || null,
                                   );
                                   if (r?.error) setError(r.error);
                                   else setEdit(null);
@@ -402,7 +458,8 @@ export default function MaestraProveedor({
                             <button
                               onClick={() => {
                                 setEdit(it.id);
-                                setEditCosto(it.costo);
+                                setEditCosto(String(it.costo).replace(".", ","));
+                                setEditMoneda(it.moneda ?? "");
                                 setEditCodigo(it.codigo ?? "");
                               }}
                               className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
@@ -418,6 +475,7 @@ export default function MaestraProveedor({
                                     it.costo,
                                     it.codigo ?? "",
                                     !it.activo,
+                                    it.moneda,
                                   );
                                   if (r?.error) setError(r.error);
                                 })
@@ -425,6 +483,34 @@ export default function MaestraProveedor({
                               className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                             >
                               {it.activo ? "desactivar" : "activar"}
+                            </button>
+                            <button
+                              onClick={() =>
+                                empezar(async () => {
+                                  setError(null);
+                                  setAviso(null);
+                                  if (it.preferente) {
+                                    const r = await quitarPreferente(it.id, idProveedor);
+                                    if (r?.error) setError(r.error);
+                                    else setAviso("Se quito la marca. El costo del insumo queda como estaba hasta que se marque otro proveedor.");
+                                  } else {
+                                    const r = await marcarPreferente(it.id, idProveedor);
+                                    if (r?.error) setError(r.error);
+                                    else
+                                      setAviso(
+                                        `Ahora este proveedor define el costo: ${importe(r.costo, monedaMercado)}. Los paneles se recostean con "Solo recalcular catalogo" en Materias primas.`,
+                                      );
+                                  }
+                                })
+                              }
+                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
+                              title={
+                                it.preferente
+                                  ? "Dejar de usar este proveedor para costear"
+                                  : "Usar el costo de este proveedor para costear"
+                              }
+                            >
+                              {it.preferente ? "quitar preferente" : "hacer preferente"}
                             </button>
                             <button
                               onClick={() =>

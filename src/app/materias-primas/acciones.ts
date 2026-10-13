@@ -86,6 +86,16 @@ export async function actualizarMateria(id: number, d: DatosMateria) {
   if (err) return { error: err };
 
   const supabase = await createClient();
+
+  // Si tiene proveedor preferente, el costo es el suyo: lo que venga del formulario
+  // se descarta para que no lo pise a mano.
+  const { count: conPreferente } = await supabase
+    .from("proveedor_items")
+    .select("id", { count: "exact", head: true })
+    .eq("id_materia_prima", id)
+    .eq("es_preferente", true);
+  const costo = conPreferente ? undefined : d.costo;
+
   const { error } = await supabase
     .from("materias_primas")
     .update({
@@ -97,7 +107,7 @@ export async function actualizarMateria(id: number, d: DatosMateria) {
       largo_mm: d.largo_mm,
       espesor_mm: d.espesor_mm,
       espesor_nominal: d.espesor_nominal,
-      costo: d.costo,
+      ...(costo !== undefined ? { costo } : {}),
       unidad: d.unidad.trim() || null,
     })
     .eq("id", id);
@@ -151,6 +161,16 @@ export async function cargarCostos(filas: FilaCarga[]) {
     });
   }
 
+  // Los insumos con proveedor preferente toman el costo de ese proveedor: la
+  // carga masiva no los toca.
+  const { data: conPref } = await supabase
+    .from("proveedor_items")
+    .select("id_materia_prima")
+    .eq("es_preferente", true)
+    .not("id_materia_prima", "is", null);
+  const definidos = new Set((conPref ?? []).map((x) => Number(x.id_materia_prima)));
+  const conProveedor: string[] = [];
+
   const noEncontrados: string[] = [];
   const cambios: { id: number; nombre: string; antes: number; ahora: number }[] = [];
 
@@ -159,6 +179,10 @@ export async function cargarCostos(filas: FilaCarga[]) {
     const actual = porNombre.get(clave);
     if (!actual) {
       noEncontrados.push(f.nombre);
+      continue;
+    }
+    if (definidos.has(actual.id)) {
+      if (f.costo !== actual.costo) conProveedor.push(f.nombre);
       continue;
     }
     if (Number.isFinite(f.costo) && f.costo >= 0 && f.costo !== actual.costo) {
@@ -189,8 +213,9 @@ export async function cargarCostos(filas: FilaCarga[]) {
   return {
     ok: true,
     actualizados: cambios.length,
-    sinCambio: filas.length - cambios.length - noEncontrados.length,
+    sinCambio: filas.length - cambios.length - noEncontrados.length - conProveedor.length,
     noEncontrados,
+    conProveedor,
     recalculados,
     detalle: cambios.slice(0, 20),
   };
