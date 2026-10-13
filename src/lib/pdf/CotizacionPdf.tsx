@@ -113,7 +113,7 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
   const ven: PersonaDoc = d.vendedor ?? {};
 
   return (
-    <Document title={d.num_cotizacion ?? "Cotizacion"} author={pTxt(p, "EmpresaNombre")}>
+    <Document title={d.num_cotizacion ?? (d.pedido ? "Pedido" : "Cotizacion")} author={pTxt(p, "EmpresaNombre")}>
       <Page size="A4" style={s.pagina}>
         {/* ---- cabecera ---- */}
         <View style={s.cabecera}>
@@ -127,12 +127,13 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
             </View>
           </View>
           <View style={s.folio}>
+            {d.pedido ? <Text style={{ fontSize: 7, color: DORADO, fontFamily: "Helvetica-Bold" }}>PEDIDO</Text> : null}
             <Text style={s.folioNum}>{d.num_cotizacion}</Text>
             <Text style={{ fontSize: 7, color: DORADO }}>
               {pTxt(p, "EmpresaNombre")}   {idTrib} {pTxt(p, "EmpresaRUT")}
             </Text>
             <Text style={{ fontSize: 7 }}>
-              Emitida {fmtFecha(d.fecha)}   Vence {fmtFecha(vence)}
+              {d.pedido ? `Fecha ${fmtFecha(d.fecha)}` : `Emitida ${fmtFecha(d.fecha)}   Vence ${fmtFecha(vence)}`}
             </Text>
           </View>
         </View>
@@ -215,9 +216,11 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
         <View style={s.pie} wrap={false}>
           <View style={[s.bloque, { marginRight: 18 }]}>
             <Text style={s.tituloPie}>CONDICIONES COMERCIALES</Text>
-            <Text>
-              Validez de la cotizacion: {d.validez_dias} dias corridos (vence el {fmtFecha(vence)}).
-            </Text>
+            {d.pedido ? null : (
+              <Text>
+                Validez de la cotizacion: {d.validez_dias} dias corridos (vence el {fmtFecha(vence)}).
+              </Text>
+            )}
             <Text>Medio de pago: {d.medio_pago ?? pTxt(p, "MedioPagoDefecto")}</Text>
             {d.forma_pago ? <Text>Forma de pago: {d.forma_pago}</Text> : null}
             {d.tiempo_entrega ? <Text>Tiempo de entrega: {d.tiempo_entrega}</Text> : null}
@@ -240,6 +243,13 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
           <Text style={{ color: DORADO_OSC, fontFamily: "Helvetica-Bold" }}>DESPACHAR A: </Text>
           {d.direccion_despacho ?? ""}
         </Text>
+        {d.pago ? (
+          <Text style={{ marginTop: 3, fontSize: 7 }}>
+            <Text style={{ color: DORADO_OSC, fontFamily: "Helvetica-Bold" }}>ESTADO DE PAGO: </Text>
+            <Text style={{ fontFamily: "Helvetica-Bold" }}>{d.pago.estado}</Text>
+            {`  \u00b7  Total ${importe(d.pago.total, d.moneda)}  \u00b7  Abonado ${importe(d.pago.abonado, d.moneda)}  \u00b7  Saldo ${importe(d.pago.saldo, d.moneda)}`}
+          </Text>
+        ) : null}
       </Page>
     </Document>
   );

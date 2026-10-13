@@ -2,7 +2,13 @@
 
 // Barra de acciones del documento. Lleva print:hidden para que no salga en el
 // papel: es andamiaje de pantalla, no parte de la cotizacion.
-export default function BotonImprimir({ idCotizacion }: { idCotizacion?: number }) {
+export default function BotonImprimir({
+  idCotizacion,
+  idPedido,
+}: {
+  idCotizacion?: number;
+  idPedido?: number;
+}) {
   return (
     <div className="print:hidden bg-crema border-b border-gray-200 px-6 py-3 flex gap-2 items-center">
       <button
@@ -17,6 +23,14 @@ export default function BotonImprimir({ idCotizacion }: { idCotizacion?: number 
           className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
         >
           Ver cotizacion
+        </a>
+      )}
+      {idPedido != null && (
+        <a
+          href={`/pedidos/${idPedido}`}
+          className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+        >
+          Ver pedido
         </a>
       )}
       <button

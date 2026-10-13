@@ -260,6 +260,13 @@ export default function EditorPedido({
             </button>
           )}
           {puedeEditar && <BotonDuplicar tipo="pedido" id={id} />}
+          <Link
+            href={`/pedidos/${id}/pdf`}
+            target="_blank"
+            className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
+          >
+            Ver PDF
+          </Link>
         </div>
       </div>
 
