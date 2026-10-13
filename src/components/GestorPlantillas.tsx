@@ -68,8 +68,14 @@ function Fila({
   const [asunto, setAsunto] = useState(p.asunto ?? "");
   const [cuerpo, setCuerpo] = useState(p.cuerpo);
   const [activo, setActivo] = useState(p.activo);
+  const [dias, setDias] = useState(p.dias_seguimiento == null ? "" : String(p.dias_seguimiento));
   const [confirmando, setConfirmando] = useState(false);
-  const cambio = nombre !== p.nombre || asunto !== (p.asunto ?? "") || cuerpo !== p.cuerpo || activo !== p.activo;
+  const cambio =
+    nombre !== p.nombre ||
+    asunto !== (p.asunto ?? "") ||
+    cuerpo !== p.cuerpo ||
+    activo !== p.activo ||
+    dias !== (p.dias_seguimiento == null ? "" : String(p.dias_seguimiento));
 
   return (
     <li className={`bg-white border rounded p-3 space-y-2 ${p.activo ? "border-gray-200" : "border-gray-200 opacity-70"}`}>
@@ -107,11 +113,33 @@ function Fila({
         </label>
         <textarea id={`c-${p.id}`} value={cuerpo} onChange={(e) => setCuerpo(e.target.value)} rows={canal === "email" ? 8 : 4} maxLength={4000} className={CAMPO} />
       </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <div>
+          <label htmlFor={`d-${p.id}`} className={ROTULO}>
+            Dias para el seguimiento
+          </label>
+          <input
+            id={`d-${p.id}`}
+            type="number"
+            min={1}
+            max={60}
+            step={1}
+            value={dias}
+            placeholder="Los del mercado"
+            onChange={(e) => setDias(e.target.value)}
+            className={`${CAMPO} w-40`}
+          />
+        </div>
+        <p className="text-[11px] text-gray-500 pb-1 max-w-md">
+          Al enviar este mensaje se crea una tarea de seguimiento para esa cantidad de dias; si cae en fin de semana, pasa al lunes. Vacio: usa el
+          parametro &quot;DiasSeguimientoEnvio&quot; de Parametros.
+        </p>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           disabled={ocupado || !cambio}
-          onClick={() => ejecutar(() => guardarPlantilla(p.id, canal, { nombre, asunto, cuerpo, activo }))}
+          onClick={() => ejecutar(() => guardarPlantilla(p.id, canal, { nombre, asunto, cuerpo, activo, dias }))}
           className="bg-verde text-white text-[12px] font-semibold px-2.5 py-1 rounded disabled:opacity-50"
         >
           Guardar
@@ -141,6 +169,7 @@ function Nuevo({ linea, canal, ocupado, ejecutar }: { linea: string; canal: Cana
   const [nombre, setNombre] = useState("");
   const [asunto, setAsunto] = useState("");
   const [cuerpo, setCuerpo] = useState("");
+  const [dias, setDias] = useState("");
 
   if (!abierto)
     return (
@@ -155,11 +184,12 @@ function Nuevo({ linea, canal, ocupado, ejecutar }: { linea: string; canal: Cana
       onSubmit={(e) => {
         e.preventDefault();
         ejecutar(async () => {
-          const r = await crearPlantilla(linea, canal, nombre, asunto, cuerpo);
+          const r = await crearPlantilla(linea, canal, nombre, asunto, cuerpo, dias);
           if (r.ok) {
             setNombre("");
             setAsunto("");
             setCuerpo("");
+            setDias("");
             setAbierto(false);
           }
           return r;
@@ -186,6 +216,12 @@ function Nuevo({ linea, canal, ocupado, ejecutar }: { linea: string; canal: Cana
           Texto
         </label>
         <textarea id="nuevo-cuerpo" value={cuerpo} onChange={(e) => setCuerpo(e.target.value)} rows={canal === "email" ? 8 : 4} maxLength={4000} className={CAMPO} />
+      </div>
+      <div>
+        <label htmlFor="nuevo-dias" className={ROTULO}>
+          Dias para el seguimiento (opcional)
+        </label>
+        <input id="nuevo-dias" type="number" min={1} max={60} step={1} value={dias} placeholder="Los del mercado" onChange={(e) => setDias(e.target.value)} className={`${CAMPO} w-40`} />
       </div>
       <div className="flex gap-2">
         <button type="submit" disabled={ocupado} className="bg-verde text-white text-[12px] font-semibold px-2.5 py-1 rounded disabled:opacity-50">

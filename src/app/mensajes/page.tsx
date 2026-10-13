@@ -29,7 +29,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
   const linea = sp.linea && lineas.includes(sp.linea) ? sp.linea : lineas[0];
   const { data, error } = await supabase
     .from("plantillas_mensaje")
-    .select("id, canal, linea, nombre, asunto, cuerpo, orden, activo")
+    .select("id, canal, linea, nombre, asunto, cuerpo, orden, activo, dias_seguimiento")
     .eq("canal", canal)
     .eq("linea", linea)
     .order("orden")

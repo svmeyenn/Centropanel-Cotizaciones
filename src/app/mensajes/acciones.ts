@@ -28,20 +28,31 @@ function limpiar(canal: Canal, nombre: string, asunto: string, cuerpo: string): 
   return { nombre: n, asunto: canal === "email" ? a : null, cuerpo: c };
 }
 
+// Dias de la tarea de seguimiento: vacio es "los del mercado" (parametro DiasSeguimientoEnvio).
+function leerDias(d: string | number | null | undefined): { dias: number | null } | { error: string } {
+  const t = String(d ?? "").trim();
+  if (t === "") return { dias: null };
+  const n = Number(t);
+  if (!Number.isInteger(n) || n < 1 || n > 60) return { error: "Los dias del seguimiento van de 1 a 60, sin decimales." };
+  return { dias: n };
+}
+
 // La linea es un texto libre --paneles, casas, y las que vengan--: se acepta cualquiera con forma de clave.
 const lineaValida = (l: string) => /^[a-z0-9_-]{1,40}$/.test(l);
 
-export async function crearPlantilla(linea: string, canal: string, nombre: string, asunto: string, cuerpo: string): Promise<Resultado> {
+export async function crearPlantilla(linea: string, canal: string, nombre: string, asunto: string, cuerpo: string, dias: string = ""): Promise<Resultado> {
   const no = await exigirAdmin();
   if (no) return no;
   if (canal !== "email" && canal !== "whatsapp") return { ok: false, mensaje: "Ese canal no existe." };
   if (!lineaValida(linea)) return { ok: false, mensaje: "Esa linea no es valida." };
   const l = limpiar(canal, nombre, asunto, cuerpo);
   if ("error" in l) return { ok: false, mensaje: l.error };
+  const d = leerDias(dias);
+  if ("error" in d) return { ok: false, mensaje: d.error };
 
   const supabase = await createClient();
   const { data: ult } = await supabase.from("plantillas_mensaje").select("orden").eq("canal", canal).eq("linea", linea).order("orden", { ascending: false }).limit(1);
-  const { error } = await supabase.from("plantillas_mensaje").insert({ canal, linea, ...l, orden: ((ult?.[0]?.orden as number | undefined) ?? 0) + 10 });
+  const { error } = await supabase.from("plantillas_mensaje").insert({ canal, linea, ...l, dias_seguimiento: d.dias, orden: ((ult?.[0]?.orden as number | undefined) ?? 0) + 10 });
   if (error) return { ok: false, mensaje: mensajeDe(error) };
   revalidatePath("/mensajes");
   return { ok: true, mensaje: `Mensaje "${l.nombre}" agregado.` };
@@ -50,16 +61,18 @@ export async function crearPlantilla(linea: string, canal: string, nombre: strin
 export async function guardarPlantilla(
   id: number,
   canal: string,
-  cambios: { nombre: string; asunto: string; cuerpo: string; activo: boolean }
+  cambios: { nombre: string; asunto: string; cuerpo: string; activo: boolean; dias?: string }
 ): Promise<Resultado> {
   const no = await exigirAdmin();
   if (no) return no;
   if (canal !== "email" && canal !== "whatsapp") return { ok: false, mensaje: "Ese canal no existe." };
   const l = limpiar(canal, cambios.nombre, cambios.asunto, cambios.cuerpo);
   if ("error" in l) return { ok: false, mensaje: l.error };
+  const d = leerDias(cambios.dias);
+  if ("error" in d) return { ok: false, mensaje: d.error };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("plantillas_mensaje").update({ ...l, activo: cambios.activo }).eq("id", id).select("id");
+  const { data, error } = await supabase.from("plantillas_mensaje").update({ ...l, activo: cambios.activo, dias_seguimiento: d.dias }).eq("id", id).select("id");
   if (error) return { ok: false, mensaje: mensajeDe(error) };
   // Una actualizacion que la base no deja hacer no da error: no toca ninguna fila.
   if (!data || data.length === 0) return { ok: false, mensaje: "No se pudo guardar: su perfil no tiene permiso." };

@@ -28,7 +28,9 @@ export async function registrarEnvioLead(
   asunto: string = "",
   cuerpo: string = "",
   // Nombres de los archivos del lead que se adjuntan, para dejarlos en el registro.
-  archivos: string[] = []
+  archivos: string[] = [],
+  // Dias de la tarea de seguimiento: los del mensaje; vacio, los del mercado.
+  diasSeguimiento: number | null = null
 ): Promise<Resultado> {
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite escribirle a los leads." };
@@ -73,6 +75,7 @@ export async function registrarEnvioLead(
     p_oportunidad: idsCotizacion.length > 0,
     p_asunto: asunto.trim().slice(0, 300) || null,
     p_cuerpo: cuerpo.trim().slice(0, 4500) || null,
+    p_dias: diasSeguimiento,
   });
   if (error) return { ok: false, mensaje: error.message };
 
@@ -85,7 +88,7 @@ export async function registrarEnvioLead(
   revalidatePath(`/leads/${idLead}`);
   revalidatePath("/");
   revalidatePath("/cotizaciones");
-  const base = (data as string) ?? "Anotado en el lead, con seguimiento en 3 dias.";
+  const base = (data as string) ?? "Anotado en el lead, con su tarea de seguimiento.";
   return { ok: true, mensaje: base + (porEnviar.length > 0 && !aviso ? " La cotizacion quedo como Enviada." : "") + aviso };
 }
 

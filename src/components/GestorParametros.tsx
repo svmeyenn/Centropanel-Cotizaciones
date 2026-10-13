@@ -34,6 +34,10 @@ const GRUPOS: { titulo: string; claves: string[] }[] = [
     ],
   },
   {
+    titulo: "Seguimiento de los mensajes",
+    claves: ["DiasSeguimientoEnvio"],
+  },
+  {
     titulo: "Cotizacion",
     claves: [
       "ValidezDias",

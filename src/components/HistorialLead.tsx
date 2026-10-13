@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { borrarEnvioLead } from "@/app/leads/mensaje";
 import { PanelFinDeSemana, esFinDeSemana, useFinDeSemana } from "@/components/ConsultaFinDeSemana";
+import { PanelSinTarea } from "@/components/AvisoSinTarea";
 import {
   caducarCompromiso,
   editarCompromiso,
@@ -100,6 +101,8 @@ export default function HistorialLead({
   yo,
   zona = "America/Santiago",
   autoresCotizacion = {},
+  exigeSeguimiento = false,
+  estadoTexto = "",
 }: {
   idLead: number;
   entradas: EntradaHistorial[];
@@ -114,6 +117,10 @@ export default function HistorialLead({
   zona?: string;
   // Quien genero cada cotizacion, por su id: no es lo mismo que quien anoto en ella.
   autoresCotizacion?: Record<number, string>;
+  // El lead sigue vivo --no esta cerrado, ganado ni es basura--: siempre debe tener una tarea.
+  exigeSeguimiento?: boolean;
+  // El estado en que esta, para el aviso.
+  estadoTexto?: string;
 }) {
   const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
@@ -127,6 +134,11 @@ export default function HistorialLead({
   // Programar para un sabado o domingo pregunta antes, al anotar y al editar un compromiso.
   const finde = useFinDeSemana();
   const [findeEdicion, setFindeEdicion] = useState(false);
+  // Un lead vivo no puede quedar sin tarea: se avisa al anotar una conversacion sin compromiso y al
+  // cumplir la ultima tarea que le quedaba.
+  const [sinTarea, setSinTarea] = useState(false);
+  const omitirSinTarea = useRef(false);
+  const [porCumplir, setPorCumplir] = useState<{ accion: () => Promise<Resultado> } | null>(null);
   // Revocar y caducar piden el motivo escrito: el boton no actua de inmediato,
   // abre el campo y recien despues se confirma.
   const [conMotivo, setConMotivo] = useState<{
@@ -176,6 +188,35 @@ export default function HistorialLead({
   const vencidas = entradas.filter(
     (e) => e.origen === "lead" && e.estado_proxima === "Vencida"
   ).length;
+  // Las tareas que siguen abiertas, tanto del lead como de sus cotizaciones.
+  const tareasAbiertas = entradas.filter(abierto);
+
+  function alEnviarFormulario(ev: React.FormEvent<HTMLFormElement>) {
+    if (omitirSinTarea.current) {
+      omitirSinTarea.current = false;
+    } else if (exigeSeguimiento && !conCompromiso && tareasAbiertas.length === 0) {
+      ev.preventDefault();
+      setSinTarea(true);
+      return;
+    }
+    finde.alEnviar(ev);
+  }
+
+  function enfocarCompromiso() {
+    setTimeout(() => {
+      (formulario.current?.elements.namedItem("proxima_accion") as HTMLInputElement | null)?.focus();
+      formulario.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  }
+
+  // Cumplir una tarea: si era la ultima que le quedaba a un lead vivo, se pregunta antes.
+  function pedirCumplir(e: EntradaHistorial, accion: () => Promise<Resultado>) {
+    if (exigeSeguimiento && tareasAbiertas.length === 1 && clave(tareasAbiertas[0]) === clave(e)) {
+      setPorCumplir({ accion });
+      return;
+    }
+    correr(accion);
+  }
 
   return (
     <div>
@@ -195,7 +236,7 @@ export default function HistorialLead({
         <form
           ref={formulario}
           action={enviar}
-          onSubmit={finde.alEnviar}
+          onSubmit={alEnviarFormulario}
           className="border-b border-gray-200 px-3 py-2 grid gap-2 sm:grid-cols-4 items-end bg-gray-50/60"
         >
           <input type="hidden" name="id_clientify" value={idLead} />
@@ -257,6 +298,38 @@ export default function HistorialLead({
             </>
           )}
 
+          {sinTarea && (
+            <PanelSinTarea
+              className="sm:col-span-4"
+              texto={
+                <>
+                  <strong>Este lead quedaria sin tarea de seguimiento.</strong> Esta en «{estadoTexto}» y no tiene ninguna tarea pendiente: mientras no este cerrado, ganado ni
+                  clasificado como basura, siempre debe tener una.
+                </>
+              }
+              acciones={[
+                {
+                  texto: "Agregar una tarea",
+                  principal: true,
+                  onClick: () => {
+                    setSinTarea(false);
+                    setConCompromiso(true);
+                    enfocarCompromiso();
+                  },
+                },
+                {
+                  texto: "Anotar sin tarea",
+                  onClick: () => {
+                    setSinTarea(false);
+                    omitirSinTarea.current = true;
+                    formulario.current?.requestSubmit();
+                  },
+                },
+                { texto: "Volver", onClick: () => setSinTarea(false) },
+              ]}
+            />
+          )}
+
           {finde.consulta && (
             <PanelFinDeSemana
               className="sm:col-span-4"
@@ -283,6 +356,40 @@ export default function HistorialLead({
             </p>
           )}
         </form>
+      )}
+
+      {porCumplir && (
+        <div className="px-3 py-2 border-b border-gray-200">
+          <PanelSinTarea
+            texto={
+              <>
+                <strong>Es la ultima tarea pendiente de este lead.</strong> Al cumplirla quedaria sin tarea de seguimiento, y en «{estadoTexto}» siempre debe tener una.
+              </>
+            }
+            acciones={[
+              {
+                texto: "Cumplirla y agregar otra tarea",
+                principal: true,
+                onClick: () => {
+                  const { accion } = porCumplir;
+                  setPorCumplir(null);
+                  correr(accion);
+                  setConCompromiso(true);
+                  enfocarCompromiso();
+                },
+              },
+              {
+                texto: "Cumplirla igual",
+                onClick: () => {
+                  const { accion } = porCumplir;
+                  setPorCumplir(null);
+                  correr(accion);
+                },
+              },
+              { texto: "Cancelar", onClick: () => setPorCumplir(null) },
+            ]}
+          />
+        </div>
       )}
 
       {aviso && (
@@ -386,7 +493,7 @@ export default function HistorialLead({
                           <button
                             className={BOTON_CLARO}
                             disabled={enCurso}
-                            onClick={() => correr(() => marcarCompromisoHecho(e.id, idLead))}
+                            onClick={() => pedirCumplir(e, () => marcarCompromisoHecho(e.id, idLead))}
                           >
                             Cumplida
                           </button>
@@ -456,7 +563,7 @@ export default function HistorialLead({
                                 className={BOTON_CLARO}
                                 disabled={enCurso}
                                 onClick={() =>
-                                  correr(() => marcarAccionHecha(e.id, e.id_cotizacion as number))
+                                  pedirCumplir(e, () => marcarAccionHecha(e.id, e.id_cotizacion as number))
                                 }
                               >
                                 Cumplida

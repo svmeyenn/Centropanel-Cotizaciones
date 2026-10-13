@@ -12,6 +12,7 @@ import type { Plantilla } from "@/lib/mensajes";
 import { leerEspera } from "@/lib/espera";
 import HistorialLead, { type EntradaHistorial } from "@/components/HistorialLead";
 import RegistrosEstado from "@/components/RegistrosEstado";
+import { BannerSinTarea } from "@/components/AvisoSinTarea";
 import ProyectoCasa, { type DatosCasaGuardados, type Valorizacion } from "@/components/ProyectoCasa";
 import ArchivosLead, { type ArchivoLead } from "@/components/ArchivosLead";
 import { QuitarVinculo, VincularCotizacionALead } from "@/components/VincularLead";
@@ -20,7 +21,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ESTADOS_OPORTUNIDAD, ETAPAS } from "@/lib/clientify";
 import { dinero, fecha, hoyISO, primerNombre } from "@/lib/formato";
 import { LINEAS, puedeEscribirLeads, type Linea } from "@/lib/leads";
-import { etiquetaDe, type Estado } from "@/lib/catalogoEstados";
+import { etiquetaDe, tieneMarca, type Estado } from "@/lib/catalogoEstados";
 import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 
 export const dynamic = "force-dynamic";
@@ -251,9 +252,13 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     if (nombre) autoresCotizacion[a.id] = nombre;
   }
   const espera = await leerEspera(supabase, c.id_clientify, null);
+  // Un lead vivo --no esta cerrado, ganado ni es basura-- siempre debe tener una tarea de seguimiento. Los estados que
+  // lo exigen son los que el mantenedor de Estados marca como "Vivo, hay que moverlo".
+  const exigeSeguimiento = tieneMarca(cat.lead, c.estado_efectivo, "en_seguimiento") && !espera;
+  const tieneTarea = historial.some((e) => e.estado_proxima === "Vigente" || e.estado_proxima === "Vencida");
   // Los mensajes que se pueden escribir al contacto; si la base aun no los tiene, no se ofrece.
   const { data: plantillasDb, error: errPlantillas } = puedeEscribir
-    ? await supabase.from("plantillas_mensaje").select("id, canal, linea, nombre, asunto, cuerpo, orden, activo").eq("activo", true).eq("linea", c.linea ?? "paneles").order("orden").order("nombre")
+    ? await supabase.from("plantillas_mensaje").select("id, canal, linea, nombre, asunto, cuerpo, orden, activo, dias_seguimiento").eq("activo", true).eq("linea", c.linea ?? "paneles").order("orden").order("nombre")
     : { data: null, error: null };
   const plantillas = (errPlantillas ? [] : (plantillasDb ?? [])) as Plantilla[];
   const puedeCotizar = v.puede_crear || tienePerfilAdmin(v);
@@ -313,9 +318,13 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           />
         )}
 
+        {exigeSeguimiento && !tieneTarea && (
+          <BannerSinTarea sujeto="lead" estado={etiquetaDe(cat.lead, c.estado_efectivo)} ancla="conversaciones" puedeAgregar={puedeEscribir} />
+        )}
+
         {/* Datos personales */}
         <FichaLead
-          lead={c}
+          lead={{ ...c, con_tarea: tieneTarea }}
           codigoPais={codigoPais}
           paises={accesibles.map((p) => ({ id: p.id, nombre: p.nombre }))}
           propietarios={(propietariosDb ?? []) as { email: string; nombre: string }[]}
@@ -471,7 +480,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         )}
 
         {/* Conversaciones y compromisos */}
-        <section className="bg-white border border-gray-200 rounded overflow-hidden">
+        <section id="conversaciones" className="bg-white border border-gray-200 rounded overflow-hidden scroll-mt-4">
           <h2 className={TITULO}>
             <span>CONVERSACIONES Y COMPROMISOS</span>
           </h2>
@@ -486,6 +495,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             yo={v.id}
             zona={zona}
             autoresCotizacion={autoresCotizacion}
+            exigeSeguimiento={exigeSeguimiento}
+            estadoTexto={etiquetaDe(cat.lead, c.estado_efectivo)}
           />
         </section>
 
