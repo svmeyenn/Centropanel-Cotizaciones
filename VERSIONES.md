@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0119-20261013**
+Version vigente: **v0120-20261013**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0120-20261013 | 13-10-2026 | Campos de comentario, fecha y compromiso de leads y cotizaciones alineados arriba. Solo codigo | 66b1d1f |
 | v0119-20261013 | 13-10-2026 | Comentarios y compromisos manuales de leads y cotizaciones aceptan saltos de linea y se muestran respetados. Solo codigo | 09044da |
 | v0118-20261013 | 13-10-2026 | Mantenedor de mensajes: el resultado de guardar se dice junto al boton y cada mensaje muestra los dias de seguimiento que tiene guardados. Solo codigo | d32db33 |
 | v0117-20261013 | 13-10-2026 | Dias de la tarea de seguimiento tras enviar un mensaje parametrizables: parametro DiasSeguimientoEnvio por mercado y valor propio en cada mensaje; aviso cuando un lead vivo (Contactado, Lead caliente, Oportunidad) o una cotizacion que espera respuesta queda sin tarea de seguimiento | 8558c11 |
