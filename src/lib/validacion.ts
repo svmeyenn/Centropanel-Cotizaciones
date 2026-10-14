@@ -4,6 +4,15 @@ import { telefonoValido } from "@/lib/formato";
 // la accion del servidor. En un solo lugar para que la pantalla y el servidor
 // no puedan discrepar sobre que es obligatorio.
 
+// Al modificar algo que ya existe, solo frena lo que la modificacion deja en blanco o
+// mal. Un cliente o proveedor cargado antes de que se exigiera un dato no puede
+// quedar sin poder tocarse hasta completarlo: lo que ya le faltaba no bloquea el
+// grabar, se muestra como pendiente.
+export function nuevasFaltas(actuales: string[], originales: string[]): string[] {
+  const antes = new Set(originales);
+  return actuales.filter((f) => !antes.has(f));
+}
+
 export interface DatosObligatoriosCliente {
   razon_social: string;
   contacto: string;

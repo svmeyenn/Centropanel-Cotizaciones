@@ -10,6 +10,7 @@ import {
   type TipoFicha,
 } from "@/lib/fichas";
 import { buscarParecidos, type Parecido } from "@/lib/finanzas/parecidos";
+import { nuevasFaltas } from "@/lib/validacion";
 
 export interface ResultadoFicha {
   ok?: boolean;
@@ -90,10 +91,48 @@ export async function guardarFicha(
   };
   const banco = p.veFinanzas ? cuentas : [];
 
-  const faltan = faltantesFicha(datos, banco);
-  if (faltan.length > 0) return { error: `Faltan datos: ${faltan.join(", ")}.` };
-
   const supabase = await createClient();
+
+  let faltan = faltantesFicha(datos, banco);
+  // Al modificar una ficha ya cargada solo frena lo que la modificacion deja
+  // mal: lo que ya le faltaba antes no impide grabar.
+  if (id !== null && faltan.length > 0) {
+    const { data: e } = await supabase
+      .from("entidades")
+      .select(
+        "razon_social, nombre_referencia, rut, contacto, email, telefono, direccion, comuna, ciudad, con_transferencia"
+      )
+      .eq("id_entidad", id)
+      .single();
+    if (e) {
+      const { data: t } = await supabase.from("entidad_tipos").select("tipo").eq("id_entidad", id);
+      const { data: c } = p.veFinanzas
+        ? await supabase
+            .from("interlocutor_cuentas")
+            .select("banco, tipo_cuenta, numero_cuenta, email")
+            .eq("id_interlocutor", id)
+        : { data: [] as CuentaBancaria[] };
+      const s = (x: string | null) => x ?? "";
+      const antes = faltantesFicha(
+        {
+          razon_social: s(e.razon_social),
+          nombre_referencia: s(e.nombre_referencia),
+          rut: s(e.rut),
+          contacto: s(e.contacto),
+          email: s(e.email),
+          telefono: s(e.telefono),
+          direccion: s(e.direccion),
+          comuna: s(e.comuna),
+          ciudad: s(e.ciudad),
+          con_transferencia: p.veFinanzas ? Boolean(e.con_transferencia) : false,
+          tipos: p.veFinanzas ? ((t ?? []).map((x) => x.tipo) as TipoFicha[]) : ["cliente"],
+        },
+        (c ?? []) as CuentaBancaria[]
+      );
+      faltan = nuevasFaltas(faltan, antes);
+    }
+  }
+  if (faltan.length > 0) return { error: `Faltan datos: ${faltan.join(", ")}.` };
 
   // Antes de crear una nueva se mira si ya esta: la misma ficha cargada dos
   // veces con el nombre escrito distinto deja los datos repartidos entre las

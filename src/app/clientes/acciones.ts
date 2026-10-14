@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
-import { faltantesCliente } from "@/lib/validacion";
+import { faltantesCliente, nuevasFaltas } from "@/lib/validacion";
 import { etiquetaIdDe } from "@/lib/paises";
 
 export interface DatosCliente {
@@ -119,7 +119,25 @@ export async function actualizarCliente(id: number, d: DatosCliente) {
   if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar clientes." };
   }
-  const faltan = faltantesCliente(d);
+  // Un cliente cargado antes de exigir un dato se puede seguir modificando: solo
+  // frena lo que la modificacion deja en blanco o mal.
+  const { data: actual } = await (await createClient())
+    .from("clientes")
+    .select("razon_social, contacto, telefono, ciudad")
+    .eq("id", id)
+    .single();
+  const s = (x: string | null | undefined) => x ?? "";
+  const faltan = nuevasFaltas(
+    faltantesCliente(d),
+    actual
+      ? faltantesCliente({
+          razon_social: s(actual.razon_social),
+          contacto: s(actual.contacto),
+          telefono: s(actual.telefono),
+          ciudad: s(actual.ciudad),
+        })
+      : []
+  );
   if (faltan.length > 0) {
     return { error: `Faltan datos del cliente: ${faltan.join(", ")}.` };
   }

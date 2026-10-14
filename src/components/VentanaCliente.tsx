@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Ventana from "@/components/Ventana";
 import CampoTelefono from "@/components/CampoTelefono";
 import { actualizarCliente, type DatosCliente } from "@/app/clientes/acciones";
-import { faltantesCliente } from "@/lib/validacion";
+import { faltantesCliente, nuevasFaltas } from "@/lib/validacion";
 import { rut as fmtRut } from "@/lib/formato";
 
 // Ficha del cliente abierta desde una cotizacion o un pedido: para completar
@@ -49,7 +49,16 @@ export default function VentanaCliente({
     ciudad: cliente.ciudad ?? "",
     id_pais: cliente.id_pais,
   });
-  const faltan = faltantesCliente(form);
+  // Lo que ya le faltaba al cliente no impide grabar; solo frena lo que se deja mal ahora.
+  const faltanTodo = faltantesCliente(form);
+  const faltanDeAntes = faltantesCliente({
+    razon_social: cliente.razon_social ?? "",
+    contacto: cliente.contacto ?? "",
+    telefono: cliente.telefono ?? "",
+    ciudad: cliente.ciudad ?? "",
+  });
+  const faltan = nuevasFaltas(faltanTodo, faltanDeAntes);
+  const pendientes = faltanTodo.filter((f) => !faltan.includes(f));
   const cls = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
 
   function grabar() {
@@ -117,8 +126,13 @@ export default function VentanaCliente({
         </div>
 
         {faltan.length > 0 && (
+          <div className="text-xs text-red-700 font-semibold">
+            Para grabar falta{faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
+          </div>
+        )}
+        {pendientes.length > 0 && (
           <div className="text-xs text-gray-500">
-            Falta{faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
+            Pendiente de completar (no impide grabar): {pendientes.join(", ")}.
           </div>
         )}
         {error && (

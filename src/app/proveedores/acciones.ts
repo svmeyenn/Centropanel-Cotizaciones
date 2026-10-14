@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
-import { faltantesProveedor } from "@/lib/validacion";
+import { faltantesProveedor, nuevasFaltas } from "@/lib/validacion";
 import { etiquetaIdDe } from "@/lib/paises";
 
 async function soloAdmin() {
@@ -63,7 +63,31 @@ export async function crearProveedor(d: DatosProveedor) {
 export async function actualizarProveedor(id: number, d: DatosProveedor) {
   const err = await soloAdmin();
   if (err) return { error: err };
-  const faltan = faltantesProveedor(d, await etiquetaIdDe(d.id_pais));
+  // Un proveedor cargado antes de exigir un dato se puede seguir modificando: solo
+  // frena lo que la modificacion deja en blanco.
+  const etiqueta = await etiquetaIdDe(d.id_pais);
+  const { data: actual } = await (await createClient())
+    .from("proveedores")
+    .select("razon_social, rut, contacto, email, telefono, direccion")
+    .eq("id", id)
+    .single();
+  const s = (x: string | null | undefined) => x ?? "";
+  const faltan = nuevasFaltas(
+    faltantesProveedor(d, etiqueta),
+    actual
+      ? faltantesProveedor(
+          {
+            razon_social: s(actual.razon_social),
+            rut: s(actual.rut),
+            contacto: s(actual.contacto),
+            email: s(actual.email),
+            telefono: s(actual.telefono),
+            direccion: s(actual.direccion),
+          },
+          etiqueta
+        )
+      : []
+  );
   if (faltan.length > 0) {
     return { error: `Faltan datos del proveedor: ${faltan.join(", ")}.` };
   }
