@@ -14,7 +14,7 @@ import {
 } from "@/app/proveedores/acciones";
 import type { Pais } from "@/types/database";
 import Ventana from "@/components/Ventana";
-import { faltantesProveedor } from "@/lib/validacion";
+import { faltantesProveedor, nuevasFaltas } from "@/lib/validacion";
 import { rut as fmtRut } from "@/lib/formato";
 import CampoTelefono from "@/components/CampoTelefono";
 
@@ -70,7 +70,24 @@ export default function GestorProveedores({
     paises.length === 1
       ? paises[0].etiqueta_id
       : [...new Set(paises.map((x) => x.etiqueta_id))].join(" / ") || "RUT";
-  const faltan = faltantesProveedor(form, etiquetaId);
+  const faltanTodo = faltantesProveedor(form, etiquetaId);
+  // Lo que ya le faltaba al proveedor no impide grabar; solo frena lo que se deja mal ahora.
+  const original = typeof editando === "number" ? proveedores.find((x) => x.id === editando) : null;
+  const faltanDeAntes = original
+    ? faltantesProveedor(
+        {
+          razon_social: original.razon_social,
+          rut: original.rut ?? "",
+          contacto: original.contacto ?? "",
+          email: original.email ?? "",
+          telefono: original.telefono ?? "",
+          direccion: original.direccion ?? "",
+        },
+        etiquetaId
+      )
+    : [];
+  const faltan = nuevasFaltas(faltanTodo, faltanDeAntes);
+  const pendientes = faltanTodo.filter((f) => !faltan.includes(f));
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -265,9 +282,13 @@ export default function GestorProveedores({
             </label>
           </div>
           {faltan.length > 0 && (
+            <div className="text-xs text-red-700 font-semibold">
+              Para grabar falta{faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
+            </div>
+          )}
+          {pendientes.length > 0 && (
             <div className="text-xs text-gray-500">
-              Al proveedor no le puede faltar ninguno. Falta
-              {faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
+              Pendiente de completar (no impide grabar): {pendientes.join(", ")}.
             </div>
           )}
           <div className="flex gap-2">

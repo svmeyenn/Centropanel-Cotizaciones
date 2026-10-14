@@ -25,6 +25,7 @@ import {
   juntarFichas,
   type ResultadoFicha,
 } from "@/app/clientes/acciones-ficha";
+import { nuevasFaltas } from "@/lib/validacion";
 import type { Pais } from "@/types/database";
 
 // Una sola lista para todo tercero.
@@ -132,13 +133,8 @@ export default function GestorFichas({
     ? TIPOS_FICHA
     : TIPOS_FICHA.filter((t) => t.tipo === "cliente");
 
-  function abrir(f: Ficha, como: "ver" | "editar" = "ver") {
-    setAbierta(f.id_entidad);
-    setCreando(false);
-    setModo(puedeEditar ? como : "ver");
-    setResultado(null);
-    setJuntarCon("");
-    setForm({
+  function datosDe(f: Ficha): DatosFicha {
+    return {
       razon_social: f.razon_social,
       nombre_referencia: f.nombre_referencia,
       rut: f.rut ?? "",
@@ -151,7 +147,16 @@ export default function GestorFichas({
       con_transferencia: f.con_transferencia,
       tipos: [...f.tipos],
       id_pais: f.id_pais,
-    });
+    };
+  }
+
+  function abrir(f: Ficha, como: "ver" | "editar" = "ver") {
+    setAbierta(f.id_entidad);
+    setCreando(false);
+    setModo(puedeEditar ? como : "ver");
+    setResultado(null);
+    setJuntarCon("");
+    setForm(datosDe(f));
     const suyas = cuentas[f.id_entidad] ?? [];
     setFilasBanco(suyas.length > 0 ? suyas.map((c) => ({ ...c })) : [{ ...CUENTA_VACIA }]);
   }
@@ -198,8 +203,23 @@ export default function GestorFichas({
       ? paises[0].etiqueta_id
       : [...new Set(paises.map((x) => x.etiqueta_id))].join(" / ") || "RUT";
 
-  const faltan = faltantesFicha(form, veFinanzas ? filasBanco : []);
   const laAbierta = fichas.find((f) => f.id_entidad === abierta) ?? null;
+  const faltanTodo = faltantesFicha(form, veFinanzas ? filasBanco : []);
+  // Al modificar una ficha ya existente solo frena lo que la modificacion deja
+  // mal; lo que ya le faltaba se avisa, pero no impide grabar.
+  const faltanDeAntes =
+    laAbierta && !creando
+      ? faltantesFicha(
+          {
+            ...datosDe(laAbierta),
+            tipos: veFinanzas ? laAbierta.tipos : ["cliente"],
+            con_transferencia: veFinanzas ? laAbierta.con_transferencia : false,
+          },
+          veFinanzas ? (cuentas[laAbierta.id_entidad] ?? []) : []
+        )
+      : [];
+  const faltan = creando ? faltanTodo : nuevasFaltas(faltanTodo, faltanDeAntes);
+  const pendientes = faltanTodo.filter((f) => !faltan.includes(f));
   // Un solo interruptor para toda la ventana: o se esta mirando, o se esta
   // cambiando.
   const bloqueado = !puedeEditar || modo === "ver";
@@ -762,8 +782,13 @@ export default function GestorFichas({
             )}
 
             {faltan.length > 0 && (
+              <p className="text-xs text-red-700 font-semibold">
+                Para grabar falta{faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
+              </p>
+            )}
+            {pendientes.length > 0 && (
               <p className="text-xs text-gray-500">
-                Falta{faltan.length > 1 ? "n" : ""}: {faltan.join(", ")}.
+                Pendiente de completar (no impide grabar): {pendientes.join(", ")}.
               </p>
             )}
 
