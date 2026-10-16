@@ -59,6 +59,9 @@ export default function MaestraProveedor({
   const [pendiente, empezar] = useTransition();
   // Asignacion en lote: marcar varios y agregarlos de una vez, con el costo
   // en cero para completarlo despues en la tabla de abajo.
+  // Items en cero: quedan inactivos y piden la atencion de quien los asigno.
+  const [soloSinCosto, setSoloSinCosto] = useState(false);
+  const [alerta, setAlerta] = useState<string | null>(null);
   const [lote, setLote] = useState(false);
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [buscaLote, setBuscaLote] = useState("");
@@ -73,15 +76,17 @@ export default function MaestraProveedor({
     return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
   }, [candidatos]);
 
+  const sinCosto = items.filter((it) => !(it.costo > 0));
+
   const grupos = useMemo(() => {
     const g = new Map<string, ItemMaestra[]>();
-    for (const it of items) {
+    for (const it of soloSinCosto ? items.filter((x) => !(x.costo > 0)) : items) {
       const l = g.get(it.grupo);
       if (l) l.push(it);
       else g.set(it.grupo, [it]);
     }
     return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
-  }, [items]);
+  }, [items, soloSinCosto]);
 
   function agregar() {
     setError(null);
@@ -100,6 +105,10 @@ export default function MaestraProveedor({
       });
       if (r?.error) setError(r.error);
       else {
+        if (!(leerMontoLibre(costo) > 0))
+          setAlerta(
+            "El item quedo con costo cero e inactivo: asigne el costo real de este proveedor para que cuente."
+          );
         setSel("");
         setCodigo("");
         setCosto("");
@@ -256,6 +265,9 @@ export default function MaestraProveedor({
                   ]);
                   if (r?.error) setError(r.error);
                   else {
+                    setAlerta(
+                      `Se asignaron ${marcados.size} item(s) con costo cero e inactivos. Asigneles el costo real de este proveedor: mientras esten en cero no cuentan para costear ni para pedir cotizacion.`
+                    );
                     setMarcados(new Set());
                     setLote(false);
                   }
@@ -268,8 +280,9 @@ export default function MaestraProveedor({
             </button>
           </div>
           <p className="text-xs text-gray-500">
-            Entran con costo cero e inactivos; el costo se completa despues en la tabla de
-            abajo, que es donde se ve todo junto. Al asignarles costo pasan a activos.
+            Entran con costo cero e inactivos --no se les pone un costo promedio porque no seria
+            real--. El costo se completa despues en la tabla de abajo, y al asignarlo pasan a
+            activos. Mientras esten en cero, la pantalla los marca como pendientes.
           </p>
           <div className="max-h-80 overflow-y-auto border border-gray-200 rounded">
             {gruposLote.length === 0 && (
@@ -316,6 +329,23 @@ export default function MaestraProveedor({
       {aviso && (
         <div className="bg-green-50 border border-green-200 text-green-900 text-sm rounded p-3">
           {aviso}
+        </div>
+      )}
+      {(sinCosto.length > 0 || alerta) && (
+        <div className="bg-amber-50 border border-amber-400 text-amber-900 text-sm rounded p-3 flex flex-wrap items-center gap-x-3 gap-y-1" role="alert">
+          <span>
+            <strong>{sinCosto.length} item(s) sin costo requieren su atencion.</strong>{" "}
+            {alerta ??
+              "Estan inactivos con costo cero: asigneles el costo real de este proveedor para que cuenten para costear y para pedir cotizacion."}
+          </span>
+          {sinCosto.length > 0 && (
+            <button
+              onClick={() => setSoloSinCosto((x) => !x)}
+              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded whitespace-nowrap"
+            >
+              {soloSinCosto ? "Ver todos los items" : "Ver solo los que faltan"}
+            </button>
+          )}
         </div>
       )}
 
@@ -365,7 +395,7 @@ export default function MaestraProveedor({
                   {lista.map((it) => (
                     <tr
                       key={it.id}
-                      className="border-t border-gray-100 hover:bg-crema"
+                      className={`border-t border-gray-100 hover:bg-crema ${!(it.costo > 0) ? "bg-amber-50" : ""}`}
                     >
                       <td className="px-3 py-2 pl-6">
                         {it.descripcion}
@@ -407,8 +437,12 @@ export default function MaestraProveedor({
                               <option value="USD">USD</option>
                             </select>
                           </span>
-                        ) : (
+                        ) : it.costo > 0 ? (
                           importe(it.costo, it.moneda ?? monedaMercado)
+                        ) : (
+                          <span className="inline-block bg-amber-200 text-amber-900 font-semibold px-1.5 py-0.5 rounded">
+                            Falta costo
+                          </span>
                         )}
                       </td>
                       <td className="px-3 py-2">

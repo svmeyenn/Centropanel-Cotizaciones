@@ -17,15 +17,18 @@ export default async function Pagina() {
   const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
   const [{ data: proveedores }, { data: items }] = await Promise.all([
     conPais(supabase.from("proveedores").select("*"), idPaisActivo).order("razon_social"),
-    supabase.from("proveedor_items").select("id_proveedor"),
+    supabase.from("proveedor_items").select("id_proveedor, costo"),
   ]);
 
   // Cuantos items tiene cada maestra: un proveedor con cero no recibe ninguna
   // solicitud, y eso conviene verlo desde el listado.
   const cuenta = new Map<number, number>();
+  // Items en cero: requieren que alguien les asigne el costo real.
+  const sinCosto = new Map<number, number>();
   for (const it of items ?? []) {
     const k = Number(it.id_proveedor);
     cuenta.set(k, (cuenta.get(k) ?? 0) + 1);
+    if (!(Number(it.costo) > 0)) sinCosto.set(k, (sinCosto.get(k) ?? 0) + 1);
   }
 
   const filas = (proveedores ?? []).map((p) => ({
@@ -39,6 +42,7 @@ export default async function Pagina() {
     direccion: p.direccion as string | null,
     activo: Boolean(p.activo),
     items: cuenta.get(Number(p.id)) ?? 0,
+    sin_costo: sinCosto.get(Number(p.id)) ?? 0,
   }));
 
   return (
