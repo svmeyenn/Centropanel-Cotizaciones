@@ -86,8 +86,23 @@ export async function actualizarMateria(id: number, d: DatosMateria) {
   if (err) return { error: err };
 
   const supabase = await createClient();
-  // El costo es movil: se puede cambiar a mano aunque el insumo tenga proveedor
-  // preferente. El preferente solo lo vuelve a escribir cuando cambia algo de su lado.
+
+  // El costo es movil, pero con proveedor preferente es UNA sola cifra: cambiarlo aqui
+  // cambia el costo del item de ese proveedor --y de ahi vuelve al insumo--. Sin
+  // preferente es un costo manual. Lo resuelve la base (costos_fijar).
+  const { data: actual } = await supabase
+    .from("materias_primas")
+    .select("costo")
+    .eq("id", id)
+    .single();
+  if (actual && Number(actual.costo) !== Number(d.costo)) {
+    const { error: eCosto } = await supabase.rpc("costos_fijar", {
+      p_filas: [{ mp: id, costo: d.costo }],
+      p_recostear: false,
+    });
+    if (eCosto) return { error: eCosto.message };
+  }
+
   const { error } = await supabase
     .from("materias_primas")
     .update({
@@ -99,13 +114,13 @@ export async function actualizarMateria(id: number, d: DatosMateria) {
       largo_mm: d.largo_mm,
       espesor_mm: d.espesor_mm,
       espesor_nominal: d.espesor_nominal,
-      costo: d.costo,
       unidad: d.unidad.trim() || null,
     })
     .eq("id", id);
   if (error) return { error: error.message };
 
   revalidatePath("/materias-primas");
+  revalidatePath("/productos");
   return { ok: true };
 }
 
@@ -173,17 +188,20 @@ export async function cargarCostos(filas: FilaCarga[]) {
     }
   }
 
-  for (const c of cambios) {
-    const { error } = await supabase
-      .from("materias_primas")
-      .update({ costo: c.ahora })
-      .eq("id", c.id);
-    if (error) return { error: `Al actualizar ${c.nombre}: ${error.message}` };
-  }
-
-  // Recostear los paneles con los precios nuevos. Los de precio manual
-  // conservan su precio de venta, igual que RecalcularCatalogo en Access.
-  const recalculados = await recalcularCatalogo();
+  // Todo en una sola transaccion. Con proveedor preferente el costo nuevo pasa al item
+  // de ese proveedor (una sola cifra); sin preferente es el costo del insumo. Despues se
+  // recostean los paneles --los de precio manual conservan su precio de venta-- y las
+  // cotizaciones sin pedido; los pedidos no se tocan.
+  const { data: rpc, error: eFijar } = await supabase.rpc("costos_fijar", {
+    p_filas: cambios.map((c) => ({ mp: c.id, costo: c.ahora })),
+    p_recostear: true,
+  });
+  if (eFijar) return { error: eFijar.message };
+  const hecho = (rpc ?? {}) as { paneles?: number; cotizaciones?: number };
+  const recalculados = {
+    paneles: Number(hecho.paneles ?? 0),
+    cotizaciones: Number(hecho.cotizaciones ?? 0),
+  };
 
   revalidatePath("/materias-primas");
   revalidatePath("/productos");

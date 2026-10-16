@@ -37,7 +37,23 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
     .eq("id", id)
     .single();
   const esPanel = actual?.tipo === "Panel SIP";
-  const costo = esPanel ? Number(actual?.costo_unitario ?? 0) : d.costo_unitario;
+  let costo = esPanel ? Number(actual?.costo_unitario ?? 0) : d.costo_unitario;
+
+  // Con proveedor preferente el costo es el del item de ese proveedor: cambiarlo aqui
+  // cambia el de ese item. Sin preferente es un costo manual (costos_fijar).
+  if (!esPanel && costo !== Number(actual?.costo_unitario ?? 0)) {
+    const { error: eCosto } = await supabase.rpc("costos_fijar", {
+      p_filas: [{ prod: id, costo }],
+      p_recostear: false,
+    });
+    if (eCosto) return { error: eCosto.message };
+    const { data: ahora } = await supabase
+      .from("productos")
+      .select("costo_unitario")
+      .eq("id", id)
+      .single();
+    costo = Number(ahora?.costo_unitario ?? costo);
+  }
 
   const cambiaMercado =
     d.id_pais != null && d.id_pais !== Number(actual?.id_pais);
