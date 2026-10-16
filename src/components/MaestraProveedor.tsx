@@ -323,8 +323,9 @@ export default function MaestraProveedor({
         El proveedor preferente se elige <strong>por insumo o producto</strong>, no por proveedor:
         un proveedor puede ser el preferente de unos items de su maestra y no de otros. El costo
         del preferente es el que usa el sistema para costear los paneles y calcular el margen;
-        los demas proveedores de lo mismo quedan como referencia. El costo del insumo se puede
-        cambiar a mano; el preferente solo lo vuelve a escribir cuando cambia su propio costo.
+        los demas proveedores de lo mismo quedan como referencia. El costo del insumo es siempre el
+        del preferente, en moneda local (si el proveedor cotiza en USD se convierte con el tipo de
+        cambio de Parametros). La descripcion del insumo es siempre la de Centropanel.
       </p>
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">

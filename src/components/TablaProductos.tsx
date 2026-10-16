@@ -509,8 +509,8 @@ export default function TablaProductos({
               )}
               {!esPanel && preferentes[enEdicion?.id ?? -1] != null && (
                 <span className="text-xs text-gray-500">
-                  Proveedor preferente: {preferentes[enEdicion?.id ?? -1].proveedor} (
-                  {pesos(preferentes[enEdicion?.id ?? -1].costo)}). Puede cambiar el costo a mano.
+                  Es el costo del proveedor preferente: {preferentes[enEdicion?.id ?? -1].proveedor}.
+                  Si lo cambia aqui, se actualiza el costo de ese proveedor para este producto.
                 </span>
               )}
             </label>
@@ -812,16 +812,10 @@ export default function TablaProductos({
                               {pesos(p.costo_unitario)}
                               {preferentes[p.id] != null && (
                                 <div
-                                  className={`text-[10px] max-w-[10rem] ml-auto truncate ${
-                                    Math.abs(Number(p.costo_unitario ?? 0) - preferentes[p.id].costo) > 0.5
-                                      ? "text-amber-700"
-                                      : "text-gray-500"
-                                  }`}
-                                  title={`Proveedor preferente: ${preferentes[p.id].proveedor}, ${pesos(preferentes[p.id].costo)}`}
+                                  className="text-[10px] text-gray-500 max-w-[10rem] ml-auto truncate"
+                                  title={`Proveedor preferente: ${preferentes[p.id].proveedor}`}
                                 >
-                                  {Math.abs(Number(p.costo_unitario ?? 0) - preferentes[p.id].costo) > 0.5
-                                    ? `difiere del preferente (${pesos(preferentes[p.id].costo)})`
-                                    : preferentes[p.id].proveedor}
+                                  {preferentes[p.id].proveedor}
                                 </div>
                               )}
                             </td>

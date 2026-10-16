@@ -416,23 +416,9 @@ export default function GestorMateriasPrimas({
               />
               {editando != null && preferentes[editando] != null ? (
                 <span className="text-xs text-gray-500">
-                  Proveedor preferente: {preferentes[editando].proveedor} (
-                  {pesos(preferentes[editando].costo)}). Puede cambiar el costo a mano; el
-                  preferente solo lo vuelve a escribir cuando cambia su propio costo.
-                  {Math.abs(form.costo - preferentes[editando].costo) > 0.5 && (
-                    <>
-                      {" "}
-                      <button
-                        type="button"
-                        className="underline text-verde"
-                        onClick={() =>
-                          setForm({ ...form, costo: preferentes[editando].costo })
-                        }
-                      >
-                        Volver al costo del preferente
-                      </button>
-                    </>
-                  )}
+                  Es el costo del proveedor preferente: {preferentes[editando].proveedor}. Si lo
+                  cambia aqui, se actualiza el costo de ese proveedor para este insumo (una sola
+                  cifra). Si el proveedor cotiza en otra moneda, se convierte.
                 </span>
               ) : (
                 <span className="text-xs text-gray-500">
@@ -516,22 +502,14 @@ export default function GestorMateriasPrimas({
                   <td className="px-3 py-2 text-right font-semibold">
                     {pesos(m.costo)}
                     <div
-                      className={`text-[10px] font-normal max-w-[10rem] ml-auto truncate ${
-                        preferentes[m.id] != null && Math.abs(m.costo - preferentes[m.id].costo) > 0.5
-                          ? "text-amber-700"
-                          : "text-gray-500"
-                      }`}
+                      className="text-[10px] font-normal text-gray-500 max-w-[10rem] ml-auto truncate"
                       title={
                         preferentes[m.id] != null
-                          ? `Proveedor preferente: ${preferentes[m.id].proveedor}, ${pesos(preferentes[m.id].costo)}`
-                          : "Sin proveedor preferente"
+                          ? `Proveedor preferente: ${preferentes[m.id].proveedor}`
+                          : "Sin proveedor preferente: costo manual"
                       }
                     >
-                      {preferentes[m.id] != null
-                        ? Math.abs(m.costo - preferentes[m.id].costo) > 0.5
-                          ? `difiere del preferente (${pesos(preferentes[m.id].costo)})`
-                          : preferentes[m.id].proveedor
-                        : "costo manual"}
+                      {preferentes[m.id] != null ? preferentes[m.id].proveedor : "costo manual"}
                     </div>
                   </td>
                   <td className="px-3 py-2">
