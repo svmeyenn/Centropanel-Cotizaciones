@@ -268,8 +268,8 @@ export default function MaestraProveedor({
             </button>
           </div>
           <p className="text-xs text-gray-500">
-            Entran con costo cero; el costo se completa despues en la tabla de
-            abajo, que es donde se ve todo junto.
+            Entran con costo cero e inactivos; el costo se completa despues en la tabla de
+            abajo, que es donde se ve todo junto. Al asignarles costo pasan a activos.
           </p>
           <div className="max-h-80 overflow-y-auto border border-gray-200 rounded">
             {gruposLote.length === 0 && (
@@ -424,7 +424,9 @@ export default function MaestraProveedor({
                         {it.activo ? (
                           <span className="text-green-700">Activo</span>
                         ) : (
-                          <span className="text-gray-400">Inactivo</span>
+                          <span className="text-gray-400">
+                            {it.costo > 0 ? "Inactivo" : "Inactivo (sin costo)"}
+                          </span>
                         )}
                       </td>
                       <td className="px-2 py-2 text-right">
@@ -483,7 +485,9 @@ export default function MaestraProveedor({
                                   if (r?.error) setError(r.error);
                                 })
                               }
-                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
+                              disabled={!it.activo && !(it.costo > 0)}
+                              title={!it.activo && !(it.costo > 0) ? "Asigne el costo para activarlo" : undefined}
+                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2 disabled:opacity-40"
                             >
                               {it.activo ? "desactivar" : "activar"}
                             </button>

@@ -173,6 +173,11 @@ export async function actualizarItemProveedor(
   if (!monedaValida(moneda)) return { error: "La moneda del costo es la del mercado o USD." };
   const supabase = await createClient();
 
+  // Un item sin costo no se activa hasta que se le asigne uno.
+  if (activo && !(costo > 0)) {
+    return { error: "Asigne el costo antes de activar el item: sin costo queda inactivo." };
+  }
+
   // Un preferente no se desactiva: el insumo se quedaria sin quien le defina el costo.
   if (!activo) {
     const { data: actual } = await supabase
@@ -182,6 +187,12 @@ export async function actualizarItemProveedor(
       .single();
     if (actual?.es_preferente) {
       return { error: "Este proveedor es el preferente de ese insumo. Quitele la marca antes de desactivarlo." };
+    }
+  }
+  if (!(costo > 0)) {
+    const { data: pref } = await supabase.from("proveedor_items").select("es_preferente").eq("id", id).single();
+    if (pref?.es_preferente) {
+      return { error: "Este proveedor es el preferente de ese insumo: no puede quedar sin costo. Quitele la marca primero." };
     }
   }
 
