@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
+import BotonRecostearPedido from "@/components/BotonRecostearPedido";
 import GrupoCabecera from "@/components/GrupoCabecera";
 import BorrarPedido from "@/components/BorrarPedido";
 import Bitacora from "@/components/Bitacora";
@@ -260,6 +261,7 @@ export default function EditorPedido({
             </button>
           )}
           {puedeEditar && <BotonDuplicar tipo="pedido" id={id} />}
+          {esAdmin && facturas.length === 0 && <BotonRecostearPedido id={id} moneda={moneda} />}
           <Link
             href={`/pedidos/${id}/pdf`}
             target="_blank"

@@ -225,9 +225,10 @@ function revalidarCostos(idProveedor: number) {
   revalidatePath("/configurador");
 }
 
-// Este proveedor pasa a definir el costo del insumo o producto: el de los demas
-// queda como referencia. El costo del insumo cambia al instante; los paneles se
-// recostean con "Solo recalcular catalogo", como con cualquier cambio de costo.
+// Este proveedor pasa a ser el preferente DE ESE insumo o producto --no de toda su
+// maestra--: el costo de los demas proveedores de lo mismo queda como referencia. El
+// costo cambia al instante, y se recostean los paneles y las cotizaciones sin pedido;
+// los pedidos no se tocan.
 export async function marcarPreferente(idItem: number, idProveedor: number) {
   const err = await soloAdmin();
   if (err) return { error: err };
@@ -235,7 +236,13 @@ export async function marcarPreferente(idItem: number, idProveedor: number) {
   const { data, error } = await supabase.rpc("item_marcar_preferente", { p_item: idItem });
   if (error) return { error: error.message };
   revalidarCostos(idProveedor);
-  return { ok: true, costo: Number((data as { costo?: number } | null)?.costo ?? 0) };
+  const r = (data ?? {}) as { costo?: number; paneles?: number; cotizaciones?: number };
+  return {
+    ok: true,
+    costo: Number(r.costo ?? 0),
+    paneles: Number(r.paneles ?? 0),
+    cotizaciones: Number(r.cotizaciones ?? 0),
+  };
 }
 
 export async function quitarPreferente(idItem: number, idProveedor: number) {

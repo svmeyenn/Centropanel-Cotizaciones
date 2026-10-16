@@ -86,16 +86,8 @@ export async function actualizarMateria(id: number, d: DatosMateria) {
   if (err) return { error: err };
 
   const supabase = await createClient();
-
-  // Si tiene proveedor preferente, el costo es el suyo: lo que venga del formulario
-  // se descarta para que no lo pise a mano.
-  const { count: conPreferente } = await supabase
-    .from("proveedor_items")
-    .select("id", { count: "exact", head: true })
-    .eq("id_materia_prima", id)
-    .eq("es_preferente", true);
-  const costo = conPreferente ? undefined : d.costo;
-
+  // El costo es movil: se puede cambiar a mano aunque el insumo tenga proveedor
+  // preferente. El preferente solo lo vuelve a escribir cuando cambia algo de su lado.
   const { error } = await supabase
     .from("materias_primas")
     .update({
@@ -107,7 +99,7 @@ export async function actualizarMateria(id: number, d: DatosMateria) {
       largo_mm: d.largo_mm,
       espesor_mm: d.espesor_mm,
       espesor_nominal: d.espesor_nominal,
-      ...(costo !== undefined ? { costo } : {}),
+      costo: d.costo,
       unidad: d.unidad.trim() || null,
     })
     .eq("id", id);
@@ -161,16 +153,6 @@ export async function cargarCostos(filas: FilaCarga[]) {
     });
   }
 
-  // Los insumos con proveedor preferente toman el costo de ese proveedor: la
-  // carga masiva no los toca.
-  const { data: conPref } = await supabase
-    .from("proveedor_items")
-    .select("id_materia_prima")
-    .eq("es_preferente", true)
-    .not("id_materia_prima", "is", null);
-  const definidos = new Set((conPref ?? []).map((x) => Number(x.id_materia_prima)));
-  const conProveedor: string[] = [];
-
   const noEncontrados: string[] = [];
   const cambios: { id: number; nombre: string; antes: number; ahora: number }[] = [];
 
@@ -179,10 +161,6 @@ export async function cargarCostos(filas: FilaCarga[]) {
     const actual = porNombre.get(clave);
     if (!actual) {
       noEncontrados.push(f.nombre);
-      continue;
-    }
-    if (definidos.has(actual.id)) {
-      if (f.costo !== actual.costo) conProveedor.push(f.nombre);
       continue;
     }
     if (Number.isFinite(f.costo) && f.costo >= 0 && f.costo !== actual.costo) {
@@ -213,57 +191,24 @@ export async function cargarCostos(filas: FilaCarga[]) {
   return {
     ok: true,
     actualizados: cambios.length,
-    sinCambio: filas.length - cambios.length - noEncontrados.length - conProveedor.length,
+    sinCambio: filas.length - cambios.length - noEncontrados.length,
     noEncontrados,
-    conProveedor,
-    recalculados,
+    recalculados: recalculados.paneles,
+    cotizaciones: recalculados.cotizaciones,
     detalle: cambios.slice(0, 20),
   };
 }
 
-// Recostea todos los paneles del catalogo con los costos vigentes.
-export async function recalcularCatalogo(): Promise<number> {
+// Recostea los paneles del catalogo con los costos vigentes y las cotizaciones que
+// todavia no tienen pedido. Las que ya tienen pedido --y sobre todo las facturadas--
+// quedan como estaban: un pedido se recostea solo, uno por uno, desde su pantalla.
+// Lo hace la base en una sola transaccion (catalogo_recalcular).
+export async function recalcularCatalogo(): Promise<{ paneles: number; cotizaciones: number }> {
   const supabase = await createClient();
-  const { data: paneles } = await supabase
-    .from("productos")
-    .select("id, id_eps, id_placa_a, id_placa_b, precio_venta, precio_manual, id_pais")
-    .eq("tipo", "Panel SIP");
-
-  let n = 0;
-  for (const p of paneles ?? []) {
-    if (!p.id_eps || !p.id_placa_a) continue;
-
-    const { data: costoRaw } = await supabase.rpc("costo_panel", {
-      p_eps: p.id_eps,
-      p_placa_a: p.id_placa_a,
-      p_placa_b: p.id_placa_b,
-    });
-    const costo = Number(costoRaw ?? 0);
-
-    let precio: number;
-    if (p.precio_manual) {
-      precio = Number(p.precio_venta);
-    } else {
-      // Cada panel con el margen objetivo de su mercado.
-      const { data } = await supabase.rpc("precio_desde_costo", {
-        p_costo: costo,
-        p_margen: null,
-        p_pais: p.id_pais,
-      });
-      precio = Number(data ?? 0);
-    }
-
-    await supabase
-      .from("productos")
-      .update({
-        costo_unitario: costo,
-        precio_venta: precio,
-        margen_aplicado: precio > 0 ? (precio - costo) / precio : 0,
-      })
-      .eq("id", p.id);
-    n++;
-  }
-  return n;
+  const { data, error } = await supabase.rpc("catalogo_recalcular");
+  if (error) throw new Error(error.message);
+  const r = (data ?? {}) as { paneles?: number; cotizaciones?: number };
+  return { paneles: Number(r.paneles ?? 0), cotizaciones: Number(r.cotizaciones ?? 0) };
 }
 
 // Eliminar de verdad, no desactivar: para lo que se cargo por error. La base

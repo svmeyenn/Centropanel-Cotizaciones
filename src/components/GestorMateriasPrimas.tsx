@@ -22,9 +22,9 @@ interface Resumen {
   actualizados: number;
   sinCambio: number;
   noEncontrados: string[];
-  // Insumos cuyo costo lo define el proveedor preferente: la carga no los toco.
-  conProveedor: string[];
   recalculados: number;
+  // Cotizaciones sin pedido cuyo costo se recosteo.
+  cotizaciones?: number;
   detalle: { nombre: string; antes: number; ahora: number }[];
 }
 
@@ -38,8 +38,8 @@ export default function GestorMateriasPrimas({
   esAdminGeneral,
   preferentes,
 }: {
-  // Proveedor preferente de cada insumo que lo tiene: el que define su costo.
-  preferentes: Record<number, string>;
+  // Proveedor preferente de cada insumo que lo tiene, y el costo que cobra.
+  preferentes: Record<number, { proveedor: string; costo: number }>;
   materias: MateriaPrima[];
   // Listas configurables en Parametros de materias primas.
   etiquetas: string[];
@@ -220,8 +220,8 @@ export default function GestorMateriasPrimas({
                   actualizados: 0,
                   sinCambio: 0,
                   noEncontrados: [],
-                  conProveedor: [],
-                  recalculados: n,
+                  recalculados: n.paneles,
+                  cotizaciones: n.cotizaciones,
                   detalle: [],
                 });
               })
@@ -254,19 +254,13 @@ export default function GestorMateriasPrimas({
           <div>
             {resumen.actualizados} costos actualizados · {resumen.sinCambio} sin
             cambio · {resumen.recalculados} paneles recosteados
+            {resumen.cotizaciones != null ? ` · ${resumen.cotizaciones} lineas de cotizaciones sin pedido recosteadas` : ""}
           </div>
           {resumen.noEncontrados.length > 0 && (
             <div className="text-amber-800">
               No se encontraron en la base ({resumen.noEncontrados.length}):{" "}
               {resumen.noEncontrados.slice(0, 5).join(", ")}
               {resumen.noEncontrados.length > 5 ? "..." : ""}
-            </div>
-          )}
-          {resumen.conProveedor.length > 0 && (
-            <div className="text-amber-800">
-              No se cambio el costo de {resumen.conProveedor.length} insumo(s) porque lo define su
-              proveedor preferente: {resumen.conProveedor.slice(0, 5).join(", ")}
-              {resumen.conProveedor.length > 5 ? "..." : ""}
             </div>
           )}
           {resumen.detalle.length > 0 && (
@@ -416,20 +410,33 @@ export default function GestorMateriasPrimas({
               <span className="block text-dorado-osc font-semibold mb-1">Costo</span>
               <input
                 type="number"
-                className={`${input} disabled:bg-gray-100`}
+                className={input}
                 value={form.costo}
-                disabled={editando != null && preferentes[editando] != null}
                 onChange={(e) => setForm({ ...form, costo: Number(e.target.value) })}
               />
               {editando != null && preferentes[editando] != null ? (
                 <span className="text-xs text-gray-500">
-                  Lo define el proveedor preferente: {preferentes[editando]}. Se cambia en la
-                  maestra de ese proveedor.
+                  Proveedor preferente: {preferentes[editando].proveedor} (
+                  {pesos(preferentes[editando].costo)}). Puede cambiar el costo a mano; el
+                  preferente solo lo vuelve a escribir cuando cambia su propio costo.
+                  {Math.abs(form.costo - preferentes[editando].costo) > 0.5 && (
+                    <>
+                      {" "}
+                      <button
+                        type="button"
+                        className="underline text-verde"
+                        onClick={() =>
+                          setForm({ ...form, costo: preferentes[editando].costo })
+                        }
+                      >
+                        Volver al costo del preferente
+                      </button>
+                    </>
+                  )}
                 </span>
               ) : (
                 <span className="text-xs text-gray-500">
-                  Sin proveedor preferente: el costo se escribe a mano. Para que lo defina un
-                  proveedor, marquelo como preferente en su maestra.
+                  Sin proveedor preferente: el costo se escribe a mano.
                 </span>
               )}
             </label>
@@ -509,10 +516,22 @@ export default function GestorMateriasPrimas({
                   <td className="px-3 py-2 text-right font-semibold">
                     {pesos(m.costo)}
                     <div
-                      className="text-[10px] font-normal text-gray-500 max-w-[9rem] ml-auto truncate"
-                      title={preferentes[m.id] != null ? `Proveedor preferente: ${preferentes[m.id]}` : "Sin proveedor preferente"}
+                      className={`text-[10px] font-normal max-w-[10rem] ml-auto truncate ${
+                        preferentes[m.id] != null && Math.abs(m.costo - preferentes[m.id].costo) > 0.5
+                          ? "text-amber-700"
+                          : "text-gray-500"
+                      }`}
+                      title={
+                        preferentes[m.id] != null
+                          ? `Proveedor preferente: ${preferentes[m.id].proveedor}, ${pesos(preferentes[m.id].costo)}`
+                          : "Sin proveedor preferente"
+                      }
                     >
-                      {preferentes[m.id] != null ? preferentes[m.id] : "costo manual"}
+                      {preferentes[m.id] != null
+                        ? Math.abs(m.costo - preferentes[m.id].costo) > 0.5
+                          ? `difiere del preferente (${pesos(preferentes[m.id].costo)})`
+                          : preferentes[m.id].proveedor
+                        : "costo manual"}
                     </div>
                   </td>
                   <td className="px-3 py-2">
