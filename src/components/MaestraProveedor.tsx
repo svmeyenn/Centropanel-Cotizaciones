@@ -88,6 +88,29 @@ export default function MaestraProveedor({
     return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
   }, [items, soloSinCosto]);
 
+  // El check de la columna "Preferente": marca o quita este proveedor como el preferente de este item.
+  function alternarPreferente(it: ItemMaestra) {
+    setError(null);
+    setAviso(null);
+    empezar(async () => {
+      if (it.preferente) {
+        const r = await quitarPreferente(it.id, idProveedor);
+        if (r?.error) setError(r.error);
+        else
+          setAviso(
+            "Se quito la marca. El costo del insumo queda como estaba hasta que se marque otro proveedor."
+          );
+      } else {
+        const r = await marcarPreferente(it.id, idProveedor);
+        if (r?.error) setError(r.error);
+        else
+          setAviso(
+            `Este proveedor es ahora el preferente de "${it.descripcion}" (${importe(r.costo, monedaMercado)}). Se recostearon ${r.paneles} paneles y ${r.cotizaciones} lineas de cotizaciones sin pedido. Los pedidos no se tocaron.`
+          );
+      }
+    });
+  }
+
   function agregar() {
     setError(null);
     if (!sel) {
@@ -446,13 +469,20 @@ export default function MaestraProveedor({
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        {it.preferente ? (
-                          <span className="inline-block bg-verde text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
-                            Preferente
-                          </span>
-                        ) : (
-                          ""
-                        )}
+                        <input
+                          type="checkbox"
+                          checked={it.preferente}
+                          disabled={pendiente || (!it.preferente && (!(it.costo > 0) || !it.activo))}
+                          onChange={() => alternarPreferente(it)}
+                          title={
+                            !(it.costo > 0)
+                              ? "Asigne el costo de este proveedor para poder elegirlo como preferente"
+                              : it.preferente
+                                ? "Quitar la marca de preferente de este item"
+                                : "Usar el costo de este proveedor para costear este item"
+                          }
+                          aria-label={`Proveedor preferente de ${it.descripcion}`}
+                        />
                       </td>
                       <td className="px-3 py-2">
                         {it.activo ? (
@@ -524,34 +554,6 @@ export default function MaestraProveedor({
                               className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2 disabled:opacity-40"
                             >
                               {it.activo ? "desactivar" : "activar"}
-                            </button>
-                            <button
-                              onClick={() =>
-                                empezar(async () => {
-                                  setError(null);
-                                  setAviso(null);
-                                  if (it.preferente) {
-                                    const r = await quitarPreferente(it.id, idProveedor);
-                                    if (r?.error) setError(r.error);
-                                    else setAviso("Se quito la marca. El costo del insumo queda como estaba hasta que se marque otro proveedor.");
-                                  } else {
-                                    const r = await marcarPreferente(it.id, idProveedor);
-                                    if (r?.error) setError(r.error);
-                                    else
-                                      setAviso(
-                                        `Este proveedor es ahora el preferente de "${it.descripcion}" (${importe(r.costo, monedaMercado)}). Se recostearon ${r.paneles} paneles y ${r.cotizaciones} lineas de cotizaciones sin pedido. Los pedidos no se tocaron.`,
-                                      );
-                                  }
-                                })
-                              }
-                              className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
-                              title={
-                                it.preferente
-                                  ? "Este proveedor deja de ser el preferente de este item"
-                                  : "Usar el costo de este proveedor para costear solo este item"
-                              }
-                            >
-                              {it.preferente ? "quitar preferente" : "hacer preferente"}
                             </button>
                             <button
                               onClick={() =>

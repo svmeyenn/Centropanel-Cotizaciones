@@ -4,7 +4,8 @@ import { BanderaDe } from "@/components/Bandera";
 
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import { advertenciaEps } from "@/app/configurador/acciones";
-import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
+import { pesos, porcentaje, unidades, conIva, monedaDelPais } from "@/lib/formato";
+import ProveedoresDelItem, { type ProveedorDeItem } from "@/components/ProveedoresDelItem";
 import { nombreImpuesto } from "@/lib/impuesto";
 import {
   actualizarProducto,
@@ -53,6 +54,7 @@ export default function TablaProductos({
   gruposFamilia = {},
   advertencias = {},
   preferentes = {},
+  proveedoresDe = {},
 }: {
   productos: ProductoFila[];
   esAdmin: boolean;
@@ -66,6 +68,8 @@ export default function TablaProductos({
   advertencias?: Record<number, string>;
   // Proveedor preferente de cada producto comprado, y el costo que cobra.
   preferentes?: Record<number, { proveedor: string; costo: number }>;
+  // Los proveedores de cada producto comprado, para elegir el preferente con un check.
+  proveedoresDe?: Record<number, ProveedorDeItem[]>;
 }) {
   const [busca, setBusca] = useState("");
   const [familia, setFamilia] = useState("");
@@ -514,6 +518,15 @@ export default function TablaProductos({
                 </span>
               )}
             </label>
+            {!esPanel && enEdicion && esAdmin && (
+              <div className="md:col-span-4">
+                <ProveedoresDelItem
+                  proveedores={proveedoresDe[enEdicion.id] ?? []}
+                  monedaMercado={monedaDelPais(enEdicion.id_pais)}
+                  onCostoCambiado={(c) => setForm((f) => (f ? { ...f, costo_unitario: c } : f))}
+                />
+              </div>
+            )}
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">
                 Precio de venta neto

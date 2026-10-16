@@ -6,6 +6,7 @@ import type { MateriaVenta } from "@/components/Configurador";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import BotonNuevoProducto from "@/components/BotonNuevoProducto";
 import { createClient } from "@/lib/supabase/server";
+import type { ProveedorDeItem } from "@/components/ProveedoresDelItem";
 import { leerIvaPorPais } from "@/lib/parametros";
 
 export default async function Pagina() {
@@ -70,7 +71,25 @@ export default async function Pagina() {
 
   // Proveedor preferente de cada producto comprado: el que define su costo.
   const preferentes: Record<number, { proveedor: string; costo: number }> = {};
+  const proveedoresDe: Record<number, ProveedorDeItem[]> = {};
   if (esAdmin) {
+    const { data: provItems } = await supabase
+      .from("proveedor_items")
+      .select("id, id_proveedor, id_producto, costo, moneda, activo, es_preferente, proveedores(razon_social)")
+      .not("id_producto", "is", null)
+      .order("id");
+    for (const x of provItems ?? []) {
+      const pr = Array.isArray(x.proveedores) ? x.proveedores[0] : x.proveedores;
+      (proveedoresDe[Number(x.id_producto)] ??= []).push({
+        id: Number(x.id),
+        id_proveedor: Number(x.id_proveedor),
+        proveedor: (pr as { razon_social?: string } | null)?.razon_social ?? "",
+        costo: Number(x.costo),
+        moneda: (x.moneda as string | null) ?? null,
+        activo: Boolean(x.activo),
+        preferente: Boolean(x.es_preferente),
+      });
+    }
     const { data: pref } = await supabase.rpc("preferentes_costos");
     for (const x of (pref ?? []) as { id_producto: number | null; proveedor: string; costo: number | null }[]) {
       if (x.id_producto != null && x.costo != null)
@@ -129,6 +148,7 @@ export default async function Pagina() {
           gruposFamilia={gruposFamilia}
           advertencias={advertencias}
           preferentes={preferentes}
+          proveedoresDe={proveedoresDe}
         />
       </div>
     </div>

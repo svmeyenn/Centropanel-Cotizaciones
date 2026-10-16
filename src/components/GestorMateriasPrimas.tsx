@@ -17,6 +17,8 @@ import {
 } from "@/app/materias-primas/acciones";
 import type { MateriaPrima, Pais, TipoMateria } from "@/types/database";
 import ModalNuevaMateria from "@/components/ModalNuevaMateria";
+import ProveedoresDelItem, { type ProveedorDeItem } from "@/components/ProveedoresDelItem";
+import { monedaDelPais } from "@/lib/formato";
 
 interface Resumen {
   actualizados: number;
@@ -37,9 +39,12 @@ export default function GestorMateriasPrimas({
   paises,
   esAdminGeneral,
   preferentes,
+  proveedoresDe,
 }: {
   // Proveedor preferente de cada insumo que lo tiene, y el costo que cobra.
   preferentes: Record<number, { proveedor: string; costo: number }>;
+  // Los proveedores de cada insumo, para elegir el preferente con un check.
+  proveedoresDe: Record<number, ProveedorDeItem[]>;
   materias: MateriaPrima[];
   // Listas configurables en Parametros de materias primas.
   etiquetas: string[];
@@ -434,6 +439,13 @@ export default function GestorMateriasPrimas({
               cls={input}
             />
           </div>
+          {editando != null && (
+            <ProveedoresDelItem
+              proveedores={proveedoresDe[editando] ?? []}
+              monedaMercado={monedaDelPais(materias.find((m) => m.id === editando)?.id_pais)}
+              onCostoCambiado={(c) => setForm((f) => (f ? { ...f, costo: c } : f))}
+            />
+          )}
           <div className="flex gap-2">
             <button
               onClick={guardar}

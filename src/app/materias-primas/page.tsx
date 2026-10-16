@@ -4,6 +4,7 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorMateriasPrimas from "@/components/GestorMateriasPrimas";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
+import type { ProveedorDeItem } from "@/components/ProveedoresDelItem";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
@@ -50,6 +51,27 @@ export default async function Pagina() {
       preferentes[Number(x.id_materia_prima)] = { proveedor: x.proveedor, costo: Number(x.costo) };
   }
 
+  // Los proveedores de cada insumo, para elegir el preferente con un check en la ficha.
+  const { data: provItems } = await supabase
+    .from("proveedor_items")
+    .select("id, id_proveedor, id_materia_prima, costo, moneda, activo, es_preferente, proveedores(razon_social)")
+    .not("id_materia_prima", "is", null)
+    .order("id");
+  const proveedoresDe: Record<number, ProveedorDeItem[]> = {};
+  for (const x of provItems ?? []) {
+    const pr = Array.isArray(x.proveedores) ? x.proveedores[0] : x.proveedores;
+    const k = Number(x.id_materia_prima);
+    (proveedoresDe[k] ??= []).push({
+      id: Number(x.id),
+      id_proveedor: Number(x.id_proveedor),
+      proveedor: (pr as { razon_social?: string } | null)?.razon_social ?? "",
+      costo: Number(x.costo),
+      moneda: (x.moneda as string | null) ?? null,
+      activo: Boolean(x.activo),
+      preferente: Boolean(x.es_preferente),
+    });
+  }
+
   const { data: tipos } = await supabase
     .from("tipos_materia")
     .select("id, nombre, es_nucleo, es_cara, orden, activo")
@@ -73,6 +95,7 @@ export default async function Pagina() {
           paises={paises}
           esAdminGeneral={esAdminGeneral}
           preferentes={preferentes}
+          proveedoresDe={proveedoresDe}
         />
       </div>
     </div>
