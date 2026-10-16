@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0122-20261013**
+Version vigente: **v0123-20261016**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0123-20261016 | 16-10-2026 | Proveedor preferente por insumo o producto: define el costo (una sola cifra, en moneda local; USD con tipo de cambio por mercado). Recosteo automatico de paneles y de cotizaciones vigentes sin pedido; recosteo individual de pedidos sin factura. Base de datos: migraciones proveedor_preferente_*; respaldo en tablas zz_respaldo_20261016_*; ETSA (item 81) marcado como preferente | 6158047 |
 | v0122-20261013 | 13-10-2026 | Estado de pago del PDF del pedido en letra mas grande. Solo codigo | 60c7e13 |
 | v0121-20261013 | 13-10-2026 | PDF del pedido con la estructura de la cotizacion (boton Ver PDF, impresion y archivo) y estado de pago bajo el lugar de despacho. Solo codigo | e809799 |
 | v0120-20261013 | 13-10-2026 | Campos de comentario, fecha y compromiso de leads y cotizaciones alineados arriba. Solo codigo | 66b1d1f |
