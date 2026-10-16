@@ -37,14 +37,7 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
     .eq("id", id)
     .single();
   const esPanel = actual?.tipo === "Panel SIP";
-  // Con proveedor preferente el costo es el suyo y no se escribe a mano.
-  const { count: conPreferente } = await supabase
-    .from("proveedor_items")
-    .select("id", { count: "exact", head: true })
-    .eq("id_producto", id)
-    .eq("es_preferente", true);
-  const costo =
-    esPanel || conPreferente ? Number(actual?.costo_unitario ?? 0) : d.costo_unitario;
+  const costo = esPanel ? Number(actual?.costo_unitario ?? 0) : d.costo_unitario;
 
   const cambiaMercado =
     d.id_pais != null && d.id_pais !== Number(actual?.id_pais);

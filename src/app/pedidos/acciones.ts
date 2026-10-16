@@ -34,6 +34,28 @@ export async function generarPedido(
   return { ok: true, id: Number(data) };
 }
 
+// Recostea UN pedido: lleva el costo de sus lineas al vigente. Es la unica via para mover el
+// costo de un pedido --el recosteo general no lo toca--, y un pedido con facturas no se
+// recostea. Lo valida y lo hace la base (pedido_recostear).
+export async function recostearPedido(id: number) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) return { error: "Solo el administrador puede recostear un pedido." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("pedido_recostear", { p_pedido: id });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/pedidos/${id}`);
+  revalidatePath("/pedidos");
+  const r = (data ?? {}) as { lineas?: number; costo_antes?: number; costo_despues?: number };
+  return {
+    ok: true,
+    lineas: Number(r.lineas ?? 0),
+    antes: Number(r.costo_antes ?? 0),
+    despues: Number(r.costo_despues ?? 0),
+  };
+}
+
 export interface DatosPedido {
   fecha: string;
   estado: string;

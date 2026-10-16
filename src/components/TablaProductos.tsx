@@ -64,8 +64,8 @@ export default function TablaProductos({
   gruposFamilia?: Record<string, string>;
   // Paneles con una plancha EPS que no calza con sus placas, por id, con el aviso.
   advertencias?: Record<number, string>;
-  // Proveedor preferente de cada producto comprado: el que define su costo.
-  preferentes?: Record<number, string>;
+  // Proveedor preferente de cada producto comprado, y el costo que cobra.
+  preferentes?: Record<number, { proveedor: string; costo: number }>;
 }) {
   const [busca, setBusca] = useState("");
   const [familia, setFamilia] = useState("");
@@ -487,7 +487,7 @@ export default function TablaProductos({
                 type="text"
                 inputMode="numeric"
                 className={`${input} disabled:bg-gray-100`}
-                disabled={esPanel || preferentes[enEdicion?.id ?? -1] != null}
+                disabled={esPanel}
                 value={
                   enFoco === "costo" ? tecleado : pesos(form.costo_unitario)
                 }
@@ -509,7 +509,8 @@ export default function TablaProductos({
               )}
               {!esPanel && preferentes[enEdicion?.id ?? -1] != null && (
                 <span className="text-xs text-gray-500">
-                  Lo define el proveedor preferente: {preferentes[enEdicion?.id ?? -1]}.
+                  Proveedor preferente: {preferentes[enEdicion?.id ?? -1].proveedor} (
+                  {pesos(preferentes[enEdicion?.id ?? -1].costo)}). Puede cambiar el costo a mano.
                 </span>
               )}
             </label>
@@ -810,8 +811,17 @@ export default function TablaProductos({
                             <td className="px-3 py-2 text-right">
                               {pesos(p.costo_unitario)}
                               {preferentes[p.id] != null && (
-                                <div className="text-[10px] text-gray-500 max-w-[9rem] ml-auto truncate" title={`Proveedor preferente: ${preferentes[p.id]}`}>
-                                  {preferentes[p.id]}
+                                <div
+                                  className={`text-[10px] max-w-[10rem] ml-auto truncate ${
+                                    Math.abs(Number(p.costo_unitario ?? 0) - preferentes[p.id].costo) > 0.5
+                                      ? "text-amber-700"
+                                      : "text-gray-500"
+                                  }`}
+                                  title={`Proveedor preferente: ${preferentes[p.id].proveedor}, ${pesos(preferentes[p.id].costo)}`}
+                                >
+                                  {Math.abs(Number(p.costo_unitario ?? 0) - preferentes[p.id].costo) > 0.5
+                                    ? `difiere del preferente (${pesos(preferentes[p.id].costo)})`
+                                    : preferentes[p.id].proveedor}
                                 </div>
                               )}
                             </td>

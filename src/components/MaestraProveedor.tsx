@@ -320,9 +320,11 @@ export default function MaestraProveedor({
       )}
 
       <p className="text-xs text-gray-600">
-        Cuando un insumo o producto tiene varios proveedores, uno es el <strong>preferente</strong>:
-        su costo es el que usa el sistema para costear los paneles y calcular el margen. Los
-        demas quedan como referencia.
+        El proveedor preferente se elige <strong>por insumo o producto</strong>, no por proveedor:
+        un proveedor puede ser el preferente de unos items de su maestra y no de otros. El costo
+        del preferente es el que usa el sistema para costear los paneles y calcular el margen;
+        los demas proveedores de lo mismo quedan como referencia. El costo del insumo se puede
+        cambiar a mano; el preferente solo lo vuelve a escribir cuando cambia su propio costo.
       </p>
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
@@ -498,7 +500,7 @@ export default function MaestraProveedor({
                                     if (r?.error) setError(r.error);
                                     else
                                       setAviso(
-                                        `Ahora este proveedor define el costo: ${importe(r.costo, monedaMercado)}. Los paneles se recostean con "Solo recalcular catalogo" en Materias primas.`,
+                                        `Este proveedor es ahora el preferente de "${it.descripcion}" (${importe(r.costo, monedaMercado)}). Se recostearon ${r.paneles} paneles y ${r.cotizaciones} lineas de cotizaciones sin pedido. Los pedidos no se tocaron.`,
                                       );
                                   }
                                 })
@@ -506,8 +508,8 @@ export default function MaestraProveedor({
                               className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                               title={
                                 it.preferente
-                                  ? "Dejar de usar este proveedor para costear"
-                                  : "Usar el costo de este proveedor para costear"
+                                  ? "Este proveedor deja de ser el preferente de este item"
+                                  : "Usar el costo de este proveedor para costear solo este item"
                               }
                             >
                               {it.preferente ? "quitar preferente" : "hacer preferente"}

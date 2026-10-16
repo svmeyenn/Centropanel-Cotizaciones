@@ -43,15 +43,11 @@ export default async function Pagina() {
   ].sort();
 
   // Proveedor preferente de cada insumo: el que define su costo.
-  const { data: pref } = await supabase
-    .from("proveedor_items")
-    .select("id_materia_prima, proveedores(razon_social)")
-    .eq("es_preferente", true)
-    .not("id_materia_prima", "is", null);
-  const preferentes: Record<number, string> = {};
-  for (const x of pref ?? []) {
-    const pr = Array.isArray(x.proveedores) ? x.proveedores[0] : x.proveedores;
-    preferentes[Number(x.id_materia_prima)] = (pr as { razon_social?: string } | null)?.razon_social ?? "";
+  const { data: pref } = await supabase.rpc("preferentes_costos");
+  const preferentes: Record<number, { proveedor: string; costo: number }> = {};
+  for (const x of (pref ?? []) as { id_materia_prima: number | null; proveedor: string; costo: number | null }[]) {
+    if (x.id_materia_prima != null && x.costo != null)
+      preferentes[Number(x.id_materia_prima)] = { proveedor: x.proveedor, costo: Number(x.costo) };
   }
 
   const { data: tipos } = await supabase
