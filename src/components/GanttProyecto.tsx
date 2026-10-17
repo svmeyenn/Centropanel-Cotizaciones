@@ -21,7 +21,6 @@ const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
 
 const ALTO = 28;
 const ENCAB = 38;
-const COL_NOMBRE = 200;
 const input = "border border-gray-300 rounded px-2 py-1 text-xs w-full";
 
 const vacio = (hoy: string) => ({
@@ -196,7 +195,7 @@ export default function GanttProyecto({
       {error && <div className="text-sm text-red-700 font-semibold">{error}</div>}
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden flex">
-        <div className="shrink-0 border-r border-gray-200 text-xs" style={{ width: COL_NOMBRE }}>
+        <div className="shrink-0 border-r border-gray-200 text-xs w-32 sm:w-52">
           <div className="bg-verde text-white px-2 flex items-center font-semibold" style={{ height: ENCAB }}>
             Tarea
           </div>
