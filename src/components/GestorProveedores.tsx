@@ -29,6 +29,8 @@ interface Fila {
   id_pais: number | null;
   activo: boolean;
   items: number;
+  // Items de la maestra en cero, pendientes de costo.
+  sin_costo: number;
 }
 
 const vacio = (pais: number | null): DatosProveedor => ({
@@ -360,6 +362,14 @@ export default function GestorProveedores({
                       </span>
                     ) : (
                       p.items
+                    )}
+                    {p.sin_costo > 0 && (
+                      <div
+                        className="text-[10px] font-semibold text-amber-700"
+                        title="Items con costo cero e inactivos: falta asignarles el costo real"
+                      >
+                        {p.sin_costo} sin costo
+                      </div>
                     )}
                   </td>
                   <td className="px-3 py-2">
