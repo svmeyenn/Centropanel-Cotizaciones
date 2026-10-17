@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0126-20261016**
+Version vigente: **v0127-20261017**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0127-20261017 | 17-10-2026 | Eficiencia y seguridad de la base de datos: funciones con privilegios elevados cerradas a quien no tiene sesion, reglas de acceso calculadas una vez por consulta en vez de fila por fila (listado de leads de 2-4 s a 50-140 ms, totales de cotizacion de 2,8 s a 15 ms), enlaces de adjuntos de finanzas firmados en una sola llamada, limpieza de funciones y reglas sin uso. Sin cambios de datos ni de visibilidad, verificado con usuarios simulados | 46fdd61 |
 | v0126-20261016 | 16-10-2026 | Al asignar un item a un proveedor entra con costo cero (no el del insumo), inactivo y con alerta de costo pendiente en la maestra y en el listado de proveedores; proveedor preferente con check en la maestra y en la ficha del insumo y del producto. Base de datos: migracion item_proveedor_costo_cero_real | 0476f41, 10b61ec |
 | v0125-20261016 | 16-10-2026 | Clientes y proveedores ya cargados se pueden modificar: al grabar solo frena lo que la modificacion deja mal; lo que ya les faltaba se avisa como pendiente. Solo codigo | a10ade8 |
 | v0124-20261016 | 16-10-2026 | Items de proveedor sin costo quedan inactivos (solo esa relacion proveedor-item) hasta que se les asigna costo; corrige el error al asignar varios productos. Base de datos: migracion item_proveedor_sin_costo_inactivo; 38 items con costo 0 quedan inactivos | bedf601 |
