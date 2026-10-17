@@ -7,6 +7,7 @@ import { leerParametros, pTxt } from "@/lib/parametros";
 import { fecha as fmtFecha, pesos, unidades as fmtUnid } from "@/lib/formato";
 import { LOGO_PDF } from "@/lib/logo";
 import BotonImprimir from "@/app/cotizaciones/[id]/pdf/BotonImprimir";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -64,9 +65,6 @@ export default async function Pagina({
       .order("orden"),
     leerParametros(Number(pedidoSol?.id_pais ?? 1)),
   ]);
-
-  const uno = <T,>(x: unknown): T | null =>
-    Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
   const prov = uno<{
     razon_social: string;

@@ -190,6 +190,9 @@ export type Movimiento = {
   // una excepcion al cuadre.
   sin_banco: boolean;
   sin_banco_motivo: string | null;
+  // Todo egreso lo aprueba el responsable del proyecto antes de pagarse.
+  aprobacion: "Pendiente" | "Aprobado" | "Rechazado" | null;
+  motivo_rechazo: string | null;
 };
 
 // Una linea de la cartola: el movimiento visto desde la cuenta, con el saldo

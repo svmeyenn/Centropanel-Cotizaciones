@@ -8,6 +8,7 @@ import MaestraProveedor, {
 } from "@/components/MaestraProveedor";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -52,9 +53,6 @@ export default async function Pagina({
     ]);
 
   if (!prov) notFound();
-
-  const uno = <T,>(x: unknown): T | null =>
-    Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
   const monedaMercado = uno<{ moneda_base: string }>(prov.paises)?.moneda_base ?? "CLP";
 

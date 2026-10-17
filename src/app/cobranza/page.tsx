@@ -7,6 +7,7 @@ import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
 import { BanderaDe } from "@/components/Bandera";
 import { importe, monedaDelPais, resumenMontos, porcentaje, fecha as fmtFecha } from "@/lib/formato";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -93,9 +94,6 @@ export default async function Pagina({
         : (f.numero as string);
     foliosDe.set(k, [...(foliosDe.get(k) ?? []), folio]);
   }
-
-  const uno = <T,>(x: unknown): T | null =>
-    Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
   const filas = (pedidos ?? []).map((p) => {
     const c = cuentaDe.get(Number(p.id));

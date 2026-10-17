@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { pesos, pesosCorto, fecha as fmtFecha, porcentaje } from "@/lib/formato";
+import { pesos, pesosCorto, porcentaje } from "@/lib/formato";
 import SelectorMes from "@/components/SelectorMes";
 import TituloOrden, { BarraOrden } from "@/components/TituloOrden";
 import { CLIENTES, EQUIPO } from "@/components/inicio/orden";

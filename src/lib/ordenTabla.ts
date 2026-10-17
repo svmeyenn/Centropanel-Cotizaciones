@@ -36,7 +36,6 @@ export function conParametro(qs: string, param: string, valor: string | null): s
 
 // Un rango viaja como "desde..hasta"; cualquiera de los dos lados puede faltar.
 export type Rango = { desde: string; hasta: string };
-export const SIN_RANGO: Rango = { desde: "", hasta: "" };
 
 export function leerRango(valor: string | undefined): Rango {
   const [desde = "", hasta = ""] = (valor ?? "").split("..");
@@ -48,8 +47,6 @@ export function escribirRango(r: Rango): string | null {
   const h = r.hasta.trim();
   return d || h ? `${d}..${h}` : null;
 }
-
-export const hayRango = (r: Rango) => Boolean(r.desde || r.hasta);
 
 // Ordena las tablas que llegan completas. El valor de cada columna lo da quien
 // llama, porque solo ella sabe como se lee cada campo de sus filas.

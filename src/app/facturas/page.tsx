@@ -7,6 +7,7 @@ import { nombreImpuesto } from "@/lib/impuesto";
 import { createClient } from "@/lib/supabase/server";
 import { BanderaDe } from "@/components/Bandera";
 import { importe, monedaDelPais, resumenMontos, fecha as fmtFecha } from "@/lib/formato";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +42,6 @@ export default async function Pagina({
   if (hasta) consulta = consulta.lte("fecha", hasta);
 
   const { data } = await consulta;
-
-  const uno = <T,>(x: unknown): T | null =>
-    Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
   type Ped = { id: number; num_pedido: string; id_pais?: number; clientes: unknown };
 
@@ -80,9 +78,6 @@ export default async function Pagina({
       )
     : filas;
 
-  const totalNeto = visibles.reduce((s, f) => s + f.neto, 0);
-  const totalIva = visibles.reduce((s, f) => s + f.iva, 0);
-  const total = visibles.reduce((s, f) => s + f.total, 0);
   const sinArchivo = visibles.filter((f) => !f.tieneArchivo).length;
 
   const campo = "border border-gray-300 rounded px-2 py-1 text-sm";

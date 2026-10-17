@@ -5,12 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { LOGO_PDF } from "@/lib/logo";
 import { dinero, fecha, unidades as fmtUnid } from "@/lib/formato";
 import BotonImprimir from "@/app/cotizaciones/[id]/pdf/BotonImprimir";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Orden de compra" };
-
-const uno = <T,>(x: unknown): T | null => (Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null));
 
 export default async function Pagina({ params }: { params: Promise<{ id: string }> }) {
   await requerirVendedor();

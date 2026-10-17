@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { actualizarProyecto, crearProyecto, type DatosProyecto } from "@/app/proyectos/acciones";
+import { actualizarProyecto, buscarClientes, crearProyecto, type DatosProyecto } from "@/app/proyectos/acciones";
 
 export const ESTADOS_PROYECTO = ["Planificacion", "Fabricacion", "Despacho", "Instalacion", "Cerrado"];
 
@@ -26,6 +26,7 @@ export default function FormProyecto({
   const [f, setF] = useState<DatosProyecto>({
     nombre: inicial?.nombre ?? "",
     cliente: inicial?.cliente ?? "",
+    id_cliente: inicial?.id_cliente ?? null,
     tipo: inicial?.tipo ?? "obra",
     estado: inicial?.estado ?? "Planificacion",
     id_responsable: inicial?.id_responsable ?? null,
@@ -37,6 +38,19 @@ export default function FormProyecto({
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   const [pendiente, empezar] = useTransition();
+  const [sugeridos, setSugeridos] = useState<{ id: number; razon_social: string; rut: string | null }[]>([]);
+  const reloj = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // El cliente se enlaza a su ficha: escribir busca por nombre o RUT.
+  function escribirCliente(texto: string) {
+    setF((a) => ({ ...a, cliente: texto, id_cliente: null }));
+    if (reloj.current) clearTimeout(reloj.current);
+    reloj.current = setTimeout(async () => setSugeridos(await buscarClientes(texto)), 250);
+  }
+  function elegirCliente(c: { id: number; razon_social: string }) {
+    setF((a) => ({ ...a, cliente: c.razon_social, id_cliente: c.id }));
+    setSugeridos([]);
+  }
 
   function guardar() {
     setError(null);
@@ -77,9 +91,38 @@ export default function FormProyecto({
             <option value="centro_costo">Centro de costo (gastos generales)</option>
           </select>
         </label>
-        <label className="text-sm">
-          <span className="block text-dorado-osc font-semibold mb-1">Cliente</span>
-          <input className={input} value={f.cliente} onChange={set("cliente")} disabled={!puedeEditar} />
+        <label className="text-sm relative">
+          <span className="block text-dorado-osc font-semibold mb-1">
+            Cliente{" "}
+            {f.id_cliente ? (
+              <span className="text-verde text-[11px]">enlazado a su ficha</span>
+            ) : f.cliente ? (
+              <span className="text-gray-400 text-[11px]">solo texto: elija de la lista para enlazar</span>
+            ) : null}
+          </span>
+          <input
+            className={input}
+            value={f.cliente}
+            onChange={(e) => escribirCliente(e.target.value)}
+            disabled={!puedeEditar}
+            autoComplete="off"
+          />
+          {sugeridos.length > 0 && (
+            <ul className="absolute z-10 left-0 right-0 bg-white border border-gray-300 rounded shadow mt-0.5 max-h-56 overflow-auto">
+              {sugeridos.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    className="w-full text-left px-2 py-1 text-xs hover:bg-crema"
+                    onClick={() => elegirCliente(c)}
+                  >
+                    {c.razon_social}
+                    {c.rut ? <span className="text-gray-500"> · {c.rut}</span> : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </label>
         <label className="text-sm">
           <span className="block text-dorado-osc font-semibold mb-1">Estado</span>

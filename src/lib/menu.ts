@@ -65,7 +65,7 @@ export const GRUPOS: Grupo[] = [
     opciones: [
       { texto: "Proyectos", href: "/proyectos" },
       { texto: "Ordenes de compra", href: "/compras" },
-      { texto: "Aprobadores de compra", href: "/compras/aprobadores", soloAdmin: true },
+      { texto: "Por aprobar", href: "/aprobaciones", ve: (v) => v.rol === "Administrador" },
     ],
   },
   {

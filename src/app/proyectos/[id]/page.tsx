@@ -5,9 +5,11 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import FormProyecto from "@/components/FormProyecto";
 import PresupuestoProyecto from "@/components/PresupuestoProyecto";
 import GanttProyecto from "@/components/GanttProyecto";
+import AprobadoresProyecto from "@/components/AprobadoresProyecto";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { dinero, fecha, hoyISO, monedaDelPais } from "@/lib/formato";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +20,6 @@ const PESTANAS = [
   ["compras", "Compras"],
   ["datos", "Datos"],
 ] as const;
-
-const uno = <T,>(x: unknown): T | null => (Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null));
 
 export default async function Pagina({
   params,
@@ -39,7 +39,7 @@ export default async function Pagina({
   if (!p) notFound();
   const moneda = monedaDelPais(Number(p.id_pais));
 
-  const [{ data: costos }, { data: tareas }, { data: ocs }, { data: res }, { data: pedidos }, { data: vendedores }] =
+  const [{ data: costos }, { data: tareas }, { data: ocs }, { data: res }, { data: pedidos }, { data: vendedores }, { data: aprob }, { data: maestro }] =
     await Promise.all([
       supabase.from("v_partida_costos").select("*").eq("id_proyecto", id).order("id"),
       supabase
@@ -55,7 +55,11 @@ export default async function Pagina({
         .order("id", { ascending: false }),
       supabase.from("v_proyecto_resumen").select("*").eq("id_proyecto", id).single(),
       supabase.from("pedidos").select("id, num_pedido, estado").eq("id_proyecto", id),
-      supabase.from("vendedores").select("id, nombre").eq("activo", true).order("nombre"),
+      supabase.from("vendedores").select("id, nombre, rol").eq("activo", true).order("nombre"),
+      supabase.from("proyecto_aprobadores").select("id, id_vendedor").eq("id_proyecto", id),
+      p.aprobacion_en
+        ? supabase.from("proyectos").select("id_proyecto, nombre").eq("id_proyecto", p.aprobacion_en).single()
+        : Promise.resolve({ data: null }),
     ]);
 
   const partidas = (costos ?? []).map((c) => ({
@@ -213,11 +217,13 @@ export default async function Pagina({
         )}
 
         {tab === "datos" && (
+          <div className="space-y-4">
           <FormProyecto
             id={id}
             inicial={{
               nombre: p.nombre as string,
               cliente: (p.cliente as string) ?? "",
+              id_cliente: p.id_cliente != null ? Number(p.id_cliente) : null,
               tipo: p.tipo,
               estado: p.estado,
               id_responsable: p.id_responsable != null ? Number(p.id_responsable) : null,
@@ -230,6 +236,19 @@ export default async function Pagina({
             puedeEditar={puedeEditar}
             etiquetaBoton="Editar"
           />
+          <AprobadoresProyecto
+            idProyecto={id}
+            aprobadores={(aprob ?? []).map((a) => ({
+              id: Number(a.id),
+              nombre: (vendedores ?? []).find((x) => Number(x.id) === Number(a.id_vendedor))?.nombre ?? "",
+            }))}
+            candidatos={(vendedores ?? [])
+              .filter((x) => x.rol === "Administrador" && !(aprob ?? []).some((a) => Number(a.id_vendedor) === Number(x.id)))
+              .map((x) => ({ id: Number(x.id), nombre: x.nombre as string }))}
+            heredaDe={maestro ? { id: Number(maestro.id_proyecto), nombre: maestro.nombre as string } : null}
+            puedeEditar={puedeEditar}
+          />
+          </div>
         )}
       </div>
     </div>
