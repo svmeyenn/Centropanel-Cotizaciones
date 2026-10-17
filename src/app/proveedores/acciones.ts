@@ -34,9 +34,10 @@ export async function crearProveedor(d: DatosProveedor) {
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("proveedores")
+    .from("entidades")
     .insert({
       razon_social: d.razon_social.trim(),
+      nombre_referencia: d.razon_social.trim(),
       rut: d.rut.trim(),
       contacto: d.contacto.trim(),
       email: d.email.trim(),
@@ -44,8 +45,15 @@ export async function crearProveedor(d: DatosProveedor) {
       direccion: d.direccion.trim(),
       ...(d.id_pais ? { id_pais: d.id_pais } : {}),
     })
-    .select("id, razon_social")
+    .select("id_entidad, razon_social")
     .single();
+
+  if (!error) {
+    const { error: errMarca } = await supabase
+      .from("entidad_tipos")
+      .insert({ id_entidad: data.id_entidad, tipo: "proveedor" });
+    if (errMarca) return { error: errMarca.message };
+  }
 
   if (error) {
     return {
@@ -57,7 +65,7 @@ export async function crearProveedor(d: DatosProveedor) {
   }
 
   revalidatePath("/proveedores");
-  return { ok: true, proveedor: data };
+  return { ok: true, proveedor: { id: data.id_entidad, razon_social: data.razon_social } };
 }
 
 export async function actualizarProveedor(id: number, d: DatosProveedor) {
@@ -67,9 +75,9 @@ export async function actualizarProveedor(id: number, d: DatosProveedor) {
   // frena lo que la modificacion deja en blanco.
   const etiqueta = await etiquetaIdDe(d.id_pais);
   const { data: actual } = await (await createClient())
-    .from("proveedores")
+    .from("entidades")
     .select("razon_social, rut, contacto, email, telefono, direccion")
-    .eq("id", id)
+    .eq("id_entidad", id)
     .single();
   const s = (x: string | null | undefined) => x ?? "";
   const faltan = nuevasFaltas(
@@ -94,7 +102,7 @@ export async function actualizarProveedor(id: number, d: DatosProveedor) {
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("proveedores")
+    .from("entidades")
     .update({
       razon_social: d.razon_social.trim(),
       rut: d.rut.trim(),
@@ -105,7 +113,7 @@ export async function actualizarProveedor(id: number, d: DatosProveedor) {
       ...(d.id_pais ? { id_pais: d.id_pais } : {}),
       activo: d.activo ?? true,
     })
-    .eq("id", id);
+    .eq("id_entidad", id);
 
   if (error) {
     return {
@@ -126,9 +134,9 @@ export async function cambiarActivoProveedor(id: number, activo: boolean) {
   if (err) return { error: err };
   const supabase = await createClient();
   const { error } = await supabase
-    .from("proveedores")
+    .from("entidades")
     .update({ activo })
-    .eq("id", id);
+    .eq("id_entidad", id);
   if (error) return { error: error.message };
   revalidatePath("/proveedores");
   return { ok: true };

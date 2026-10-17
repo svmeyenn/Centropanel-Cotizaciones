@@ -75,11 +75,11 @@ export default async function Pagina() {
   if (esAdmin) {
     const { data: provItems } = await supabase
       .from("proveedor_items")
-      .select("id, id_proveedor, id_producto, costo, moneda, activo, es_preferente, proveedores(razon_social)")
+      .select("id, id_proveedor, id_producto, costo, moneda, activo, es_preferente, entidades(razon_social)")
       .not("id_producto", "is", null)
       .order("id");
     for (const x of provItems ?? []) {
-      const pr = Array.isArray(x.proveedores) ? x.proveedores[0] : x.proveedores;
+      const pr = Array.isArray(x.entidades) ? x.entidades[0] : x.entidades;
       (proveedoresDe[Number(x.id_producto)] ??= []).push({
         id: Number(x.id),
         id_proveedor: Number(x.id_proveedor),

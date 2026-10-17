@@ -50,7 +50,7 @@ export default async function Pagina({
       supabase.rpc("necesidades_pedido", { p_pedido: id }),
       supabase
         .from("solicitudes")
-        .select("id, num_solicitud, estado, proveedores(razon_social)")
+        .select("id, num_solicitud, estado, entidades(razon_social)")
         .eq("id_pedido", id)
         .order("id"),
       supabase.from("v_pedido_cuenta").select("*").eq("id", id).single(),
@@ -168,7 +168,7 @@ export default async function Pagina({
     id: Number(s.id),
     num: s.num_solicitud as string,
     proveedor:
-      uno<{ razon_social: string }>(s.proveedores)?.razon_social ?? "",
+      uno<{ razon_social: string }>(s.entidades)?.razon_social ?? "",
     estado: s.estado as string,
     lineas: lineasPorSol.get(Number(s.id)) ?? 0,
   }));

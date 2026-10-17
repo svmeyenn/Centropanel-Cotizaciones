@@ -54,12 +54,12 @@ export default async function Pagina() {
   // Los proveedores de cada insumo, para elegir el preferente con un check en la ficha.
   const { data: provItems } = await supabase
     .from("proveedor_items")
-    .select("id, id_proveedor, id_materia_prima, costo, moneda, activo, es_preferente, proveedores(razon_social)")
+    .select("id, id_proveedor, id_materia_prima, costo, moneda, activo, es_preferente, entidades(razon_social)")
     .not("id_materia_prima", "is", null)
     .order("id");
   const proveedoresDe: Record<number, ProveedorDeItem[]> = {};
   for (const x of provItems ?? []) {
-    const pr = Array.isArray(x.proveedores) ? x.proveedores[0] : x.proveedores;
+    const pr = Array.isArray(x.entidades) ? x.entidades[0] : x.entidades;
     const k = Number(x.id_materia_prima);
     (proveedoresDe[k] ??= []).push({
       id: Number(x.id),

@@ -16,7 +16,10 @@ export default async function Pagina() {
   const supabase = await createClient();
   const { paises, esAdminGeneral, idPaisActivo } = await contextoMercado(v);
   const [{ data: proveedores }, { data: items }] = await Promise.all([
-    conPais(supabase.from("proveedores").select("*"), idPaisActivo).order("razon_social"),
+    conPais(
+      supabase.from("entidades").select("*, entidad_tipos!inner(tipo)").eq("entidad_tipos.tipo", "proveedor"),
+      idPaisActivo
+    ).order("razon_social"),
     supabase.from("proveedor_items").select("id_proveedor, costo"),
   ]);
 
@@ -32,7 +35,7 @@ export default async function Pagina() {
   }
 
   const filas = (proveedores ?? []).map((p) => ({
-    id: Number(p.id),
+    id: Number(p.id_entidad),
     razon_social: p.razon_social as string,
     rut: p.rut as string | null,
     contacto: p.contacto as string | null,
@@ -41,8 +44,8 @@ export default async function Pagina() {
     telefono: p.telefono as string | null,
     direccion: p.direccion as string | null,
     activo: Boolean(p.activo),
-    items: cuenta.get(Number(p.id)) ?? 0,
-    sin_costo: sinCosto.get(Number(p.id)) ?? 0,
+    items: cuenta.get(Number(p.id_entidad)) ?? 0,
+    sin_costo: sinCosto.get(Number(p.id_entidad)) ?? 0,
   }));
 
   return (

@@ -26,7 +26,7 @@ export default async function Pagina({
   const supabase = await createClient();
   const [{ data: prov }, { data: items }, { data: materias }, { data: productos }] =
     await Promise.all([
-      supabase.from("proveedores").select("*, paises(etiqueta_id, moneda_base)").eq("id", id).single(),
+      supabase.from("entidades").select("*, paises(etiqueta_id, moneda_base)").eq("id_entidad", id).single(),
       supabase
         .from("proveedor_items")
         .select(
@@ -68,20 +68,20 @@ export default async function Pagina({
     costo: number;
     moneda: string | null;
     es_preferente: boolean;
-    proveedores: { razon_social: string } | { razon_social: string }[] | null;
+    entidades: { razon_social: string } | { razon_social: string }[] | null;
   };
   const [{ data: otrosMp }, { data: otrosProd }] = await Promise.all([
     idsMp.length
       ? supabase
           .from("proveedor_items")
-          .select("id_materia_prima, id_producto, costo, moneda, es_preferente, proveedores(razon_social)")
+          .select("id_materia_prima, id_producto, costo, moneda, es_preferente, entidades(razon_social)")
           .in("id_materia_prima", idsMp)
           .neq("id_proveedor", id)
       : Promise.resolve({ data: [] as Otro[] }),
     idsProd.length
       ? supabase
           .from("proveedor_items")
-          .select("id_materia_prima, id_producto, costo, moneda, es_preferente, proveedores(razon_social)")
+          .select("id_materia_prima, id_producto, costo, moneda, es_preferente, entidades(razon_social)")
           .in("id_producto", idsProd)
           .neq("id_proveedor", id)
       : Promise.resolve({ data: [] as Otro[] }),
@@ -107,7 +107,7 @@ export default async function Pagina({
             : o.id_producto === it.id_producto
         )
         .map((o) => ({
-          proveedor: uno<{ razon_social: string }>(o.proveedores)?.razon_social ?? "",
+          proveedor: uno<{ razon_social: string }>(o.entidades)?.razon_social ?? "",
           costo: Number(o.costo),
           moneda: o.moneda ?? monedaMercado,
           preferente: Boolean(o.es_preferente),
