@@ -188,17 +188,20 @@ export async function cargarEnlacesRespaldo(
     if (!primeraRuta.has(fila.id_mov)) primeraRuta.set(fila.id_mov, fila.ruta);
   }
 
-  const firmadas = await Promise.all(
-    [...primeraRuta.entries()].map(async ([idMov, ruta]) => {
-      const { data: firmada } = await supabase.storage
-        .from(BUCKET_ADJUNTOS)
-        .createSignedUrl(ruta, 60 * 10);
-      return [idMov, firmada?.signedUrl ?? null] as const;
-    })
-  );
+  // Todos los enlaces en una sola llamada: firmarlos de a uno hacia una consulta al
+  // almacenamiento por cada movimiento en cada carga de la lista.
+  const entradas = [...primeraRuta.entries()];
+  if (entradas.length === 0) return {};
+  const { data: firmadas } = await supabase.storage
+    .from(BUCKET_ADJUNTOS)
+    .createSignedUrls(entradas.map(([, ruta]) => ruta), 60 * 10);
+  const porRuta = new Map((firmadas ?? []).map((f) => [f.path, f.signedUrl]));
 
   const enlaces: Record<number, string> = {};
-  for (const [idMov, url] of firmadas) if (url) enlaces[idMov] = url;
+  for (const [idMov, ruta] of entradas) {
+    const url = porRuta.get(ruta);
+    if (url) enlaces[idMov] = url;
+  }
   return enlaces;
 }
 
@@ -352,17 +355,19 @@ export async function cargarEnlacesBoletas(
   for (const fila of data ?? [])
     if (!primera.has(fila.id_gasto)) primera.set(fila.id_gasto, fila.ruta);
 
-  const firmadas = await Promise.all(
-    [...primera.entries()].map(async ([idGasto, ruta]) => {
-      const { data: firmada } = await supabase.storage
-        .from(BUCKET_BOLETAS)
-        .createSignedUrl(ruta, 60 * 10);
-      return [idGasto, firmada?.signedUrl ?? null] as const;
-    })
-  );
+  // Todos los enlaces en una sola llamada, no uno por gasto.
+  const entradas = [...primera.entries()];
+  if (entradas.length === 0) return {};
+  const { data: firmadas } = await supabase.storage
+    .from(BUCKET_BOLETAS)
+    .createSignedUrls(entradas.map(([, ruta]) => ruta), 60 * 10);
+  const porRuta = new Map((firmadas ?? []).map((f) => [f.path, f.signedUrl]));
 
   const enlaces: Record<number, string> = {};
-  for (const [id, url] of firmadas) if (url) enlaces[id] = url;
+  for (const [id, ruta] of entradas) {
+    const url = porRuta.get(ruta);
+    if (url) enlaces[id] = url;
+  }
   return enlaces;
 }
 
