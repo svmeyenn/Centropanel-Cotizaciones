@@ -60,6 +60,15 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
+    titulo: "Proyectos y compras",
+    nota: "Obras, presupuesto, cronograma y ordenes de compra",
+    opciones: [
+      { texto: "Proyectos", href: "/proyectos" },
+      { texto: "Ordenes de compra", href: "/compras" },
+      { texto: "Aprobadores de compra", href: "/compras/aprobadores", soloAdmin: true },
+    ],
+  },
+  {
     titulo: "Catalogo",
     nota: "Que vendemos y con que esta hecho",
     opciones: [

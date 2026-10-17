@@ -10,6 +10,7 @@ import type { FacturaVista } from "@/components/FacturaPedido";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import type { FichaCliente } from "@/components/VentanaCliente";
 import Link from "next/link";
+import ProyectoDelPedido from "@/components/ProyectoDelPedido";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,6 +35,7 @@ export default async function Pagina({
     { data: cta },
     { data: pagos },
     { data: fact },
+    { data: proyectosAct },
   ] = await Promise.all([
       supabase
         .from("pedidos")
@@ -70,6 +72,13 @@ export default async function Pagina({
         .eq("id_pedido", id)
         .order("fecha")
         .order("id"),
+      supabase
+        .from("proyectos")
+        .select("id_proyecto, nombre")
+        .eq("borrado", false)
+        .eq("activo", true)
+        .eq("tipo", "obra")
+        .order("nombre"),
     ]);
 
   if (!ped) notFound();
@@ -188,6 +197,20 @@ export default async function Pagina({
             Todos los pedidos
           </Link>
         </BarraNavegacion>
+        <ProyectoDelPedido
+          idPedido={id}
+          actual={
+            (proyectosAct ?? []).find((x) => Number(x.id_proyecto) === Number(ped.id_proyecto))
+              ? {
+                  id: Number(ped.id_proyecto),
+                  nombre: (proyectosAct ?? []).find((x) => Number(x.id_proyecto) === Number(ped.id_proyecto))!
+                    .nombre as string,
+                }
+              : null
+          }
+          proyectos={(proyectosAct ?? []).map((x) => ({ id: Number(x.id_proyecto), nombre: x.nombre as string }))}
+          puedeEditar={tienePerfilAdmin(v)}
+        />
       </div>
       <EditorPedido
         id={id}
