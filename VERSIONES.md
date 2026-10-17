@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0125-20261016**
+Version vigente: **v0126-20261016**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0126-20261016 | 16-10-2026 | Al asignar un item a un proveedor entra con costo cero (no el del insumo), inactivo y con alerta de costo pendiente en la maestra y en el listado de proveedores; proveedor preferente con check en la maestra y en la ficha del insumo y del producto. Base de datos: migracion item_proveedor_costo_cero_real | 0476f41, 10b61ec |
 | v0125-20261016 | 16-10-2026 | Clientes y proveedores ya cargados se pueden modificar: al grabar solo frena lo que la modificacion deja mal; lo que ya les faltaba se avisa como pendiente. Solo codigo | a10ade8 |
 | v0124-20261016 | 16-10-2026 | Items de proveedor sin costo quedan inactivos (solo esa relacion proveedor-item) hasta que se les asigna costo; corrige el error al asignar varios productos. Base de datos: migracion item_proveedor_sin_costo_inactivo; 38 items con costo 0 quedan inactivos | bedf601 |
 | v0123-20261016 | 16-10-2026 | Proveedor preferente por insumo o producto: define el costo (una sola cifra, en moneda local; USD con tipo de cambio por mercado). Recosteo automatico de paneles y de cotizaciones vigentes sin pedido; recosteo individual de pedidos sin factura. Base de datos: migraciones proveedor_preferente_*; respaldo en tablas zz_respaldo_20261016_*; ETSA (item 81) marcado como preferente | 6158047 |
