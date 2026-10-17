@@ -13,6 +13,7 @@ async function soloAdmin() {
 export interface DatosProyecto {
   nombre: string;
   cliente: string;
+  id_cliente: number | null;
   tipo: "obra" | "centro_costo";
   estado: string;
   id_responsable: number | null;
@@ -25,6 +26,7 @@ export interface DatosProyecto {
 const limpio = (d: DatosProyecto) => ({
   nombre: d.nombre.trim(),
   cliente: d.cliente.trim() || null,
+  id_cliente: d.id_cliente,
   tipo: d.tipo,
   estado: d.estado,
   id_responsable: d.id_responsable,
@@ -167,20 +169,32 @@ export async function asociarPedidoAProyecto(idPedido: number, idProyecto: numbe
   if (destino == null) {
     const { data: p } = await supabase
       .from("pedidos")
-      .select("num_pedido, id_pais, entidades:id_cliente(razon_social)")
+      .select("num_pedido, id_pais, id_cliente, entidades:id_cliente(razon_social)")
       .eq("id", idPedido)
       .single();
     if (!p) return { error: "El pedido no existe." };
     const cli = (Array.isArray(p.entidades) ? p.entidades[0] : p.entidades) as {
       razon_social: string;
     } | null;
+    // Los egresos de paneles se aprueban como un solo proyecto: el maestro "Paneles".
+    const { data: maestro } = await supabase
+      .from("proyectos")
+      .select("id_proyecto")
+      .eq("id_pais", p.id_pais)
+      .eq("nombre", "Paneles")
+      .is("cliente", null)
+      .eq("borrado", false)
+      .limit(1)
+      .maybeSingle();
     const { data: nuevo, error } = await supabase
       .from("proyectos")
       .insert({
         id_pais: p.id_pais,
         nombre: `Pedido ${p.num_pedido}`,
         cliente: cli?.razon_social ?? null,
+        id_cliente: p.id_cliente,
         num_pedido: p.num_pedido,
+        aprobacion_en: maestro?.id_proyecto ?? null,
       })
       .select("id_proyecto")
       .single();
@@ -192,4 +206,49 @@ export async function asociarPedidoAProyecto(idPedido: number, idProyecto: numbe
   revalidatePath(`/pedidos/${idPedido}`);
   revalidatePath("/proyectos");
   return { ok: true, id: destino };
+}
+
+// --- quien aprueba los gastos del proyecto -----------------------------------
+
+export async function asignarAprobador(idProyecto: number, idVendedor: number) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("proyecto_aprobadores")
+    .insert({ id_proyecto: idProyecto, id_vendedor: idVendedor });
+  if (error) return { error: error.code === "23505" ? "Ya es aprobador de este proyecto." : error.message };
+  revalidatePath(`/proyectos/${idProyecto}`);
+  return { ok: true };
+}
+
+export async function quitarAprobador(idProyecto: number, id: number) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  const supabase = await createClient();
+  const { error } = await supabase.from("proyecto_aprobadores").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath(`/proyectos/${idProyecto}`);
+  return { ok: true };
+}
+
+// Busca la ficha del cliente por nombre o RUT para enlazarla al proyecto.
+export async function buscarClientes(texto: string) {
+  await requerirVendedor();
+  const q = texto.replace(/[,()%*]/g, " ").trim();
+  if (q.length < 2) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("entidades")
+    .select("id_entidad, razon_social, rut, entidad_tipos!inner(tipo)")
+    .eq("entidad_tipos.tipo", "cliente")
+    .eq("activo", true)
+    .or(`razon_social.ilike.%${q}%,nombre_referencia.ilike.%${q}%,rut.ilike.%${q}%`)
+    .order("razon_social")
+    .limit(8);
+  return (data ?? []).map((e) => ({
+    id: Number(e.id_entidad),
+    razon_social: e.razon_social as string,
+    rut: (e.rut as string | null) ?? null,
+  }));
 }

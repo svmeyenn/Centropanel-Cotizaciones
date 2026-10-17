@@ -5,10 +5,9 @@ import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { dinero, fecha, monedaDelPais } from "@/lib/formato";
 import { COLOR_ESTADO, ESTADOS_OC } from "@/lib/compras";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
-
-const uno = <T,>(x: unknown): T | null => (Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null));
 
 export default async function Pagina({
   searchParams,

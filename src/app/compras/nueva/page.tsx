@@ -3,10 +3,9 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import NuevaOC from "@/components/NuevaOC";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
-
-const uno = <T,>(x: unknown): T | null => (Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null));
 
 export default async function Pagina({
   searchParams,

@@ -7,10 +7,9 @@ import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { COLOR_ESTADO } from "@/lib/compras";
 import { fecha } from "@/lib/formato";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
-
-const uno = <T,>(x: unknown): T | null => (Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null));
 
 export default async function Pagina({ params }: { params: Promise<{ id: string }> }) {
   const v = await requerirVendedor();

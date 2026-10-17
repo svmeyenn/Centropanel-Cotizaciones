@@ -262,36 +262,6 @@ function numero(s: string, rotulo: string, tope: number): number | null | "error
   return n;
 }
 
-export async function guardarProyectoCasa(idLead: number, d: DatosCasa): Promise<Resultado> {
-  const v = await requerirVendedor();
-  if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite editar leads." };
-
-  const campos = [
-    numero(d.metros2, "Los metros cuadrados", 1_000_000),
-    numero(d.uf, "El valor en UF", 10_000_000),
-    numero(d.clp, "El valor en pesos", 1e13),
-    numero(d.usd, "El valor en dolares", 1e10),
-    numero(d.pen, "El valor en soles", 1e11),
-  ];
-  const error = campos.find((c) => typeof c === "string");
-  if (error) return { ok: false, mensaje: error as string };
-  const [metros2, uf, clp, usd, pen] = campos as (number | null)[];
-
-  const supabase = await createClient();
-  const { data, error: errRpc } = await supabase.rpc("lead_guardar_casa", {
-    p_lead: idLead,
-    p_metros2: metros2,
-    p_uf: uf,
-    p_clp: clp,
-    p_usd: usd,
-    p_pen: pen,
-  });
-  if (errRpc) return { ok: false, mensaje: errRpc.message };
-
-  revalidatePath(`/leads/${idLead}`);
-  return { ok: true, mensaje: (data as string) ?? "Datos del proyecto guardados." };
-}
-
 // Guarda el proyecto con todas sus valorizaciones: la lista que llega reemplaza a la anterior.
 export interface FilaValorizacion {
   descripcion: string;

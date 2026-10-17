@@ -9,6 +9,7 @@ import { nombreImpuesto } from "@/lib/impuesto";
 import Bandera, { BanderaDe } from "@/components/Bandera";
 import { createClient } from "@/lib/supabase/server";
 import { fecha as fmtFecha, importe, monedaDelPais, coincideTelefono } from "@/lib/formato";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -131,9 +132,6 @@ export default async function Pagina({
     const k = Number(s.id_pedido);
     solPorPedido.set(k, (solPorPedido.get(k) ?? 0) + 1);
   }
-
-  const uno = <T,>(x: unknown): T | null =>
-    Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
   // Lo mismo que muestra la tabla, para bajarlo a una planilla.
   const filasExcel = (pedidos ?? []).map((p) => {

@@ -159,16 +159,3 @@ export async function actualizarCliente(id: number, d: DatosCliente) {
   return { ok: true };
 }
 
-// No se borra: se desactiva. Un cliente puede tener cotizaciones asociadas y
-// borrarlo dejaria historial huerfano (la FK ademas lo impediria).
-export async function cambiarActivoCliente(id: number, activo: boolean) {
-  const v = await requerirVendedor();
-  if (!v.puede_editar && !tienePerfilAdmin(v)) {
-    return { error: "Su perfil no permite modificar clientes." };
-  }
-  const supabase = await createClient();
-  const { error } = await supabase.from("clientes").update({ activo }).eq("id", id);
-  if (error) return { error: error.message };
-  revalidatePath("/clientes");
-  return { ok: true };
-}

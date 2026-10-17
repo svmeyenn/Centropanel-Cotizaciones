@@ -166,31 +166,6 @@ export interface Cotizacion {
   fecha_creacion: string;
 }
 
-export interface CotizacionDetalle {
-  id: number;
-  id_cotizacion: number;
-  orden: number;
-  id_producto: number | null;
-  descripcion: string;
-  unidades: number;
-  valor_unitario: number;
-  costo_unitario: number;
-}
-
-export interface CotizacionTotales {
-  id: number;
-  num_cotizacion: string | null;
-  subtotal: number;
-  descuento_monto: number;
-  descuento2_monto: number;
-  descuento3_monto: number;
-  descuento_total: number;
-  total_neto: number;
-  iva: number;
-  total: number;
-  margen: number;
-}
-
 // Placeholder de tipado generico para que @supabase/ssr no exija el esquema
 // completo generado por el CLI mientras no lo conectemos.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

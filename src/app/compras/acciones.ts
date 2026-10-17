@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
+import { requerirVendedor } from "@/lib/sesion";
 
 function refrescar(id?: number) {
   revalidatePath("/compras");
@@ -182,30 +182,5 @@ export async function solicitarPagoOC(
   if (error) return { error: error.message };
   refrescar(idOc);
   revalidatePath("/egresos");
-  return { ok: true };
-}
-
-// --- quien aprueba -----------------------------------------------------------
-
-export async function guardarAprobador(d: { id_pais: number; id_vendedor: number; monto_desde: number }) {
-  const v = await requerirVendedor();
-  if (!tienePerfilAdmin(v)) return { error: "Solo el administrador puede hacer esto." };
-  if (!(d.monto_desde >= 0)) return { error: "El monto no puede ser negativo." };
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("oc_aprobadores")
-    .upsert({ ...d, activo: true }, { onConflict: "id_pais,id_vendedor" });
-  if (error) return { error: error.message };
-  revalidatePath("/compras/aprobadores");
-  return { ok: true };
-}
-
-export async function quitarAprobador(id: number) {
-  const v = await requerirVendedor();
-  if (!tienePerfilAdmin(v)) return { error: "Solo el administrador puede hacer esto." };
-  const supabase = await createClient();
-  const { error } = await supabase.from("oc_aprobadores").delete().eq("id", id);
-  if (error) return { error: error.message };
-  revalidatePath("/compras/aprobadores");
   return { ok: true };
 }

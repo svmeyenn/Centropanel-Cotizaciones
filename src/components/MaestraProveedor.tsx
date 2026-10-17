@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState, useTransition } from "react";
-import { importe, leerMontoLibre, pesos } from "@/lib/formato";
+import { importe, leerMontoLibre } from "@/lib/formato";
 import {
   agregarItemProveedor,
   agregarItemsProveedor,

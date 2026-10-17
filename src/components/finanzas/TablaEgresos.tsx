@@ -116,6 +116,22 @@ export default function TablaEgresos({
             <span className="block text-[11px] text-gray-500">
               pedido el {fechaDeRegistro(m.fecha_registro)}
             </span>
+            <span
+              className={`inline-block mt-0.5 px-1.5 rounded text-[10px] font-semibold ${
+                m.aprobacion === "Aprobado"
+                  ? "bg-emerald-100 text-emerald-800"
+                  : m.aprobacion === "Rechazado"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-amber-100 text-amber-800"
+              }`}
+              title={m.motivo_rechazo ?? undefined}
+            >
+              {m.aprobacion === "Aprobado"
+                ? "Aprobado"
+                : m.aprobacion === "Rechazado"
+                  ? "Rechazado"
+                  : "Por aprobar"}
+            </span>
           </>
         )}
       </td>
@@ -191,7 +207,9 @@ export default function TablaEgresos({
             )}
             {puedePagar && m.estado_pago === "Pendiente" && (
               <button
-                className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded"
+                className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={m.aprobacion !== "Aprobado"}
+                title={m.aprobacion !== "Aprobado" ? "Falta la aprobacion del responsable del proyecto" : undefined}
                 onClick={() => setPagando(m)}
               >
                 Pagar

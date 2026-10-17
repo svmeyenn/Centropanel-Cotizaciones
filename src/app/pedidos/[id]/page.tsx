@@ -13,6 +13,7 @@ import Link from "next/link";
 import ProyectoDelPedido from "@/components/ProyectoDelPedido";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
+import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -96,9 +97,6 @@ export default async function Pagina({
     const k = Number(x.id_solicitud);
     lineasPorSol.set(k, (lineasPorSol.get(k) ?? 0) + 1);
   }
-
-  const uno = <T,>(x: unknown): T | null =>
-    Array.isArray(x) ? ((x[0] as T) ?? null) : ((x as T) ?? null);
 
   // Costo de cada linea: el pedido no lo guarda, asi que se trae de la
   // cotizacion que lo origino --el costo congelado al vender-- cruzando por
