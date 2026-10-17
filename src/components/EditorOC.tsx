@@ -289,7 +289,7 @@ export default function EditorOC({
                   Total
                 </td>
                 <td className="px-3 py-2 text-right">{dinero(oc.total, m)}</td>
-                <td colSpan={3} />
+                <td colSpan={1 + (recibible ? 1 : 0) + (borrador ? 1 : 0)} />
               </tr>
             </tfoot>
           </table>
