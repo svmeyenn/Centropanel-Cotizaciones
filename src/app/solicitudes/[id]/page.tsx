@@ -17,7 +17,7 @@ const leerSolicitud = cache(async (id: number) => {
   const { data } = await supabase
     .from("solicitudes")
     .select(
-      "*, proveedores(razon_social, rut, contacto, email, telefono, direccion), pedidos(num_pedido, tiempo_entrega, id_pais)"
+      "*, entidades(razon_social, rut, contacto, email, telefono, direccion), pedidos(num_pedido, tiempo_entrega, id_pais)"
     )
     .eq("id", id)
     .single();
@@ -75,7 +75,7 @@ export default async function Pagina({
     email: string | null;
     telefono: string | null;
     direccion: string | null;
-  }>(sol.proveedores);
+  }>(sol.entidades);
   const ped = uno<{ num_pedido: string; tiempo_entrega: string | null }>(
     sol.pedidos
   );
