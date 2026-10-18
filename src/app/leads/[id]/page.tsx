@@ -99,6 +99,7 @@ const CAMPOS_CAMBIO: Record<string, string> = {
   origen: "Origen",
   campana: "Campana",
   propietario: "Propietario",
+  reingreso: "Reingreso",
   estado: "Estado",
   linea: "Linea",
   pais: "Pais",
@@ -559,7 +560,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
                     <span className="font-semibold text-verde">
                       {CAMPOS_CAMBIO[x.campo] ?? x.campo}
                     </span>
-                    : {legible(x.campo, x.antes, cat.lead)} → {legible(x.campo, x.despues, cat.lead)}
+                    : {x.antes == null && (x.campo === "reingreso" || x.campo === "alta")
+                      ? x.despues
+                      : `${legible(x.campo, x.antes, cat.lead)} → ${legible(x.campo, x.despues, cat.lead)}`}
                   </div>
                 </li>
               ))}
