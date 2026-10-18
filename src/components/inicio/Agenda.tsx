@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { BanderaDe } from "@/components/Bandera";
 import { marcarAccionHecha, reabrirAccion } from "@/app/cotizaciones/actividad";
 import { marcarCompromisoHecho, reabrirCompromiso } from "@/app/leads/actividad-lead";
@@ -61,7 +61,27 @@ export default function Agenda({
   const [pendiente, empezar] = useTransition();
 
   const finSemana = sumarDias(lunes, 6);
-  const dias = useMemo(() => Array.from({ length: 14 }, (_, i) => sumarDias(lunes, i)), [lunes]);
+  // El calendario se recorre hacia atras con la barra de la derecha: hasta la
+  // semana del compromiso mas antiguo que sigue pendiente, y siempre al menos
+  // cuatro semanas, para poder mirar atras aunque no haya nada vencido.
+  const semanasAtras = useMemo(() => {
+    const masAntigua = items.reduce((m, x) => (x.fecha < m ? x.fecha : m), lunes);
+    return Math.min(52, Math.max(4, Math.ceil(diasEntre(masAntigua, lunes) / 7)));
+  }, [items, lunes]);
+  const semanas = useMemo(
+    () => Array.from({ length: semanasAtras + 2 }, (_, i) => i - semanasAtras),
+    [semanasAtras]
+  );
+  const calendario = useRef<HTMLDivElement>(null);
+  // Se abre mirando esta semana; lo anterior queda arriba, a un gesto.
+  useEffect(() => {
+    const cont = calendario.current;
+    const esta = cont?.querySelector<HTMLElement>("[data-semana-actual]");
+    const cab = cont?.querySelector<HTMLElement>("[data-cabecera-dias]");
+    // La etiqueta va centrada en su fila: la altura de la fila la da el primer dia.
+    const fila = (esta?.nextElementSibling as HTMLElement | null) ?? esta;
+    if (cont && fila) cont.scrollTop = fila.offsetTop - (cab?.offsetHeight ?? 0) - 4;
+  }, [semanasAtras]);
 
   // Las cifras del resumen llevan aqui con #agenda-hoy, #agenda-atrasado...
   useEffect(() => {
@@ -132,6 +152,7 @@ export default function Agenda({
       <div className="bg-verde text-white px-3 py-1.5 flex flex-wrap items-center justify-between gap-2">
         <h2 id="titulo-agenda" className="text-[11px] font-semibold uppercase">
           Agenda: esta semana y la proxima
+          <span className="ml-2 normal-case font-normal opacity-80">· la barra del calendario llega a semanas anteriores</span>
         </h2>
         <div className="flex flex-wrap gap-1 text-[10px]" role="group" aria-label="Que mostrar">
           {(["todos", "lead", "cotizacion", "entrega"] as const).map((t) => (
@@ -151,24 +172,35 @@ export default function Agenda({
       {/* El calendario: dos filas, una por semana. Cada dia dice cuantas cosas
           tiene; al pulsarlo la lista muestra solo ese dia. */}
       <div className="p-2 border-b border-gray-100">
-        <div className="grid grid-cols-[auto_repeat(7,minmax(0,1fr))] gap-1 text-[10px]">
-          <span />
-          {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((d) => (
-            <span key={d} className="text-center text-gray-500 uppercase">
-              {d}
-            </span>
-          ))}
-          {[0, 1].map((semana) => (
-            <Semana
-              key={semana}
-              titulo={semana === 0 ? "Esta" : "Proxima"}
-              dias={dias.slice(semana * 7, semana * 7 + 7)}
-              hoy={hoy}
-              items={porTipo}
-              filtro={filtro}
-              alElegir={(d) => setFiltro(filtro === d ? "todo" : d)}
-            />
-          ))}
+        <div
+          ref={calendario}
+          className="relative max-h-[6.1rem] overflow-y-auto overscroll-contain pr-1"
+          aria-label="Calendario: desplace hacia arriba para ver semanas anteriores"
+          tabIndex={0}
+        >
+          <div className="grid grid-cols-[auto_repeat(7,minmax(0,1fr))] gap-1 text-[10px]">
+            <span data-cabecera-dias className="sticky top-0 z-[2] bg-white" />
+            {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((d) => (
+              <span key={d} className="sticky top-0 z-[2] bg-white text-center text-gray-500 uppercase">
+                {d}
+              </span>
+            ))}
+            {semanas.map((n) => {
+              const inicio = sumarDias(lunes, n * 7);
+              return (
+                <Semana
+                  key={n}
+                  titulo={n === 0 ? "Esta" : n === 1 ? "Proxima" : n === -1 ? "Pasada" : diaCorto(inicio)}
+                  actual={n === 0}
+                  dias={Array.from({ length: 7 }, (_, i) => sumarDias(inicio, i))}
+                  hoy={hoy}
+                  items={porTipo}
+                  filtro={filtro}
+                  alElegir={(d) => setFiltro(filtro === d ? "todo" : d)}
+                />
+              );
+            })}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[10px] text-gray-600">
           {(["atrasado", "hoy", "semana", "proxima"] as const).map((f) => (
@@ -316,6 +348,7 @@ function tituloDia(clave: string, hoy: string, finSemana: string) {
 
 function Semana({
   titulo,
+  actual,
   dias,
   hoy,
   items,
@@ -323,6 +356,7 @@ function Semana({
   alElegir,
 }: {
   titulo: string;
+  actual: boolean;
   dias: string[];
   hoy: string;
   items: ItemAgenda[];
@@ -331,7 +365,10 @@ function Semana({
 }) {
   return (
     <>
-      <span className="self-center pr-1 text-[9px] uppercase text-gray-500 [writing-mode:vertical-rl] rotate-180 sm:[writing-mode:horizontal-tb] sm:rotate-0">
+      <span
+        {...(actual ? { "data-semana-actual": "" } : {})}
+        className="self-center pr-1 text-[9px] uppercase text-gray-500 [writing-mode:vertical-rl] rotate-180 sm:[writing-mode:horizontal-tb] sm:rotate-0"
+      >
         {titulo}
       </span>
       {dias.map((d) => {
