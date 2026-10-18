@@ -210,8 +210,18 @@ export async function asociarPedidoAProyecto(idPedido: number, idProyecto: numbe
 
 // --- quien aprueba los gastos del proyecto -----------------------------------
 
+// Elegir quien aprueba los gastos es del administrador general (Administrador
+// con mercado Ambos): si cualquier administrador pudiera, se podria nombrar a si
+// mismo aprobador de lo que el mismo pide.
+async function soloAdminGeneral() {
+  const v = await requerirVendedor();
+  if (!(tienePerfilAdmin(v) && v.mercado === "Ambos"))
+    return "Solo el administrador general puede elegir aprobadores.";
+  return null;
+}
+
 export async function asignarAprobador(idProyecto: number, idVendedor: number) {
-  const err = await soloAdmin();
+  const err = await soloAdminGeneral();
   if (err) return { error: err };
   const supabase = await createClient();
   const { error } = await supabase
@@ -223,7 +233,7 @@ export async function asignarAprobador(idProyecto: number, idVendedor: number) {
 }
 
 export async function quitarAprobador(idProyecto: number, id: number) {
-  const err = await soloAdmin();
+  const err = await soloAdminGeneral();
   if (err) return { error: err };
   const supabase = await createClient();
   const { error } = await supabase.from("proyecto_aprobadores").delete().eq("id", id);
