@@ -246,7 +246,7 @@ export default async function Pagina({
               .filter((x) => x.rol === "Administrador" && !(aprob ?? []).some((a) => Number(a.id_vendedor) === Number(x.id)))
               .map((x) => ({ id: Number(x.id), nombre: x.nombre as string }))}
             heredaDe={maestro ? { id: Number(maestro.id_proyecto), nombre: maestro.nombre as string } : null}
-            puedeEditar={puedeEditar}
+            puedeEditar={puedeEditar && v.mercado === "Ambos"}
           />
           </div>
         )}
