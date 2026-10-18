@@ -60,10 +60,14 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
-    titulo: "Proyectos y compras",
-    nota: "Obras, presupuesto, cronograma y ordenes de compra",
+    titulo: "Proyectos",
+    nota: "Obras, presupuesto y cronograma",
+    opciones: [{ texto: "Proyectos", href: "/proyectos" }],
+  },
+  {
+    titulo: "Compras",
+    nota: "Ordenes de compra a proveedores y su aprobacion",
     opciones: [
-      { texto: "Proyectos", href: "/proyectos" },
       { texto: "Ordenes de compra", href: "/compras" },
       { texto: "Por aprobar", href: "/aprobaciones", ve: (v) => v.rol === "Administrador" },
     ],
