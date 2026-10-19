@@ -10,7 +10,7 @@ import { ALCANCE_CONTACTOS, correoConfigurado, tokenPara } from "@/lib/gmail";
 export const contactosConfigurado = correoConfigurado;
 
 const API = "https://people.googleapis.com/v1";
-const GRUPO = "Leads Centropanel";
+const GRUPO = "Cliente";
 
 type Persona = { names?: { displayName?: string }[]; phoneNumbers?: { value?: string; canonicalForm?: string }[] };
 
@@ -32,7 +32,7 @@ async function llamar<T>(token: string, ruta: string, init: RequestInit = {}): P
 
 const soloDigitos = (s: string) => s.replace(/\D/g, "");
 
-// La etiqueta donde quedan todos los leads, para encontrarlos --o borrarlos-- juntos.
+// La etiqueta "Cliente": si ya existe en la libreta se usa, y si no se crea.
 async function grupoLeads(token: string): Promise<string | null> {
   try {
     const lista = await llamar<{ contactGroups?: { resourceName: string; name: string; groupType?: string }[] }>(token, "/contactGroups?pageSize=200");

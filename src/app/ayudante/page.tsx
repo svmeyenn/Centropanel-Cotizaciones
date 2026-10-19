@@ -20,7 +20,7 @@ export default async function Pagina() {
           <h2 className="font-semibold text-verde">Contactos en el telefono</h2>
           {listo ? (
             <p className="text-green-700 font-semibold">
-              Activo: al mandarle un WhatsApp a un lead, su contacto se guarda en Contactos de Google de {v.email ?? "su cuenta"}, con la etiqueta &quot;Leads Centropanel&quot;. Si el telefono tiene esa cuenta de Google sincronizada, WhatsApp lo muestra con su nombre.
+              Activo: al mandarle un WhatsApp a un lead, su contacto se guarda en Contactos de Google de {v.email ?? "su cuenta"}, con la etiqueta &quot;Cliente&quot;. Si el telefono tiene esa cuenta de Google sincronizada, WhatsApp lo muestra con su nombre.
             </p>
           ) : (
             <>
