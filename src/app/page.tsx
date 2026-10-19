@@ -195,16 +195,16 @@ async function VistaGestion({
     );
   }
 
-  // Los WhatsApp dejados para esta hora o antes: con un clic se abre el chat del contacto.
+  // Todo lo que esta dejado para despues --correos en la bandeja de salida de Outlook y WhatsApp por
+  // enviar--: arriba lo que ya cumplio su hora, debajo lo que aun no llega.
   const { data: progDb } = await supabase
     .from("mensajes_programados")
     .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, nombres_adjuntos, estado, clientify_contactos(nombre_completo, id_pais)")
-    .eq("canal", "whatsapp")
-    .eq("estado", "Programado")
+    .in("estado", ["Programado", "En bandeja de salida"])
     .eq("id_vendedor", v.id)
-    .lte("programado_para", new Date(Date.now() + 12 * 3600 * 1000).toISOString())
-    .order("programado_para");
-  const whatsappPorEnviar = (progDb ?? []).map((x) => {
+    .order("programado_para")
+    .limit(100);
+  const programados = (progDb ?? []).map((x) => {
     const lead = uno<{ nombre_completo: string | null; id_pais: number }>(x.clientify_contactos);
     return { ...(x as unknown as Programado), nombre: lead?.nombre_completo ?? "(sin nombre)", prefijo: lead?.id_pais === 2 ? "51" : "56" };
   });
@@ -238,7 +238,7 @@ async function VistaGestion({
 
       <ResumenGestion g={g} hrefLeads={hrefLeads} />
 
-      <MensajesProgramados items={whatsappPorEnviar} titulo="WhatsApp por enviar" mostrarLead />
+      <MensajesProgramados items={programados} titulo="Mensajes programados" mostrarLead ahoraInicial={new Date().toISOString()} />
 
       <Agenda items={g.agenda} hoy={g.hoy} lunes={g.lunes} puedeEditar={v.puede_editar} verResponsable={verEquipo} />
 
