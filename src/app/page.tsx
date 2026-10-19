@@ -6,6 +6,8 @@ import PestanasInicio from "@/components/inicio/PestanasInicio";
 import SelectorAlcance from "@/components/inicio/SelectorAlcance";
 import ResumenGestion from "@/components/inicio/ResumenGestion";
 import Agenda from "@/components/inicio/Agenda";
+import MensajesProgramados, { type Programado } from "@/components/MensajesProgramados";
+import { uno } from "@/lib/relaciones";
 import BandejaLeads from "@/components/inicio/BandejaLeads";
 import CotizacionesEnJuego from "@/components/inicio/CotizacionesEnJuego";
 import EnEsperaCliente from "@/components/inicio/EnEsperaCliente";
@@ -193,6 +195,20 @@ async function VistaGestion({
     );
   }
 
+  // Los WhatsApp dejados para esta hora o antes: con un clic se abre el chat del contacto.
+  const { data: progDb } = await supabase
+    .from("mensajes_programados")
+    .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, nombres_adjuntos, estado, clientify_contactos(nombre_completo, id_pais)")
+    .eq("canal", "whatsapp")
+    .eq("estado", "Programado")
+    .eq("id_vendedor", v.id)
+    .lte("programado_para", new Date(Date.now() + 12 * 3600 * 1000).toISOString())
+    .order("programado_para");
+  const whatsappPorEnviar = (progDb ?? []).map((x) => {
+    const lead = uno<{ nombre_completo: string | null; id_pais: number }>(x.clientify_contactos);
+    return { ...(x as unknown as Programado), nombre: lead?.nombre_completo ?? "(sin nombre)", prefijo: lead?.id_pais === 2 ? "51" : "56" };
+  });
+
   const equipo = (equipoDb ?? []) as { id: number; nombre: string }[];
   const verEquipo = g.quien == null;
   const nombreDe = equipo.find((p) => p.id === g.quien)?.nombre;
@@ -221,6 +237,8 @@ async function VistaGestion({
       </div>
 
       <ResumenGestion g={g} hrefLeads={hrefLeads} />
+
+      <MensajesProgramados items={whatsappPorEnviar} titulo="WhatsApp por enviar" mostrarLead />
 
       <Agenda items={g.agenda} hoy={g.hoy} lunes={g.lunes} puedeEditar={v.puede_editar} verResponsable={verEquipo} />
 

@@ -6,6 +6,7 @@ import BotonCotizarLead from "@/components/BotonCotizarLead";
 import FichaLead, { type DatosFicha } from "@/components/FichaLead";
 import ControlEspera from "@/components/ControlEspera";
 import MensajeLead from "@/components/MensajeLead";
+import MensajesProgramados, { type Programado } from "@/components/MensajesProgramados";
 import FusionLead from "@/components/FusionLead";
 import EnlacesInicio from "@/components/EnlacesInicio";
 import type { Plantilla } from "@/lib/mensajes";
@@ -232,6 +233,14 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           .order("id")
       : Promise.resolve({ data: [] }),
   ]);
+  // Lo que esta dejado para despues en este lead: correos en la bandeja de salida y WhatsApp por enviar.
+  const { data: programadosDb } = await supabase
+    .from("mensajes_programados")
+    .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, nombres_adjuntos, estado")
+    .eq("id_clientify", idContacto)
+    .in("estado", ["Programado", "En bandeja de salida"])
+    .order("programado_para");
+  const programados = ((programadosDb ?? []) as Programado[]).map((x) => ({ ...x, prefijo: codigoPais === "PE" ? "51" : "56" }));
   const cotizaciones = (cots ?? []) as CotizacionVinculada[];
   const oportunidades = (ops ?? []) as Oportunidad[];
   const notasClientify = (acts ?? []) as Actividad[];
@@ -318,6 +327,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             }}
           />
         )}
+
+        {puedeEscribir && <MensajesProgramados items={programados} titulo="Mensajes programados" mostrarLead={false} />}
 
         {exigeSeguimiento && !tieneTarea && (
           <BannerSinTarea sujeto="lead" estado={etiquetaDe(cat.lead, c.estado_efectivo)} ancla="conversaciones" puedeAgregar={puedeEscribir} />
