@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0128-20261018**
+Version vigente: **v0129-20261018**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0129-20261018 | 18-10-2026 | Reingresos de leads por Meta: cuando un contacto que ya era lead vuelve a escribir por Meta (mismo correo o telefono), queda anotado en su historial y aparece en la bandeja "Volvieron a contactar" del inicio, con "Visto" y "Reabrir" para los leads perdidos. Antes el reingreso pasaba inadvertido | 175d295 |
 | v0128-20261018 | 18-10-2026 | Modulos de proyectos y de compras: presupuesto por partidas, cronograma Gantt, ordenes de compra con recepcion, factura y pago, y aprobacion obligatoria de todo egreso por el aprobador del proyecto (los paneles aprueban como un solo proyecto), con bandeja Por aprobar. Proveedores unificados en la ficha unica de clientes y proveedores. Cliente enlazado en el proyecto, pedido asociado a su proyecto. Agenda del inicio con retroceso de semanas, estados de carga y error en todas las pantallas, limpieza de codigo sin uso | e8c5d43..d3066e2 |
 | v0127-20261017 | 17-10-2026 | Eficiencia y seguridad de la base de datos: funciones con privilegios elevados cerradas a quien no tiene sesion, reglas de acceso calculadas una vez por consulta en vez de fila por fila (listado de leads de 2-4 s a 50-140 ms, totales de cotizacion de 2,8 s a 15 ms), enlaces de adjuntos de finanzas firmados en una sola llamada, limpieza de funciones y reglas sin uso. Sin cambios de datos ni de visibilidad, verificado con usuarios simulados | 46fdd61 |
 | v0126-20261016 | 16-10-2026 | Al asignar un item a un proveedor entra con costo cero (no el del insumo), inactivo y con alerta de costo pendiente en la maestra y en el listado de proveedores; proveedor preferente con check en la maestra y en la ficha del insumo y del producto. Base de datos: migracion item_proveedor_costo_cero_real | 0476f41, 10b61ec |
