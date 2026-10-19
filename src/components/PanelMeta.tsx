@@ -28,7 +28,7 @@ const POR_PAGINA = 25;
 const GRUPOS: { clave: Grupo; titulo: string; ayuda: string }[] = [
   { clave: "diferencias", titulo: "Con diferencias", ayuda: "El lead existe pero un dato no coincide con Meta: corrijalo o sume el de Meta." },
   { clave: "faltantes", titulo: "Con datos por agregar", ayuda: "El lead existe y le faltan datos que Meta si tiene." },
-  { clave: "nuevo", titulo: "Nuevos", ayuda: "No hay ningun lead con ese email, telefono o nombre." },
+  { clave: "nuevo", titulo: "Nuevos", ayuda: "No hay ningun lead con ese email, telefono o nombre en esa fecha. El mismo telefono en otra fecha es un lead nuevo: se crea solo al cargar el archivo." },
   { clave: "al_dia", titulo: "Al dia", ayuda: "El lead ya tiene todo lo que trae Meta." },
   { clave: "ignorado", titulo: "Ignorados", ayuda: "Los que se dejaron de lado." },
 ];
