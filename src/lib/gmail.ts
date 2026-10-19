@@ -13,6 +13,8 @@ import { createSign } from "crypto";
 // Sin dependencias: se firma el JWT con crypto y se habla directo con las API.
 
 const ALCANCE = "https://www.googleapis.com/auth/gmail.send";
+// Para guardar contactos en la libreta de Google de la persona --la del telefono--.
+export const ALCANCE_CONTACTOS = "https://www.googleapis.com/auth/contacts";
 
 export function correoConfigurado(): boolean {
   return Boolean(process.env.GOOGLE_SA_EMAIL && process.env.GOOGLE_SA_KEY);
@@ -26,8 +28,8 @@ function b64url(x: Buffer | string): string {
     .replace(/\//g, "_");
 }
 
-// Token de acceso para actuar como `email`.
-async function tokenPara(email: string): Promise<string> {
+// Token de acceso para actuar como `email`, con el permiso `alcance`.
+export async function tokenPara(email: string, alcance: string = ALCANCE): Promise<string> {
   const cuenta = process.env.GOOGLE_SA_EMAIL!;
   // Vercel guarda los saltos de linea de la clave como "\n" literales.
   const clave = process.env.GOOGLE_SA_KEY!.replace(/\\n/g, "\n");
@@ -38,7 +40,7 @@ async function tokenPara(email: string): Promise<string> {
     JSON.stringify({
       iss: cuenta,
       sub: email,
-      scope: ALCANCE,
+      scope: alcance,
       aud: "https://oauth2.googleapis.com/token",
       iat: ahora,
       exp: ahora + 600,
