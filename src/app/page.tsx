@@ -6,7 +6,6 @@ import PestanasInicio from "@/components/inicio/PestanasInicio";
 import SelectorAlcance from "@/components/inicio/SelectorAlcance";
 import ResumenGestion from "@/components/inicio/ResumenGestion";
 import Agenda from "@/components/inicio/Agenda";
-import Reingresos, { type Reingreso } from "@/components/inicio/Reingresos";
 import BandejaLeads from "@/components/inicio/BandejaLeads";
 import CotizacionesEnJuego from "@/components/inicio/CotizacionesEnJuego";
 import EnEsperaCliente from "@/components/inicio/EnEsperaCliente";
@@ -149,7 +148,7 @@ async function VistaGestion({
   const [sgD, sgH] = partes(rango("rg_seg"));
   const [moD, moH] = partes(rango("rg_seg_monto"));
 
-  const [{ data, error }, { data: equipoDb }, { data: reingresosDb }, { data: estadosDb }] = await Promise.all([
+  const [{ data, error }, { data: equipoDb }] = await Promise.all([
     supabase.rpc("inicio_gestion", {
       p_pais: idPaisActivo,
       p_quien: pQuien,
@@ -181,14 +180,9 @@ async function VistaGestion({
           .in("mercado", mercado ? ["Ambos", mercado === "PE" ? "Peru" : "Chile"] : ["Ambos", "Chile", "Peru"])
           .order("nombre")
       : Promise.resolve({ data: [] }),
-    supabase.rpc("leads_reingresados", { p_quien: pQuien }),
-    supabase.from("estados_lead").select("codigo, etiqueta"),
   ]);
   const g = data as Gestion | null;
-  const reingresos = (reingresosDb ?? []) as Reingreso[];
-  const etiquetasEstado = Object.fromEntries(
-    ((estadosDb ?? []) as { codigo: string; etiqueta: string }[]).map((e) => [e.codigo, e.etiqueta])
-  );
+
 
   if (!g) {
     return (
@@ -227,14 +221,6 @@ async function VistaGestion({
       </div>
 
       <ResumenGestion g={g} hrefLeads={hrefLeads} />
-
-      <Reingresos
-        items={reingresos}
-        hoy={g.hoy}
-        etiquetasEstado={etiquetasEstado}
-        verPropietario={verEquipo}
-        puedeEditar={v.puede_editar}
-      />
 
       <Agenda items={g.agenda} hoy={g.hoy} lunes={g.lunes} puedeEditar={v.puede_editar} verResponsable={verEquipo} />
 
