@@ -136,6 +136,17 @@ export default async function Pagina({
       ? await supabase.rpc("leads_n_cotizaciones", { p_ids: contactos.map((c) => c.id_clientify) })
       : { data: [] };
   const nCot = new Map(((cuentasCot ?? []) as { id_clientify: number; n: number }[]).map((x) => [Number(x.id_clientify), Number(x.n)]));
+  // Lo que ya habia con este mismo contacto (mismo correo o telefono): otros leads suyos anteriores y los pedidos que ha hecho.
+  const { data: antecedentesDb } =
+    contactos.length > 0
+      ? await supabase.rpc("leads_antecedentes", { p_ids: contactos.map((c) => c.id_clientify) })
+      : { data: [] };
+  const antecedentes = new Map(
+    ((antecedentesDb ?? []) as { id_clientify: number; leads_previos: number; pedidos: number }[]).map((x) => [
+      Number(x.id_clientify),
+      x,
+    ])
+  );
   const filtros = (filtrosData ?? { estados: [], propietarios: [], total: 0 }) as Filtros;
   const total = count ?? 0;
   // Los que hay en el mercado que se esta mirando, sin filtros.
@@ -347,6 +358,8 @@ export default async function Pagina({
                 "Email",
                 "Campana",
                 "Cotizaciones",
+                "Leads previos",
+                "Pedidos",
                 "Propietario",
                 "Comuna",
                 "Region",
@@ -363,6 +376,8 @@ export default async function Pagina({
                 c.email,
                 c.campana,
                 nCot.get(c.id_clientify) ?? "",
+                antecedentes.get(c.id_clientify)?.leads_previos ?? "",
+                antecedentes.get(c.id_clientify)?.pedidos ?? "",
                 c.propietario,
                 c.comuna,
                 c.region,
@@ -399,14 +414,16 @@ export default async function Pagina({
             <colgroup>
               {puedeAsignar && <col className="w-[3%]" />}
               <col className="w-[6%]" />
-              <col className="w-[20%]" />
-              <col className="w-[10%]" />
-              <col className="w-[15%]" />
-              <col className="w-[12%]" />
+              <col className="w-[17%]" />
               <col className="w-[9%]" />
-              <col className="w-[9%]" />
-              <col className="w-[9%]" />
-              <col className="w-[7%]" />
+              <col className="w-[14%]" />
+              <col className="w-[11%]" />
+              <col className="w-[8%]" />
+              <col className="w-[8%]" />
+              <col className="w-[8%]" />
+              <col className="w-[6%]" />
+              <col className="w-[5%]" />
+              <col className="w-[5%]" />
             </colgroup>
             <thead className="bg-verde text-white">
               <tr>
@@ -424,12 +441,24 @@ export default async function Pagina({
                 <th className="text-left px-2 py-1.5">{esPeru ? "Departamento" : "Region"}</th>
                 <th className="text-left px-2 py-1.5">Estado</th>
                 <th className="text-center px-2 py-1.5">Cotizaciones</th>
+                <th
+                  className="text-center px-2 py-1.5"
+                  title="Otros leads de este mismo contacto (mismo correo o telefono) creados antes que este"
+                >
+                  Leads previos
+                </th>
+                <th
+                  className="text-center px-2 py-1.5"
+                  title="Pedidos que ha hecho este contacto, con este lead o con otros suyos"
+                >
+                  Pedidos
+                </th>
               </tr>
             </thead>
             <tbody>
               {contactos.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={12} className="px-3 py-8 text-center text-gray-400">
                     {totalMercado === 0
                       ? "Todavia no hay leads. Importe el archivo de leads."
                       : "Ningun contacto coincide con la busqueda."}
@@ -477,6 +506,10 @@ export default async function Pagina({
                     </td>
                     <td className="px-2 py-1 break-words">{nombreEstado(c.estado_efectivo)}</td>
                     <td className="px-2 py-1 text-center tabular-nums">{nCot.get(c.id_clientify) || ""}</td>
+                    <td className="px-2 py-1 text-center tabular-nums">{antecedentes.get(c.id_clientify)?.leads_previos || ""}</td>
+                    <td className="px-2 py-1 text-center tabular-nums font-semibold text-verde">
+                      {antecedentes.get(c.id_clientify)?.pedidos || ""}
+                    </td>
                   </tr>
                 ))
               )}
