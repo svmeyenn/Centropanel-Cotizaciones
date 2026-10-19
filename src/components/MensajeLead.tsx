@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { armarBorradorOutlook, registrarEnvioLead } from "@/app/leads/mensaje";
+import { armarBorradorOutlook, registrarEnvioLead, segundosDesdeUltimoWhatsapp } from "@/app/leads/mensaje";
 import { urlArchivoLead } from "@/app/leads/edicion-lead";
 import { aplicarPlantilla, normalizarFono, type Canal, type DatosMensaje, type Plantilla } from "@/lib/mensajes";
 
@@ -12,6 +12,10 @@ export type ArchivoAdjuntable = { id: number; nombre: string; tamano: number };
 const mb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
 type Aviso = { ok: boolean; texto: string } | null;
+
+// Pausa minima entre un WhatsApp y el siguiente: mandar uno tras otro sin pausa es lo que lleva a
+// WhatsApp a bloquear el numero.
+const PAUSA_WHATSAPP = 20;
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[11px] w-full bg-white";
 const ROTULO = "block text-[11px] font-semibold text-dorado-osc mb-0.5";
@@ -72,6 +76,9 @@ export default function MensajeLead({
   const [aviso, setAviso] = useState<Aviso>(null);
   const [ocupado, setOcupado] = useState(false);
   const ultimo = useRef({ clave: "", cuando: 0 });
+  // La espera entre WhatsApp: los segundos que faltan, y como cancelarla.
+  const [espera, setEspera] = useState<number | null>(null);
+  const cancelarEspera = useRef<(() => void) | null>(null);
   // Si el lead paso de "no contactado" a "contactado", la base lo dice al registrar.
   const nota = useRef("");
 
@@ -93,6 +100,9 @@ export default function MensajeLead({
       setDestino(t?.phone ?? "");
     }
   }, [canal, delCanal, emails, telefonos]);
+
+  // Si la pantalla se cierra mientras se espera el turno, no queda un reloj corriendo.
+  useEffect(() => () => cancelarEspera.current?.(), []);
 
   // Si el navegador sabe compartir archivos --telefono, o Windows con la hoja de compartir--.
   useEffect(() => {
@@ -126,6 +136,39 @@ export default function MensajeLead({
     setCuerpo(plantilla ? aplicarPlantilla(plantilla.cuerpo, d) : "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plantilla, folios.join("|"), editado]);
+
+  // Respeta la pausa entre WhatsApp: si el ultimo salio hace menos de 20 segundos, avisa y
+  // espera lo que falta. Devuelve false si la persona cancela la espera.
+  async function esperarTurno(): Promise<boolean> {
+    const desde = await segundosDesdeUltimoWhatsapp();
+    if (desde == null || desde >= PAUSA_WHATSAPP) return true;
+    let falta = Math.ceil(PAUSA_WHATSAPP - desde);
+    const primero = Math.round(desde);
+    setAviso({
+      ok: false,
+      texto: `Advertencia: solo pasaron ${primero} segundo${primero === 1 ? "" : "s"} desde el ultimo WhatsApp. Se espera a completar ${PAUSA_WHATSAPP} para que WhatsApp no bloquee el numero; el mensaje sale solo.`,
+    });
+    return new Promise<boolean>((resolver) => {
+      setEspera(falta);
+      const reloj = setInterval(() => {
+        falta -= 1;
+        if (falta <= 0) {
+          clearInterval(reloj);
+          cancelarEspera.current = null;
+          setEspera(null);
+          setAviso(null);
+          resolver(true);
+        } else setEspera(falta);
+      }, 1000);
+      cancelarEspera.current = () => {
+        clearInterval(reloj);
+        cancelarEspera.current = null;
+        setEspera(null);
+        setAviso({ ok: false, texto: "Se cancelo el envio. No quedo anotado en el lead." });
+        resolver(false);
+      };
+    });
+  }
 
   async function anotar() {
     // Cada envio queda anotado; solo se ignora el mismo toque repetido a los pocos segundos.
@@ -228,15 +271,17 @@ export default function MensajeLead({
   async function whatsapp() {
     setAviso(null);
     const fono = normalizarFono(destino, prefijoTelefono);
+    // La ventana se abre al pulsar --despues de una espera el navegador ya no la dejaria abrir--
+    // y se le da la direccion cuando llega el turno.
+    const ventana = window.open("about:blank", "_blank");
     setOcupado(true);
     try {
-      if (!(await anotar())) return;
+      if (!(await esperarTurno())) return void ventana?.close();
+      if (!(await anotar())) return void ventana?.close();
       if (claves.length > 0) await bajarPdfs();
-      window.open(
-        fono ? `https://wa.me/${fono}?text=${encodeURIComponent(cuerpo)}` : `https://wa.me/?text=${encodeURIComponent(cuerpo)}`,
-        "_blank",
-        "noopener,noreferrer"
-      );
+      const url = fono ? `https://wa.me/${fono}?text=${encodeURIComponent(cuerpo)}` : `https://wa.me/?text=${encodeURIComponent(cuerpo)}`;
+      if (ventana) ventana.location.href = url;
+      else window.open(url, "_blank", "noopener,noreferrer");
       setAviso({
         ok: true,
         texto:
@@ -247,6 +292,7 @@ export default function MensajeLead({
           (nota.current ? ` ${nota.current}` : ""),
       });
     } catch (e) {
+      ventana?.close();
       setAviso({ ok: false, texto: (e as Error).message });
     } finally {
       setOcupado(false);
@@ -263,6 +309,12 @@ export default function MensajeLead({
     const files = archivosListos as File[];
     if (!navigator.canShare?.({ files })) return setAviso({ ok: false, texto: "Este navegador no puede compartir esos archivos. Use \"Abrir WhatsApp\" y adjunte lo que se bajo." });
     setOcupado(true);
+    if (!(await esperarTurno())) return setOcupado(false);
+    // Tras esperar, el navegador ya no deja abrir la hoja de compartir sin un clic nuevo.
+    if (!navigator.userActivation?.isActive) {
+      setOcupado(false);
+      return setAviso({ ok: true, texto: "Ya pasaron los 20 segundos: pulse \"Compartir con los archivos\" otra vez para enviarlo." });
+    }
     try {
       // El texto tambien queda copiado, por si la aplicacion elegida no lo recibe junto con los archivos.
       navigator.clipboard?.writeText(cuerpo).catch(() => {});
@@ -491,6 +543,14 @@ export default function MensajeLead({
               )}
             </div>
 
+            {espera != null && (
+              <p className="flex flex-wrap items-center gap-2 text-amber-800 font-semibold" role="status" aria-live="polite">
+                <span>Sale en {espera} s</span>
+                <button type="button" onClick={() => cancelarEspera.current?.()} className="underline font-normal">
+                  Cancelar envio
+                </button>
+              </p>
+            )}
             {aviso && (
               <p className={aviso.ok ? "text-green-700" : "text-red-700"} role={aviso.ok ? "status" : "alert"}>
                 {aviso.texto}
