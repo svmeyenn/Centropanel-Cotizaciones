@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { GrupoVisible } from "@/lib/menu";
 import LOGO from "@/lib/logo";
 
@@ -36,12 +36,50 @@ export default function MenuLateral({
   const [abierto, setAbierto] = useState(false);
   const [sobre, setSobre] = useState<string | null>(null);
   const cierre = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const barra = useRef<HTMLElement>(null);
+  // Donde cae el panel abierto: se calcula para que quepa siempre entero en la
+  // pantalla, por largo que sea.
+  const [pos, setPos] = useState<{ top: number; left: number; alto: number } | null>(null);
 
   useEffect(() => {
     return () => {
       if (cierre.current) clearTimeout(cierre.current);
     };
   }, []);
+
+  const idDe = (titulo: string) => `grupo-${titulo.replace(/\s+/g, "-").toLowerCase()}`;
+
+  // El panel sale a la derecha del titulo, pero si por la altura de la pantalla
+  // no cabe se sube lo necesario, y si aun asi es mas alto que la pantalla, se
+  // le pone su propia barra de desplazamiento. Nunca queda una opcion fuera.
+  useLayoutEffect(() => {
+    if (!sobre) {
+      setPos(null);
+      return;
+    }
+    function medir() {
+      const panel = document.getElementById(idDe(sobre as string));
+      const grupo = panel?.parentElement;
+      const nav = barra.current;
+      if (!panel || !grupo || !nav || !window.matchMedia("(min-width: 1024px)").matches) {
+        setPos(null);
+        return;
+      }
+      const margen = 8;
+      const disponible = window.innerHeight - 2 * margen;
+      const natural = panel.scrollHeight + 2;
+      const alto = Math.min(natural, disponible);
+      const top = Math.min(
+        Math.max(grupo.getBoundingClientRect().top, margen),
+        window.innerHeight - margen - alto
+      );
+      setPos({ top, left: nav.getBoundingClientRect().right + 2, alto: disponible });
+    }
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sobre, grupos]);
 
   // Al cambiar de pantalla se cierra todo: el panel que quedo abierto sobre la
   // pantalla nueva es basura visual.
@@ -82,9 +120,10 @@ export default function MenuLateral({
       </button>
 
       <nav
+        ref={barra}
         className={`${
           abierto ? "block" : "hidden"
-        } lg:block print:hidden fixed lg:sticky top-0 left-0 z-30 w-56 h-screen shrink-0 bg-verde text-white overflow-y-auto lg:overflow-visible`}
+        } lg:block print:hidden fixed lg:sticky top-0 left-0 z-30 w-56 h-screen shrink-0 bg-verde text-white overflow-y-auto`}
       >
         <div className="bg-white px-3 pt-2 pb-1.5">
           <Link href="/" title="Volver al menu principal" className="flex items-center gap-2">
@@ -117,7 +156,7 @@ export default function MenuLateral({
           {grupos.map((g) => {
             const desplegado = sobre === g.titulo;
             const conLaRuta = tieneLaRuta(g);
-            const id = `grupo-${g.titulo.replace(/\s+/g, "-").toLowerCase()}`;
+            const id = idDe(g.titulo);
 
             return (
               <div
@@ -151,9 +190,14 @@ export default function MenuLateral({
                     que ahi las opciones van debajo, siempre a la vista. */}
                 <div
                   id={id}
+                  style={
+                    desplegado && pos
+                      ? ({ "--pt": `${pos.top}px`, "--pl": `${pos.left}px`, "--pa": `${pos.alto}px` } as React.CSSProperties)
+                      : undefined
+                  }
                   className={`${
                     desplegado ? "lg:block" : "lg:hidden"
-                  } block lg:absolute lg:left-full lg:top-0 lg:z-50 lg:ml-0.5 lg:w-60 lg:rounded lg:bg-verde lg:shadow-xl lg:border lg:border-white/15 lg:max-h-[70vh] lg:overflow-y-auto`}
+                  } block lg:fixed lg:top-[var(--pt)] lg:left-[var(--pl)] lg:max-h-[var(--pa)] lg:z-50 lg:w-60 lg:rounded lg:bg-verde lg:shadow-xl lg:border lg:border-white/15 lg:overflow-y-auto lg:overscroll-contain`}
                 >
                   <div className="hidden lg:block px-3 pt-2 pb-1 text-[10px] text-white/60">
                     {g.nota}
