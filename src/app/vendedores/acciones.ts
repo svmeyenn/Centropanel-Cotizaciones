@@ -132,6 +132,17 @@ export async function crearVendedor(d: DatosVendedor, password: string) {
   }
   const userId = alta.user?.id;
   if (!userId) return { error: "No se pudo crear el acceso." };
+  // Si el correo ya tiene acceso, Supabase no avisa: devuelve un usuario sin
+  // identidades y con un id que no existe. Sin esta revision la ficha fallaba
+  // despues con un error de llave foranea que no explicaba nada. Los accesos se
+  // comparten entre produccion y pruebas, asi que le pasa a quien ya fue creado
+  // en el otro ambiente.
+  if (alta.user && Array.isArray(alta.user.identities) && alta.user.identities.length === 0) {
+    return {
+      error:
+        "Ese correo ya tiene acceso al sistema (los accesos son los mismos en produccion y en pruebas). No hace falta crearlo de nuevo: solo falta su ficha en este ambiente, que se vincula a su acceso existente. Pidalo y se completa.",
+    };
+  }
 
   const { error } = await supabase.from("vendedores").insert({
     user_id: userId,
