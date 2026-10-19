@@ -30,7 +30,9 @@ export async function registrarEnvioLead(
   // Nombres de los archivos del lead que se adjuntan, para dejarlos en el registro.
   archivos: string[] = [],
   // Dias de la tarea de seguimiento: los del mensaje; vacio, los del mercado.
-  diasSeguimiento: number | null = null
+  diasSeguimiento: number | null = null,
+  // Si el mensaje queda programado: cuando sale. El seguimiento cuenta desde esa fecha.
+  programadoPara: string | null = null
 ): Promise<Resultado> {
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite escribirle a los leads." };
@@ -69,6 +71,9 @@ export async function registrarEnvioLead(
       [
         porEnviar.length > 0 ? `Cotizacion pasada a Enviada: ${porEnviar.map((c) => c.num_cotizacion ?? c.id).join(", ")}.` : "",
         archivos.length > 0 ? `Archivos del lead adjuntos: ${archivos.join(", ")}.` : "",
+        programadoPara
+          ? `Programado para ${new Date(programadoPara).toLocaleString("es-CL", { timeZone: "America/Santiago", dateStyle: "short", timeStyle: "short" })}.`
+          : "",
       ]
         .filter(Boolean)
         .join(" ") || null,
@@ -90,6 +95,24 @@ export async function registrarEnvioLead(
   revalidatePath("/cotizaciones");
   const base = (data as string) ?? "Anotado en el lead, con su tarea de seguimiento.";
   return { ok: true, mensaje: base + (porEnviar.length > 0 && !aviso ? " La cotizacion quedo como Enviada." : "") + aviso };
+}
+
+// Segundos desde el ultimo WhatsApp que mando esta persona, a cualquier lead; null si no ha mandado
+// ninguno. Se mide con la hora del servidor, no la del computador. Sirve para espaciar los envios:
+// WhatsApp bloquea los numeros que mandan mensajes uno tras otro sin pausa.
+export async function segundosDesdeUltimoWhatsapp(): Promise<number | null> {
+  const v = await requerirVendedor();
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lead_actividad")
+    .select("fecha_registro")
+    .eq("canal_envio", "whatsapp")
+    .eq("id_vendedor", v.id)
+    .order("fecha_registro", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data?.fecha_registro) return null;
+  return Math.max(0, (Date.now() - new Date(data.fecha_registro as string).getTime()) / 1000);
 }
 
 // Borrar el registro de un correo o WhatsApp --y su seguimiento--. La base solo
