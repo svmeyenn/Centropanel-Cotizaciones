@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { armarBorradorOutlook, registrarEnvioLead, segundosDesdeUltimoWhatsapp } from "@/app/leads/mensaje";
+import { armarBorradorOutlook, registrarEnvioLead } from "@/app/leads/mensaje";
+import { useTurnoWhatsapp } from "@/lib/turnoWhatsapp";
+import { programarMensaje } from "@/app/leads/programados";
+import { aBase64, estadoAyudante, outlookCorreo, whatsappAbrir, type AdjuntoB64, type EstadoAyudante } from "@/lib/ayudante";
 import { urlArchivoLead } from "@/app/leads/edicion-lead";
 import { aplicarPlantilla, normalizarFono, type Canal, type DatosMensaje, type Plantilla } from "@/lib/mensajes";
 
@@ -13,9 +16,16 @@ const mb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} M
 
 type Aviso = { ok: boolean; texto: string } | null;
 
-// Pausa minima entre un WhatsApp y el siguiente: mandar uno tras otro sin pausa es lo que lleva a
-// WhatsApp a bloquear el numero.
-const PAUSA_WHATSAPP = 20;
+const pad = (n: number) => String(n).padStart(2, "0");
+// Valor de un campo datetime-local: la hora de este computador.
+const paraCampo = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const manana9 = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(9, 0, 0, 0);
+  return paraCampo(d);
+};
+const cuandoLegible = (iso: string) => new Date(iso).toLocaleString("es-CL", { dateStyle: "full", timeStyle: "short" });
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[11px] w-full bg-white";
 const ROTULO = "block text-[11px] font-semibold text-dorado-osc mb-0.5";
@@ -74,11 +84,17 @@ export default function MensajeLead({
   const [cuerpo, setCuerpo] = useState("");
   const [editado, setEditado] = useState(false);
   const [aviso, setAviso] = useState<Aviso>(null);
+  // La pausa de 20 segundos entre un WhatsApp y el siguiente.
+  const { espera, esperarTurno, cancelar: cancelarEspera } = useTurnoWhatsapp(setAviso);
   const [ocupado, setOcupado] = useState(false);
   const ultimo = useRef({ clave: "", cuando: 0 });
-  // La espera entre WhatsApp: los segundos que faltan, y como cancelarla.
-  const [espera, setEspera] = useState<number | null>(null);
-  const cancelarEspera = useRef<(() => void) | null>(null);
+  // Dejarlo programado: el correo queda en la bandeja de salida de Outlook con su hora; el
+  // WhatsApp espera su hora en el sistema.
+  const [programar, setProgramar] = useState(false);
+  const [cuando, setCuando] = useState("");
+  // El ayudante del computador: undefined mientras se averigua, null si no esta instalado.
+  const [ayudante, setAyudante] = useState<EstadoAyudante | null | undefined>(undefined);
+  const conAyudante = Boolean(ayudante?.pareado);
   // Si el lead paso de "no contactado" a "contactado", la base lo dice al registrar.
   const nota = useRef("");
 
@@ -101,8 +117,13 @@ export default function MensajeLead({
     }
   }, [canal, delCanal, emails, telefonos]);
 
-  // Si la pantalla se cierra mientras se espera el turno, no queda un reloj corriendo.
-  useEffect(() => () => cancelarEspera.current?.(), []);
+  useEffect(() => {
+    let vigente = true;
+    estadoAyudante().then((e) => vigente && setAyudante(e));
+    return () => {
+      vigente = false;
+    };
+  }, []);
 
   // Si el navegador sabe compartir archivos --telefono, o Windows con la hoja de compartir--.
   useEffect(() => {
@@ -137,44 +158,21 @@ export default function MensajeLead({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plantilla, folios.join("|"), editado]);
 
-  // Respeta la pausa entre WhatsApp: si el ultimo salio hace menos de 20 segundos, avisa y
-  // espera lo que falta. Devuelve false si la persona cancela la espera.
-  async function esperarTurno(): Promise<boolean> {
-    const desde = await segundosDesdeUltimoWhatsapp();
-    if (desde == null || desde >= PAUSA_WHATSAPP) return true;
-    let falta = Math.ceil(PAUSA_WHATSAPP - desde);
-    const primero = Math.round(desde);
-    setAviso({
-      ok: false,
-      texto: `Advertencia: solo pasaron ${primero} segundo${primero === 1 ? "" : "s"} desde el ultimo WhatsApp. Se espera a completar ${PAUSA_WHATSAPP} para que WhatsApp no bloquee el numero; el mensaje sale solo.`,
-    });
-    return new Promise<boolean>((resolver) => {
-      setEspera(falta);
-      const reloj = setInterval(() => {
-        falta -= 1;
-        if (falta <= 0) {
-          clearInterval(reloj);
-          cancelarEspera.current = null;
-          setEspera(null);
-          setAviso(null);
-          resolver(true);
-        } else setEspera(falta);
-      }, 1000);
-      cancelarEspera.current = () => {
-        clearInterval(reloj);
-        cancelarEspera.current = null;
-        setEspera(null);
-        setAviso({ ok: false, texto: "Se cancelo el envio. No quedo anotado en el lead." });
-        resolver(false);
-      };
-    });
+  // La fecha elegida para dejarlo programado, ya validada; o el texto del error.
+  function fechaProgramada(): { iso: string; dias: number } | string {
+    if (!cuando) return "Elija la fecha y la hora.";
+    const f = new Date(cuando);
+    if (Number.isNaN(f.getTime()) || f.getTime() < Date.now() + 60000) return "La fecha y la hora deben ser futuras.";
+    // El seguimiento cuenta desde que sale el mensaje, no desde hoy.
+    const dias = Math.ceil((f.getTime() - Date.now()) / 86400000) + (plantilla?.dias_seguimiento ?? 3);
+    return { iso: f.toISOString(), dias };
   }
 
-  async function anotar() {
+  async function anotar(prog?: { programadoPara: string; dias: number }) {
     // Cada envio queda anotado; solo se ignora el mismo toque repetido a los pocos segundos.
-    const clave = `${canal}|${destino}|${asunto}|${cuerpo}|${folios.join(",")}|${nombresArchivos.join(",")}`;
+    const clave = `${canal}|${destino}|${asunto}|${cuerpo}|${folios.join(",")}|${nombresArchivos.join(",")}|${prog?.programadoPara ?? ""}`;
     if (ultimo.current.clave === clave && Date.now() - ultimo.current.cuando < 15000) return true;
-    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas, canal === "email" ? asunto : "", cuerpo, nombresArchivos, plantilla?.dias_seguimiento ?? null);
+    const r = await registrarEnvioLead(idLead, canal, plantilla?.nombre ?? "Mensaje libre", destino, folios, elegidas, canal === "email" ? asunto : "", cuerpo, nombresArchivos, prog?.dias ?? plantilla?.dias_seguimiento ?? null, prog?.programadoPara ?? null);
     if (!r.ok) {
       setAviso({ ok: false, texto: r.mensaje ?? "No se pudo anotar en el lead." });
       return false;
@@ -218,6 +216,117 @@ export default function MensajeLead({
     for (const k of claves) {
       const f = await traer(k);
       descargar(f.name, f);
+    }
+  }
+
+  async function adjuntosB64(): Promise<AdjuntoB64[]> {
+    const salida: AdjuntoB64[] = [];
+    for (const k of claves) {
+      const f = await traer(k);
+      salida.push({ nombre: f.name, base64: await aBase64(f) });
+    }
+    return salida;
+  }
+
+  const datosProgramado = (iso: string, estado: "Programado" | "En bandeja de salida") => ({
+    idLead,
+    canal,
+    programadoPara: iso,
+    destino,
+    asunto,
+    cuerpo,
+    plantilla: plantilla?.nombre ?? "Mensaje libre",
+    idsCotizacion: elegidas,
+    idsArchivo: archivosElegidos,
+    nombresAdjuntos: [...folios.map((f) => `${f}.pdf`), ...nombresArchivos],
+    estado,
+  });
+
+  // Correo directo a Outlook de escritorio, por el ayudante y desde la cuenta de quien escribe
+  // --stephan@centropanel.cl, por ejemplo--: se abre para revisarlo o, con fecha, queda en la
+  // bandeja de salida esperando su hora. Sin archivo que bajar ni abrir.
+  async function outlookDirecto() {
+    setAviso(null);
+    const desde = (datos.emailVendedor ?? "").trim();
+    if (!desde) return setAviso({ ok: false, texto: "Su ficha no tiene correo: el correo sale desde su cuenta de Centropanel. Pida que lo agreguen en Vendedores y accesos." });
+    let prog: { iso: string; dias: number } | null = null;
+    if (programar) {
+      const f = fechaProgramada();
+      if (typeof f === "string") return setAviso({ ok: false, texto: f });
+      prog = f;
+    }
+    setOcupado(true);
+    try {
+      const r = await outlookCorreo({ desde, para: destino, asunto, cuerpo, enviar_en: prog?.iso ?? null, adjuntos: await adjuntosB64() });
+      if (!r.ok) return setAviso({ ok: false, texto: r.motivo ?? "Outlook no pudo crear el correo." });
+      if (!(await anotar(prog ? { programadoPara: prog.iso, dias: prog.dias } : undefined))) return;
+      if (prog) {
+        const g = await programarMensaje(datosProgramado(prog.iso, "En bandeja de salida"));
+        setAviso({
+          ok: g.ok,
+          texto:
+            `Quedo en la bandeja de salida de Outlook (${desde}), programado para ${cuandoLegible(prog.iso)}. Outlook debe estar abierto a esa hora para enviarlo. Quedo anotado en el lead.` +
+            (g.ok ? "" : ` (No se pudo dejar en la lista de programados: ${g.mensaje})`) +
+            (nota.current ? ` ${nota.current}` : ""),
+        });
+      } else {
+        setAviso({ ok: true, texto: `Se abrio el correo en Outlook (${desde}) para revisarlo y enviarlo. Quedo anotado en el lead, con su tarea de seguimiento.` + (nota.current ? ` ${nota.current}` : "") });
+      }
+    } catch (e) {
+      setAviso({ ok: false, texto: (e as Error).message });
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  // WhatsApp programado: espera su hora en el sistema. A esa hora aparece en "Mi gestion" y en
+  // el lead, y con un clic se abre el chat del contacto con todo listo.
+  async function programarWhatsapp() {
+    setAviso(null);
+    const f = fechaProgramada();
+    if (typeof f === "string") return setAviso({ ok: false, texto: f });
+    setOcupado(true);
+    try {
+      // No se anota en el lead todavia: sale --y se anota-- cuando se abre el chat a la hora.
+      const g = await programarMensaje(datosProgramado(f.iso, "Programado"));
+      if (!g.ok) return setAviso({ ok: false, texto: g.mensaje ?? "No se pudo programar." });
+      setAviso({
+        ok: true,
+        texto: `Quedo programado para ${cuandoLegible(f.iso)}. Aparecera en Mi gestion y en este lead: al llegar la hora, un clic abre el chat con el mensaje y los archivos listos.` + (nota.current ? ` ${nota.current}` : ""),
+      });
+    } catch (e) {
+      setAviso({ ok: false, texto: (e as Error).message });
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  // WhatsApp de escritorio por el ayudante: abre el chat del contacto con el texto escrito y los
+  // archivos en el portapapeles, para pegarlos con Ctrl+V. Sin buscar a nadie.
+  async function whatsappDirecto() {
+    setAviso(null);
+    const fono = normalizarFono(destino, prefijoTelefono);
+    if (!fono) return setAviso({ ok: false, texto: "El numero no es valido." });
+    setOcupado(true);
+    try {
+      if (!(await esperarTurno())) return;
+      const r = await whatsappAbrir({ telefono: fono, texto: cuerpo, adjuntos: await adjuntosB64() });
+      if (!r.ok) return setAviso({ ok: false, texto: r.motivo ?? "El ayudante no pudo abrir WhatsApp." });
+      if (!(await anotar())) return;
+      const n = Number(r.archivos ?? 0);
+      setAviso({
+        ok: true,
+        texto:
+          (n > 0
+            ? `Se abrio el chat del contacto con el mensaje escrito. ${n === 1 ? "El archivo esta copiado" : `Los ${n} archivos estan copiados`}: pegue con Ctrl+V en el chat y envie.`
+            : "Se abrio el chat del contacto con el mensaje escrito: revíselo y envíelo.") +
+          " Quedo anotado en el lead, con su tarea de seguimiento." +
+          (nota.current ? ` ${nota.current}` : ""),
+      });
+    } catch (e) {
+      setAviso({ ok: false, texto: (e as Error).message });
+    } finally {
+      setOcupado(false);
     }
   }
 
@@ -492,17 +601,68 @@ export default function MensajeLead({
               />
             </div>
 
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <label className="inline-flex items-center gap-1.5 font-semibold">
+                <input
+                  type="checkbox"
+                  checked={programar}
+                  onChange={(e) => {
+                    setProgramar(e.target.checked);
+                    if (e.target.checked && !cuando) setCuando(manana9());
+                  }}
+                />
+                Dejarlo programado
+              </label>
+              {programar && (
+                <input
+                  type="datetime-local"
+                  aria-label="Fecha y hora de envio"
+                  value={cuando}
+                  min={paraCampo(new Date(Date.now() + 60000))}
+                  onChange={(e) => setCuando(e.target.value)}
+                  className={`${CAMPO} !w-auto`}
+                />
+              )}
+              <span className="text-[10px] text-gray-600">
+                {canal === "email"
+                  ? "Queda en la bandeja de salida de Outlook y sale a esa hora (Outlook debe estar abierto)."
+                  : "Queda en Mi gestion: a esa hora se abre el chat del contacto con un clic."}
+              </span>
+            </div>
+
+            {canal === "email" && !conAyudante && ayudante !== undefined && (
+              <p className="text-[10px] text-amber-700">
+                {ayudante === null ? "Para dejarlo en la bandeja de salida de Outlook, o abrirlo en Outlook sin bajar un archivo, instale el ayudante: " : "El ayudante esta instalado pero falta emparejarlo: "}
+                <a href="/ayudante" className="underline font-semibold" target="_blank" rel="noreferrer">
+                  {ayudante === null ? "como instalarlo" : "emparejar"}
+                </a>
+                .
+              </p>
+            )}
+
             <div className="flex flex-wrap gap-2">
               {canal === "email" ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={outlook}
-                    disabled={ocupado || sinContacto || !asunto.trim() || !cuerpo.trim()}
-                    className="bg-verde text-white font-semibold px-2.5 py-1 rounded disabled:opacity-50"
-                  >
-                    {ocupado ? "Preparando…" : "Borrador para Outlook de escritorio"}
-                  </button>
+                  {conAyudante && ayudante?.outlook ? (
+                    <button
+                      type="button"
+                      onClick={outlookDirecto}
+                      disabled={ocupado || preparando || sinContacto || !asunto.trim() || !cuerpo.trim()}
+                      className="bg-verde text-white font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+                    >
+                      {ocupado ? "Preparando…" : programar ? "Programar en Outlook" : "Abrir en Outlook"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={outlook}
+                      disabled={ocupado || sinContacto || programar || !asunto.trim() || !cuerpo.trim()}
+                      title={programar ? "Para programar hace falta el ayudante de Outlook" : undefined}
+                      className="bg-verde text-white font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+                    >
+                      {ocupado ? "Preparando…" : "Borrador para Outlook de escritorio"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={gmail}
@@ -512,9 +672,29 @@ export default function MensajeLead({
                     Abrir en Gmail
                   </button>
                 </>
+              ) : programar ? (
+                <button
+                  type="button"
+                  onClick={programarWhatsapp}
+                  disabled={ocupado || sinContacto || !cuerpo.trim()}
+                  className="bg-[#25D366] text-white font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+                >
+                  {ocupado ? "Programando…" : "Programar WhatsApp"}
+                </button>
               ) : (
                 <>
-                  {claves.length > 0 && puedeCompartir && (
+                  {conAyudante && (
+                    <button
+                      type="button"
+                      onClick={whatsappDirecto}
+                      disabled={ocupado || preparando || sinContacto || !cuerpo.trim()}
+                      className="bg-[#25D366] text-white font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+                      title="Abre el chat del contacto con el mensaje escrito y los archivos listos para pegar"
+                    >
+                      {preparando ? "Preparando archivos…" : "Abrir chat con los archivos"}
+                    </button>
+                  )}
+                  {claves.length > 0 && puedeCompartir && !conAyudante && (
                     <button
                       type="button"
                       onClick={compartirWhatsapp}
@@ -528,7 +708,7 @@ export default function MensajeLead({
                     type="button"
                     onClick={whatsapp}
                     disabled={ocupado || sinContacto || !cuerpo.trim()}
-                    className={`font-semibold px-2.5 py-1 rounded disabled:opacity-50 ${claves.length > 0 && puedeCompartir ? "border border-[#25D366] text-[#128C7E] bg-white" : "bg-[#25D366] text-white"}`}
+                    className={`font-semibold px-2.5 py-1 rounded disabled:opacity-50 ${conAyudante || (claves.length > 0 && puedeCompartir) ? "border border-[#25D366] text-[#128C7E] bg-white" : "bg-[#25D366] text-white"}`}
                   >
                     Abrir WhatsApp
                   </button>
@@ -546,7 +726,7 @@ export default function MensajeLead({
             {espera != null && (
               <p className="flex flex-wrap items-center gap-2 text-amber-800 font-semibold" role="status" aria-live="polite">
                 <span>Sale en {espera} s</span>
-                <button type="button" onClick={() => cancelarEspera.current?.()} className="underline font-normal">
+                <button type="button" onClick={cancelarEspera} className="underline font-normal">
                   Cancelar envio
                 </button>
               </p>
