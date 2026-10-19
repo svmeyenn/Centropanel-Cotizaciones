@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0131-20261019**
+Version vigente: **v0132-20261019**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0132-20261019 | 19-10-2026 | Leads de Meta indexados por telefono o correo y fecha: un registro de Meta es el mismo lead que uno existente solo si coincide su telefono, correo o nombre y la fecha (mismo dia en Chile, o menos de 6 horas); el mismo telefono en otra fecha es un lead nuevo, que se crea solo al cargar el archivo de Meta. Se crearon 52 leads de los ultimos 30 dias que faltaban. Reemplaza los reingresos de v0129, cuya tabla se respaldo y se elimino | 94b1957 |
 | v0131-20261019 | 19-10-2026 | Menu lateral: el panel de opciones de cada grupo siempre cabe entero en la pantalla --se sube si le falta alto y, si aun asi es mas alto que la pantalla, se desplaza con su propia barra--, de modo que ninguna opcion queda fuera de alcance | 91ea71c |
 | v0130-20261018 | 18-10-2026 | Lista de leads: dos columnas nuevas, Leads previos (otros leads del mismo contacto, por correo o telefono, creados antes) y Pedidos (los que ha hecho ese contacto, con ese lead o con otros suyos). Se calculan por pagina en menos de 150 ms | e44b6ab |
 | v0129-20261018 | 18-10-2026 | Reingresos de leads por Meta: cuando un contacto que ya era lead vuelve a escribir por Meta (mismo correo o telefono), queda anotado en su historial y aparece en la bandeja "Volvieron a contactar" del inicio, con "Visto" y "Reabrir" para los leads perdidos. Antes el reingreso pasaba inadvertido | 175d295 |
