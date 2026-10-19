@@ -6,7 +6,8 @@ import { requerirVendedor } from "@/lib/sesion";
 import { BUCKET_LEADS, puedeEscribirLeads } from "@/lib/leads";
 import { leerCotizacionDoc } from "@/lib/cotizacionDoc";
 import { archivoCotizacionPdf } from "@/lib/pdf/CotizacionPdf";
-import type { Canal } from "@/lib/mensajes";
+import { normalizarFono, type Canal } from "@/lib/mensajes";
+import { contactosConfigurado, guardarContacto } from "@/lib/contactosGoogle";
 import { codigoDeRol, tieneMarca } from "@/lib/catalogoEstados";
 import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import { cambiarEstado } from "@/app/cotizaciones/acciones";
@@ -90,11 +91,15 @@ export async function registrarEnvioLead(
     if (r && "error" in r && r.error) aviso += ` No se pudo pasar ${c.num_cotizacion ?? c.id} a Enviada: ${r.error}`;
   }
 
+  // Al mandarle un WhatsApp, el contacto queda guardado en Contactos de Google de quien escribe --la
+  // libreta del telefono--, para que WhatsApp lo muestre con su nombre. Si falla, el envio no se pierde.
+  if (canal === "whatsapp") aviso += await guardarEnTelefono(supabase, v.email, idLead, destino);
+
   revalidatePath(`/leads/${idLead}`);
   revalidatePath("/");
   revalidatePath("/cotizaciones");
   const base = (data as string) ?? "Anotado en el lead, con su tarea de seguimiento.";
-  return { ok: true, mensaje: base + (porEnviar.length > 0 && !aviso ? " La cotizacion quedo como Enviada." : "") + aviso };
+  return { ok: true, mensaje: base + (porEnviar.length > 0 && !aviso.trim().startsWith("No se pudo pasar") ? " La cotizacion quedo como Enviada." : "") + aviso };
 }
 
 // Segundos desde el ultimo WhatsApp que mando esta persona, a cualquier lead; null si no ha mandado
@@ -113,6 +118,37 @@ export async function segundosDesdeUltimoWhatsapp(): Promise<number | null> {
     .maybeSingle();
   if (!data?.fecha_registro) return null;
   return Math.max(0, (Date.now() - new Date(data.fecha_registro as string).getTime()) / 1000);
+}
+
+// Guarda el contacto del lead en la libreta de Google de quien le escribe. Devuelve el texto que se
+// agrega al aviso: vacio si no esta configurado o ya estaba guardado.
+async function guardarEnTelefono(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  correoDe: string | null,
+  idLead: number,
+  destino: string
+): Promise<string> {
+  if (!contactosConfigurado() || !correoDe) return "";
+  try {
+    const { data: lead } = await supabase
+      .from("v_leads")
+      .select("nombre_completo, empresa, email, id_pais")
+      .eq("id_clientify", idLead)
+      .maybeSingle();
+    const fono = normalizarFono(destino, lead?.id_pais === 2 ? "51" : "56");
+    if (!fono) return "";
+    const r = await guardarContacto({
+      de: correoDe,
+      nombre: (lead?.nombre_completo as string | null)?.trim() || `Lead ${idLead}`,
+      telefono: `+${fono}`,
+      email: (lead?.email as string | null) ?? null,
+      empresa: (lead?.empresa as string | null) ?? null,
+      nota: `Lead de Centro Panel (#${idLead}).`,
+    });
+    return r === "creado" ? " El contacto quedo guardado en los contactos de su telefono (Contactos de Google)." : "";
+  } catch (e) {
+    return ` (No se pudo guardar el contacto en el telefono: ${(e as Error).message})`;
+  }
 }
 
 // Borrar el registro de un correo o WhatsApp --y su seguimiento--. La base solo
