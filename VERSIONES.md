@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0134-20261019**
+Version vigente: **v0135-20261019**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0135-20261019 | 19-10-2026 | Los mensajes programados muestran el nombre y apellido del contacto, con su telefono o correo al lado | (pendiente) |
 | v0134-20261019 | 19-10-2026 | Los contactos que se guardan en Contactos de Google al mandar un WhatsApp llevan la etiqueta "Cliente" | 305a5f0 |
 | v0133-20261019 | 19-10-2026 | Mensajes a leads: se pueden dejar programados --el correo queda en la bandeja de salida de Outlook de la cuenta de Centropanel con su hora de entrega, y el WhatsApp espera su hora en el sistema--, visibles en el inicio separando los que ya cumplieron su hora de los que aun no llegan; pausa de 20 segundos entre un WhatsApp y el siguiente, con advertencia y espera; ayudante local para Outlook y WhatsApp (clave de emparejamiento, direcciones exactas); guardado del contacto en Contactos de Google al mandar un WhatsApp, a la espera de la autorizacion del administrador de Workspace; aviso claro al crear un usuario cuyo correo ya tiene acceso | 2947b7f..fad25ec |
 | v0132-20261019 | 19-10-2026 | Leads de Meta indexados por telefono o correo y fecha: un registro de Meta es el mismo lead que uno existente solo si coincide su telefono, correo o nombre y la fecha (mismo dia en Chile, o menos de 6 horas); el mismo telefono en otra fecha es un lead nuevo, que se crea solo al cargar el archivo de Meta. Se crearon 52 leads de los ultimos 30 dias que faltaban. Reemplaza los reingresos de v0129, cuya tabla se respaldo y se elimino | 94b1957 |

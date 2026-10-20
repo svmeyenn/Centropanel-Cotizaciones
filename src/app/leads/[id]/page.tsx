@@ -240,7 +240,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     .eq("id_clientify", idContacto)
     .in("estado", ["Programado", "En bandeja de salida"])
     .order("programado_para");
-  const programados = ((programadosDb ?? []) as Programado[]).map((x) => ({ ...x, prefijo: codigoPais === "PE" ? "51" : "56" }));
+  const programados = ((programadosDb ?? []) as Programado[]).map((x) => ({ ...x, nombre: c.nombre_completo || "(sin nombre)", prefijo: codigoPais === "PE" ? "51" : "56" }));
   const cotizaciones = (cots ?? []) as CotizacionVinculada[];
   const oportunidades = (ops ?? []) as Oportunidad[];
   const notasClientify = (acts ?? []) as Actividad[];
