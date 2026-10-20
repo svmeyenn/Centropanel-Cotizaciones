@@ -158,6 +158,25 @@ export default function MenuLateral({
             const conLaRuta = tieneLaRuta(g);
             const id = idDe(g.titulo);
 
+            // Configuracion no despliega nada: abre su pantalla, y ahi las
+            // opciones van como pestanas laterales.
+            if (g.pestanas) {
+              return (
+                <div key={g.titulo} className="px-2 py-0.5">
+                  <Link
+                    href={g.opciones[0].href}
+                    title={g.nota}
+                    aria-current={conLaRuta ? "page" : undefined}
+                    className={`block w-full rounded px-2 py-1.5 text-[11px] uppercase tracking-wide ${
+                      conLaRuta ? "bg-white/10 text-dorado font-bold" : "text-dorado/85 hover:bg-white/10"
+                    }`}
+                  >
+                    {g.titulo}
+                  </Link>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={g.titulo}
