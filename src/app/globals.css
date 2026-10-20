@@ -125,3 +125,72 @@ table.datos tbody tr:nth-child(even) {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* ---------------------------------------------------------------------------
+   Modulo de Configuracion: letra mas chica y controles parejos en todas sus
+   pantallas. Se aplica desde PestanasLaterales, que envuelve cada una; asi no
+   hay que tocar las nueve, y lo que se corrija aqui queda corregido en todas.
+   --------------------------------------------------------------------------- */
+.vista-config {
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+.vista-config .text-2xl { font-size: 1.0625rem; line-height: 1.4rem; }
+.vista-config .text-xl  { font-size: 0.9375rem; line-height: 1.3rem; }
+.vista-config .text-lg  { font-size: 0.875rem;  line-height: 1.25rem; }
+.vista-config .text-base { font-size: 0.75rem;  line-height: 1.15rem; }
+.vista-config .text-sm  { font-size: 0.6875rem; line-height: 1.1rem; }
+.vista-config .text-xs  { font-size: 0.625rem;  line-height: 1rem; }
+
+/* Menos aire alrededor: la pantalla se aprovecha para la tabla, no para el margen. */
+.vista-config .min-h-screen > .p-6,
+.vista-config .min-h-screen > .p-4,
+.vista-config .min-h-screen > div > .p-6,
+.vista-config .min-h-screen > div > .p-4 {
+  padding: 0.875rem 1rem;
+}
+
+/* Controles de formulario */
+.vista-config input:not([type="checkbox"]):not([type="radio"]),
+.vista-config select,
+.vista-config textarea {
+  font-size: 0.6875rem;
+  line-height: 1.1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.vista-config input:focus-visible,
+.vista-config select:focus-visible,
+.vista-config textarea:focus-visible {
+  outline: none;
+  border-color: #1D4E4A;
+  box-shadow: 0 0 0 2px rgba(29, 78, 74, 0.18);
+}
+.vista-config button {
+  font-size: 0.6875rem;
+  transition: background-color 0.12s, opacity 0.12s, border-color 0.12s;
+}
+.vista-config button:focus-visible,
+.vista-config a:focus-visible {
+  outline: 2px solid #C9A84C;
+  outline-offset: 1px;
+}
+.vista-config button:disabled { cursor: not-allowed; }
+
+/* Tablas: encabezado discreto, filas compactas y resaltado al pasar */
+.vista-config table { font-size: 0.6875rem; border-collapse: separate; border-spacing: 0; }
+.vista-config th {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.vista-config th,
+.vista-config td { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+.vista-config tbody tr { transition: background-color 0.1s; }
+.vista-config tbody tr:hover { background-color: rgba(201, 168, 76, 0.1); }
+.vista-config table { font-variant-numeric: tabular-nums; }
+.vista-config h2,
+.vista-config h3 { letter-spacing: 0.01em; }
