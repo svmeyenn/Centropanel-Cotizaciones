@@ -1,4 +1,5 @@
 import MenuLateral from "@/components/MenuLateral";
+import PestanasLaterales from "@/components/PestanasLaterales";
 import { ProveedorEstados } from "@/components/ProveedorEstados";
 import { catalogoEstados } from "@/lib/leerCatalogoEstados";
 import RecordatorioDatos from "@/components/RecordatorioDatos";
@@ -19,6 +20,8 @@ export default async function Estructura({
   const v = await requerirVendedor();
   const incompletos = await clientesIncompletos(v);
   const catalogo = await catalogoEstados();
+  const grupos = menuDe(v);
+  const config = grupos.find((g) => g.pestanas);
 
   return (
     <div className="flex min-h-screen">
@@ -26,14 +29,18 @@ export default async function Estructura({
         <RecordatorioDatos clientes={incompletos} idVendedor={v.id} />
       )}
       <MenuLateral
-        grupos={menuDe(v)}
+        grupos={grupos}
         nombre={v.nombre}
         rol={v.rol}
         version={VERSION}
         sandbox={ES_SANDBOX}
       />
       <div className="flex-1 min-w-0">
-        <ProveedorEstados catalogo={catalogo}>{children}</ProveedorEstados>
+        <ProveedorEstados catalogo={catalogo}>
+          <PestanasLaterales titulo={config?.titulo ?? ""} opciones={config?.opciones ?? []}>
+            {children}
+          </PestanasLaterales>
+        </ProveedorEstados>
       </div>
     </div>
   );

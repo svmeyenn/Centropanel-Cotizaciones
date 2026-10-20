@@ -23,6 +23,9 @@ export interface Opcion {
 export interface Grupo {
   titulo: string;
   nota: string;
+  // Sin panel desplegable: el titulo abre la primera pantalla y las demas quedan
+  // como pestanas laterales a la izquierda del contenido.
+  pestanas?: boolean;
   opciones: Opcion[];
 }
 
@@ -38,6 +41,7 @@ export interface OpcionVisible {
 export interface GrupoVisible {
   titulo: string;
   nota: string;
+  pestanas?: boolean;
   opciones: OpcionVisible[];
 }
 
@@ -131,6 +135,7 @@ export const GRUPOS: Grupo[] = [
   {
     titulo: "Configuracion",
     nota: "Reglas del sistema y quien entra",
+    pestanas: true,
     opciones: [
       // Las cuatro listas, cada una con su direccion: se entra derecho a la
       // que se va a tocar en vez de elegir una pestana al llegar.
@@ -196,6 +201,7 @@ export function menuDe(v: Vendedor): GrupoVisible[] {
   return GRUPOS.map((g) => ({
     titulo: g.titulo,
     nota: g.nota,
+    pestanas: g.pestanas,
     // Solo el texto y la direccion: lo que decide el permiso se queda en el
     // servidor.
     opciones: g.opciones
