@@ -27,7 +27,7 @@ $script = @'
 # instalarlo. Sin esa clave no hace nada: ninguna otra pagina web puede darle ordenes.
 param([string]$Clave = '')
 $ErrorActionPreference = 'Stop'
-$Version = '2'
+$Version = '3'
 $Puerto = 47931
 $Carpeta = Join-Path $env:LOCALAPPDATA 'CentropanelAyudante'
 $Origenes = @(
@@ -163,7 +163,21 @@ function Whatsapp-Abrir($d) {
   if ($d['solo_preparar']) { return @{ ok = $true; archivos = $rutas.Count; via = 'preparado' } }
   if (Whatsapp-Disponible) {
     Start-Process ("whatsapp://send?phone=$tel&text=$texto")
-    return @{ ok = $true; archivos = $rutas.Count; via = 'escritorio' }
+    # Con archivos, se espera a que el chat este abierto y se pegan solos: queda la vista
+    # previa con los adjuntos, lista para revisar y enviar.
+    $pegado = $false
+    if ($rutas.Count -gt 0) {
+      try {
+        Start-Sleep -Milliseconds 3500
+        $sh = New-Object -ComObject WScript.Shell
+        if ($sh.AppActivate('WhatsApp')) {
+          Start-Sleep -Milliseconds 500
+          $sh.SendKeys('^v')
+          $pegado = $true
+        }
+      } catch { }
+    }
+    return @{ ok = $true; archivos = $rutas.Count; via = 'escritorio'; pegado = $pegado }
   }
   Start-Process ("https://wa.me/$tel?text=$texto")
   return @{ ok = $true; archivos = $rutas.Count; via = 'web' }
