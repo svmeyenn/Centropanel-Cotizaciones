@@ -185,8 +185,9 @@ export default function MensajesProgramados({
               {p.nombre}
             </Link>
           ) : (
-            p.destino
+            (p.nombre ?? p.destino)
           )}
+          {p.nombre ? <span className="font-normal text-gray-600"> · {p.destino}</span> : null}
           {p.asunto ? <span className="font-normal text-gray-600"> · {p.asunto}</span> : null}
         </p>
         <p className={vencido ? "text-amber-900 font-semibold break-words" : "text-gray-600 break-words"}>
