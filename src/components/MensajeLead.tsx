@@ -318,7 +318,9 @@ export default function MensajeLead({
         ok: true,
         texto:
           (n > 0
-            ? `Se abrio el chat del contacto con el mensaje escrito. ${n === 1 ? "El archivo esta copiado" : `Los ${n} archivos estan copiados`}: pegue con Ctrl+V en el chat y envie.`
+            ? r.pegado
+              ? `Se abrio el chat del contacto con ${n === 1 ? "el archivo adjunto" : `los ${n} archivos adjuntos`} y el mensaje: revise y envie desde WhatsApp.`
+              : `Se abrio el chat del contacto con el mensaje escrito. ${n === 1 ? "El archivo esta copiado" : `Los ${n} archivos estan copiados`}: pegue con Ctrl+V en el chat y envie.`
             : "Se abrio el chat del contacto con el mensaje escrito: revíselo y envíelo.") +
           " Quedo anotado en el lead, con su tarea de seguimiento." +
           (nota.current ? ` ${nota.current}` : ""),

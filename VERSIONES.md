@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0137-20261019**
+Version vigente: **v0138-20261020**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0138-20261020 | 20-10-2026 | WhatsApp con archivos: el ayudante abre el chat del contacto y pega los adjuntos solo; queda revisar y enviar (ayudante v3, hay que reinstalarlo) | (pendiente) |
 | v0137-20261019 | 19-10-2026 | Configuracion: letra mas chica, tablas y controles parejos en todas sus pantallas | (pendiente) |
 | v0136-20261019 | 19-10-2026 | Configuracion ya no despliega un panel en el menu: abre su pantalla y las opciones quedan como pestanas laterales | (pendiente) |
 | v0135-20261019 | 19-10-2026 | Los mensajes programados muestran el nombre y apellido del contacto, con su telefono o correo al lado | a9deaad |
