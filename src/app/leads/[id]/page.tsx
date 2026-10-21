@@ -21,6 +21,7 @@ import { administraUsuarios, contextoMercado, requerirVendedor, tienePerfilAdmin
 import { createClient } from "@/lib/supabase/server";
 import { ESTADOS_OPORTUNIDAD, ETAPAS } from "@/lib/clientify";
 import { dinero, fecha, hoyISO, primerNombre } from "@/lib/formato";
+import { inferirGenero, type Genero } from "@/lib/genero";
 import { LINEAS, puedeEscribirLeads, type Linea } from "@/lib/leads";
 import { etiquetaDe, tieneMarca, type Estado } from "@/lib/catalogoEstados";
 import { catalogoEstados } from "@/lib/leerCatalogoEstados";
@@ -233,6 +234,10 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           .order("id")
       : Promise.resolve({ data: [] }),
   ]);
+  // El genero fijado a mano; sin eso, se infiere del primer nombre. Decide "Estimado/a", "interesado/a".
+  const { data: generoDb } = await supabase.rpc("lead_genero", { p_lead: idContacto });
+  const generoManual = generoDb === "F" || generoDb === "M" ? (generoDb as Genero) : null;
+  const generoAuto = inferirGenero(c.nombre) ?? inferirGenero(c.nombre_completo);
   // Lo que esta dejado para despues en este lead: correos en la bandeja de salida y WhatsApp por enviar.
   const { data: programadosDb } = await supabase
     .from("mensajes_programados")
@@ -317,6 +322,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             cotizaciones={cotizaciones.filter((q) => q.folio).map((q) => ({ id: q.id_cotizacion, folio: q.folio }))}
             archivos={archivos.map((a) => ({ id: a.id, nombre: a.nombre, tamano: a.tamano ?? 0 }))}
             datos={{
+              genero: generoManual ?? generoAuto,
+              generoVendedor: inferirGenero(v.nombre),
               nombre: primerNombre(c.nombre) || primerNombre(c.nombre_completo),
               nombreCompleto: c.nombre_completo ?? "",
               empresa: c.empresa ?? "",
@@ -337,6 +344,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         {/* Datos personales */}
         <FichaLead
           lead={{ ...c, con_tarea: tieneTarea }}
+          generoManual={generoManual}
+          generoAuto={generoAuto}
           codigoPais={codigoPais}
           paises={accesibles.map((p) => ({ id: p.id, nombre: p.nombre }))}
           propietarios={(propietariosDb ?? []) as { email: string; nombre: string }[]}

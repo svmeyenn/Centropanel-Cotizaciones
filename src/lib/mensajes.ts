@@ -2,6 +2,8 @@
 // mantenedor y aqui se llenan con los datos del lead y de quien escribe. Nada se
 // envia solo: el mensaje se arma, se revisa y lo manda la persona.
 
+import { tratos, type Genero } from "@/lib/genero";
+
 export type Canal = "email" | "whatsapp";
 
 export type Plantilla = {
@@ -29,9 +31,21 @@ export const MARCADORES: { marca: string; ayuda: string }[] = [
   { marca: "{CARGOVENDEDOR}", ayuda: "Cargo de quien escribe" },
   { marca: "{EMAILVENDEDOR}", ayuda: "Correo de quien escribe" },
   { marca: "{FONOVENDEDOR}", ayuda: "Telefono de quien escribe" },
+  // Concuerdan con el genero del contacto --el de su ficha o el que sale de su nombre--. Sin
+  // genero definido salen en doble forma: "Estimado/a", "interesado/a".
+  { marca: "{ESTIMADO}", ayuda: "Estimado / Estimada" },
+  { marca: "{SR}", ayuda: "Sr. / Sra." },
+  { marca: "{EL}", ayuda: "el / la, por ejemplo antes de un cargo: \"{EL} gerente\"" },
+  { marca: "{O}", ayuda: "o / a al final de una palabra del contacto: interesad{O}, agradecid{O}" },
+  // Concuerdan con el genero de quien escribe.
+  { marca: "{ATENTO}", ayuda: "atento / atenta, segun quien escribe: \"Quedo {ATENTO}\"" },
+  { marca: "{O_VENDEDOR}", ayuda: "o / a al final de una palabra de quien escribe: content{O_VENDEDOR}" },
 ];
 
 export type DatosMensaje = {
+  // Genero del contacto y de quien escribe; nulo, sin definir (se usan las formas dobles).
+  genero: Genero | null;
+  generoVendedor: Genero | null;
   nombre: string;
   nombreCompleto: string;
   empresa: string;
@@ -49,7 +63,15 @@ export function listarFolios(folios: string[]): string {
 }
 
 export function aplicarPlantilla(texto: string, d: DatosMensaje): string {
+  const c = tratos(d.genero);
+  const v = tratos(d.generoVendedor);
   return texto
+    .replace(/\{ESTIMADO\}/g, c.estimado)
+    .replace(/\{SR\}/g, c.sr)
+    .replace(/\{EL\}/g, c.el)
+    .replace(/\{O_VENDEDOR\}/g, v.o)
+    .replace(/\{O\}/g, c.o)
+    .replace(/\{ATENTO\}/g, v.atento)
     .replace(/\{NOMBRE_COMPLETO\}/g, d.nombreCompleto)
     .replace(/\{NOMBRE\}/g, d.nombre)
     .replace(/\{EMPRESA\}/g, d.empresa)

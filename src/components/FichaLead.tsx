@@ -7,6 +7,7 @@ import { fecha } from "@/lib/formato";
 import { LINEAS, type Linea } from "@/lib/leads";
 import { codigoDeRol, etiquetaDe, ordenados } from "@/lib/catalogoEstados";
 import { useCatalogoEstados } from "@/components/ProveedorEstados";
+import type { Genero } from "@/lib/genero";
 import { fijarEstadoLead, fijarLineaLead, guardarDatosLead } from "@/app/leads/edicion-lead";
 
 export interface DatosFicha {
@@ -47,6 +48,8 @@ const ROTULOS_GEO = {
   PE: { comuna: "Distrito", ciudad: "Provincia", region: "Departamento" },
 } as const;
 
+const NOMBRE_GENERO: Record<Genero, string> = { F: "Femenino", M: "Masculino" };
+
 const SUBTITULO =
   "text-[9px] font-semibold text-verde uppercase tracking-wider border-b border-gray-200 mb-1 pb-px";
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[11px] w-full bg-white";
@@ -72,8 +75,13 @@ export default function FichaLead({
   propietarios,
   puedeEditar,
   puedeCambiarPais,
+  generoManual,
+  generoAuto,
 }: {
   lead: DatosFicha;
+  // El genero fijado a mano y el que sale del nombre: deciden "Estimado/a" en los mensajes.
+  generoManual: Genero | null;
+  generoAuto: Genero | null;
   codigoPais: "CL" | "PE";
   // Los mercados entre los que quien administra puede mover un lead.
   paises: { id: number; nombre: string }[];
@@ -103,6 +111,7 @@ export default function FichaLead({
     apellido: lead.apellido ?? "",
     empresa: lead.empresa ?? "",
     cargo: lead.cargo ?? "",
+    genero: generoManual ?? "",
     telefonos: tels.map((t) => t.phone).join("\n"),
     emails: mails.map((e) => e.email).join("\n"),
     direccion: lead.direccion ?? "",
@@ -124,6 +133,7 @@ export default function FichaLead({
       apellido: lead.apellido ?? "",
       empresa: lead.empresa ?? "",
       cargo: lead.cargo ?? "",
+      genero: generoManual ?? "",
       telefonos: tels.map((t) => t.phone).join("\n"),
       emails: mails.map((e) => e.email).join("\n"),
       direccion: lead.direccion ?? "",
@@ -196,6 +206,13 @@ export default function FichaLead({
               <Dato etiqueta="Apellido">{lead.apellido}</Dato>
               <Dato etiqueta="Empresa">{lead.empresa}</Dato>
               <Dato etiqueta="Cargo">{lead.cargo}</Dato>
+              <Dato etiqueta="Genero (para los mensajes)">
+                {generoManual
+                  ? NOMBRE_GENERO[generoManual]
+                  : generoAuto
+                    ? `${NOMBRE_GENERO[generoAuto]} (por el nombre)`
+                    : "Sin definir: los mensajes usan Estimado/a"}
+              </Dato>
               <Dato etiqueta="Telefonos">
                 {tels.length > 0 && (
                   <ul>
@@ -299,6 +316,16 @@ export default function FichaLead({
             <label>
               <span className={ROTULO}>Cargo</span>
               <input className={CAMPO} value={form.cargo} onChange={poner("cargo")} maxLength={200} />
+            </label>
+            <label>
+              <span className={ROTULO}>Genero (para los mensajes)</span>
+              <select className={CAMPO} value={form.genero} onChange={poner("genero")}>
+                <option value="">
+                  {generoAuto ? `Segun el nombre: ${NOMBRE_GENERO[generoAuto]}` : "Sin definir (Estimado/a)"}
+                </option>
+                <option value="F">{NOMBRE_GENERO.F}</option>
+                <option value="M">{NOMBRE_GENERO.M}</option>
+              </select>
             </label>
             <label className="lg:col-span-2">
               <span className={ROTULO}>Telefonos (uno por linea, con codigo de pais)</span>
