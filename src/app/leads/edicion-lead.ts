@@ -24,6 +24,8 @@ export interface DatosLead {
   apellido: string;
   empresa: string;
   cargo: string;
+  // "F", "M" o vacio: vacio, el genero se infiere del nombre.
+  genero: string;
   emails: string;
   telefonos: string;
   direccion: string;
@@ -168,6 +170,13 @@ export async function guardarDatosLead(idLead: number, d: DatosLead): Promise<Re
       phone,
     }));
   }
+
+  // El genero fijado a mano: F o M; vacio lo deja a la inferencia por el nombre.
+  const generoNuevo = (d.genero ?? "").trim();
+  if (generoNuevo !== "" && generoNuevo !== "F" && generoNuevo !== "M")
+    return { ok: false, mensaje: "El genero no es valido." };
+  const { data: generoActual } = await supabase.rpc("lead_genero", { p_lead: idLead });
+  if (generoNuevo !== ((generoActual as string | null) ?? "")) cambios.genero = generoNuevo;
 
   // El propietario se elige de una lista; la base valida que sea uno de ella.
   const propNuevo = (d.propietario ?? "").trim().toLowerCase();
