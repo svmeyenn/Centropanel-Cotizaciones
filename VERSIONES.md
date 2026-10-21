@@ -9,7 +9,7 @@ Version vigente: **v0139-20261020**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
-| v0139-20261020 | 20-10-2026 | Mensajes a leads concuerdan con el genero: marcadores {ESTIMADO}, {SR}, {EL}, {O} (contacto) y {ATENTO}, {O_VENDEDOR} (quien escribe); el genero sale del nombre o se fija en la ficha del lead; sin definir, formas dobles (Estimado/a). Plantillas actuales actualizadas ("Quedo {ATENTO}", "interesad{O}") | (pendiente) |
+| v0139-20261020 | 20-10-2026 | Mensajes a leads concuerdan con el genero: marcadores {ESTIMADO}, {SR}, {EL}, {O} (contacto) y {ATENTO}, {O_VENDEDOR} (quien escribe); el genero sale del nombre o se fija en la ficha del lead; sin definir, formas dobles (Estimado/a). Plantillas actuales actualizadas ("Quedo {ATENTO}", "interesad{O}") | 477137e |
 | v0138-20261020 | 20-10-2026 | WhatsApp con archivos: el ayudante abre el chat del contacto y pega los adjuntos solo; queda revisar y enviar (ayudante v3, hay que reinstalarlo) | abfb100..bb90d97 |
 | v0137-20261019 | 19-10-2026 | Configuracion: letra mas chica, tablas y controles parejos en todas sus pantallas | abfb100..bb90d97 |
 | v0136-20261019 | 19-10-2026 | Configuracion ya no despliega un panel en el menu: abre su pantalla y las opciones quedan como pestanas laterales | abfb100..bb90d97 |
