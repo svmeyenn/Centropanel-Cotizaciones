@@ -358,6 +358,35 @@ export async function guardarPago(
   return { ok: true, mensaje: "Pago registrado." };
 }
 
+// Reversar un egreso pagado: vuelve a Pendiente y sale de la cartola. Solo el
+// Administrador, y con motivo. La base vuelve a comprobar el rol y rechaza lo que
+// no corresponde (conciliado con el banco, anticipo con rendiciones).
+export async function reversarEgreso(
+  _previo: Resultado | null,
+  datos: FormData
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador" || !puedeVerRuta(v, "/egresos"))
+    return { ok: false, mensaje: "Solo un Administrador puede reversar un egreso." };
+
+  const idMov = numeroONulo(datos.get("id_mov"));
+  const motivo = (textoONulo(datos.get("motivo")) ?? "").trim();
+  if (!idMov) return { ok: false, mensaje: "Falta identificar el egreso." };
+  if (motivo.length < 5)
+    return { ok: false, mensaje: "Escriba el motivo de la reversa (al menos 5 caracteres)." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("egreso_reversar", {
+    p_id_mov: idMov,
+    p_motivo: motivo,
+  });
+  if (error) return { ok: false, mensaje: error.message };
+
+  refrescarFinanzas();
+  revalidatePath("/compras");
+  return { ok: true, mensaje: (data as string) ?? "Pago reversado." };
+}
+
 export async function listarAdjuntos(
   idMov: number
 ): Promise<
