@@ -356,7 +356,7 @@ export default async function Pagina({
           cliente tiene que transferir. Facturado es lo que ya tiene factura
           emitida: un pedido pagado sigue pendiente de factura hasta que se
           registre. Un pedido con el pie pendiente no puede pedir insumos a los
-          proveedores.
+          proveedores, salvo que un administrador lo autorice en el pedido.
         </p>
       </div>
     </div>

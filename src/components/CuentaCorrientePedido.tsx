@@ -131,7 +131,7 @@ export default function CuentaCorrientePedido({
           ) : (
             <div className="bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded p-3">
               <strong>Falta el pie: {importe(faltaPie, moneda)}.</strong> Hasta que se
-              registre, no se generan solicitudes a proveedores: comprar antes
+              registre --o un administrador lo autorice en el recuadro de compras--, no se generan solicitudes a proveedores: comprar antes
               seria financiar la produccion con caja propia.
             </div>
           ))}
