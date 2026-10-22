@@ -156,6 +156,21 @@ export default async function Pagina({
   }>(ped.clientes);
   const ven = uno<{ nombre: string }>(ped.vendedores);
 
+  // Si un administrador autorizo generar solicitudes sin el pie completo: quien, cuando y por que.
+  let sinPie: { por: string; en: string; motivo: string } | null = null;
+  if (ped.sin_pie_autorizado_por != null) {
+    const { data: quien } = await supabase
+      .from("vendedores")
+      .select("nombre")
+      .eq("id", ped.sin_pie_autorizado_por)
+      .maybeSingle();
+    sinPie = {
+      por: (quien?.nombre as string | undefined) ?? "un administrador",
+      en: (ped.sin_pie_autorizado_en as string) ?? "",
+      motivo: (ped.sin_pie_motivo as string | null) ?? "",
+    };
+  }
+
   const filas: LineaVista[] = (lineas ?? []).map((l) => ({
     id: Number(l.id),
     sku: (l.sku as string | null) ?? null,
@@ -284,6 +299,7 @@ export default async function Pagina({
         puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
         puedeCrear={v.puede_crear || tienePerfilAdmin(v)}
         esAdmin={tienePerfilAdmin(v)}
+        autorizacionSinPie={sinPie}
         costoPorLinea={costoPorLinea}
         fichaCliente={cli ? (cli as unknown as FichaCliente) : null}
         prefijoTelefono={uno<{ prefijo_telefono: string }>(ped.paises)?.prefijo_telefono ?? "+56"}

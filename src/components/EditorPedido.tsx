@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia } from "@/lib/formato";
+import { fecha as fmtFecha, porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia } from "@/lib/formato";
 import BotonDuplicar from "@/components/BotonDuplicar";
 import BotonRecostearPedido from "@/components/BotonRecostearPedido";
 import GrupoCabecera from "@/components/GrupoCabecera";
@@ -28,6 +28,8 @@ import {
   actualizarLineasPedido,
   quitarLineaPedido,
   generarSolicitudes,
+  autorizarSinPie,
+  revocarSinPie,
   cambiarEstadoSolicitud,
   eliminarSolicitud,
   type DatosPedido,
@@ -79,6 +81,7 @@ export default function EditorPedido({
   puedeEditar,
   puedeCrear,
   esAdmin,
+  autorizacionSinPie = null,
   costoPorLinea,
   verMargen,
   lineasSinCosto = 0,
@@ -114,6 +117,8 @@ export default function EditorPedido({
   puedeEditar: boolean;
   puedeCrear: boolean;
   esAdmin: boolean;
+  // Si un administrador autorizo pedir insumos con el pie sin cubrir.
+  autorizacionSinPie?: { por: string; en: string; motivo: string } | null;
   // Costo unitario de cada linea, tomado de la cotizacion de origen: el
   // pedido no lo guarda. Solo llega a quien puede ver costos.
   costoPorLinea?: Record<number, number>;
@@ -135,6 +140,7 @@ export default function EditorPedido({
   const [sinProveedor, setSinProveedor] = useState<string[]>([]);
   const [pendiente, empezar] = useTransition();
   const [verFicha, setVerFicha] = useState(false);
+  const [motivoSinPie, setMotivoSinPie] = useState("");
 
   const soloLectura = !editable || !puedeEditar;
   const subtotal = ls.reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
@@ -648,6 +654,91 @@ export default function EditorPedido({
             </table>
           </div>
 
+          {necesidades.length > 0 && !cuenta.pie_cubierto && (
+            <div
+              className={`text-xs rounded border p-3 space-y-2 ${
+                autorizacionSinPie
+                  ? "bg-green-50 border-green-200 text-green-900"
+                  : "bg-amber-50 border-amber-300 text-amber-900"
+              }`}
+              role="status"
+            >
+              {autorizacionSinPie ? (
+                <>
+                  <p>
+                    <strong>Autorizado sin el pie completo</strong> por {autorizacionSinPie.por}
+                    {autorizacionSinPie.en && <> el {fmtFecha(autorizacionSinPie.en.slice(0, 10))}</>}
+                    {autorizacionSinPie.motivo && <>: {autorizacionSinPie.motivo}</>}
+                  </p>
+                  {esAdmin && (
+                    <button
+                      type="button"
+                      disabled={pendiente}
+                      className="border border-green-700 text-green-900 font-semibold px-2.5 py-0.5 rounded bg-white disabled:opacity-50"
+                      onClick={() =>
+                        empezar(async () => {
+                          setError(null);
+                          setAviso(null);
+                          const r = await revocarSinPie(id);
+                          if (r?.error) return setError(r.error);
+                          setAviso(r.mensaje ?? "Autorizacion revocada.");
+                          router.refresh();
+                        })
+                      }
+                    >
+                      Revocar autorizacion
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p>
+                    <strong>Falta el pie:</strong> se exigen {importe(cuenta.pie_monto, moneda)} y van abonados{" "}
+                    {importe(cuenta.abonado, moneda)}.{" "}
+                    {esAdmin
+                      ? "Puede autorizar que se generen las solicitudes de compra igual."
+                      : "Para generar las solicitudes de compra, un administrador debe autorizarlo en este pedido."}
+                  </p>
+                  {esAdmin && (
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="flex-1 min-w-[16rem]">
+                        <label htmlFor="motivo-sin-pie" className="block font-semibold mb-0.5">
+                          Motivo de la autorizacion
+                        </label>
+                        <input
+                          id="motivo-sin-pie"
+                          value={motivoSinPie}
+                          onChange={(e) => setMotivoSinPie(e.target.value)}
+                          maxLength={300}
+                          placeholder="Por ejemplo: cliente con orden de compra firmada, pago en camino"
+                          className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white text-negro"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        disabled={pendiente || motivoSinPie.trim().length < 5}
+                        className="bg-dorado-osc text-white font-semibold px-3 py-1 rounded disabled:opacity-40"
+                        onClick={() =>
+                          empezar(async () => {
+                            setError(null);
+                            setAviso(null);
+                            const r = await autorizarSinPie(id, motivoSinPie);
+                            if (r?.error) return setError(r.error);
+                            setMotivoSinPie("");
+                            setAviso(r.mensaje ?? "Autorizado.");
+                            router.refresh();
+                          })
+                        }
+                      >
+                        Autorizar sin el pie completo
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           {puedeCrear && necesidades.length > 0 && (
             <div className="flex flex-wrap gap-3 items-center">
               <button
@@ -673,20 +764,20 @@ export default function EditorPedido({
                     router.refresh();
                   })
                 }
-                disabled={pendiente || !cuenta.pie_cubierto}
+                disabled={pendiente || !(cuenta.pie_cubierto || autorizacionSinPie)}
                 className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40"
                 title={
-                  cuenta.pie_cubierto
+                  cuenta.pie_cubierto || autorizacionSinPie
                     ? undefined
-                    : "Falta el pie del cliente"
+                    : "Falta el pie del cliente: un administrador puede autorizar"
                 }
               >
                 {pendiente ? "Generando..." : "Generar solicitudes a proveedores"}
               </button>
               <span className="text-xs text-gray-500">
-                {cuenta.pie_cubierto
+                {cuenta.pie_cubierto || autorizacionSinPie
                   ? "Un documento por proveedor. Las ya emitidas no se tocan: para rehacer una hay que eliminarla."
-                  : "Primero hay que registrar el pie en la cuenta corriente."}
+                  : "Registre el pie en la cuenta corriente, o pida a un administrador que autorice."}
               </span>
             </div>
           )}

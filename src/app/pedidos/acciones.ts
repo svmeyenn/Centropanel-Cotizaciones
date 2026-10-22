@@ -163,6 +163,38 @@ export async function generarSolicitudes(idPedido: number) {
   };
 }
 
+// Autorizar que un pedido genere solicitudes de compra aunque su pie no este cubierto.
+// Es exclusivo de un administrador y deja anotado quien y por que; la base lo vuelve a exigir.
+export async function autorizarSinPie(idPedido: number, motivo: string) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) {
+    return { error: "Solo un administrador puede autorizar generar solicitudes sin el pie completo." };
+  }
+  if (motivo.trim().length < 5) {
+    return { error: "Escriba el motivo de la autorizacion (al menos 5 caracteres)." };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("pedido_autorizar_sin_pie", {
+    p_pedido: idPedido,
+    p_motivo: motivo.trim(),
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  return { ok: true, mensaje: (data as string) ?? "Autorizado." };
+}
+
+export async function revocarSinPie(idPedido: number) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) {
+    return { error: "Solo un administrador puede revocar la autorizacion." };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("pedido_revocar_sin_pie", { p_pedido: idPedido });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  return { ok: true, mensaje: (data as string) ?? "Autorizacion revocada." };
+}
+
 export async function cambiarEstadoSolicitud(
   id: number,
   idPedido: number,
