@@ -20,6 +20,7 @@ import {
 import DatosTransferencia from "./DatosTransferencia";
 import FormularioEgreso from "./FormularioEgreso";
 import DialogoPagar from "./DialogoPagar";
+import DialogoReversar from "./DialogoReversar";
 
 // El texto que agrega el banco a cada transferencia no aporta nada aqui: el
 // nombre de la contraparte ya se lee solo.
@@ -36,6 +37,8 @@ export default function TablaEgresos({
   vendedores,
   puedeSolicitar,
   puedePagar,
+  puedeReversar,
+  reversos,
   enlaces,
   hayFiltro,
 }: {
@@ -50,6 +53,10 @@ export default function TablaEgresos({
   vendedores: { id: number; nombre: string }[];
   puedeSolicitar: boolean;
   puedePagar: boolean;
+  // Reversar un pago es exclusivo del Administrador.
+  puedeReversar: boolean;
+  // El motivo de la ultima reversa de cada egreso que volvio a Pendiente.
+  reversos: Record<number, string>;
   enlaces: Record<number, string>;
   hayFiltro: boolean;
 }) {
@@ -57,6 +64,7 @@ export default function TablaEgresos({
   const [editando, setEditando] = useState<Movimiento | null>(null);
   const [creando, setCreando] = useState(false);
   const [pagando, setPagando] = useState<Movimiento | null>(null);
+  const [reversando, setReversando] = useState<Movimiento | null>(null);
   const [copiando, setCopiando] = useState<Movimiento | null>(null);
   const [aviso, setAviso] = useState("");
   const [colapsados, setColapsados] = useState<Set<string>>(new Set());
@@ -100,10 +108,11 @@ export default function TablaEgresos({
   const pagados = movimientos.filter((m) => m.estado_pago === "Pagado");
   const totalPendiente = pendientes.reduce((t, m) => t + Number(m.monto), 0);
   const grupos = agruparPorMes(pagados);
-  const columnas = 10 + (puedeEditar || puedePagar ? 1 : 0);
+  const conAcciones = puedeEditar || puedePagar || puedeReversar;
+  const columnas = 7 + (conAcciones ? 1 : 0);
 
   const fila = (m: Movimiento) => (
-    <tr key={m.id_mov} className="group border-t border-gray-100 hover:bg-crema">
+    <tr key={m.id_mov} className="group border-t border-gray-100 align-top hover:bg-crema">
       <td className="px-3 py-2 whitespace-nowrap">
         <BanderaDe idPais={m.id_pais} />
         {m.fecha ? (
@@ -132,45 +141,50 @@ export default function TablaEgresos({
                   ? "Rechazado"
                   : "Por aprobar"}
             </span>
+            {reversos[m.id_mov] && (
+              <span
+                className="block mt-0.5 text-[10px] font-semibold text-red-700"
+                title={`Pago reversado: ${reversos[m.id_mov]}`}
+              >
+                Pago reversado
+              </span>
+            )}
           </>
         )}
       </td>
-      <td className="px-3 py-2 truncate" title={etiquetaContraparte(m)}>
-        {etiquetaContraparte(m)}
+      {/* Destino y comentario juntos: el comentario dice de que es el gasto y se
+          lee mejor pegado a quien se le paga que en una columna aparte. */}
+      <td className="px-3 py-2" title={m.comentario ? `${etiquetaContraparte(m)}: ${m.comentario}` : etiquetaContraparte(m)}>
+        <span className="block font-semibold text-negro line-clamp-2 break-words">{etiquetaContraparte(m)}</span>
+        {m.comentario && <span className="block text-[11px] text-gray-600 line-clamp-2 break-words">{m.comentario}</span>}
       </td>
       <td className="px-3 py-2 tabular-nums" title={m.documento ?? ""}>
         <span className="block truncate">{m.documento ?? <span className="text-gray-400">—</span>}</span>
         {m.servicio_prestado ? (
           <span className="block text-[10px] text-verde font-semibold">Servicio prestado</span>
         ) : (
-          <span className="block text-[10px] text-gray-400">Servicio por prestar</span>
+          <span className="block text-[10px] text-gray-500">Servicio por prestar</span>
         )}
         {m.fecha_pago_acordada && (
           <span className="block text-[10px] text-gray-600">Pago acordado: {fechaCorta(m.fecha_pago_acordada)}</span>
         )}
       </td>
-      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
+      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-semibold text-negro">
         {pesos(m.monto)}
       </td>
-      <td className="px-3 py-2 hidden md:table-cell text-gray-600 truncate">
-        {nombreCuenta(m.id_cuenta)}
+      <td className="px-3 py-2" title={nombreProyecto(m.id_proyecto)}>
+        <span className="block text-gray-700 line-clamp-2 break-words">
+          {nombreProyecto(m.id_proyecto) || <span className="text-gray-500">Sin proyecto</span>}
+        </span>
+        <span className="block text-[11px] text-gray-600 truncate">{nombreCategoria(m.id_categoria)}</span>
       </td>
-      <td
-        className="px-3 py-2 hidden md:table-cell text-gray-600 truncate"
-        title={nombreProyecto(m.id_proyecto)}
-      >
-        {nombreProyecto(m.id_proyecto)}
+      <td className="px-3 py-2">
+        <span className="block text-gray-700 truncate" title={nombreCuenta(m.id_cuenta)}>{nombreCuenta(m.id_cuenta)}</span>
+        <span className="block text-[11px] text-gray-600 truncate" title={quienSolicito(m.id_vendedor)}>
+          {quienSolicito(m.id_vendedor) && `Solicito ${quienSolicito(m.id_vendedor)}`}
+        </span>
       </td>
-      <td className="px-3 py-2 hidden lg:table-cell text-gray-600 truncate">
-        {nombreCategoria(m.id_categoria)}
-      </td>
-      <td
-        className="px-3 py-2 hidden xl:table-cell text-gray-600 truncate"
-        title={m.comentario ?? ""}
-      >
-        {m.comentario}
-      </td>
-      <td className="px-3 py-2 hidden md:table-cell">
+      <td className="px-3 py-2">
         {enlaces[m.id_mov] ? (
           <a
             href={enlaces[m.id_mov]}
@@ -184,30 +198,14 @@ export default function TablaEgresos({
           <span className="text-gray-400">—</span>
         )}
       </td>
-      <td className="px-3 py-2 hidden xl:table-cell text-gray-600 truncate">
-        {quienSolicito(m.id_vendedor)}
-      </td>
-      {(puedeEditar || puedePagar) && (
-        // Anclada a la derecha: es la columna con la que se trabaja, y con
-        // diez columnas la tabla puede tener que desplazarse. Antes quedaba
-        // fuera de la pantalla y el boton de pagar no se veia.
-        <td className="px-3 py-2 whitespace-nowrap sticky right-0 bg-white group-hover:bg-crema border-l border-gray-100">
-          <div className="flex gap-1.5 justify-end">
-            {m.estado_pago === "Pendiente" && (
-              // Los datos de la transferencia se copian desde aqui: pagar es
-              // salir a la lista, abrir la ficha y volver, y en el camino se
-              // pierde el numero de cuenta.
-              <button
-                className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
-                onClick={() => setCopiando(m)}
-                title="Copiar los datos para transferir"
-              >
-                Datos
-              </button>
-            )}
+      {conAcciones && (
+        // Anclada a la derecha: es la columna con la que se trabaja. La accion
+        // principal --pagar-- va arriba y llena; las demas, debajo y mas livianas.
+        <td className="px-3 py-2 sticky right-0 bg-white group-hover:bg-crema border-l border-gray-100">
+          <div className="flex flex-col gap-1 items-stretch">
             {puedePagar && m.estado_pago === "Pendiente" && (
               <button
-                className="bg-verde text-white text-xs font-semibold px-2 py-0.5 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+                className="bg-verde text-white text-xs font-semibold px-2 py-1 rounded disabled:opacity-40 disabled:cursor-not-allowed"
                 disabled={m.aprobacion !== "Aprobado"}
                 title={m.aprobacion !== "Aprobado" ? "Falta la aprobacion del responsable del proyecto" : undefined}
                 onClick={() => setPagando(m)}
@@ -215,14 +213,37 @@ export default function TablaEgresos({
                 Pagar
               </button>
             )}
-            {puedeEditar && (
-              <button
-                className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
-                onClick={() => setEditando(m)}
-              >
-                Editar
-              </button>
-            )}
+            <div className="flex items-center justify-between gap-2 text-[11px] font-semibold">
+              {m.estado_pago === "Pendiente" && (
+                // Los datos de la transferencia se copian desde aqui: pagar es
+                // salir a la lista, abrir la ficha y volver, y en el camino se
+                // pierde el numero de cuenta.
+                <button
+                  className="text-verde underline underline-offset-2 hover:text-dorado-osc"
+                  onClick={() => setCopiando(m)}
+                  title="Copiar los datos para transferir"
+                >
+                  Datos
+                </button>
+              )}
+              {puedeEditar && (
+                <button
+                  className="text-gray-700 underline underline-offset-2 hover:text-dorado-osc"
+                  onClick={() => setEditando(m)}
+                >
+                  Editar
+                </button>
+              )}
+              {puedeReversar && m.estado_pago === "Pagado" && (
+                <button
+                  className="text-red-700 underline underline-offset-2 hover:text-red-900"
+                  onClick={() => setReversando(m)}
+                  title="Deshacer el pago: vuelve a Pendiente"
+                >
+                  Reversar
+                </button>
+              )}
+            </div>
           </div>
         </td>
       )}
@@ -295,34 +316,30 @@ export default function TablaEgresos({
 
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed text-xs">
+          <table className="w-full table-fixed min-w-[64rem] text-xs">
+            {/* Anchos pensados para lo que lleva cada columna: fecha, monto y
+                respaldo son cortos y fijos; destino y proyecto se reparten el resto
+                y parten el texto en dos lineas en vez de cortarlo. */}
+            <colgroup>
+              <col className="w-[8.5rem]" />
+              <col />
+              <col className="w-[9.5rem]" />
+              <col className="w-[8rem]" />
+              <col />
+              <col className="w-[10rem]" />
+              <col className="w-[4.5rem]" />
+              {conAcciones && <col className="w-[7.5rem]" />}
+            </colgroup>
             <thead className="bg-verde text-white">
               <tr>
-                <th className="text-left px-3 py-2 w-[12%]">Fecha de pago</th>
-                <th className="text-left px-3 py-2 w-[19%]">Destino</th>
-                <th className="text-left px-3 py-2 w-[9%]">Documento</th>
-                <th className="text-right px-3 py-2 w-[11%]">Monto</th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-[9%]">
-                  Cuenta
-                </th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-[14%]">
-                  Proyecto / Cliente
-                </th>
-                <th className="text-left px-3 py-2 hidden lg:table-cell w-[11%]">
-                  Categoria
-                </th>
-                <th className="text-left px-3 py-2 hidden xl:table-cell w-[12%]">
-                  Comentario
-                </th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-[7%]">
-                  Respaldo
-                </th>
-                <th className="text-left px-3 py-2 hidden xl:table-cell w-[10%]">
-                  Solicito
-                </th>
-                {(puedeEditar || puedePagar) && (
-                  <th className="px-3 py-2 w-[10%] min-w-[11rem] sticky right-0 bg-verde" />
-                )}
+                <th className="text-left px-3 py-2">Fecha de pago</th>
+                <th className="text-left px-3 py-2">Destino y comentario</th>
+                <th className="text-left px-3 py-2">Documento</th>
+                <th className="text-right px-3 py-2">Monto</th>
+                <th className="text-left px-3 py-2">Proyecto / Categoria</th>
+                <th className="text-left px-3 py-2">Cuenta / Solicitante</th>
+                <th className="text-left px-3 py-2">Respaldo</th>
+                {conAcciones && <th className="px-3 py-2 sticky right-0 bg-verde" aria-label="Acciones" />}
               </tr>
             </thead>
             <tbody>
@@ -401,6 +418,17 @@ export default function TablaEgresos({
           solicito={quienSolicito(copiando.id_vendedor)}
           enlaceRespaldo={enlaces[copiando.id_mov] ?? null}
           alCerrar={() => setCopiando(null)}
+        />
+      )}
+
+      {reversando && (
+        <DialogoReversar
+          movimiento={reversando}
+          alCerrar={(mensaje) => {
+            setReversando(null);
+            if (mensaje) setAviso(mensaje);
+            router.refresh();
+          }}
         />
       )}
 

@@ -54,6 +54,18 @@ export default async function Pagina({
   const { data: gente } = await supabase.from("vendedores").select("id, nombre");
   const vendedores = (gente ?? []) as { id: number; nombre: string }[];
 
+  // Los egresos que volvieron a Pendiente tras una reversa: se marcan con su motivo.
+  const reversos: Record<number, string> = {};
+  const idsPendientes = movimientos.filter((m) => m.estado_pago === "Pendiente").map((m) => m.id_mov);
+  if (idsPendientes.length > 0) {
+    const { data: rev } = await supabase
+      .from("egreso_reversos")
+      .select("id_mov, motivo, en")
+      .in("id_mov", idsPendientes)
+      .order("en", { ascending: true });
+    for (const r of rev ?? []) reversos[r.id_mov as number] = r.motivo as string;
+  }
+
   const filasExcel = movimientos.map((m) => {
     const inter = interlocutores.find(
       (x) => x.id_interlocutor === m.id_interlocutor
@@ -127,6 +139,8 @@ export default async function Pagina({
           vendedores={vendedores}
           puedeSolicitar={v.fin_solicitar_gastos}
           puedePagar={v.fin_pagar_gastos}
+          puedeReversar={v.rol === "Administrador"}
+          reversos={reversos}
           enlaces={enlaces}
           hayFiltro={hayFiltro}
         />
