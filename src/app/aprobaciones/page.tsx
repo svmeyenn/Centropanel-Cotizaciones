@@ -6,6 +6,7 @@ import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { monedaDelPais } from "@/lib/formato";
 import { uno } from "@/lib/relaciones";
+import { cargarEnlacesRespaldo } from "@/lib/finanzas/consultas";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,9 @@ export default async function Pagina() {
     })
   );
 
+  // El respaldo de cada egreso, para abrirlo sin salir de la bandeja.
+  const adjuntos = await cargarEnlacesRespaldo((egr ?? []).map((m) => Number(m.id_mov)));
+
   const quien = new Map((vend ?? []).map((x) => [Number(x.id), x.nombre as string]));
   const nombreProy = new Map(
     (proy ?? []).map((x) => [Number(x.id_proyecto), `${x.nombre}${x.cliente ? ` · ${x.cliente}` : ""}`])
@@ -84,8 +88,9 @@ export default async function Pagina() {
       moneda: monedaDelPais(Number(m.id_pais)),
       puede: puede.get(`${m.id_proyecto ?? 0}|${m.id_pais}`) ?? false,
       enlace: "/egresos",
+      adjunto: adjuntos[Number(m.id_mov)] ?? null,
     })),
-  ].sort((a, b) => Number(b.puede) - Number(a.puede) || a.fecha.localeCompare(b.fecha));
+  ].sort((a, b) => b.fecha.localeCompare(a.fecha));
 
   return (
     <div className="min-h-screen">

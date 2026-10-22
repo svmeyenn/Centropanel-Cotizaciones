@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0141-20261022**
+Version vigente: **v0142-20261022**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0142-20261022 | 22-10-2026 | Por aprobar: ordenado de lo mas reciente a lo mas antiguo, y los egresos llevan el enlace "Ver documento adjunto" | (pendiente) |
 | v0141-20261022 | 22-10-2026 | Pedidos: si el pie no esta cubierto, un administrador puede autorizar --con motivo, en el mismo recuadro de compras del pedido-- que se generen las solicitudes de compra a proveedores; queda anotado quien, cuando y por que, y se puede revocar | cec5335..9fcacaa |
 | v0140-20261022 | 22-10-2026 | Egresos: nueva distribucion de la lista (destino con su comentario, proyecto con categoria, cuenta con solicitante; anchos fijos para fecha, monto y respaldo; nada oculto por el ancho de pantalla; pagar como accion principal y Datos/Editar/Reversar debajo). Reversar el pago de un egreso: exclusivo del Administrador, con motivo, vuelve a Pendiente y sale de la cartola; no procede si esta conciliado con el banco ni si es un anticipo con rendiciones | cec5335..9fcacaa |
 | v0139-20261020 | 20-10-2026 | Mensajes a leads concuerdan con el genero: marcadores {ESTIMADO}, {SR}, {EL}, {O} (contacto) y {ATENTO}, {O_VENDEDOR} (quien escribe); el genero sale del nombre o se fija en la ficha del lead; sin definir, formas dobles (Estimado/a). Plantillas actuales actualizadas ("Quedo {ATENTO}", "interesad{O}") | 477137e |

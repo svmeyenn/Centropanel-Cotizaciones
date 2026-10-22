@@ -19,6 +19,8 @@ export interface ItemCola {
   moneda: string;
   puede: boolean;
   enlace: string;
+  // Enlace al respaldo adjunto, si lo tiene (los egresos).
+  adjunto?: string | null;
 }
 
 export default function ColaAprobacion({ items }: { items: ItemCola[] }) {
@@ -78,6 +80,16 @@ export default function ColaAprobacion({ items }: { items: ItemCola[] }) {
                       {i.titulo}
                     </Link>
                     <span className="block text-[11px] text-gray-500">{i.detalle}</span>
+                    {i.adjunto && (
+                      <a
+                        href={i.adjunto}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block mt-0.5 text-[11px] font-semibold text-verde underline underline-offset-2"
+                      >
+                        Ver documento adjunto
+                      </a>
+                    )}
                   </td>
                   <td className="px-3 py-2">{i.proyecto || "Sin proyecto"}</td>
                   <td className="px-3 py-2">{i.solicita}</td>
