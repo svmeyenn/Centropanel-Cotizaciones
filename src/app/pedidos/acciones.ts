@@ -28,9 +28,11 @@ export async function generarPedido(
 
   if (error) return { error: error.message };
 
+  // La base deja al lead como Cliente y rechaza sus otras cotizaciones abiertas.
   revalidatePath("/pedidos");
   revalidatePath(`/cotizaciones/${idCotizacion}`);
   revalidatePath("/cotizaciones");
+  revalidatePath("/leads");
   return { ok: true, id: Number(data) };
 }
 
