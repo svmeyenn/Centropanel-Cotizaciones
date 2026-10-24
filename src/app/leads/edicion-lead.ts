@@ -413,3 +413,25 @@ export async function urlArchivoLead(
   if (error || !data) return { error: error?.message ?? "No se pudo abrir el archivo." };
   return { url: data.signedUrl };
 }
+
+// Poner o sacar la marca de "trabajo previo": el lead necesita desarrollo, investigacion o calculos
+// mas sofisticados antes de responder. Cualquiera que pueda editar leads; la base lo vuelve a exigir.
+export async function marcarTrabajoPrevio(idLead: number, activo: boolean, nota: string): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite editar leads." };
+  if (!Number.isInteger(idLead)) return { ok: false, mensaje: "Falta el lead." };
+  if (nota.trim().length > 300) return { ok: false, mensaje: "La nota es demasiado larga (maximo 300 caracteres)." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lead_trabajo_previo_marcar", {
+    p_lead: idLead,
+    p_activo: activo,
+    p_nota: nota.trim() || null,
+  });
+  if (error) return { ok: false, mensaje: error.message };
+
+  revalidatePath(`/leads/${idLead}`);
+  revalidatePath("/leads");
+  revalidatePath("/");
+  return { ok: true, mensaje: (data as string) ?? "Listo." };
+}

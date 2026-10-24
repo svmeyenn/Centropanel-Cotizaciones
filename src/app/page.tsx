@@ -13,7 +13,8 @@ import CotizacionesEnJuego from "@/components/inicio/CotizacionesEnJuego";
 import EnEsperaCliente from "@/components/inicio/EnEsperaCliente";
 import PanelLeads from "@/components/inicio/PanelLeads";
 import Cumplimiento from "@/components/inicio/Cumplimiento";
-import type { CumplimientoFila, Gestion, PanelLeadsDatos } from "@/components/inicio/tipos";
+import type { CumplimientoFila, Gestion, ListasLeadsDatos, PanelLeadsDatos } from "@/components/inicio/tipos";
+import { ConTrabajoPrevio } from "@/components/inicio/ListasLeads";
 import * as Cuadro from "@/components/inicio/orden";
 import { campos, type CuadroOrden } from "@/components/inicio/orden";
 import { leerOrden, type Orden } from "@/lib/ordenTabla";
@@ -150,7 +151,7 @@ async function VistaGestion({
   const [sgD, sgH] = partes(rango("rg_seg"));
   const [moD, moH] = partes(rango("rg_seg_monto"));
 
-  const [{ data, error }, { data: equipoDb }] = await Promise.all([
+  const [{ data, error }, { data: equipoDb }, { data: listasDb }] = await Promise.all([
     supabase.rpc("inicio_gestion", {
       p_pais: idPaisActivo,
       p_quien: pQuien,
@@ -182,8 +183,11 @@ async function VistaGestion({
           .in("mercado", mercado ? ["Ambos", mercado === "PE" ? "Peru" : "Chile"] : ["Ambos", "Chile", "Peru"])
           .order("nombre")
       : Promise.resolve({ data: [] }),
+    // Leads de los ultimos 15 dias sin seguimiento asignado y leads con trabajo previo.
+    supabase.rpc("inicio_listas_leads", { p_pais: idPaisActivo, p_quien: pQuien }),
   ]);
   const g = data as Gestion | null;
+  const listas = (listasDb as ListasLeadsDatos | null) ?? null;
 
 
   if (!g) {
@@ -250,7 +254,10 @@ async function VistaGestion({
         qs={qs}
         ordenNuevos={oNuevos}
         ordenSeguimiento={oSeg}
+        recientes={listas?.sin_seguimiento_15d ?? null}
       />
+
+      {listas && <ConTrabajoPrevio d={listas.trabajo_previo} hoy={g.hoy} verPropietario={verEquipo} />}
 
       <EnEsperaCliente g={g} verResponsable={verEquipo} puedeEditar={v.puede_editar} />
 

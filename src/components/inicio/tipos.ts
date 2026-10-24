@@ -228,3 +228,17 @@ export function antiguedad(dias: number): string {
   if (dias < 60) return `${Math.round(dias / 7)} semanas`;
   return `${Math.round(dias / 30)} meses`;
 }
+
+// Lo que devuelve inicio_listas_leads(): los leads de los ultimos 15 dias sin seguimiento asignado
+// y los marcados con trabajo previo.
+export type LeadDeLista = LeadEnBandeja & {
+  // Solo en los marcados con trabajo previo: que hay que hacer y desde cuando.
+  nota?: string | null;
+  marcado_en?: string | null;
+  marcado_por?: string | null;
+};
+
+export type ListasLeadsDatos = {
+  sin_seguimiento_15d: { n: number; lista: LeadDeLista[] };
+  trabajo_previo: { n: number; lista: LeadDeLista[] };
+};

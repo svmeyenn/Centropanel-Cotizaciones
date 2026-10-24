@@ -2,11 +2,12 @@ import Link from "next/link";
 import { BanderaDe } from "@/components/Bandera";
 import PildoraLinea from "@/components/PildoraLinea";
 import { LINEAS } from "@/lib/leads";
-import { antiguedad, diasEntre, type Gestion, type LeadEnBandeja } from "@/components/inicio/tipos";
+import { antiguedad, diasEntre, type Gestion, type LeadEnBandeja, type ListasLeadsDatos } from "@/components/inicio/tipos";
 import { BarraOrden } from "@/components/TituloOrden";
 import FiltrosCuadro from "@/components/FiltrosCuadro";
 import { NUEVOS } from "@/components/inicio/orden";
 import SinSeguimiento from "@/components/inicio/SinSeguimiento";
+import { SinSeguimientoReciente } from "@/components/inicio/ListasLeads";
 import type { Orden } from "@/lib/ordenTabla";
 
 // Lo que espera sin fecha, en dos cuadros: los leads nuevos que nadie ha
@@ -22,6 +23,7 @@ export default function BandejaLeads({
   qs,
   ordenNuevos,
   ordenSeguimiento,
+  recientes,
 }: {
   g: Gestion;
   verPropietario: boolean;
@@ -30,6 +32,8 @@ export default function BandejaLeads({
   qs: string;
   ordenNuevos: Orden;
   ordenSeguimiento: Orden;
+  // Leads de los ultimos 15 dias sin seguimiento asignado: van antes de la lista de siete dias.
+  recientes: ListasLeadsDatos["sin_seguimiento_15d"] | null;
 }) {
   const lineas = [
     { valor: "paneles", texto: LINEAS.paneles },
@@ -72,13 +76,16 @@ export default function BandejaLeads({
         }}
         detalle={(l) => [l.origen, l.campana].filter(Boolean).join(" · ")}
       />
-      <SinSeguimiento
-        g={g}
-        verResponsable={verPropietario}
-        qs={qs}
-        orden={ordenSeguimiento}
-        hrefLeads={hrefSinSeguimiento}
-      />
+      <div className="space-y-2 min-w-0">
+        {recientes && <SinSeguimientoReciente d={recientes} hoy={g.hoy} verPropietario={verPropietario} />}
+        <SinSeguimiento
+          g={g}
+          verResponsable={verPropietario}
+          qs={qs}
+          orden={ordenSeguimiento}
+          hrefLeads={hrefSinSeguimiento}
+        />
+      </div>
     </div>
   );
 }
