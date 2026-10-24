@@ -5,6 +5,7 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import BotonCotizarLead from "@/components/BotonCotizarLead";
 import FichaLead, { type DatosFicha } from "@/components/FichaLead";
 import ControlEspera from "@/components/ControlEspera";
+import MarcaTrabajoPrevio from "@/components/MarcaTrabajoPrevio";
 import MensajeLead from "@/components/MensajeLead";
 import MensajesProgramados, { type Programado } from "@/components/MensajesProgramados";
 import FusionLead from "@/components/FusionLead";
@@ -236,6 +237,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   ]);
   // El genero fijado a mano; sin eso, se infiere del primer nombre. Decide "Estimado/a", "interesado/a".
   const { data: generoDb } = await supabase.rpc("lead_genero", { p_lead: idContacto });
+  const { data: marcaDb } = await supabase.rpc("lead_trabajo_previo_de", { p_lead: idContacto });
   const generoManual = generoDb === "F" || generoDb === "M" ? (generoDb as Genero) : null;
   const generoAuto = inferirGenero(c.nombre) ?? inferirGenero(c.nombre_completo);
   // Lo que esta dejado para despues en este lead: correos en la bandeja de salida y WhatsApp por enviar.
@@ -310,6 +312,12 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         {espera !== undefined && (
           <ControlEspera idLead={c.id_clientify} idCot={null} vigente={espera} puedeEditar={puedeEscribir} zona={zona} />
         )}
+
+        <MarcaTrabajoPrevio
+          idLead={c.id_clientify}
+          marca={(marcaDb as { nota: string | null; desde: string | null; por: string | null } | null) ?? null}
+          puedeEditar={puedeEscribir}
+        />
 
         {puedeEscribir && !errPlantillas && (
           <MensajeLead

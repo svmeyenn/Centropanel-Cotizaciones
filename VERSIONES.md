@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0143-20261024**
+Version vigente: **v0144-20261024**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0144-20261024 | 24-10-2026 | Marca "trabajo previo" en el lead (icono de escuadra y regla, con nota de lo que hay que hacer; la pone o quita cualquiera que edite leads) y dos listas nuevas en Mi gestion: leads de los ultimos 15 dias sin seguimiento asignado --antes de la lista de siete dias-- y leads con trabajo previo | (pendiente) |
 | v0143-20261024 | 24-10-2026 | Al generar un pedido desde una cotizacion, el lead vinculado queda como Cliente y sus demas cotizaciones abiertas (borrador, emitida, enviada, stand by) quedan Rechazadas, con nota en su bitacora; lo hace la base de datos en la misma transaccion del pedido | (pendiente) |
 | v0142-20261022 | 22-10-2026 | Por aprobar: ordenado de lo mas reciente a lo mas antiguo, y los egresos llevan el enlace "Ver documento adjunto" | 6929e07 |
 | v0141-20261022 | 22-10-2026 | Pedidos: si el pie no esta cubierto, un administrador puede autorizar --con motivo, en el mismo recuadro de compras del pedido-- que se generen las solicitudes de compra a proveedores; queda anotado quien, cuando y por que, y se puede revocar | cec5335..9fcacaa |

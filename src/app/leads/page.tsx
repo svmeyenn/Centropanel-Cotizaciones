@@ -5,6 +5,7 @@ import BotonExportarFilas from "@/components/BotonExportarFilas";
 import { BanderaDe } from "@/components/Bandera";
 import AsignarPropietarioMasivo from "@/components/AsignarPropietarioMasivo";
 import PildoraLinea from "@/components/PildoraLinea";
+import IconoTrabajoPrevio from "@/components/IconoTrabajoPrevio";
 import { GESTIONES, SIN_PROPIETARIO, aplicarFiltrosLeads } from "@/lib/filtrosLeads";
 import CargarContactosClientify from "@/components/CargarContactosClientify";
 import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
@@ -135,6 +136,12 @@ export default async function Pagina({
     contactos.length > 0
       ? await supabase.rpc("leads_n_cotizaciones", { p_ids: contactos.map((c) => c.id_clientify) })
       : { data: [] };
+  // Los leads de esta pagina que tienen la marca de trabajo previo.
+  const { data: marcasDb } =
+    contactos.length > 0
+      ? await supabase.rpc("leads_trabajo_previo", { p_ids: contactos.map((c) => c.id_clientify) })
+      : { data: [] };
+  const trabajoPrevio = new Map(((marcasDb ?? []) as { id_clientify: number; nota: string | null }[]).map((x) => [Number(x.id_clientify), x.nota]));
   const nCot = new Map(((cuentasCot ?? []) as { id_clientify: number; n: number }[]).map((x) => [Number(x.id_clientify), Number(x.n)]));
   // Lo que ya habia con este mismo contacto (mismo correo o telefono): otros leads suyos anteriores y los pedidos que ha hecho.
   const { data: antecedentesDb } =
@@ -483,6 +490,11 @@ export default async function Pagina({
                         >
                           {c.nombre_completo || "(sin nombre)"}
                         </Link>
+                        {trabajoPrevio.has(c.id_clientify) && (
+                          <span className="shrink-0 text-dorado-osc" title={`Trabajo previo${trabajoPrevio.get(c.id_clientify) ? `: ${trabajoPrevio.get(c.id_clientify)}` : ""}`}>
+                            <IconoTrabajoPrevio className="h-3.5 w-3.5" />
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">{c.telefono}</td>
