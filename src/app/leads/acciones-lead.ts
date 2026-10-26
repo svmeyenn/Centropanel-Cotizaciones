@@ -66,50 +66,10 @@ export async function prepararCotizacionDesdeLead(idLead: number): Promise<Resul
     };
   }
 
-  // Si no hay, se crea con lo que se sabe del lead.
-  // El cliente nace en el pais del lead, no en el mercado que se esta mirando.
-  const idPais = lead.id_pais as number;
-
-  const nombre = (lead.nombre_completo ?? "").trim();
-  if (!nombre && !lead.empresa) return { error: "El lead no tiene nombre ni empresa." };
-
-  const base = {
-    razon_social: (lead.empresa ?? nombre).trim(),
-    contacto: nombre || null,
-    email: lead.email ?? null,
-    telefono: lead.telefono ?? null,
-    direccion: lead.direccion ?? null,
-    comuna: lead.comuna ?? null,
-    ciudad: lead.ciudad ?? lead.comuna ?? lead.region ?? null,
-    id_pais: idPais,
-    activo: true,
-    con_transferencia: false,
-  };
-  const referencia = (lead.empresa ?? nombre).trim();
-
-  // El nombre corto no se puede repetir entre fichas vigentes; si ya lo usa
-  // otra persona, se distingue con el numero del lead.
-  let creada = await supabase
-    .from("entidades")
-    .insert({ ...base, nombre_referencia: referencia })
-    .select("id_entidad")
-    .single();
-  if (creada.error?.code === "23505") {
-    creada = await supabase
-      .from("entidades")
-      .insert({ ...base, nombre_referencia: `${referencia} (${idLead})` })
-      .select("id_entidad")
-      .single();
-  }
-  if (creada.error || !creada.data)
-    return { error: creada.error?.message ?? "No se pudo crear la ficha del cliente." };
-
-  const idEntidad = creada.data.id_entidad as number;
-  const { error: errTipo } = await supabase
-    .from("entidad_tipos")
-    .insert({ id_entidad: idEntidad, tipo: "cliente" });
-  if (errTipo) return { error: errTipo.message };
-
-  await supabase.rpc("vincular_lead_ficha", { p_lead: idLead, p_entidad: idEntidad });
-  return { ok: true, id_entidad: idEntidad, mensaje: "Se creo la ficha del cliente con los datos del lead." };
+  // Si no hay, se crea con lo que se sabe del lead. Lo hace la base en un solo paso --ficha, tipo cliente y
+  // enlace--: quien no maneja finanzas no puede ver una ficha de cliente recien creada hasta que tenga su
+  // tipo, y crearla desde aqui, paso a paso, le fallaba con "viola la politica de seguridad".
+  const { data: idEntidad, error: errCrear } = await supabase.rpc("lead_crear_ficha_cliente", { p_lead: idLead });
+  if (errCrear || idEntidad == null) return { error: errCrear?.message ?? "No se pudo crear la ficha del cliente." };
+  return { ok: true, id_entidad: Number(idEntidad), mensaje: "Se creo la ficha del cliente con los datos del lead." };
 }
