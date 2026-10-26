@@ -174,6 +174,8 @@ export const GRUPOS: Grupo[] = [
       },
       // Los correos y WhatsApp que se ofrecen al escribirle a un lead.
       { texto: "Mensajes a leads", href: "/mensajes", soloAdmin: true },
+      // Las personas a las que se les asigna un lead, cada una con su unico correo.
+      { texto: "Propietarios de leads", href: "/propietarios", soloAdmin: true },
       { texto: "Vendedores y accesos", href: "/vendedores", soloUsuarios: true },
     ],
   },
