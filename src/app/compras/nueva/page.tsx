@@ -43,7 +43,7 @@ export default async function Pagina({
   return (
     <div className="min-h-screen">
       <Cabecera titulo="Nueva orden de compra" subtitulo="Elija el proyecto y el proveedor" />
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion volverA="/compras" />
         <NuevaOC
           proyectoInicial={proyecto ? Number(proyecto) : null}

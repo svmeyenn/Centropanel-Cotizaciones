@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0147-20261026**
+Version vigente: **v0148-20261026**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0148-20261026 | 26-10-2026 | Propietarios: tabla de personas con un solo correo cada una --la base corrige el nombre segun el correo al cargar o cambiar un lead, las cargas de planilla toman el correo de esa tabla y reasignar compara tambien el nombre, de modo que ya no se mezclan Alexa y Gianfranco--. Tablas: las pantallas de listas y configuracion usan todo el ancho disponible --hasta 120 rem en vez de 80 o 96-- para ver mas columnas sin desplazarse | (pendiente) |
 | v0147-20261026 | 26-10-2026 | Rendimiento fase 2 (solo base de datos): los totales de las cotizaciones vivas se calculan en bloque en Mi gestion y en el seguimiento de cotizaciones (inicio_gestion de 311 a unos 145 ms, panel_seguimiento de 150 a 10 ms) y la comparacion de un lead de Meta descarta de entrada los leads de otros dias (de 172 a 18 ms por llamada); resultados verificados identicos | 57d4ff9 |
 | v0146-20261026 | 26-10-2026 | Rendimiento: el Desempeno muestra cada bloque (ventas, leads, seguimiento) apenas le llega su dato, la banda de divisas llega por separado sin retener la pagina, la sesion se verifica por su firma en vez de volver a Supabase Auth, y Mi gestion y la estructura piden sus consultas a la vez | 4ca3377..2d62e12 |
 | v0145-20261026 | 26-10-2026 | Rendimiento fase 1: el calculo de totales de cotizacion se hace en una sola pasada --Mi gestion de 770 a 180 ms, seguimiento de cotizaciones de 640 a 40 ms, cotizaciones de un lead de 64 a 15 ms--, se quita un indice duplicado de movimientos y la aplicacion pasa a correr en Portland (pdx1), junto a la base de datos | 4ca3377..2d62e12 |

@@ -43,7 +43,7 @@ export default async function Pagina({
         titulo="Proyectos"
         subtitulo="Cada obra con su presupuesto, cronograma y compras"
       />
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion />
         <div className="flex items-center justify-between gap-3">
           <div className="text-xs text-gray-600 flex gap-3">

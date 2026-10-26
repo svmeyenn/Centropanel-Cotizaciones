@@ -97,7 +97,7 @@ export default async function Pagina({
         titulo={veFinanzas ? "Clientes y proveedores" : "Clientes"}
         subtitulo="Una ficha por cada persona o empresa con la que tratamos"
       />
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion />
         <GestorFichas
           fichas={fichas}

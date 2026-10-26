@@ -54,7 +54,7 @@ export default async function Pagina() {
         titulo="Proveedores"
         subtitulo="Cada proveedor con su maestra de productos y sus costos"
       />
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion />
         <GestorProveedores
           proveedores={filas}
