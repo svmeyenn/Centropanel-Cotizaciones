@@ -18,8 +18,8 @@ export default async function Estructura({
   children: React.ReactNode;
 }) {
   const v = await requerirVendedor();
-  const incompletos = await clientesIncompletos(v);
-  const catalogo = await catalogoEstados();
+  // Independientes entre si: se piden a la vez.
+  const [incompletos, catalogo] = await Promise.all([clientesIncompletos(v), catalogoEstados()]);
   const grupos = menuDe(v);
   const config = grupos.find((g) => g.pestanas);
 
