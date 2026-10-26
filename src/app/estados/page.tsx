@@ -61,7 +61,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
   return (
     <div className="min-h-screen">
       <Cabecera titulo="ESTADOS" subtitulo="Como se llaman y que significan los estados de leads y de cotizaciones" />
-      <div className="max-w-screen-xl mx-auto p-4 space-y-3">
+      <div className="max-w-[120rem] mx-auto p-4 space-y-3">
         <BarraNavegacion />
 
         <nav aria-label="Que estados" className="flex flex-wrap gap-2 text-sm">

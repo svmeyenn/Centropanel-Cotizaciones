@@ -25,7 +25,7 @@ export default async function Pagina() {
         titulo="Leads de Meta"
         subtitulo="Comparar el archivo descargado de Meta con los leads del sistema"
       />
-      <div className="max-w-screen-xl mx-auto p-4 space-y-3 text-[11px]">
+      <div className="max-w-[120rem] mx-auto p-4 space-y-3 text-[11px]">
         <BarraNavegacion volverA="/leads">
           <Link
             href="/leads"

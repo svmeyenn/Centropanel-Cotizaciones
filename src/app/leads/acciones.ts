@@ -134,7 +134,7 @@ export async function guardarLoteLeads(
   const supabase = await createClient();
   const ids = leads.map((l) => l.id).filter((n) => Number.isInteger(n));
 
-  const [{ data: previos }, { data: duenos }] = await Promise.all([
+  const [{ data: previos }, { data: duenos }, { data: personas }] = await Promise.all([
     supabase
       .from("clientify_contactos")
       .select(
@@ -142,13 +142,16 @@ export async function guardarLoteLeads(
       )
       .in("id_clientify", ids),
     supabase.from("clientify_contactos").select("propietario, propietario_email").not("propietario_email", "is", null).limit(2000),
+    // Cada persona con su unico correo.
+    supabase.from("propietarios").select("email, nombre"),
   ]);
   const previo = new Map((previos ?? []).map((p) => [Number(p.id_clientify), p]));
-  // La planilla trae el nombre del propietario y no su email: se toma el que ya
-  // tienen sus otros leads.
+  // La planilla trae el nombre del propietario y no su email: manda el de la tabla de personas --un
+  // correo, una persona--; si el nombre no esta ahi, se toma el que ya tienen sus otros leads.
   const emailDe = new Map<string, string>();
   for (const d of duenos ?? [])
-    if (d.propietario && d.propietario_email) emailDe.set(String(d.propietario), String(d.propietario_email));
+    if (d.propietario && d.propietario_email) emailDe.set(String(d.propietario).toLowerCase(), String(d.propietario_email));
+  for (const d of personas ?? []) emailDe.set(String(d.nombre).toLowerCase(), String(d.email));
 
   let nuevos = 0;
   const filas = leads.map((l) => {
@@ -178,7 +181,7 @@ export async function guardarLoteLeads(
       empresa: l.empresa ?? p?.empresa ?? null,
       cargo: l.cargo ?? p?.cargo ?? null,
       propietario,
-      propietario_email: (propietario ? emailDe.get(propietario) : null) ?? p?.propietario_email ?? null,
+      propietario_email: (propietario ? emailDe.get(propietario.toLowerCase()) : null) ?? p?.propietario_email ?? null,
       estado: l.estado ?? p?.estado ?? null,
       // Del origen manda el que ya estaba: el archivo lo dice con otras palabras.
       origen: (p?.origen as string | null) ?? l.origen ?? null,
@@ -339,7 +342,7 @@ export async function guardarLoteOportunidades(
   const supabase = await createClient();
   const ids = oportunidades.map((o) => o.id).filter((n) => Number.isInteger(n));
 
-  const [{ data: previas }, { data: duenos }] = await Promise.all([
+  const [{ data: previas }, { data: duenos }, { data: personas }] = await Promise.all([
     supabase
       .from("clientify_oportunidades")
       .select("id_clientify, cotizaciones, propietario_email, id_contacto, id_empresa, id_etapa, id_pipeline")
@@ -349,12 +352,15 @@ export async function guardarLoteOportunidades(
       .select("propietario, propietario_email")
       .not("propietario_email", "is", null)
       .limit(2000),
+    supabase.from("propietarios").select("email, nombre"),
   ]);
   const previa = new Map((previas ?? []).map((p) => [Number(p.id_clientify), p]));
   const emailDe = new Map<string, string>();
   for (const d of duenos ?? [])
     if (d.propietario && d.propietario_email)
       emailDe.set(String(d.propietario).toLowerCase(), String(d.propietario_email));
+  // La tabla de personas manda sobre lo que traigan los leads: un correo, una persona.
+  for (const d of personas ?? []) emailDe.set(String(d.nombre).toLowerCase(), String(d.email));
 
   let nuevas = 0;
   const filas = oportunidades.map((o) => {

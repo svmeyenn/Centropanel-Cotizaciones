@@ -169,7 +169,7 @@ export default async function Pagina({
         titulo="Pedidos"
         subtitulo="Cotizaciones aceptadas y sus solicitudes a proveedores"
       />
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion>
           <Link
             href="/cobranza"

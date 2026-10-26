@@ -286,7 +286,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         titulo={c.nombre_completo || "(sin nombre)"}
         subtitulo={[c.empresa, c.cargo].filter(Boolean).join(" · ") || "Lead"}
       />
-      <div className="max-w-screen-xl mx-auto p-4 space-y-3 text-[11px]">
+      <div className="max-w-screen-2xl mx-auto p-4 space-y-3 text-[11px]">
         <BarraNavegacion volverA="/leads">
           <EnlacesInicio />
           <Link

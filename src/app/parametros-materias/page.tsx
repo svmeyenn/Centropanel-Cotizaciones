@@ -77,7 +77,7 @@ export default async function Pagina({
         titulo="Parametros de materias primas"
         subtitulo={`Tipo, etiqueta, familia y unidad con que se clasifican los insumos de ${pais.nombre}`}
       />
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion />
         <PestanasPais
           paises={ctx.activo ? [] : ctx.accesibles}

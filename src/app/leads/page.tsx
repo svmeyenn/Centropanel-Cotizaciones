@@ -191,7 +191,7 @@ export default async function Pagina({
         titulo="Leads"
         subtitulo="Contactos, conversaciones, compromisos y cotizaciones"
       />
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-4">
+      <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion />
 
         {/* Estado de la copia: de cuando es y si la ultima vuelta salio bien. */}
