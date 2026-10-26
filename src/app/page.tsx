@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import BandaDivisas from "@/components/BandaDivisas";
 import Bandera from "@/components/Bandera";
 import Cabecera from "@/components/Cabecera";
@@ -63,9 +64,6 @@ export default async function Home({
   // Las paridades del mercado en que se trabaja: desde Chile el dolar y la UF;
   // desde Peru, el sol. Con los dos mercados a la vista, una banda por pais.
   const mercados = activo ? [activo] : accesibles;
-  const bandas = await Promise.all(
-    mercados.map(async (p) => ({ codigo: p.codigo, nombre: p.nombre, paridades: await cargarParidades(p.codigo) }))
-  );
 
   return (
     <div className="min-h-screen">
@@ -74,7 +72,9 @@ export default async function Home({
         subtitulo={vista === "gestion" ? "Lo que hay que hacer hoy y lo que viene" : "Como va el negocio este mes"}
       />
       <div className="max-w-screen-2xl mx-auto p-4 space-y-3">
-        <BandaDivisas bandas={bandas} />
+        <Suspense fallback={<div className="h-9 bg-white border border-gray-200 rounded" aria-hidden="true" />}>
+          <Bandas mercados={mercados} />
+        </Suspense>
         {vista === "gestion" ? (
           <VistaGestion
             v={v}
@@ -151,7 +151,7 @@ async function VistaGestion({
   const [sgD, sgH] = partes(rango("rg_seg"));
   const [moD, moH] = partes(rango("rg_seg_monto"));
 
-  const [{ data, error }, { data: equipoDb }, { data: listasDb }] = await Promise.all([
+  const [{ data, error }, { data: equipoDb }, { data: listasDb }, { data: progDb }] = await Promise.all([
     supabase.rpc("inicio_gestion", {
       p_pais: idPaisActivo,
       p_quien: pQuien,
@@ -185,6 +185,15 @@ async function VistaGestion({
       : Promise.resolve({ data: [] }),
     // Leads de los ultimos 15 dias sin seguimiento asignado y leads con trabajo previo.
     supabase.rpc("inicio_listas_leads", { p_pais: idPaisActivo, p_quien: pQuien }),
+    // Todo lo que esta dejado para despues --correos en la bandeja de salida de Outlook y WhatsApp por
+    // enviar--: se pide junto con lo demas, no despues.
+    supabase
+      .from("mensajes_programados")
+      .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, nombres_adjuntos, estado, clientify_contactos(nombre_completo, id_pais)")
+      .in("estado", ["Programado", "En bandeja de salida"])
+      .eq("id_vendedor", v.id)
+      .order("programado_para")
+      .limit(100),
   ]);
   const g = data as Gestion | null;
   const listas = (listasDb as ListasLeadsDatos | null) ?? null;
@@ -199,15 +208,6 @@ async function VistaGestion({
     );
   }
 
-  // Todo lo que esta dejado para despues --correos en la bandeja de salida de Outlook y WhatsApp por
-  // enviar--: arriba lo que ya cumplio su hora, debajo lo que aun no llega.
-  const { data: progDb } = await supabase
-    .from("mensajes_programados")
-    .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, nombres_adjuntos, estado, clientify_contactos(nombre_completo, id_pais)")
-    .in("estado", ["Programado", "En bandeja de salida"])
-    .eq("id_vendedor", v.id)
-    .order("programado_para")
-    .limit(100);
   const programados = (progDb ?? []).map((x) => {
     const lead = uno<{ nombre_completo: string | null; id_pais: number }>(x.clientify_contactos);
     return { ...(x as unknown as Programado), nombre: lead?.nombre_completo ?? "(sin nombre)", prefijo: lead?.id_pais === 2 ? "51" : "56" };
@@ -266,7 +266,11 @@ async function VistaGestion({
   );
 }
 
-async function VistaDesempeno({
+// Los bloques del desempeno se piden todos a la vez y cada uno aparece cuando le llega su dato, en
+// vez de esperar al mas lento: el seguimiento tarda mas que las ventas y no tiene por que retenerlas.
+// `Promise.resolve` arranca la consulta de inmediato --el cliente de Supabase espera a que alguien
+// la pida--, y el mismo resultado de leads sirve al bloque de leads y al de cumplimiento.
+function VistaDesempeno({
   mercados,
   mes,
   supabase,
@@ -284,26 +288,17 @@ async function VistaDesempeno({
 
   // Un bloque por mercado: los montos de Chile son pesos y los de Peru soles, y
   // sumarlos no daria ninguna cifra.
-  const tableros = await Promise.all(
-    mercados.map(async (p) => {
-      const [{ data: panel }, { data: seg }, { data: leads }] = await Promise.all([
-        supabase.rpc("panel_desempeno", { p_pais: p.id, p_mes: mesBase }),
-        supabase.rpc("panel_seguimiento", { p_pais: p.id, p_mes: mesBase }),
-        supabase.rpc("panel_leads", { p_pais: p.id, p_mes: mesBase }),
-      ]);
-      return {
-        pais: p,
-        desempeno: panel as Desempeno | null,
-        cumpleCot: ((seg as { cumplimiento?: CumplimientoFila[] } | null)?.cumplimiento ?? []) as CumplimientoFila[],
-        leads: leads as PanelLeadsDatos | null,
-      };
-    })
-  );
+  const tableros = mercados.map((p) => ({
+    pais: p,
+    desempeno: Promise.resolve(supabase.rpc("panel_desempeno", { p_pais: p.id, p_mes: mesBase })),
+    seguimiento: Promise.resolve(supabase.rpc("panel_seguimiento", { p_pais: p.id, p_mes: mesBase })),
+    leads: Promise.resolve(supabase.rpc("panel_leads", { p_pais: p.id, p_mes: mesBase })),
+  }));
 
   return (
     <>
       <PestanasInicio vista="desempeno" mes={mes} />
-      {tableros.map(({ pais, desempeno, cumpleCot, leads }) => (
+      {tableros.map(({ pais, desempeno, seguimiento, leads }) => (
         <section key={pais.codigo} aria-labelledby={`mercado-${pais.codigo}`} className="space-y-3">
           <h2
             id={`mercado-${pais.codigo}`}
@@ -314,40 +309,100 @@ async function VistaDesempeno({
           </h2>
 
           <Subtitulo>Ventas</Subtitulo>
-          {desempeno ? (
-            <PanelDesempeno
-              d={desempeno}
-              qs={qs}
-              ordenEquipo={orden(Cuadro.EQUIPO)}
-              ordenClientes={orden(Cuadro.CLIENTES)}
-            />
-          ) : (
-            <p className="text-sm text-gray-500">No se pudo cargar el desempeno de ventas.</p>
-          )}
+          <Suspense fallback={<Cargando alto="h-64" />}>
+            <BloqueVentas p={desempeno} qs={qs} ordenEquipo={orden(Cuadro.EQUIPO)} ordenClientes={orden(Cuadro.CLIENTES)} />
+          </Suspense>
 
           <Subtitulo>Leads</Subtitulo>
-          {leads ? (
-            <PanelLeads
-              d={leads}
-              qs={qs}
-              ordenPropietarios={orden(Cuadro.PROPIETARIOS)}
-              ordenOrigenes={orden(Cuadro.ORIGENES)}
-            />
-          ) : (
-            <p className="text-sm text-gray-500">No se pudo cargar el desempeno de leads.</p>
-          )}
+          <Suspense fallback={<Cargando alto="h-64" />}>
+            <BloqueLeads p={leads} qs={qs} ordenPropietarios={orden(Cuadro.PROPIETARIOS)} ordenOrigenes={orden(Cuadro.ORIGENES)} />
+          </Suspense>
 
           <Subtitulo>Seguimiento</Subtitulo>
-          <Cumplimiento
-            cotizaciones={cumpleCot}
-            leads={leads?.cumplimiento ?? []}
-            qs={qs}
-            orden={orden(Cuadro.CUMPLIMIENTO)}
-          />
+          <Suspense fallback={<Cargando alto="h-40" />}>
+            <BloqueSeguimiento seguimiento={seguimiento} leads={leads} qs={qs} orden={orden(Cuadro.CUMPLIMIENTO)} />
+          </Suspense>
         </section>
       ))}
     </>
   );
+}
+
+type Respuesta = PromiseLike<{ data: unknown }>;
+
+async function BloqueVentas({
+  p,
+  qs,
+  ordenEquipo,
+  ordenClientes,
+}: {
+  p: Respuesta;
+  qs: string;
+  ordenEquipo: Orden;
+  ordenClientes: Orden;
+}) {
+  const d = (await p).data as Desempeno | null;
+  return d ? (
+    <PanelDesempeno d={d} qs={qs} ordenEquipo={ordenEquipo} ordenClientes={ordenClientes} />
+  ) : (
+    <p className="text-sm text-gray-500">No se pudo cargar el desempeno de ventas.</p>
+  );
+}
+
+async function BloqueLeads({
+  p,
+  qs,
+  ordenPropietarios,
+  ordenOrigenes,
+}: {
+  p: Respuesta;
+  qs: string;
+  ordenPropietarios: Orden;
+  ordenOrigenes: Orden;
+}) {
+  const d = (await p).data as PanelLeadsDatos | null;
+  return d ? (
+    <PanelLeads d={d} qs={qs} ordenPropietarios={ordenPropietarios} ordenOrigenes={ordenOrigenes} />
+  ) : (
+    <p className="text-sm text-gray-500">No se pudo cargar el desempeno de leads.</p>
+  );
+}
+
+async function BloqueSeguimiento({
+  seguimiento,
+  leads,
+  qs,
+  orden,
+}: {
+  seguimiento: Respuesta;
+  leads: Respuesta;
+  qs: string;
+  orden: Orden;
+}) {
+  const [{ data: seg }, { data: l }] = await Promise.all([seguimiento, leads]);
+  const cumpleCot = ((seg as { cumplimiento?: CumplimientoFila[] } | null)?.cumplimiento ?? []) as CumplimientoFila[];
+  const cumpleLeads = ((l as PanelLeadsDatos | null)?.cumplimiento ?? []) as CumplimientoFila[];
+  return <Cumplimiento cotizaciones={cumpleCot} leads={cumpleLeads} qs={qs} orden={orden} />;
+}
+
+// El lugar de un bloque que todavia no llega: mantiene su alto para que la pagina no salte.
+function Cargando({ alto }: { alto: string }) {
+  return (
+    <div
+      className={`${alto} bg-white border border-gray-200 rounded animate-pulse motion-reduce:animate-none`}
+      role="status"
+      aria-label="Cargando"
+    />
+  );
+}
+
+// Las paridades se piden a servicios externos --hasta un segundo si no estan guardadas--: llegan solas
+// y no retienen el resto de la portada.
+async function Bandas({ mercados }: { mercados: { codigo: string; nombre: string }[] }) {
+  const bandas = await Promise.all(
+    mercados.map(async (p) => ({ codigo: p.codigo, nombre: p.nombre, paridades: await cargarParidades(p.codigo) }))
+  );
+  return <BandaDivisas bandas={bandas} />;
 }
 
 function Subtitulo({ children }: { children: React.ReactNode }) {

@@ -10,16 +10,18 @@ import type { Pais, Vendedor } from "@/types/database";
 // UsuarioRol() en modApp.bas, pero resuelto en el servidor).
 export const requerirVendedor = cache(async function requerirVendedor(): Promise<Vendedor> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // El filtro de entrada (proxy) ya valido y refresco la sesion en esta misma peticion. Aqui solo se
+  // lee y se verifica su firma (getClaims): evita un segundo viaje a Supabase Auth en cada pagina.
+  // Si el proyecto firma con clave simetrica, getClaims consulta a Auth igual que getUser.
+  const { data: claims } = await supabase.auth.getClaims();
+  const idUsuario = claims?.claims?.sub;
 
-  if (!user) redirect("/login");
+  if (!idUsuario) redirect("/login");
 
   const { data: vendedor } = await supabase
     .from("vendedores")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", idUsuario)
     .eq("activo", true)
     .single();
 

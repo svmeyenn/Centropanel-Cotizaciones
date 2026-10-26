@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0145-20261026**
+Version vigente: **v0146-20261026**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0146-20261026 | 26-10-2026 | Rendimiento: el Desempeno muestra cada bloque (ventas, leads, seguimiento) apenas le llega su dato, la banda de divisas llega por separado sin retener la pagina, la sesion se verifica por su firma en vez de volver a Supabase Auth, y Mi gestion y la estructura piden sus consultas a la vez | (pendiente) |
 | v0145-20261026 | 26-10-2026 | Rendimiento fase 1: el calculo de totales de cotizacion se hace en una sola pasada --Mi gestion de 770 a 180 ms, seguimiento de cotizaciones de 640 a 40 ms, cotizaciones de un lead de 64 a 15 ms--, se quita un indice duplicado de movimientos y la aplicacion pasa a correr en Portland (pdx1), junto a la base de datos | (pendiente) |
 | v0144-20261024 | 24-10-2026 | Marca "trabajo previo" en el lead (icono de escuadra y regla, con nota de lo que hay que hacer; la pone o quita cualquiera que edite leads) y dos listas nuevas en Mi gestion: leads de los ultimos 15 dias sin seguimiento asignado --antes de la lista de siete dias-- y leads con trabajo previo | 99411f1..135603e |
 | v0143-20261024 | 24-10-2026 | Al generar un pedido desde una cotizacion, el lead vinculado queda como Cliente y sus demas cotizaciones abiertas (borrador, emitida, enviada, stand by) quedan Rechazadas, con nota en su bitacora; lo hace la base de datos en la misma transaccion del pedido | 99411f1..135603e |
