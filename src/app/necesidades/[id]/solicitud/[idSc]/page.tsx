@@ -10,7 +10,7 @@ import { fecha as fmtFecha } from "@/lib/formato";
 import { COLOR_NM } from "@/lib/compras";
 import { textosSolicitud } from "@/lib/textosCompra";
 import { reversarEnvioSolicitud } from "@/app/necesidades/acciones";
-import { enviarSolicitudPorCorreo, registrarWhatsAppSolicitud } from "@/app/necesidades/envios";
+import { enviarSolicitudPorCorreo, registrarEnvioSolicitud } from "@/app/necesidades/envios";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +127,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
                           textoWhatsApp={t.whatsapp}
                           bloqueo={bloqueo}
                           enviarCorreo={enviarSolicitudPorCorreo.bind(null, idNm, idSc, p.id)}
-                          registrarWhatsApp={registrarWhatsAppSolicitud.bind(null, idNm, idSc, p.id, sc.estado)}
+                          registrar={registrarEnvioSolicitud.bind(null, idNm, idSc, p.id, sc.estado)}
+                          emailRemitente={v.email}
                         />
                       )}
                     </td>

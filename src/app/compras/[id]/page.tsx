@@ -6,7 +6,7 @@ import EditorOC from "@/components/EditorOC";
 import EnvioDocumento from "@/components/EnvioDocumento";
 import BotonReversar from "@/components/BotonReversar";
 import { textosOrden } from "@/lib/textosCompra";
-import { enviarOcPorCorreo, registrarWhatsAppOc, reversarEnvioOc } from "@/app/necesidades/envios";
+import { enviarOcPorCorreo, registrarEnvioOc, reversarEnvioOc } from "@/app/necesidades/envios";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { COLOR_ESTADO } from "@/lib/compras";
@@ -132,7 +132,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
                 textoWhatsApp={textos.whatsapp}
                 bloqueo={["Aprobada", "Enviada", "Recibida parcial", "Recibida", "Facturada", "Pagada"].includes(o.estado) ? null : `La orden esta ${o.estado.toLowerCase()}: se envia una vez aprobada.`}
                 enviarCorreo={enviarOcPorCorreo.bind(null, id)}
-                registrarWhatsApp={registrarWhatsAppOc.bind(null, id)}
+                registrar={registrarEnvioOc.bind(null, id)}
+                emailRemitente={v.email}
               />
             </span>
           </div>
