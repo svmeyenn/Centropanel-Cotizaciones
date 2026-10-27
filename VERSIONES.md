@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0158-20261027**
+Version vigente: **v0159-20261027**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0159-20261027 | 27-10-2026 | Necesidades de material: "Editar cabecera" de la necesidad --fecha de entrega, direccion de destino y notas-- mientras no este cerrada ni anulada | (pendiente) |
 | v0158-20261027 | 27-10-2026 | Compras: cabecera propia de cada solicitud de cotizacion --entrega, direccion y notas, que si quedan vacias toman las de la necesidad-- y la OC generada la hereda; una OC ya emitida (pendiente, aprobada o enviada) permite corregir entrega, direccion y notas | (pendiente) |
 | v0157-20261027 | 27-10-2026 | Compras: "Reversar envio" de una orden de compra --vuelve de Enviada a Aprobada si no tiene pagos solicitados--; en la necesidad, el detalle de cada proveedor y el envio de documentos son dos pantallas separadas ("Ver detalle" y "Enviar") | (pendiente) |
 | v0156-20261027 | 27-10-2026 | Necesidades de material: "Reversar envio" de una solicitud --vuelve de En cotizacion a Borrador mientras ningun proveedor haya puesto precios-- y el registro de envios marca lo reversado | (pendiente) |

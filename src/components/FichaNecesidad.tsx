@@ -11,7 +11,7 @@ import {
   abrirSolicitud,
   adjudicarSolicitud,
   actualizarCabeceraSolicitud,
-  actualizarDestino,
+  actualizarCabeceraNecesidad,
   agregarItems,
   anularNecesidad,
   anularSolicitud,
@@ -183,7 +183,7 @@ export default function FichaNecesidad({
           {nm.direccion_destino ?? "—"}
           {comprador && abierta && (
             <button type="button" className="ml-2 text-verde underline text-[11px]" onClick={() => setEditandoDestino(true)}>
-              Cambiar
+              Editar cabecera
             </button>
           )}
         </div>
@@ -437,7 +437,7 @@ export default function FichaNecesidad({
           pendiente={pendiente}
         />
       )}
-      {editandoDestino && <VentanaDestino idNm={nm.id} fecha={nm.fecha_requerida} direccion={nm.direccion_destino} alCerrar={(hecho) => { setEditandoDestino(false); if (hecho) router.refresh(); }} />}
+      {editandoDestino && <VentanaCabeceraNecesidad idNm={nm.id} fecha={nm.fecha_requerida} direccion={nm.direccion_destino} notas={nm.notas} alCerrar={(hecho) => { setEditandoDestino(false); if (hecho) router.refresh(); }} />}
       {agregando && <VentanaAgregarItems idNm={nm.id} idPais={nm.id_pais} puedeCrearMateria={comprador} alCerrar={(hecho) => { setAgregando(false); if (hecho) router.refresh(); }} />}
     </div>
   );
@@ -800,21 +800,22 @@ function VentanaApertura({
 }
 
 // Fecha de entrega en destino y direccion de destino: van en la solicitud y en la orden de compra.
-function VentanaDestino({ idNm, fecha, direccion, alCerrar }: { idNm: number; fecha: string | null; direccion: string | null; alCerrar: (hecho: boolean) => void }) {
+function VentanaCabeceraNecesidad({ idNm, fecha, direccion, notas, alCerrar }: { idNm: number; fecha: string | null; direccion: string | null; notas: string | null; alCerrar: (hecho: boolean) => void }) {
   const [f, setF] = useState(fecha ?? "");
   const [d, setD] = useState(direccion ?? "");
+  const [n, setN] = useState(notas ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
   function guardar() {
     setError(null);
     empezar(async () => {
-      const r = await actualizarDestino(idNm, f, d);
+      const r = await actualizarCabeceraNecesidad(idNm, f, d, n);
       if (!r.ok) return setError(r.error ?? "No se pudo guardar.");
       alCerrar(true);
     });
   }
   return (
-    <Ventana titulo="Destino de la entrega" subtitulo="Va en las solicitudes y en las ordenes de compra" onCerrar={() => alCerrar(false)} ancho="max-w-lg">
+    <Ventana titulo="Cabecera de la necesidad" subtitulo="La entrega y la direccion van en las solicitudes y en las ordenes de compra" onCerrar={() => alCerrar(false)} ancho="max-w-lg">
       <form className="space-y-3 text-xs" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
         <div>
           <label htmlFor="nm-dest-fecha" className={ROTULO}>Fecha de entrega en destino</label>
@@ -824,7 +825,11 @@ function VentanaDestino({ idNm, fecha, direccion, alCerrar }: { idNm: number; fe
           <label htmlFor="nm-dest-dir" className={ROTULO}>Direccion de destino</label>
           <textarea id="nm-dest-dir" rows={2} className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white" value={d} onChange={(e) => setD(e.target.value)} maxLength={300} />
         </div>
-        <p className="text-gray-600">Las ordenes de compra que ya se generaron no cambian: se corrigen en cada orden.</p>
+        <div>
+          <label htmlFor="nm-dest-notas" className={ROTULO}>Notas</label>
+          <textarea id="nm-dest-notas" rows={3} className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white" value={n} onChange={(e) => setN(e.target.value)} maxLength={500} />
+        </div>
+        <p className="text-gray-600">Las solicitudes con cabecera propia y las ordenes de compra que ya se generaron no cambian: se corrigen en cada una.</p>
         {error && <p className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2" role="alert">{error}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" className={BTN} onClick={() => alCerrar(false)} disabled={pendiente}>Cancelar</button>
