@@ -331,7 +331,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             archivos={archivos.map((a) => ({ id: a.id, nombre: a.nombre, tamano: a.tamano ?? 0 }))}
             datos={{
               genero: generoManual ?? generoAuto,
-              generoVendedor: inferirGenero(v.nombre),
+              generoVendedor: v.genero ?? inferirGenero(v.nombre),
               nombre: primerNombre(c.nombre) || primerNombre(c.nombre_completo),
               nombreCompleto: c.nombre_completo ?? "",
               empresa: c.empresa ?? "",

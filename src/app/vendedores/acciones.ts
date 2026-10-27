@@ -10,6 +10,8 @@ export interface DatosVendedor {
   cargo: string;
   email: string;
   telefono: string;
+  // "F", "M" o vacio: vacio, se infiere del nombre. Lo usan las plantillas de mensajes.
+  genero: "" | "F" | "M";
   rol: Rol;
   // A que mercado entra: Chile, Peru o Ambos. Administrador + Ambos es el
   // administrador general, el unico que cruza paises.
@@ -63,6 +65,7 @@ export async function actualizarVendedor(id: number, d: DatosVendedor) {
       cargo: d.cargo.trim() || null,
       email: d.email.trim() || null,
       telefono: d.telefono.trim() || null,
+      genero: d.genero || null,
       rol: d.rol,
       mercado: d.mercado,
       puede_ver: d.puede_ver,
@@ -150,6 +153,7 @@ export async function crearVendedor(d: DatosVendedor, password: string) {
     cargo: d.cargo.trim() || null,
     email,
     telefono: d.telefono.trim() || null,
+    genero: d.genero || null,
     rol: d.rol,
     mercado: d.mercado,
     puede_ver: d.puede_ver,
