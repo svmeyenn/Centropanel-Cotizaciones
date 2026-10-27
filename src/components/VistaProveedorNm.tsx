@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { dinero, fecha as fmtFecha, monedaDelPais, unidades as fmtUnid } from "@/lib/formato";
 import { COLOR_NM } from "@/lib/compras";
 import { textosOrden, textosSolicitud } from "@/lib/textosCompra";
-import { enviarOcPorCorreo, enviarSolicitudPorCorreo, registrarWhatsAppOc, registrarWhatsAppSolicitud, reversarEnvioOc } from "@/app/necesidades/envios";
+import { enviarOcPorCorreo, enviarSolicitudPorCorreo, registrarEnvioOc, registrarEnvioSolicitud, reversarEnvioOc } from "@/app/necesidades/envios";
 
 export const dynamic = "force-dynamic";
 
@@ -149,7 +149,8 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                       textoWhatsApp={t.whatsapp}
                       bloqueo={bloqueoSc}
                       enviarCorreo={enviarSolicitudPorCorreo.bind(null, idNm, s.id, idPart)}
-                      registrarWhatsApp={registrarWhatsAppSolicitud.bind(null, idNm, s.id, idPart, s.estado)}
+                      registrar={registrarEnvioSolicitud.bind(null, idNm, s.id, idPart, s.estado)}
+                      emailRemitente={v.email}
                     />
                   )}
                 </span>
@@ -220,7 +221,8 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                         textoWhatsApp={to.whatsapp}
                         bloqueo={ESTADOS_OC_ENVIABLES.includes(oc.estado) ? null : `La orden esta ${oc.estado.toLowerCase()}: se envia una vez aprobada.`}
                         enviarCorreo={enviarOcPorCorreo.bind(null, oc.id)}
-                        registrarWhatsApp={registrarWhatsAppOc.bind(null, oc.id)}
+                        registrar={registrarEnvioOc.bind(null, oc.id)}
+                        emailRemitente={v.email}
                       />
                     )}
                   </span>

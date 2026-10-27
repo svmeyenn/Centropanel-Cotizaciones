@@ -55,9 +55,10 @@ async function despuesDeEnviarSolicitud(idNm: number, idSc: number, idPart: numb
   await anotar(idNm, "SC", idSc, null, idPart, canal, destino, asunto);
 }
 
-export async function registrarWhatsAppSolicitud(idNm: number, idSc: number, idPart: number, estado: string, destino: string, texto: string) {
+// Un envio que salio por fuera del sistema --Outlook o WhatsApp por el ayudante-- queda anotado igual.
+export async function registrarEnvioSolicitud(idNm: number, idSc: number, idPart: number, estado: string, canal: "email" | "whatsapp", destino: string, texto: string) {
   await requerirVendedor();
-  await despuesDeEnviarSolicitud(idNm, idSc, idPart, "whatsapp", destino, texto.slice(0, 200), estado);
+  await despuesDeEnviarSolicitud(idNm, idSc, idPart, canal, destino, texto.slice(0, 200), estado);
 }
 
 export async function enviarOcPorCorreo(idOc: number, asunto: string, texto: string): Promise<Salida> {
@@ -87,11 +88,11 @@ async function despuesDeEnviarOc(idOc: number, idNm: number | null, idSc: number
   revalidatePath("/compras");
 }
 
-export async function registrarWhatsAppOc(idOc: number, destino: string, texto: string) {
+export async function registrarEnvioOc(idOc: number, canal: "email" | "whatsapp", destino: string, texto: string) {
   await requerirVendedor();
   const doc = await leerOrdenDoc(idOc);
   if (!doc) return;
-  await despuesDeEnviarOc(idOc, doc.idNecesidad, doc.idSc, doc.idParticipante, "whatsapp", destino, texto.slice(0, 200), doc.d.estado);
+  await despuesDeEnviarOc(idOc, doc.idNecesidad, doc.idSc, doc.idParticipante, canal, destino, texto.slice(0, 200), doc.d.estado);
 }
 
 // Vuelve a "Aprobada" una orden enviada, mientras no tenga pagos solicitados. Lo ya enviado no se retira.
