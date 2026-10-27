@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Ventana from "@/components/Ventana";
-import { crearMateriaDesdeNecesidad, listasMateria, type ItemBuscado, type ListasMateria } from "@/app/necesidades/acciones";
+import { crearMateriaDesdeNecesidad, crearTipoDesdeNecesidad, listasMateria, type ItemBuscado, type ListasMateria } from "@/app/necesidades/acciones";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
@@ -24,6 +24,7 @@ export default function VentanaNuevaMateria({
   const [listas, setListas] = useState<ListasMateria | null>(null);
   const [nombre, setNombre] = useState(nombreInicial);
   const [tipo, setTipo] = useState("");
+  const [nuevoTipo, setNuevoTipo] = useState<string | null>(null);
   const [unidad, setUnidad] = useState("");
   const [familia, setFamilia] = useState("");
   const [etiqueta, setEtiqueta] = useState("");
@@ -37,6 +38,21 @@ export default function VentanaNuevaMateria({
       vigente = false;
     };
   }, [idPais]);
+
+  // El tipo nuevo queda en la lista de tipos y se elige solo.
+  function agregarTipo() {
+    setError(null);
+    const n = (nuevoTipo ?? "").trim();
+    if (n.length < 2) return setError("Escriba el nombre del tipo (al menos 2 letras).");
+    empezar(async () => {
+      const r = await crearTipoDesdeNecesidad(n);
+      if (!r.ok || !r.tipo) return setError(r.error ?? "No se pudo crear el tipo.");
+      const t = r.tipo;
+      setListas((l) => (l ? { ...l, tipos: [...l.tipos, t] } : l));
+      setTipo(t);
+      setNuevoTipo(null);
+    });
+  }
 
   function guardar() {
     setError(null);
@@ -71,6 +87,35 @@ export default function VentanaNuevaMateria({
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
+            {nuevoTipo === null ? (
+              <button type="button" onClick={() => setNuevoTipo("")} className="mt-1 text-verde underline text-[11px]">
+                + Nuevo tipo
+              </button>
+            ) : (
+              <div className="mt-1 flex gap-1">
+                <input
+                  aria-label="Nombre del nuevo tipo"
+                  className={CAMPO}
+                  value={nuevoTipo}
+                  onChange={(e) => setNuevoTipo(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      agregarTipo();
+                    }
+                  }}
+                  maxLength={40}
+                  placeholder="Nombre del tipo"
+                  autoFocus
+                />
+                <button type="button" onClick={agregarTipo} disabled={pendiente} className="bg-verde text-white text-[11px] font-semibold px-2 rounded disabled:opacity-50">
+                  Agregar
+                </button>
+                <button type="button" onClick={() => setNuevoTipo(null)} className="border border-gray-300 bg-white text-[11px] px-2 rounded">
+                  x
+                </button>
+              </div>
+            )}
           </div>
           <div>
             <label htmlFor="mp-unidad" className={ROTULO}>Unidad</label>
