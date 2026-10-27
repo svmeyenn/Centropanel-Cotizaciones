@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { buscarItemsCompra, crearNecesidad, type ItemBuscado } from "@/app/necesidades/acciones";
+import VentanaNuevaMateria from "@/components/VentanaNuevaMateria";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
@@ -16,11 +17,14 @@ export default function NuevaNecesidad({
   proyectos,
   partidas,
   pedidos,
+  puedeCrearMateria,
 }: {
   proyectoInicial: number | null;
   proyectos: { id: number; nombre: string; id_pais: number }[];
   partidas: { id: number; id_proyecto: number; nombre: string }[];
   pedidos: { id: number; num: string; id_pais: number }[];
+  // Quien compra puede dar de alta una materia prima que todavia no esta en la maestra.
+  puedeCrearMateria: boolean;
 }) {
   const router = useRouter();
   const [origen, setOrigen] = useState<"obra" | "pedido">("obra");
@@ -34,6 +38,7 @@ export default function NuevaNecesidad({
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
   const [buscando, empezarBusca] = useTransition();
+  const [creandoMateria, setCreandoMateria] = useState(false);
   const ultima = useRef(0);
 
   const pais = origen === "obra" ? proyectos.find((p) => p.id === proyecto)?.id_pais : pedidos.find((p) => p.id === pedido)?.id_pais;
@@ -145,7 +150,7 @@ export default function NuevaNecesidad({
             disabled={!pais}
             autoComplete="off"
           />
-          {(encontrados.length > 0 || buscando) && (
+          {pais && busca.trim().length >= 2 && (encontrados.length > 0 || buscando || puedeCrearMateria) && (
             <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow max-h-64 overflow-y-auto text-xs">
               {buscando && encontrados.length === 0 && <li className="px-2 py-1.5 text-gray-500">Buscando...</li>}
               {encontrados.map((it) => (
@@ -159,9 +164,28 @@ export default function NuevaNecesidad({
                   </button>
                 </li>
               ))}
+              {puedeCrearMateria && (
+                <li className="border-t border-gray-200">
+                  <button type="button" onClick={() => setCreandoMateria(true)} className="w-full text-left px-2 py-1.5 text-verde font-semibold hover:bg-crema">
+                    No esta? Crear la materia prima &laquo;{busca.trim()}&raquo;
+                  </button>
+                </li>
+              )}
             </ul>
           )}
         </div>
+
+        {creandoMateria && pais && (
+          <VentanaNuevaMateria
+            idPais={pais}
+            nombreInicial={busca.trim()}
+            alCerrar={() => setCreandoMateria(false)}
+            alCrear={(item) => {
+              setCreandoMateria(false);
+              agregar(item);
+            }}
+          />
+        )}
 
         {lineas.length === 0 ? (
           <p className="text-xs text-gray-500 py-3 text-center">Todavia no hay items.</p>

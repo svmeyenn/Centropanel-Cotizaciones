@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0152-20261027**
+Version vigente: **v0153-20261027**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0153-20261027 | 27-10-2026 | Necesidades de material: crear una materia prima desde la misma necesidad, en una ventana emergente --al buscar un item que no esta, "Crear la materia prima"--; entra con costo cero y se agrega sola a la necesidad; solo quien compra puede hacerlo | (pendiente) |
 | v0152-20261027 | 27-10-2026 | Compras: modulo "Necesidades de material", previo a la orden de compra --necesidad por obra o pedido, solicitudes de cotizacion que se abren en varias, proveedores invitados con sus precios por item, cuadro comparativo con el mejor precio, adjudicacion por solicitud y una orden de compra por cada solicitud adjudicada--; perfil Comprador; el pedido genera la necesidad en vez de solicitudes sueltas; la orden de compra muestra su origen | (pendiente) |
 | v0151-20261027 | 27-10-2026 | Vendedores y accesos: campo "Genero (para los mensajes)" en la ficha --Segun el nombre, Femenino o Masculino--; las plantillas de mensajes lo usan para concordar lo que dice quien escribe ("Quedo atento/atenta") en vez de adivinarlo siempre por el nombre | 042740a |
 | v0150-20261026 | 26-10-2026 | Configuracion: pantalla "Propietarios de leads" para agregar personas --nombre y correo-- a la lista de propietarios, cambiarles el nombre o quitarlas si no tienen leads; solo administradores y supervisores; la base valida un correo, una persona, y corrige los leads que ya traen ese correo o nombre | c406dbc |

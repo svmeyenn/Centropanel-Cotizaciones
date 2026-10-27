@@ -166,3 +166,43 @@ export async function buscarItemsCompra(q: string, idPais: number): Promise<Item
   const { data } = await supabase.rpc("compras_buscar_items", { p_q: q, p_pais: idPais, p_limite: 25 });
   return ((data ?? []) as ItemBuscado[]).map((x) => ({ ...x, id: Number(x.id) }));
 }
+
+export interface ListasMateria {
+  tipos: string[];
+  unidades: string[];
+  familias: string[];
+  etiquetas: string[];
+}
+
+// Lo que ofrece la ventana de nueva materia prima: los tipos, unidades, familias y etiquetas que ya existen.
+export async function listasMateria(idPais: number): Promise<ListasMateria | null> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("compras_listas_materia", { p_pais: idPais });
+  return (data as ListasMateria | null) ?? null;
+}
+
+// Crea la materia prima --con costo cero: el costo lo fija la cotizacion o quien administra la maestra-- y la
+// devuelve lista para agregarla a la necesidad.
+export async function crearMateriaDesdeNecesidad(d: {
+  id_pais: number;
+  nombre: string;
+  tipo: string;
+  unidad: string;
+  familia: string;
+  etiqueta: string;
+}): Promise<{ ok: boolean; error?: string; item?: ItemBuscado }> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("compras_crear_materia", {
+    p_pais: d.id_pais,
+    p_nombre: d.nombre,
+    p_tipo: d.tipo,
+    p_unidad: d.unidad,
+    p_familia: d.familia,
+    p_etiqueta: d.etiqueta,
+  });
+  if (error) return { ok: false, error: error.message };
+  const m = data as { id: number; nombre: string; unidad: string | null; sku: string | null };
+  return { ok: true, item: { tipo: "materia_prima", id: Number(m.id), descripcion: m.nombre, unidad: m.unidad, sku: m.sku } };
+}

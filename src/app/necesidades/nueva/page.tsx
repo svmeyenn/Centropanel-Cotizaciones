@@ -30,6 +30,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
           proyectos={(proyectos ?? []).map((p) => ({ id: Number(p.id_proyecto), nombre: p.nombre as string, id_pais: Number(p.id_pais) }))}
           partidas={(partidas ?? []).map((p) => ({ id: Number(p.id), id_proyecto: Number(p.id_proyecto), nombre: p.nombre as string }))}
           pedidos={(pedidos ?? []).map((p) => ({ id: Number(p.id), num: p.num_pedido as string, id_pais: Number(p.id_pais) }))}
+          puedeCrearMateria={["Administrador", "Supervisor", "Comprador"].includes(v.rol)}
         />
       </div>
     </div>
