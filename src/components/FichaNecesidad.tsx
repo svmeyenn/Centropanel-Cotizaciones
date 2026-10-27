@@ -10,6 +10,7 @@ import { dinero, fecha as fmtFecha } from "@/lib/formato";
 import {
   abrirSolicitud,
   adjudicarSolicitud,
+  actualizarCabeceraSolicitud,
   actualizarDestino,
   agregarItems,
   anularNecesidad,
@@ -85,6 +86,9 @@ type Sol = {
   id_participante: number | null;
   id_oc: number | null;
   num_oc: string | null;
+  fecha_entrega: string | null;
+  direccion_destino: string | null;
+  notas: string | null;
   items: number[];
 };
 
@@ -372,6 +376,7 @@ export default function FichaNecesidad({
         <TarjetaSolicitud
           key={s.id}
           s={s}
+          destinoNm={{ fecha: nm.fecha_requerida, direccion: nm.direccion_destino }}
           items={s.items.map((id) => itemPor.get(id)).filter((x): x is Item => !!x)}
           proveedores={proveedores.filter((p) => p.estado !== "Declino")}
           precio={precio}
@@ -441,9 +446,10 @@ export default function FichaNecesidad({
 // Una solicitud con su cuadro comparativo: items en filas, proveedores en columnas, el mejor precio de cada item
 // destacado, y el total de cada proveedor si cotizo todo.
 function TarjetaSolicitud({
-  s, items, proveedores, precio, total, moneda, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
+  s, destinoNm, items, proveedores, precio, total, moneda, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
 }: {
   s: Sol;
+  destinoNm: { fecha: string | null; direccion: string | null };
   items: Item[];
   proveedores: Prov[];
   precio: Map<string, number>;
@@ -461,8 +467,11 @@ function TarjetaSolicitud({
   const mejorTotal = Math.min(...totales.filter((t): t is number => t != null));
   const enCotizacion = s.estado === "En cotizacion";
   const adj = s.estado === "Adjudicada";
+  const [editando, setEditando] = useState(false);
+  const router = useRouter();
   return (
     <section className="bg-white border border-gray-200 rounded overflow-hidden">
+      {editando && <VentanaCabeceraSolicitud s={s} idNm={idNm} destinoNm={destinoNm} alCerrar={(hecho) => { setEditando(false); if (hecho) router.refresh(); }} />}
       <div className="bg-verde text-white px-3 py-1.5 flex flex-wrap items-center gap-2">
         <h2 className="text-[11px] font-semibold uppercase">
           {s.folio} · {items.length} item{items.length === 1 ? "" : "s"}
@@ -474,6 +483,11 @@ function TarjetaSolicitud({
           {comprador && s.estado === "Borrador" && (
             <button type="button" className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40" disabled={pendiente} onClick={() => ejecutar(() => enviarSolicitud(idNm, s.id), "Enviada a cotizar.")}>
               Enviar a cotizar
+            </button>
+          )}
+          {comprador && (s.estado === "Borrador" || enCotizacion) && (
+            <button type="button" className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded" onClick={() => setEditando(true)}>
+              Editar cabecera
             </button>
           )}
           {comprador && enCotizacion && (
@@ -815,6 +829,48 @@ function VentanaDestino({ idNm, fecha, direccion, alCerrar }: { idNm: number; fe
         <div className="flex justify-end gap-2">
           <button type="button" className={BTN} onClick={() => alCerrar(false)} disabled={pendiente}>Cancelar</button>
           <button type="submit" className={BTN_VERDE} disabled={pendiente}>{pendiente ? "Guardando..." : "Guardar"}</button>
+        </div>
+      </form>
+    </Ventana>
+  );
+}
+
+// Cabecera propia de una solicitud: entrega, direccion y notas. Vacias, valen las de la necesidad.
+function VentanaCabeceraSolicitud({ s, idNm, destinoNm, alCerrar }: { s: Sol; idNm: number; destinoNm: { fecha: string | null; direccion: string | null }; alCerrar: (hecho: boolean) => void }) {
+  const [f, setF] = useState(s.fecha_entrega ?? "");
+  const [d, setD] = useState(s.direccion_destino ?? "");
+  const [n, setN] = useState(s.notas ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [pendiente, empezar] = useTransition();
+  function guardar() {
+    setError(null);
+    empezar(async () => {
+      const r = await actualizarCabeceraSolicitud(idNm, s.id, f, d, n);
+      if (!r.ok) return setError(r.error ?? "No se pudo guardar.");
+      alCerrar(true);
+    });
+  }
+  return (
+    <Ventana titulo={`Cabecera de ${s.folio}`} subtitulo="Lo que se deja vacio toma el valor de la necesidad" onCerrar={() => alCerrar(false)} ancho="max-w-lg">
+      <form className="space-y-3 text-xs" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
+        <div>
+          <label htmlFor="sc-fecha" className={ROTULO}>Fecha de entrega en destino</label>
+          <input id="sc-fecha" type="date" className="border border-gray-300 rounded px-2 py-1 text-xs bg-white" value={f} onChange={(e) => setF(e.target.value)} />
+          <span className="ml-2 text-gray-500">{destinoNm.fecha ? `Necesidad: ${fmtFecha(destinoNm.fecha)}` : ""}</span>
+        </div>
+        <div>
+          <label htmlFor="sc-dir" className={ROTULO}>Direccion de destino</label>
+          <textarea id="sc-dir" rows={2} className={CAMPO} value={d} onChange={(e) => setD(e.target.value)} maxLength={300} placeholder={destinoNm.direccion ?? ""} />
+        </div>
+        <div>
+          <label htmlFor="sc-notas" className={ROTULO}>Notas para el proveedor</label>
+          <textarea id="sc-notas" rows={3} className={CAMPO} value={n} onChange={(e) => setN(e.target.value)} maxLength={500} />
+        </div>
+        {s.estado === "En cotizacion" && <p className="text-amber-700">La solicitud ya se envio: si cambia algo, vuelva a enviarla a los proveedores.</p>}
+        {error && <p className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2" role="alert">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" className={BTN} onClick={() => alCerrar(false)} disabled={pendiente}>Cancelar</button>
+          <button type="submit" className="bg-verde text-white text-[11px] font-semibold px-2.5 py-1 rounded disabled:opacity-50" disabled={pendiente}>{pendiente ? "Guardando..." : "Guardar"}</button>
         </div>
       </form>
     </Ventana>

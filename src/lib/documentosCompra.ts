@@ -46,7 +46,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
     nm: { folio: string; id_pais: number; proyecto: string | null; fecha_requerida: string | null; direccion_destino: string | null; notas: string | null };
     items: { id: number; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; id_sc: number | null }[];
     proveedores: ProveedorNm[];
-    solicitudes: { id: number; folio: string; estado: string }[];
+    solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; notas: string | null }[];
   };
   const sc = det.solicitudes.find((x) => x.id === idSc);
   const prov = det.proveedores.find((x) => x.id === idPart);
@@ -60,9 +60,9 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
       fecha: new Date().toLocaleDateString("sv-SE", { timeZone: "America/Santiago" }),
       proveedor: proveedorDoc(prov),
       obra: det.nm.proyecto,
-      fechaEntrega: det.nm.fecha_requerida,
-      direccionDestino: det.nm.direccion_destino,
-      notas: det.nm.notas,
+      fechaEntrega: sc.fecha_entrega ?? det.nm.fecha_requerida,
+      direccionDestino: sc.direccion_destino ?? det.nm.direccion_destino,
+      notas: [det.nm.notas, sc.notas].filter(Boolean).join("\n") || null,
       items: items.map((i) => ({ descripcion: i.descripcion, unidad: i.unidad, cantidad: Number(i.cantidad), nota: i.nota })),
       emisor: await emisor(),
     },

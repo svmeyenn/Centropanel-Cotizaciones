@@ -35,7 +35,7 @@ type Det = {
     notas: string | null;
   }[];
   precios: { p: number; i: number; v: number }[];
-  solicitudes: { id: number; folio: string; estado: string; id_padre: number | null; id_participante: number | null; id_oc: number | null; num_oc: string | null }[];
+  solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; id_padre: number | null; id_participante: number | null; id_oc: number | null; num_oc: string | null }[];
 };
 
 const ESTADOS_OC_ENVIABLES = ["Aprobada", "Enviada", "Recibida parcial", "Recibida", "Facturada", "Pagada"];
@@ -115,7 +115,7 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
           const sinPrecio = items.filter((i) => !precio.has(i.id)).length;
           const oc = suyo && s.id_oc ? ocPor.get(s.id_oc) : undefined;
           const base = `/necesidades/${idNm}/solicitud/${s.id}/${idPart}/pdf`;
-          const t = textosSolicitud({ folio: s.folio, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: det.nm.fecha_requerida, direccion: det.nm.direccion_destino, emisor });
+          const t = textosSolicitud({ folio: s.folio, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: s.fecha_entrega ?? det.nm.fecha_requerida, direccion: s.direccion_destino ?? det.nm.direccion_destino, emisor });
           const bloqueoSc = s.estado === "Adjudicada" ? "La solicitud ya esta adjudicada." : prov.estado === "Declino" ? "El proveedor declino." : null;
           const to = oc
             ? textosOrden({ numero: oc.num_oc, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: oc.fecha_entrega ?? det.nm.fecha_requerida, direccion: det.nm.direccion_destino, emisor })
