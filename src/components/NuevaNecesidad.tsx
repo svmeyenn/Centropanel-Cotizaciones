@@ -222,6 +222,7 @@ export default function NuevaNecesidad({
               {lineas.map((l, i) => (
                 <tr key={l.clave} className="border-t border-gray-100">
                   <td className="px-2 py-1.5">
+                    {l.item.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{l.item.sku}</span>}
                     {l.item.descripcion}
                     <span className="ml-1.5 text-[10px] text-gray-500">{l.item.tipo === "producto" ? "producto" : "materia prima"}{l.item.unidad ? ` · ${l.item.unidad}` : ""}</span>
                   </td>

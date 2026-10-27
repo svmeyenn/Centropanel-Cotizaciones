@@ -40,6 +40,7 @@ export interface OcDatos {
 }
 export interface Linea {
   id: number;
+  sku?: string | null;
   descripcion: string;
   unidades: number;
   costo_unitario: number;
@@ -283,7 +284,7 @@ export default function EditorOC({
             <tbody>
               {lineas.map((l) => (
                 <tr key={l.id} className="border-t border-gray-100">
-                  <td className="px-3 py-2">{l.descripcion}</td>
+                  <td className="px-3 py-2">{l.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{l.sku}</span>}{l.descripcion}</td>
                   <td className="px-3 py-2 text-right">{fmtUnid(l.unidades)}</td>
                   <td className="px-3 py-2 text-right">{dinero(l.costo_unitario, m)}</td>
                   <td className="px-3 py-2 text-right">{dinero(l.unidades * l.costo_unitario, m)}</td>

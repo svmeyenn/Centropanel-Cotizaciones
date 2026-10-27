@@ -33,6 +33,7 @@ const s = StyleSheet.create({
   fila_: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#D1D5DB" },
   celda: { paddingVertical: 3, paddingHorizontal: 5 },
   cNum: { width: 22 },
+  cSku: { width: 54 },
   cDesc: { flex: 1 },
   cUnid: { width: 44 },
   cCant: { width: 56, textAlign: "right" },
@@ -87,7 +88,7 @@ export interface SolicitudDoc {
   direccionDestino: string | null;
   contactoDestino?: ContactoDoc;
   notas: string | null;
-  items: { descripcion: string; unidad: string | null; cantidad: number; nota: string | null }[];
+  items: { sku?: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null }[];
   emisor: EmisorDoc;
 }
 
@@ -105,7 +106,7 @@ export interface OrdenDoc {
   condicionesPago: string | null;
   notas: string | null;
   total: number;
-  lineas: { descripcion: string; unidades: number; costo: number }[];
+  lineas: { sku?: string | null; descripcion: string; unidades: number; costo: number }[];
   emisor: EmisorDoc;
 }
 
@@ -188,6 +189,7 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
 
         <View style={s.tablaCab} fixed>
           <Text style={[s.celda, s.cNum]}>#</Text>
+          <Text style={[s.celda, s.cSku]}>SKU</Text>
           <Text style={[s.celda, s.cDesc]}>Descripcion</Text>
           <Text style={[s.celda, s.cUnid]}>Unidad</Text>
           <Text style={[s.celda, s.cCant]}>Cantidad</Text>
@@ -196,6 +198,7 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
         {d.items.map((it, i) => (
           <View key={i} style={s.fila_} wrap={false}>
             <Text style={[s.celda, s.cNum]}>{i + 1}</Text>
+            <Text style={[s.celda, s.cSku]}>{it.sku ?? ""}</Text>
             <View style={[s.celda, s.cDesc]}>
               <Text>{it.descripcion}</Text>
               {it.nota ? <Text style={s.chico}>{it.nota}</Text> : null}
@@ -232,6 +235,7 @@ export function OrdenCompraPdf({ d, p }: { d: OrdenDoc; p: Parametros }) {
 
         <View style={s.tablaCab} fixed>
           <Text style={[s.celda, s.cNum]}>#</Text>
+          <Text style={[s.celda, s.cSku]}>SKU</Text>
           <Text style={[s.celda, s.cDesc]}>Descripcion</Text>
           <Text style={[s.celda, s.cCant]}>Cantidad</Text>
           <Text style={[s.celda, s.cPrecio]}>Precio unitario</Text>
@@ -240,6 +244,7 @@ export function OrdenCompraPdf({ d, p }: { d: OrdenDoc; p: Parametros }) {
         {d.lineas.map((l, i) => (
           <View key={i} style={s.fila_} wrap={false}>
             <Text style={[s.celda, s.cNum]}>{i + 1}</Text>
+            <Text style={[s.celda, s.cSku]}>{l.sku ?? ""}</Text>
             <Text style={[s.celda, s.cDesc]}>{l.descripcion}</Text>
             <Text style={[s.celda, s.cCant]}>{fmtUnid(l.unidades)}</Text>
             <Text style={[s.celda, s.cPrecio]}>{dinero(l.costo, d.moneda)}</Text>

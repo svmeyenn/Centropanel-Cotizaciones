@@ -159,6 +159,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           }}
           lineas={(lineas ?? []).map((l) => ({
             id: Number(l.id),
+            sku: (l.sku as string | null) ?? null,
             descripcion: l.descripcion as string,
             unidades: Number(l.unidades),
             costo_unitario: Number(l.costo_unitario),
