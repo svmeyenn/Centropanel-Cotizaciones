@@ -24,6 +24,14 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     .single();
   if (!o) notFound();
 
+  // Si la orden salio de una solicitud de cotizacion de una necesidad de material, de donde viene.
+  const { data: scDb } = o.id_sc
+    ? await supabase.from("solicitudes_cotizacion").select("folio, id_necesidad, necesidades_material(folio)").eq("id", o.id_sc).maybeSingle()
+    : { data: null };
+  const origenSC = scDb
+    ? { folio: scDb.folio as string, idNm: Number(scDb.id_necesidad), folioNm: uno<{ folio: string }>(scDb.necesidades_material)?.folio ?? "" }
+    : null;
+
   const [{ data: lineas }, { data: recs }, { data: pagos }, { data: partidas }, { data: cuentas }, { data: cats }, { data: aprueba }, { data: quienes }] =
     await Promise.all([
       supabase.from("oc_detalle").select("*").eq("id_oc", id).order("orden").order("id"),
@@ -69,6 +77,14 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             <Link href={`/proyectos/${proy.id_proyecto}?tab=compras`} className="text-verde hover:underline">
               Ver proyecto
             </Link>
+          )}
+          {origenSC && (
+            <span>
+              Origen:{" "}
+              <Link href={`/necesidades/${origenSC.idNm}`} className="text-verde underline font-semibold">
+                {origenSC.folio} ({origenSC.folioNm})
+              </Link>
+            </span>
           )}
           {uno<{ num_solicitud: string }>(o.solicitudes) && (
             <span>Origen: {uno<{ num_solicitud: string }>(o.solicitudes)?.num_solicitud}</span>

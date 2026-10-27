@@ -23,6 +23,9 @@ function privilegiosDeRol(rol: Rol) {
       return { puede_ver: true, puede_crear: true, puede_editar: true, puede_admin: true };
     case "Vendedor":
       return { puede_ver: true, puede_crear: true, puede_editar: true, puede_admin: false };
+    // Compras completas --necesidades, solicitudes, adjudicacion y ordenes--; no aprueba ni administra usuarios.
+    case "Comprador":
+      return { puede_ver: true, puede_crear: true, puede_editar: true, puede_admin: false };
     case "Consulta":
       return { puede_ver: true, puede_crear: false, puede_editar: false, puede_admin: false };
   }
@@ -321,6 +324,7 @@ export default function GestorVendedores({
                 <option value="Administrador">Administrador</option>
                 <option value="Supervisor">Supervisor (sin gestion de usuarios)</option>
                 <option value="Vendedor">Vendedor</option>
+                <option value="Comprador">Comprador (necesidades, cotizaciones y ordenes de compra)</option>
                 <option value="Consulta">Consulta</option>
               </select>
             </label>

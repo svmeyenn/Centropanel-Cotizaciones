@@ -1,3 +1,8 @@
+import { ES_SANDBOX } from "@/lib/supabase/esquema";
+
+// Donde se guardan las cotizaciones en PDF de los proveedores.
+export const BUCKET_COTIZACIONES_PROV = ES_SANDBOX ? "cotizaciones-prov-sandbox" : "cotizaciones-prov";
+
 // Estados de una orden de compra y su color. Aparte de las paginas porque Next
 // no deja exportar otra cosa que la pagina desde un archivo de ruta.
 export const ESTADOS_OC = [
@@ -24,4 +29,17 @@ export const COLOR_ESTADO: Record<string, string> = {
   Pagada: "bg-green-200 text-green-900",
   Rechazada: "bg-red-100 text-red-800",
   Anulada: "bg-gray-200 text-gray-500",
+};
+
+// Necesidad de material: lo que se necesita comprar, antes de la orden de compra.
+export const ESTADOS_NM = ["Borrador", "En cotizacion", "Adjudicada parcial", "Adjudicada", "Cerrada", "Anulada"];
+
+export const COLOR_NM: Record<string, string> = {
+  Borrador: "bg-gray-100 text-gray-700",
+  "En cotizacion": "bg-amber-100 text-amber-800",
+  "Adjudicada parcial": "bg-sky-100 text-sky-800",
+  Adjudicada: "bg-emerald-100 text-emerald-800",
+  Cerrada: "bg-green-200 text-green-900",
+  Anulada: "bg-gray-200 text-gray-500",
+  Abierta: "bg-indigo-100 text-indigo-800",
 };

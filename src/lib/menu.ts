@@ -72,6 +72,8 @@ export const GRUPOS: Grupo[] = [
     titulo: "Compras",
     nota: "Ordenes de compra a proveedores y su aprobacion",
     opciones: [
+      // El paso previo a la orden de compra: lo que se necesita, cotizado y adjudicado por solicitud.
+      { texto: "Necesidades de material", href: "/necesidades" },
       { texto: "Ordenes de compra", href: "/compras" },
       { texto: "Por aprobar", href: "/aprobaciones", ve: (v) => v.rol === "Administrador" },
     ],

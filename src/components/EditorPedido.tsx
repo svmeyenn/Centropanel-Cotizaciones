@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fecha as fmtFecha, porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia } from "@/lib/formato";
+import { crearNecesidadDesdePedido } from "@/app/necesidades/acciones";
 import BotonDuplicar from "@/components/BotonDuplicar";
 import BotonRecostearPedido from "@/components/BotonRecostearPedido";
 import GrupoCabecera from "@/components/GrupoCabecera";
@@ -27,7 +28,6 @@ import {
   actualizarPedido,
   actualizarLineasPedido,
   quitarLineaPedido,
-  generarSolicitudes,
   autorizarSinPie,
   revocarSinPie,
   cambiarEstadoSolicitud,
@@ -82,6 +82,7 @@ export default function EditorPedido({
   puedeCrear,
   esAdmin,
   autorizacionSinPie = null,
+  necesidadesPedido = [],
   costoPorLinea,
   verMargen,
   lineasSinCosto = 0,
@@ -119,6 +120,8 @@ export default function EditorPedido({
   esAdmin: boolean;
   // Si un administrador autorizo pedir insumos con el pie sin cubrir.
   autorizacionSinPie?: { por: string; en: string; motivo: string } | null;
+  // Las necesidades de material que ya salieron de este pedido.
+  necesidadesPedido?: { id: number; folio: string; estado: string }[];
   // Costo unitario de cada linea, tomado de la cotizacion de origen: el
   // pedido no lo guarda. Solo llega a quien puede ver costos.
   costoPorLinea?: Record<number, number>;
@@ -746,22 +749,13 @@ export default function EditorPedido({
                   empezar(async () => {
                     setError(null);
                     setAviso(null);
-                    const r = await generarSolicitudes(id);
-                    if (r?.error) {
-                      setError(r.error);
+                    const r = await crearNecesidadDesdePedido(id);
+                    if (!r.ok) {
+                      setError(r.error ?? "No se pudo generar la necesidad.");
                       return;
                     }
-                    setSinProveedor(r.sinProveedor ?? []);
-                    setAviso(
-                      `${r.solicitudes} solicitud(es) generada(s).` +
-                        (r.existentes
-                          ? ` ${r.existentes} proveedor(es) ya tenian una y se dejaron como estaban.`
-                          : "") +
-                        (r.sinProveedor?.length
-                          ? ` ${r.sinProveedor.length} insumo(s) sin proveedor.`
-                          : "")
-                    );
-                    router.refresh();
+                    // Los insumos pasan a una necesidad de material: ahi se cotizan, se abren y se adjudican.
+                    router.push(`/necesidades/${r.id}`);
                   })
                 }
                 disabled={pendiente || !(cuenta.pie_cubierto || autorizacionSinPie)}
@@ -772,14 +766,29 @@ export default function EditorPedido({
                     : "Falta el pie del cliente: un administrador puede autorizar"
                 }
               >
-                {pendiente ? "Generando..." : "Generar solicitudes a proveedores"}
+                {pendiente ? "Generando..." : "Generar necesidad de material"}
               </button>
               <span className="text-xs text-gray-500">
                 {cuenta.pie_cubierto || autorizacionSinPie
-                  ? "Un documento por proveedor. Las ya emitidas no se tocan: para rehacer una hay que eliminarla."
+                  ? "Pasa estos insumos a una necesidad de material, donde se cotizan a varios proveedores y se adjudican."
                   : "Registre el pie en la cuenta corriente, o pida a un administrador que autorice."}
               </span>
             </div>
+          )}
+
+          {necesidadesPedido.length > 0 && (
+            <p className="text-xs text-gray-700">
+              Necesidades de material de este pedido:{" "}
+              {necesidadesPedido.map((n, k) => (
+                <span key={n.id}>
+                  {k > 0 && ", "}
+                  <Link href={`/necesidades/${n.id}`} className="text-verde font-semibold underline">
+                    {n.folio}
+                  </Link>{" "}
+                  <span className="text-gray-500">({n.estado})</span>
+                </span>
+              ))}
+            </p>
           )}
 
           {aviso && (
@@ -801,7 +810,7 @@ export default function EditorPedido({
       {/* solicitudes */}
       <div className="bg-white border border-gray-200 rounded overflow-hidden">
         <div className="bg-verde text-white text-xs font-semibold px-3 py-2">
-          SOLICITUDES DE COTIZACION
+          SOLICITUDES ANTERIORES (HISTORIAL)
         </div>
         <table className="w-full text-xs">
           <thead className="bg-gray-50 text-gray-600">
