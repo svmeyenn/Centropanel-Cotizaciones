@@ -64,7 +64,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
       : Promise.resolve({ data: [] as { id: number; num_oc: string; estado: string; total: number; moneda: string; fecha_entrega: string | null }[] }),
     supabase
       .from("nm_envios")
-      .select("id, tipo, id_sc, id_oc, canal, destino, asunto, id_vendedor, creado")
+      .select("id, tipo, id_sc, id_oc, canal, destino, asunto, id_vendedor, creado, reversado_en")
       .eq("id_necesidad", idNm)
       .eq("id_participante", idPart)
       .order("creado", { ascending: false })
@@ -233,7 +233,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
                     <td className="px-3 py-1.5">
                       {e.tipo === "OC" ? `Orden de compra ${e.id_oc ? (ocPor.get(Number(e.id_oc))?.num_oc ?? "") : ""}` : `Solicitud ${folioSc.get(Number(e.id_sc)) ?? ""}`}
                     </td>
-                    <td className="px-3 py-1.5">{e.canal === "email" ? "Correo" : "WhatsApp"}</td>
+                    <td className="px-3 py-1.5">{e.canal === "email" ? "Correo" : "WhatsApp"}{e.reversado_en ? <span className="ml-1.5 px-1.5 rounded bg-gray-200 text-gray-600 text-[10px] font-semibold">Reversado</span> : null}</td>
                     <td className="px-3 py-1.5">{e.destino}</td>
                     <td className="px-3 py-1.5">{vendPor.get(Number(e.id_vendedor)) ?? "—"}</td>
                   </tr>

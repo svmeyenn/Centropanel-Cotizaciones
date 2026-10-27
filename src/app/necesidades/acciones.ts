@@ -134,6 +134,11 @@ export async function enviarSolicitud(idNm: number, idSc: number) {
   return llamar((s) => s.rpc("sc_enviar", { p_sc: idSc }), idNm);
 }
 
+// Vuelve a borrador una solicitud enviada a cotizar, mientras ningun proveedor haya puesto precios.
+export async function reversarEnvioSolicitud(idNm: number, idSc: number) {
+  return llamar((s) => s.rpc("sc_reversar_envio", { p_sc: idSc }), idNm);
+}
+
 export async function abrirSolicitud(idNm: number, idSc: number, grupos: number[][]) {
   return llamar((s) => s.rpc("sc_abrir", { p_sc: idSc, p_grupos: grupos }), idNm);
 }

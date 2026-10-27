@@ -19,6 +19,7 @@ import {
   declinarProveedor,
   enlaceCotizacionPdf,
   enviarSolicitud,
+  reversarEnvioSolicitud,
   generarOC,
   invitarProveedor,
   quitarItem,
@@ -468,6 +469,20 @@ function TarjetaSolicitud({
           {comprador && s.estado === "Borrador" && (
             <button type="button" className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40" disabled={pendiente} onClick={() => ejecutar(() => enviarSolicitud(idNm, s.id), "Enviada a cotizar.")}>
               Enviar a cotizar
+            </button>
+          )}
+          {comprador && enCotizacion && (
+            <button
+              type="button"
+              className="bg-white text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40"
+              disabled={pendiente}
+              title="Vuelve la solicitud a borrador. Los correos o WhatsApp ya enviados no se pueden retirar."
+              onClick={() =>
+                confirm(`Reversar el envio de ${s.folio}? Vuelve a borrador. Lo que ya se envio a los proveedores no se puede retirar: avisele si corresponde.`) &&
+                ejecutar(() => reversarEnvioSolicitud(idNm, s.id), "Envio reversado: la solicitud volvio a borrador.")
+              }
+            >
+              Reversar envio
             </button>
           )}
           {comprador && (s.estado === "Borrador" || enCotizacion) && items.length >= 2 && (
