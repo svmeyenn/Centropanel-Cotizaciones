@@ -182,6 +182,15 @@ export async function listasMateria(idPais: number): Promise<ListasMateria | nul
   return (data as ListasMateria | null) ?? null;
 }
 
+// Agrega un tipo nuevo a la lista de tipos de materia prima (vale para todos los mercados).
+export async function crearTipoDesdeNecesidad(nombre: string): Promise<{ ok: boolean; error?: string; tipo?: string }> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("compras_crear_tipo_materia", { p_nombre: nombre });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, tipo: data as string };
+}
+
 // Crea la materia prima --con costo cero: el costo lo fija la cotizacion o quien administra la maestra-- y la
 // devuelve lista para agregarla a la necesidad.
 export async function crearMateriaDesdeNecesidad(d: {
