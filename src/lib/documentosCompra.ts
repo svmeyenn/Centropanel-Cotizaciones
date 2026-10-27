@@ -49,7 +49,11 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
     solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; notas: string | null }[];
   };
   const sc = det.solicitudes.find((x) => x.id === idSc);
-  const prov = det.proveedores.find((x) => x.id === idPart);
+  // idPart = 0: el PDF sin destinatario, para quien quiere verlo o mandarlo por su cuenta.
+  const prov: ProveedorNm | undefined =
+    idPart === 0
+      ? { id: 0, id_proveedor: 0, nombre: "(Proveedor)", razon_social: null, rut: null, direccion: null, email: null, telefono: null, contacto: null, estado: "Invitado" }
+      : det.proveedores.find((x) => x.id === idPart);
   if (!sc || !prov) return null;
   const items = det.items.filter((i) => i.id_sc === idSc);
   const p = await leerParametros(Number(det.nm.id_pais));

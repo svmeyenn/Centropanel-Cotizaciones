@@ -521,6 +521,14 @@ function TarjetaSolicitud({
               </button>
             </>
           )}
+          <a href={`/necesidades/${idNm}/solicitud/${s.id}/0/pdf`} target="_blank" rel="noopener noreferrer" className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded">
+            PDF
+          </a>
+          {comprador && (s.estado === "Borrador" || enCotizacion) && (
+            <Link href={`/necesidades/${idNm}/solicitud/${s.id}`} className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded">
+              Enviar a proveedores
+            </Link>
+          )}
           {s.id_oc && (
             <Link href={`/compras/${s.id_oc}`} className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded">
               Ver {s.num_oc}

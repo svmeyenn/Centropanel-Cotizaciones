@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0163-20261027**
+Version vigente: **v0164-20261027**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0164-20261027 | 27-10-2026 | Cada solicitud de cotizacion tiene su propia opcion de PDF --con o sin destinatario-- y una pantalla "Enviar a proveedores" con el PDF y el envio por correo o WhatsApp a cada invitado; el listado de OC suma accesos a PDF y envio | (pendiente) |
 | v0163-20261027 | 27-10-2026 | El SKU de cada materia prima o producto aparece en los items de la necesidad, de las solicitudes, del detalle por proveedor y de la OC, y en los PDF de la solicitud y de la OC --se guarda en cada item para que lo vea tambien quien compra-- | (pendiente) |
 | v0162-20261027 | 27-10-2026 | La pantalla Enviar de cada proveedor tambien muestra el detalle de los items de cada solicitud --descripcion, unidad, cantidad, precio de ese proveedor y subtotal-- | (pendiente) |
 | v0161-20261027 | 27-10-2026 | La necesidad, la solicitud y la OC rescatan de la obra la direccion --la de despacho del pedido, la de la obra o la del cliente, con comuna y ciudad-- y el contacto en destino --nombre, telefono y correo del cliente de la obra--; salen en los PDF y en los mensajes, y se pueden editar en la cabecera de la necesidad y de la OC | (pendiente) |

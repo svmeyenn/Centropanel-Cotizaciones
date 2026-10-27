@@ -70,6 +70,7 @@ export default async function Pagina({
                   <th className="text-left px-3 py-2">Proveedor</th>
                   <th className="text-left px-3 py-2">Estado</th>
                   <th className="text-right px-3 py-2">Total</th>
+                  <th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
@@ -93,11 +94,15 @@ export default async function Pagina({
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right">{dinero(Number(o.total), monedaDelPais(Number(o.id_pais)))}</td>
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <a href={`/compras/${o.id}/pdf/archivo`} target="_blank" rel="noopener noreferrer" className="text-verde underline mr-2">PDF</a>
+                      <Link href={`/compras/${o.id}`} className="text-verde underline">Enviar</Link>
+                    </td>
                   </tr>
                 ))}
                 {(data ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-3 py-6 text-center text-gray-500">
+                    <td colSpan={7} className="px-3 py-6 text-center text-gray-500">
                       Sin ordenes de compra.
                     </td>
                   </tr>
