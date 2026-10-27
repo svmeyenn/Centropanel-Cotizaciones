@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Ventana from "@/components/Ventana";
+import VentanaNuevaMateria from "@/components/VentanaNuevaMateria";
 import { COLOR_NM } from "@/lib/compras";
 import { dinero, fecha as fmtFecha } from "@/lib/formato";
 import {
@@ -410,7 +411,7 @@ export default function FichaNecesidad({
           pendiente={pendiente}
         />
       )}
-      {agregando && <VentanaAgregarItems idNm={nm.id} idPais={nm.id_pais} alCerrar={(hecho) => { setAgregando(false); if (hecho) router.refresh(); }} />}
+      {agregando && <VentanaAgregarItems idNm={nm.id} idPais={nm.id_pais} puedeCrearMateria={comprador} alCerrar={(hecho) => { setAgregando(false); if (hecho) router.refresh(); }} />}
     </div>
   );
 }
@@ -748,13 +749,20 @@ function VentanaApertura({
   );
 }
 
-function VentanaAgregarItems({ idNm, idPais, alCerrar }: { idNm: number; idPais: number; alCerrar: (hecho: boolean) => void }) {
+function VentanaAgregarItems({ idNm, idPais, puedeCrearMateria, alCerrar }: { idNm: number; idPais: number; puedeCrearMateria: boolean; alCerrar: (hecho: boolean) => void }) {
   const [busca, setBusca] = useState("");
   const [encontrados, setEncontrados] = useState<ItemBuscado[]>([]);
   const [elegidos, setElegidos] = useState<{ it: ItemBuscado; cantidad: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
+  const [creandoMateria, setCreandoMateria] = useState(false);
   const ultima = useRef(0);
+
+  function elegir(it: ItemBuscado) {
+    setElegidos((prev) => (prev.some((e) => e.it.id === it.id && e.it.tipo === it.tipo) ? prev : [...prev, { it, cantidad: "1" }]));
+    setBusca("");
+    setEncontrados([]);
+  }
 
   useEffect(() => {
     if (busca.trim().length < 2) return setEncontrados([]);
@@ -788,26 +796,40 @@ function VentanaAgregarItems({ idNm, idPais, alCerrar }: { idNm: number; idPais:
         <div className="relative">
           <label htmlFor="ai-busca" className={ROTULO}>Materia prima o producto</label>
           <input id="ai-busca" className={CAMPO} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Nombre o SKU (minimo 2 letras)" autoComplete="off" autoFocus />
-          {encontrados.length > 0 && (
+          {busca.trim().length >= 2 && (encontrados.length > 0 || puedeCrearMateria) && (
             <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow max-h-56 overflow-y-auto">
               {encontrados.map((it) => (
                 <li key={`${it.tipo}-${it.id}`}>
                   <button
                     type="button"
                     className="w-full text-left px-2 py-1.5 hover:bg-crema"
-                    onClick={() => {
-                      if (!elegidos.some((e) => e.it.id === it.id && e.it.tipo === it.tipo)) setElegidos([...elegidos, { it, cantidad: "1" }]);
-                      setBusca("");
-                      setEncontrados([]);
-                    }}
+                    onClick={() => elegir(it)}
                   >
                     {it.descripcion} <span className="text-gray-500">· {it.tipo === "producto" ? "producto" : "materia prima"}</span>
                   </button>
                 </li>
               ))}
+              {puedeCrearMateria && (
+                <li className="border-t border-gray-200">
+                  <button type="button" className="w-full text-left px-2 py-1.5 text-verde font-semibold hover:bg-crema" onClick={() => setCreandoMateria(true)}>
+                    No esta? Crear la materia prima &laquo;{busca.trim()}&raquo;
+                  </button>
+                </li>
+              )}
             </ul>
           )}
         </div>
+        {creandoMateria && (
+          <VentanaNuevaMateria
+            idPais={idPais}
+            nombreInicial={busca.trim()}
+            alCerrar={() => setCreandoMateria(false)}
+            alCrear={(item) => {
+              setCreandoMateria(false);
+              elegir(item);
+            }}
+          />
+        )}
         {elegidos.map((e, i) => (
           <div key={`${e.it.tipo}-${e.it.id}`} className="flex items-center gap-2">
             <span className="flex-1">{e.it.descripcion}</span>
