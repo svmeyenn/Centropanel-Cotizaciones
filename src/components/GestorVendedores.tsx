@@ -73,6 +73,7 @@ export default function GestorVendedores({
       cargo: v.cargo ?? "",
       email: v.email ?? "",
       telefono: v.telefono ?? "",
+      genero: v.genero ?? "",
       rol: v.rol,
       mercado: v.mercado ?? "Chile",
       puede_ver: v.puede_ver,
@@ -94,6 +95,7 @@ export default function GestorVendedores({
       cargo: "",
       email: "",
       telefono: "",
+      genero: "",
       rol: "Vendedor",
       mercado: "Chile",
       ...privilegiosDeRol("Vendedor"),
@@ -296,6 +298,18 @@ export default function GestorVendedores({
                 prefijo={form.mercado === "Peru" ? "+51" : "+56"}
                 className={input}
               />
+            </label>
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">Genero (para los mensajes)</span>
+              <select
+                className={input}
+                value={form.genero}
+                onChange={(e) => setForm({ ...form, genero: e.target.value as "" | "F" | "M" })}
+              >
+                <option value="">Segun el nombre</option>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+              </select>
             </label>
             <label className="text-sm">
               <span className="block text-dorado-osc font-semibold mb-1">Perfil</span>

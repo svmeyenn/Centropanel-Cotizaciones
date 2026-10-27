@@ -16,6 +16,8 @@ export interface Vendedor {
   cargo: string | null;
   email: string | null;
   telefono: string | null;
+  // Para que los mensajes concuerden --"atento"/"atenta"--; vacio, se infiere del nombre.
+  genero: "F" | "M" | null;
   rol: Rol;
   // Chile, Peru o Ambos. 'Ambos' con rol Administrador es el
   // administrador general: el unico que cruza mercados.
