@@ -60,6 +60,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             <div className="font-semibold">{proy?.nombre}</div>
             {(o.direccion_entrega || proy?.direccion) && <div>Direccion de destino: {o.direccion_entrega || proy?.direccion}</div>}
             {o.fecha_entrega && <div>Fecha de entrega en destino: {fecha(o.fecha_entrega)}</div>}
+            {o.contacto_entrega && <div>Recibe: {o.contacto_entrega}</div>}
+            {o.telefono_entrega && <div>Telefono: {o.telefono_entrega}</div>}
+            {o.email_entrega && <div>Correo: {o.email_entrega}</div>}
             {o.condiciones_pago && <div>Pago: {o.condiciones_pago}</div>}
           </div>
         </div>

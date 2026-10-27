@@ -25,6 +25,9 @@ export interface OcDatos {
   estado: string;
   fecha_entrega: string | null;
   direccion_entrega: string | null;
+  contacto_entrega: string | null;
+  telefono_entrega: string | null;
+  email_entrega: string | null;
   condiciones_pago: string | null;
   notas: string | null;
   total: number;
@@ -85,6 +88,9 @@ export default function EditorOC({
     id_partida: oc.id_partida ? String(oc.id_partida) : "",
     fecha_entrega: oc.fecha_entrega ?? "",
     direccion_entrega: oc.direccion_entrega ?? "",
+    contacto_entrega: oc.contacto_entrega ?? "",
+    telefono_entrega: oc.telefono_entrega ?? "",
+    email_entrega: oc.email_entrega ?? "",
     condiciones_pago: oc.condiciones_pago ?? "",
     notas: oc.notas ?? "",
   });
@@ -211,6 +217,18 @@ export default function EditorOC({
           <span className="block font-semibold mb-1">Direccion de destino</span>
           <input className={input} disabled={!(editando && editaCab)} value={cab.direccion_entrega} onChange={(e) => setCab({ ...cab, direccion_entrega: e.target.value })} maxLength={300} placeholder="Si queda vacia, se usa la de la obra" />
         </label>
+        <label className="text-xs">
+          <span className="block font-semibold mb-1">Contacto en destino</span>
+          <input className={input} disabled={!(editando && editaCab)} value={cab.contacto_entrega} onChange={(e) => setCab({ ...cab, contacto_entrega: e.target.value })} maxLength={120} />
+        </label>
+        <label className="text-xs">
+          <span className="block font-semibold mb-1">Telefono del contacto</span>
+          <input className={input} disabled={!(editando && editaCab)} value={cab.telefono_entrega} onChange={(e) => setCab({ ...cab, telefono_entrega: e.target.value })} maxLength={40} />
+        </label>
+        <label className="text-xs md:col-span-2">
+          <span className="block font-semibold mb-1">Correo del contacto</span>
+          <input type="email" className={input} disabled={!(editando && editaCab)} value={cab.email_entrega} onChange={(e) => setCab({ ...cab, email_entrega: e.target.value })} maxLength={120} />
+        </label>
         <label className="text-xs md:col-span-2">
           <span className="block font-semibold mb-1">Condiciones de pago</span>
           <input className={input} disabled={!(editando && borrador)} value={cab.condiciones_pago} onChange={(e) => setCab({ ...cab, condiciones_pago: e.target.value })} />
@@ -221,8 +239,8 @@ export default function EditorOC({
         </label>
         {editando && emitida && (
           <div className="md:col-span-4 flex flex-wrap items-center gap-3">
-            <button className={boton} disabled={pendiente} onClick={() => ejecutar(() => actualizarCabeceraOC(oc.id, { fecha_entrega: cab.fecha_entrega, direccion_entrega: cab.direccion_entrega, notas: cab.notas }), () => setEditando(false))}>
-              Grabar entrega, direccion y notas
+            <button className={boton} disabled={pendiente} onClick={() => ejecutar(() => actualizarCabeceraOC(oc.id, { fecha_entrega: cab.fecha_entrega, direccion_entrega: cab.direccion_entrega, notas: cab.notas, contacto_entrega: cab.contacto_entrega, telefono_entrega: cab.telefono_entrega, email_entrega: cab.email_entrega }), () => setEditando(false))}>
+              Grabar entrega, direccion, contacto y notas
             </button>
             <span className="text-gray-500 text-xs">
               {oc.estado === "Enviada" ? "La orden ya se envio: si cambia algo, vuelva a enviarla al proveedor." : "Las condiciones de pago y la partida solo cambian en borrador."}

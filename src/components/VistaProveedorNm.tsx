@@ -15,7 +15,7 @@ import { enviarOcPorCorreo, enviarSolicitudPorCorreo, registrarWhatsAppOc, regis
 export const dynamic = "force-dynamic";
 
 type Det = {
-  nm: { id: number; folio: string; id_pais: number; proyecto: string | null; estado: string; fecha_requerida: string | null; direccion_destino: string | null; puede_comprar: boolean };
+  nm: { id: number; folio: string; id_pais: number; proyecto: string | null; estado: string; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
   items: { id: number; orden: number; descripcion: string; unidad: string | null; cantidad: number; id_sc: number | null }[];
   proveedores: {
     id: number;
@@ -98,7 +98,7 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
         <section className="bg-white border border-gray-200 rounded p-3 grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
           <Dato rotulo="Proveedor" valor={prov.razon_social || prov.nombre} extra={prov.rut} />
           <Dato rotulo="Contacto" valor={prov.contacto} extra={[prov.email, prov.telefono].filter(Boolean).join(" | ")} />
-          <Dato rotulo="Entrega en destino" valor={det.nm.fecha_requerida ? fmtFecha(det.nm.fecha_requerida) : "Por coordinar"} extra={det.nm.direccion_destino} />
+          <Dato rotulo="Entrega en destino" valor={det.nm.fecha_requerida ? fmtFecha(det.nm.fecha_requerida) : "Por coordinar"} extra={[det.nm.direccion_destino, det.nm.contacto_destino ? `Recibe: ${det.nm.contacto_destino}` : "", [det.nm.telefono_destino, det.nm.email_destino].filter(Boolean).join(" | ")].filter(Boolean).join(" · ")} />
           <Dato
             rotulo="Su cotizacion"
             valor={prov.estado === "Respondio" ? "Respondio" : prov.estado === "Declino" ? "Declino" : "Pendiente"}
@@ -115,10 +115,10 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
           const sinPrecio = items.filter((i) => !precio.has(i.id)).length;
           const oc = suyo && s.id_oc ? ocPor.get(s.id_oc) : undefined;
           const base = `/necesidades/${idNm}/solicitud/${s.id}/${idPart}/pdf`;
-          const t = textosSolicitud({ folio: s.folio, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: s.fecha_entrega ?? det.nm.fecha_requerida, direccion: s.direccion_destino ?? det.nm.direccion_destino, emisor });
+          const t = textosSolicitud({ folio: s.folio, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: s.fecha_entrega ?? det.nm.fecha_requerida, direccion: s.direccion_destino ?? det.nm.direccion_destino, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
           const bloqueoSc = s.estado === "Adjudicada" ? "La solicitud ya esta adjudicada." : prov.estado === "Declino" ? "El proveedor declino." : null;
           const to = oc
-            ? textosOrden({ numero: oc.num_oc, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: oc.fecha_entrega ?? det.nm.fecha_requerida, direccion: det.nm.direccion_destino, emisor })
+            ? textosOrden({ numero: oc.num_oc, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: oc.fecha_entrega ?? det.nm.fecha_requerida, direccion: det.nm.direccion_destino, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor })
             : null;
           return (
             <section key={s.id} className="bg-white border border-gray-200 rounded">

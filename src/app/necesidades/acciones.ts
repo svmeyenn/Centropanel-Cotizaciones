@@ -56,8 +56,17 @@ export async function crearNecesidadDesdePedido(idPedido: number) {
   return r;
 }
 
-export async function actualizarCabeceraNecesidad(idNm: number, fecha: string, direccion: string, notas: string) {
-  return llamar((s) => s.rpc("nm_actualizar_cabecera", { p_nm: idNm, p_fecha: fecha || null, p_direccion: direccion, p_notas: notas }), idNm);
+export interface ContactoDestino {
+  contacto: string;
+  telefono: string;
+  email: string;
+}
+
+export async function actualizarCabeceraNecesidad(idNm: number, fecha: string, direccion: string, notas: string, c: ContactoDestino) {
+  return llamar(
+    (s) => s.rpc("nm_actualizar_cabecera", { p_nm: idNm, p_fecha: fecha || null, p_direccion: direccion, p_notas: notas, p_contacto: c.contacto, p_telefono: c.telefono, p_email: c.email }),
+    idNm
+  );
 }
 
 // Fecha de entrega, direccion y notas propias de una solicitud; vacias, valen las de la necesidad.
