@@ -20,7 +20,7 @@ export default function NuevaNecesidad({
   puedeCrearMateria,
 }: {
   proyectoInicial: number | null;
-  proyectos: { id: number; nombre: string; id_pais: number }[];
+  proyectos: { id: number; nombre: string; id_pais: number; direccion: string }[];
   partidas: { id: number; id_proyecto: number; nombre: string }[];
   pedidos: { id: number; num: string; id_pais: number }[];
   // Quien compra puede dar de alta una materia prima que todavia no esta en la maestra.
@@ -31,6 +31,9 @@ export default function NuevaNecesidad({
   const [proyecto, setProyecto] = useState<number | "">(proyectoInicial ?? "");
   const [pedido, setPedido] = useState<number | "">("");
   const [fecha, setFecha] = useState("");
+  const [direccion, setDireccion] = useState("");
+  // Se propone la direccion de la obra; quien crea puede cambiarla.
+  const [direccionTocada, setDireccionTocada] = useState(false);
   const [notas, setNotas] = useState("");
   const [lineas, setLineas] = useState<Linea[]>([]);
   const [busca, setBusca] = useState("");
@@ -42,6 +45,10 @@ export default function NuevaNecesidad({
   const ultima = useRef(0);
 
   const pais = origen === "obra" ? proyectos.find((p) => p.id === proyecto)?.id_pais : pedidos.find((p) => p.id === pedido)?.id_pais;
+  const direccionObra = origen === "obra" ? proyectos.find((p) => p.id === proyecto)?.direccion ?? "" : "";
+  useEffect(() => {
+    if (!direccionTocada) setDireccion(direccionObra);
+  }, [direccionObra, direccionTocada]);
   const partidasDe = useMemo(() => (origen === "obra" ? partidas.filter((x) => x.id_proyecto === proyecto) : []), [partidas, proyecto, origen]);
 
   // Busca al escribir, con una pequena espera para no pedir una busqueda por tecla.
@@ -85,6 +92,7 @@ export default function NuevaNecesidad({
         id_proyecto: origen === "obra" ? Number(proyecto) : null,
         id_pedido: origen === "pedido" ? Number(pedido) : null,
         fecha,
+        direccion,
         notas,
         items,
       });
@@ -129,8 +137,19 @@ export default function NuevaNecesidad({
           </div>
         )}
         <div>
-          <label htmlFor="nm-fecha" className={ROTULO}>Fecha requerida</label>
+          <label htmlFor="nm-fecha" className={ROTULO}>Fecha de entrega en destino</label>
           <input id="nm-fecha" type="date" className={CAMPO} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor="nm-dir" className={ROTULO}>Direccion de destino</label>
+          <input
+            id="nm-dir"
+            className={CAMPO}
+            value={direccion}
+            onChange={(e) => { setDireccion(e.target.value); setDireccionTocada(true); }}
+            maxLength={300}
+            placeholder={origen === "pedido" ? "Si queda vacia, se usa la de la obra del pedido" : "Donde se entrega el material"}
+          />
         </div>
         <div>
           <label htmlFor="nm-notas" className={ROTULO}>Notas</label>

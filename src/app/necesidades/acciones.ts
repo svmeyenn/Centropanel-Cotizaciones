@@ -38,10 +38,15 @@ export interface ItemNuevo {
   nota?: string;
 }
 
-export async function crearNecesidad(d: { id_proyecto: number | null; id_pedido: number | null; fecha: string; notas: string; items: ItemNuevo[] }) {
-  return llamar((s) =>
+export async function crearNecesidad(d: { id_proyecto: number | null; id_pedido: number | null; fecha: string; direccion?: string; notas: string; items: ItemNuevo[] }) {
+  const r = await llamar((s) =>
     s.rpc("nm_crear", { p_proyecto: d.id_proyecto, p_pedido: d.id_pedido, p_fecha: d.fecha || null, p_notas: d.notas, p_items: d.items })
   );
+  // La direccion de la obra entra sola; si quien crea la cambio, se guarda la suya.
+  if (r.ok && r.id && d.direccion?.trim()) {
+    await llamar((s) => s.rpc("nm_actualizar_destino", { p_nm: r.id!, p_fecha: d.fecha || null, p_direccion: d.direccion! }), r.id);
+  }
+  return r;
 }
 
 // Desde un pedido: sus insumos pasan solos, con la misma regla del pie de siempre.
@@ -49,6 +54,10 @@ export async function crearNecesidadDesdePedido(idPedido: number) {
   const r = await llamar((s) => s.rpc("nm_crear_desde_pedido", { p_pedido: idPedido }));
   if (r.ok) revalidatePath(`/pedidos/${idPedido}`);
   return r;
+}
+
+export async function actualizarDestino(idNm: number, fecha: string, direccion: string) {
+  return llamar((s) => s.rpc("nm_actualizar_destino", { p_nm: idNm, p_fecha: fecha || null, p_direccion: direccion }), idNm);
 }
 
 export async function agregarItems(idNm: number, items: ItemNuevo[]) {

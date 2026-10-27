@@ -58,8 +58,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           <div>
             <div className="font-bold uppercase text-gray-500 mb-1">Entrega</div>
             <div className="font-semibold">{proy?.nombre}</div>
-            {proy?.direccion && <div>{proy.direccion}</div>}
-            {o.fecha_entrega && <div>Fecha esperada: {fecha(o.fecha_entrega)}</div>}
+            {(o.direccion_entrega || proy?.direccion) && <div>Direccion de destino: {o.direccion_entrega || proy?.direccion}</div>}
+            {o.fecha_entrega && <div>Fecha de entrega en destino: {fecha(o.fecha_entrega)}</div>}
             {o.condiciones_pago && <div>Pago: {o.condiciones_pago}</div>}
           </div>
         </div>

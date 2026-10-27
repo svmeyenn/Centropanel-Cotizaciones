@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0154-20261027**
+Version vigente: **v0155-20261027**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0155-20261027 | 27-10-2026 | Compras: solicitud de cotizacion y orden de compra salen como PDF para cada proveedor, con fecha de entrega en destino y direccion de destino (editables en la necesidad y en la OC; la OC generada los hereda); envio por correo (con el PDF adjunto) o WhatsApp a cada proveedor invitado, anotado en un registro; pantalla de detalle por proveedor con sus solicitudes, precios, OC y lo enviado | (pendiente) |
 | v0154-20261027 | 27-10-2026 | Nueva materia prima desde la necesidad: se pueden crear tipos nuevos en la misma ventana ("+ Nuevo tipo"); se quita la lista cerrada EPS/Placa/Adhesivo de la base, de modo que los tipos nuevos tambien sirven en Parametros de materias primas | (pendiente) |
 | v0153-20261027 | 27-10-2026 | Necesidades de material: crear una materia prima desde la misma necesidad, en una ventana emergente --al buscar un item que no esta, "Crear la materia prima"--; entra con costo cero y se agrega sola a la necesidad; solo quien compra puede hacerlo | (pendiente) |
 | v0152-20261027 | 27-10-2026 | Compras: modulo "Necesidades de material", previo a la orden de compra --necesidad por obra o pedido, solicitudes de cotizacion que se abren en varias, proveedores invitados con sus precios por item, cuadro comparativo con el mejor precio, adjudicacion por solicitud y una orden de compra por cada solicitud adjudicada--; perfil Comprador; el pedido genera la necesidad en vez de solicitudes sueltas; la orden de compra muestra su origen | (pendiente) |

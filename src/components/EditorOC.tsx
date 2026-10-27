@@ -23,6 +23,7 @@ export interface OcDatos {
   num_oc: string;
   estado: string;
   fecha_entrega: string | null;
+  direccion_entrega: string | null;
   condiciones_pago: string | null;
   notas: string | null;
   total: number;
@@ -78,6 +79,7 @@ export default function EditorOC({
   const [cab, setCab] = useState({
     id_partida: oc.id_partida ? String(oc.id_partida) : "",
     fecha_entrega: oc.fecha_entrega ?? "",
+    direccion_entrega: oc.direccion_entrega ?? "",
     condiciones_pago: oc.condiciones_pago ?? "",
     notas: oc.notas ?? "",
   });
@@ -192,8 +194,12 @@ export default function EditorOC({
           </select>
         </label>
         <label className="text-xs">
-          <span className="block font-semibold mb-1">Entrega esperada</span>
+          <span className="block font-semibold mb-1">Fecha de entrega en destino</span>
           <input type="date" className={input} disabled={!borrador} value={cab.fecha_entrega} onChange={(e) => setCab({ ...cab, fecha_entrega: e.target.value })} />
+        </label>
+        <label className="text-xs md:col-span-2">
+          <span className="block font-semibold mb-1">Direccion de destino</span>
+          <input className={input} disabled={!borrador} value={cab.direccion_entrega} onChange={(e) => setCab({ ...cab, direccion_entrega: e.target.value })} maxLength={300} placeholder="Si queda vacia, se usa la de la obra" />
         </label>
         <label className="text-xs md:col-span-2">
           <span className="block font-semibold mb-1">Condiciones de pago</span>

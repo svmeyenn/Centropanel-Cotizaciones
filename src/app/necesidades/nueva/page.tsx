@@ -15,7 +15,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
   const supabase = await createClient();
 
   const [{ data: proyectos }, { data: partidas }, { data: pedidos }] = await Promise.all([
-    supabase.from("proyectos").select("id_proyecto, nombre, id_pais").eq("borrado", false).eq("activo", true).order("nombre"),
+    supabase.from("proyectos").select("id_proyecto, nombre, id_pais, direccion").eq("borrado", false).eq("activo", true).order("nombre"),
     supabase.from("proyecto_partidas").select("id, id_proyecto, nombre").order("orden").order("id"),
     supabase.from("pedidos").select("id, num_pedido, id_pais, id_proyecto").order("id", { ascending: false }).limit(300),
   ]);
@@ -27,7 +27,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
         <BarraNavegacion volverA="/necesidades" />
         <NuevaNecesidad
           proyectoInicial={proyecto ? Number(proyecto) : null}
-          proyectos={(proyectos ?? []).map((p) => ({ id: Number(p.id_proyecto), nombre: p.nombre as string, id_pais: Number(p.id_pais) }))}
+          proyectos={(proyectos ?? []).map((p) => ({ id: Number(p.id_proyecto), nombre: p.nombre as string, id_pais: Number(p.id_pais), direccion: (p.direccion as string | null) ?? "" }))}
           partidas={(partidas ?? []).map((p) => ({ id: Number(p.id), id_proyecto: Number(p.id_proyecto), nombre: p.nombre as string }))}
           pedidos={(pedidos ?? []).map((p) => ({ id: Number(p.id), num: p.num_pedido as string, id_pais: Number(p.id_pais) }))}
           puedeCrearMateria={["Administrador", "Supervisor", "Comprador"].includes(v.rol)}
