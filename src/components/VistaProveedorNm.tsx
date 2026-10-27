@@ -154,8 +154,6 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                   )}
                 </span>
               </header>
-              {modo === "enviar" && <p className="px-3 py-2 text-gray-600">{items.length} item{items.length === 1 ? "" : "s"}</p>}
-              {modo === "detalle" && (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 text-gray-600">
@@ -191,7 +189,6 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                   </tfoot>
                 </table>
               </div>
-              )}
               {oc && to && (
                 <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-t border-gray-200">
                   <span className="font-semibold">Orden de compra</span>
