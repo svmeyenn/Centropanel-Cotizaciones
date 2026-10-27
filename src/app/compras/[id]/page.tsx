@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import EditorOC from "@/components/EditorOC";
+import EnvioDocumento from "@/components/EnvioDocumento";
+import { textosOrden } from "@/lib/textosCompra";
+import { enviarOcPorCorreo, registrarWhatsAppOc } from "@/app/necesidades/envios";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { COLOR_ESTADO } from "@/lib/compras";
@@ -19,7 +22,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   const { data: o } = await supabase
     .from("ordenes_compra")
-    .select("*, proyectos(id_proyecto, nombre), entidades(razon_social), solicitudes(num_solicitud)")
+    .select("*, proyectos(id_proyecto, nombre, direccion), entidades(razon_social, nombre_referencia, email, telefono, contacto), solicitudes(num_solicitud)")
     .eq("id", id)
     .single();
   if (!o) notFound();
@@ -52,7 +55,18 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   const desc = new Map((lineas ?? []).map((l) => [Number(l.id), l.descripcion as string]));
   const nombre = (idv: number | null) => (quienes ?? []).find((x) => Number(x.id) === idv)?.nombre;
-  const proy = uno<{ id_proyecto: number; nombre: string }>(o.proyectos);
+  const proy = uno<{ id_proyecto: number; nombre: string; direccion: string | null }>(o.proyectos);
+  const prov = uno<{ razon_social: string; nombre_referencia: string | null; email: string | null; telefono: string | null; contacto: string | null }>(o.entidades);
+  const puedeEnviar = ["Administrador", "Supervisor", "Comprador"].includes(v.rol);
+  const { data: pais } = await supabase.from("paises").select("prefijo_telefono").eq("id", o.id_pais).single();
+  const textos = textosOrden({
+    numero: o.num_oc,
+    contacto: prov?.contacto ?? null,
+    proveedor: prov?.razon_social ?? "",
+    fechaEntrega: o.fecha_entrega,
+    direccion: o.direccion_entrega || proy?.direccion || null,
+    emisor: { nombre: v.nombre, cargo: v.cargo, email: v.email, telefono: v.telefono },
+  });
 
   return (
     <div className="min-h-screen">
@@ -90,12 +104,38 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             <span>Origen: {uno<{ num_solicitud: string }>(o.solicitudes)?.num_solicitud}</span>
           )}
         </div>
+        {puedeEnviar && (
+          <div className="flex flex-wrap items-center gap-2 text-xs bg-white border border-gray-200 rounded px-3 py-2">
+            <span className="font-semibold text-verde">Proveedor</span>
+            <span>{prov?.razon_social}</span>
+            <span className="ml-auto flex items-center gap-1.5">
+              <a href={`/compras/${id}/pdf/archivo`} target="_blank" rel="noopener noreferrer" className="border border-gray-300 bg-white text-gray-800 text-[11px] font-semibold px-2 py-0.5 rounded">
+                PDF de la orden
+              </a>
+              <EnvioDocumento
+                etiqueta="Enviar al proveedor"
+                titulo={`Enviar ${o.num_oc}`}
+                proveedor={{ nombre: prov?.razon_social ?? "", email: prov?.email ?? null, telefono: prov?.telefono ?? null }}
+                prefijoTelefono={(pais?.prefijo_telefono as string | null) ?? "56"}
+                pdfUrl={`/compras/${id}/pdf/archivo`}
+                nombreArchivo={`${o.num_oc}.pdf`}
+                asunto={textos.asunto}
+                cuerpo={textos.cuerpo}
+                textoWhatsApp={textos.whatsapp}
+                bloqueo={["Aprobada", "Enviada", "Recibida parcial", "Recibida", "Facturada", "Pagada"].includes(o.estado) ? null : `La orden esta ${o.estado.toLowerCase()}: se envia una vez aprobada.`}
+                enviarCorreo={enviarOcPorCorreo.bind(null, id)}
+                registrarWhatsApp={registrarWhatsAppOc.bind(null, id)}
+              />
+            </span>
+          </div>
+        )}
         <EditorOC
           oc={{
             id,
             num_oc: o.num_oc,
             estado: o.estado,
             fecha_entrega: o.fecha_entrega,
+            direccion_entrega: o.direccion_entrega,
             condiciones_pago: o.condiciones_pago,
             notas: o.notas,
             total: Number(o.total),

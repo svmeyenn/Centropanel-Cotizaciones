@@ -56,7 +56,7 @@ function aplicar(plantilla: string, d: DatosEnvio, enlace: string): string {
 // viene en formato local. wa.me exige el numero sin +, sin espacios y con codigo
 // de pais. Un celular de nueve digitos que empieza con 9 es igual en Chile y en
 // Peru: solo el pais de la cotizacion dice cual es.
-function normalizarFono(fono: string | null, prefijo: string): string | null {
+export function normalizarFono(fono: string | null, prefijo: string): string | null {
   if (!fono) return null;
   const n = fono.replace(/\D/g, "");
   if (!n) return null;

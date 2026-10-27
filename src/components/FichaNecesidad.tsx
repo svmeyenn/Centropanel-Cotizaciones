@@ -10,6 +10,7 @@ import { dinero, fecha as fmtFecha } from "@/lib/formato";
 import {
   abrirSolicitud,
   adjudicarSolicitud,
+  actualizarDestino,
   agregarItems,
   anularNecesidad,
   anularSolicitud,
@@ -38,6 +39,7 @@ export type Detalle = {
     id_pedido: number | null;
     estado: string;
     fecha_requerida: string | null;
+    direccion_destino: string | null;
     notas: string | null;
     proyecto: string | null;
     num_pedido: string | null;
@@ -109,6 +111,7 @@ export default function FichaNecesidad({
   const [cotizando, setCotizando] = useState<Prov | null>(null);
   const [abriendo, setAbriendo] = useState<Sol | null>(null);
   const [agregando, setAgregando] = useState(false);
+  const [editandoDestino, setEditandoDestino] = useState(false);
   const [invitar, setInvitar] = useState("");
 
   // precio[participante][item]
@@ -167,8 +170,17 @@ export default function FichaNecesidad({
           )}
         </div>
         <div>
-          <span className={ROTULO}>Fecha requerida</span>
+          <span className={ROTULO}>Entrega en destino</span>
           {nm.fecha_requerida ? fmtFecha(nm.fecha_requerida) : "—"}
+        </div>
+        <div className="max-w-sm">
+          <span className={ROTULO}>Direccion de destino</span>
+          {nm.direccion_destino ?? "—"}
+          {comprador && abierta && (
+            <button type="button" className="ml-2 text-verde underline text-[11px]" onClick={() => setEditandoDestino(true)}>
+              Cambiar
+            </button>
+          )}
         </div>
         <div>
           <span className={ROTULO}>Pidio</span>
@@ -307,6 +319,9 @@ export default function FichaNecesidad({
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-right whitespace-nowrap space-x-1.5">
+                    <Link href={`/necesidades/${nm.id}/proveedor/${p.id}`} className={BTN}>
+                      Ver detalle y enviar
+                    </Link>
                     {comprador && abierta && p.estado !== "Declino" && (
                       <button type="button" className={BTN_VERDE} onClick={() => setCotizando(p)}>
                         {p.estado === "Respondio" ? "Editar cotizacion" : "Registrar cotizacion"}
@@ -411,6 +426,7 @@ export default function FichaNecesidad({
           pendiente={pendiente}
         />
       )}
+      {editandoDestino && <VentanaDestino idNm={nm.id} fecha={nm.fecha_requerida} direccion={nm.direccion_destino} alCerrar={(hecho) => { setEditandoDestino(false); if (hecho) router.refresh(); }} />}
       {agregando && <VentanaAgregarItems idNm={nm.id} idPais={nm.id_pais} puedeCrearMateria={comprador} alCerrar={(hecho) => { setAgregando(false); if (hecho) router.refresh(); }} />}
     </div>
   );
@@ -745,6 +761,42 @@ function VentanaApertura({
           <button type="button" className={BTN_VERDE} onClick={abrir} disabled={pendiente}>{pendiente ? "Abriendo..." : "Abrir solicitud"}</button>
         </div>
       </div>
+    </Ventana>
+  );
+}
+
+// Fecha de entrega en destino y direccion de destino: van en la solicitud y en la orden de compra.
+function VentanaDestino({ idNm, fecha, direccion, alCerrar }: { idNm: number; fecha: string | null; direccion: string | null; alCerrar: (hecho: boolean) => void }) {
+  const [f, setF] = useState(fecha ?? "");
+  const [d, setD] = useState(direccion ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [pendiente, empezar] = useTransition();
+  function guardar() {
+    setError(null);
+    empezar(async () => {
+      const r = await actualizarDestino(idNm, f, d);
+      if (!r.ok) return setError(r.error ?? "No se pudo guardar.");
+      alCerrar(true);
+    });
+  }
+  return (
+    <Ventana titulo="Destino de la entrega" subtitulo="Va en las solicitudes y en las ordenes de compra" onCerrar={() => alCerrar(false)} ancho="max-w-lg">
+      <form className="space-y-3 text-xs" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
+        <div>
+          <label htmlFor="nm-dest-fecha" className={ROTULO}>Fecha de entrega en destino</label>
+          <input id="nm-dest-fecha" type="date" className="border border-gray-300 rounded px-2 py-1 text-xs bg-white" value={f} onChange={(e) => setF(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="nm-dest-dir" className={ROTULO}>Direccion de destino</label>
+          <textarea id="nm-dest-dir" rows={2} className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white" value={d} onChange={(e) => setD(e.target.value)} maxLength={300} />
+        </div>
+        <p className="text-gray-600">Las ordenes de compra que ya se generaron no cambian: se corrigen en cada orden.</p>
+        {error && <p className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2" role="alert">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" className={BTN} onClick={() => alCerrar(false)} disabled={pendiente}>Cancelar</button>
+          <button type="submit" className={BTN_VERDE} disabled={pendiente}>{pendiente ? "Guardando..." : "Guardar"}</button>
+        </div>
+      </form>
     </Ventana>
   );
 }

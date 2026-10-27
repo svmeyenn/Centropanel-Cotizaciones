@@ -53,7 +53,7 @@ export async function crearOC(d: {
 
 export async function guardarCabeceraOC(
   id: number,
-  d: { id_partida: number | null; fecha_entrega: string; condiciones_pago: string; notas: string }
+  d: { id_partida: number | null; fecha_entrega: string; direccion_entrega: string; condiciones_pago: string; notas: string }
 ) {
   await requerirVendedor();
   const supabase = await createClient();
@@ -62,6 +62,7 @@ export async function guardarCabeceraOC(
     .update({
       id_partida: d.id_partida,
       fecha_entrega: d.fecha_entrega || null,
+      direccion_entrega: d.direccion_entrega.trim() || null,
       condiciones_pago: d.condiciones_pago.trim() || null,
       notas: d.notas.trim() || null,
     })
