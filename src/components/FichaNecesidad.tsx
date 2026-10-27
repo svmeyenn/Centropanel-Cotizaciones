@@ -181,11 +181,6 @@ export default function FichaNecesidad({
         <div className="max-w-sm">
           <span className={ROTULO}>Direccion de destino</span>
           {nm.direccion_destino ?? "—"}
-          {comprador && abierta && (
-            <button type="button" className="ml-2 text-verde underline text-[11px]" onClick={() => setEditandoDestino(true)}>
-              Editar cabecera
-            </button>
-          )}
         </div>
         <div>
           <span className={ROTULO}>Pidio</span>
@@ -198,7 +193,10 @@ export default function FichaNecesidad({
           </div>
         )}
         {comprador && abierta && (
-          <div className="ml-auto">
+          <div className="ml-auto flex gap-1.5">
+            <button type="button" className={BTN} disabled={pendiente} onClick={() => setEditandoDestino(true)}>
+              Editar cabecera
+            </button>
             <button
               type="button"
               className={BTN_ROJO}
@@ -485,11 +483,6 @@ function TarjetaSolicitud({
               Enviar a cotizar
             </button>
           )}
-          {comprador && (s.estado === "Borrador" || enCotizacion) && (
-            <button type="button" className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded" onClick={() => setEditando(true)}>
-              Editar cabecera
-            </button>
-          )}
           {comprador && enCotizacion && (
             <button
               type="button"
@@ -523,6 +516,11 @@ function TarjetaSolicitud({
             <Link href={`/compras/${s.id_oc}`} className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded">
               Ver {s.num_oc}
             </Link>
+          )}
+          {comprador && (s.estado === "Borrador" || enCotizacion) && (
+            <button type="button" className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded" onClick={() => setEditando(true)}>
+              Editar cabecera
+            </button>
           )}
           {comprador && !s.id_oc && (
             <button type="button" className="bg-white text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40" disabled={pendiente} onClick={() => confirm(`Anular ${s.folio}? Sus items quedan sin solicitud.`) && ejecutar(() => anularSolicitud(idNm, s.id), "Solicitud anulada.")}>
