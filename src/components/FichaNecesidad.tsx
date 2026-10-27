@@ -42,6 +42,9 @@ export type Detalle = {
     estado: string;
     fecha_requerida: string | null;
     direccion_destino: string | null;
+    contacto_destino: string | null;
+    telefono_destino: string | null;
+    email_destino: string | null;
     notas: string | null;
     proyecto: string | null;
     num_pedido: string | null;
@@ -181,6 +184,11 @@ export default function FichaNecesidad({
         <div className="max-w-sm">
           <span className={ROTULO}>Direccion de destino</span>
           {nm.direccion_destino ?? "—"}
+        </div>
+        <div className="max-w-xs">
+          <span className={ROTULO}>Contacto en destino</span>
+          {nm.contacto_destino ?? "—"}
+          {(nm.telefono_destino || nm.email_destino) && <span className="block text-gray-600">{[nm.telefono_destino, nm.email_destino].filter(Boolean).join(" | ")}</span>}
         </div>
         <div>
           <span className={ROTULO}>Pidio</span>
@@ -435,7 +443,7 @@ export default function FichaNecesidad({
           pendiente={pendiente}
         />
       )}
-      {editandoDestino && <VentanaCabeceraNecesidad idNm={nm.id} fecha={nm.fecha_requerida} direccion={nm.direccion_destino} notas={nm.notas} alCerrar={(hecho) => { setEditandoDestino(false); if (hecho) router.refresh(); }} />}
+      {editandoDestino && <VentanaCabeceraNecesidad idNm={nm.id} fecha={nm.fecha_requerida} direccion={nm.direccion_destino} notas={nm.notas} contacto={{ contacto: nm.contacto_destino ?? "", telefono: nm.telefono_destino ?? "", email: nm.email_destino ?? "" }} alCerrar={(hecho) => { setEditandoDestino(false); if (hecho) router.refresh(); }} />}
       {agregando && <VentanaAgregarItems idNm={nm.id} idPais={nm.id_pais} puedeCrearMateria={comprador} alCerrar={(hecho) => { setAgregando(false); if (hecho) router.refresh(); }} />}
     </div>
   );
@@ -798,22 +806,23 @@ function VentanaApertura({
 }
 
 // Fecha de entrega en destino y direccion de destino: van en la solicitud y en la orden de compra.
-function VentanaCabeceraNecesidad({ idNm, fecha, direccion, notas, alCerrar }: { idNm: number; fecha: string | null; direccion: string | null; notas: string | null; alCerrar: (hecho: boolean) => void }) {
+function VentanaCabeceraNecesidad({ idNm, fecha, direccion, notas, contacto, alCerrar }: { idNm: number; fecha: string | null; direccion: string | null; notas: string | null; contacto: { contacto: string; telefono: string; email: string }; alCerrar: (hecho: boolean) => void }) {
   const [f, setF] = useState(fecha ?? "");
   const [d, setD] = useState(direccion ?? "");
   const [n, setN] = useState(notas ?? "");
+  const [c, setC] = useState(contacto);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
   function guardar() {
     setError(null);
     empezar(async () => {
-      const r = await actualizarCabeceraNecesidad(idNm, f, d, n);
+      const r = await actualizarCabeceraNecesidad(idNm, f, d, n, c);
       if (!r.ok) return setError(r.error ?? "No se pudo guardar.");
       alCerrar(true);
     });
   }
   return (
-    <Ventana titulo="Cabecera de la necesidad" subtitulo="La entrega y la direccion van en las solicitudes y en las ordenes de compra" onCerrar={() => alCerrar(false)} ancho="max-w-lg">
+    <Ventana titulo="Cabecera de la necesidad" subtitulo="La entrega y la direccion van en las solicitudes y en las ordenes de compra" onCerrar={() => alCerrar(false)} ancho="max-w-2xl">
       <form className="space-y-3 text-xs" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
         <div>
           <label htmlFor="nm-dest-fecha" className={ROTULO}>Fecha de entrega en destino</label>
@@ -822,6 +831,20 @@ function VentanaCabeceraNecesidad({ idNm, fecha, direccion, notas, alCerrar }: {
         <div>
           <label htmlFor="nm-dest-dir" className={ROTULO}>Direccion de destino</label>
           <textarea id="nm-dest-dir" rows={2} className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white" value={d} onChange={(e) => setD(e.target.value)} maxLength={300} />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <label htmlFor="nm-dest-contacto" className={ROTULO}>Contacto en destino</label>
+            <input id="nm-dest-contacto" className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white" value={c.contacto} onChange={(e) => setC({ ...c, contacto: e.target.value })} maxLength={120} />
+          </div>
+          <div>
+            <label htmlFor="nm-dest-tel" className={ROTULO}>Telefono</label>
+            <input id="nm-dest-tel" className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white" value={c.telefono} onChange={(e) => setC({ ...c, telefono: e.target.value })} maxLength={40} />
+          </div>
+          <div>
+            <label htmlFor="nm-dest-email" className={ROTULO}>Correo</label>
+            <input id="nm-dest-email" type="email" className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white" value={c.email} onChange={(e) => setC({ ...c, email: e.target.value })} maxLength={120} />
+          </div>
         </div>
         <div>
           <label htmlFor="nm-dest-notas" className={ROTULO}>Notas</label>

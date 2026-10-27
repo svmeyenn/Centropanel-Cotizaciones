@@ -69,6 +69,13 @@ export interface EmisorDoc {
   telefono?: string | null;
 }
 
+// Quien recibe en el destino.
+export interface ContactoDoc {
+  nombre?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+}
+
 export interface SolicitudDoc {
   folio: string;
   folioNecesidad: string;
@@ -78,6 +85,7 @@ export interface SolicitudDoc {
   // Fecha de entrega en destino y direccion de destino.
   fechaEntrega: string | null;
   direccionDestino: string | null;
+  contactoDestino?: ContactoDoc;
   notas: string | null;
   items: { descripcion: string; unidad: string | null; cantidad: number; nota: string | null }[];
   emisor: EmisorDoc;
@@ -93,6 +101,7 @@ export interface OrdenDoc {
   obra: string | null;
   fechaEntrega: string | null;
   direccionDestino: string | null;
+  contactoDestino?: ContactoDoc;
   condicionesPago: string | null;
   notas: string | null;
   total: number;
@@ -136,7 +145,7 @@ function BloqueProveedor({ pr }: { pr: ProveedorDoc }) {
   );
 }
 
-function BloqueEntrega({ obra, fechaEntrega, direccion, etiquetaFecha }: { obra: string | null; fechaEntrega: string | null; direccion: string | null; etiquetaFecha: string }) {
+function BloqueEntrega({ obra, fechaEntrega, direccion, etiquetaFecha, contacto }: { obra: string | null; fechaEntrega: string | null; direccion: string | null; etiquetaFecha: string; contacto?: ContactoDoc }) {
   return (
     <View style={s.bloque}>
       <Text style={s.rotuloBloque}>ENTREGA EN DESTINO</Text>
@@ -147,6 +156,9 @@ function BloqueEntrega({ obra, fechaEntrega, direccion, etiquetaFecha }: { obra:
         {direccion || "Por informar"}
       </Text>
       <Campo rotulo="Obra" valor={obra} />
+      <Campo rotulo="Recibe" valor={contacto?.nombre} />
+      <Campo rotulo="Telefono" valor={contacto?.telefono} />
+      <Campo rotulo="Correo" valor={contacto?.email} />
     </View>
   );
 }
@@ -170,7 +182,7 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
         <Cabecera p={p} titulo="SOLICITUD DE COTIZACION" numero={d.folio} fecha={d.fecha} />
         <View style={s.bloques}>
           <BloqueProveedor pr={d.proveedor} />
-          <BloqueEntrega obra={d.obra} fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} etiquetaFecha="Fecha de entrega requerida en destino" />
+          <BloqueEntrega obra={d.obra} fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} contacto={d.contactoDestino} etiquetaFecha="Fecha de entrega requerida en destino" />
           <BloqueEmisor e={d.emisor} p={p} />
         </View>
 
@@ -213,7 +225,7 @@ export function OrdenCompraPdf({ d, p }: { d: OrdenDoc; p: Parametros }) {
         {!d.aprobada ? <Text style={s.aviso}>DOCUMENTO NO VALIDO: la orden aun no esta aprobada ({d.estado}).</Text> : null}
         <View style={s.bloques}>
           <BloqueProveedor pr={d.proveedor} />
-          <BloqueEntrega obra={d.obra} fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} etiquetaFecha="Fecha de entrega comprometida en destino" />
+          <BloqueEntrega obra={d.obra} fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} contacto={d.contactoDestino} etiquetaFecha="Fecha de entrega comprometida en destino" />
           <BloqueEmisor e={d.emisor} p={p} />
         </View>
         {d.condicionesPago ? <Text style={[s.campo, { marginBottom: 8 }]}><Text style={{ color: GRIS }}>Condiciones de pago: </Text>{d.condicionesPago}</Text> : null}

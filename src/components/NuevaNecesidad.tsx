@@ -148,7 +148,7 @@ export default function NuevaNecesidad({
             value={direccion}
             onChange={(e) => { setDireccion(e.target.value); setDireccionTocada(true); }}
             maxLength={300}
-            placeholder={origen === "pedido" ? "Si queda vacia, se usa la de la obra del pedido" : "Donde se entrega el material"}
+            placeholder={origen === "pedido" ? "Si queda vacia, se usa la del pedido o la de su obra" : "Donde se entrega el material"}
           />
         </div>
         <div>

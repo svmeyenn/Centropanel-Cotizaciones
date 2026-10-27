@@ -53,7 +53,16 @@ export async function crearOC(d: {
 
 export async function guardarCabeceraOC(
   id: number,
-  d: { id_partida: number | null; fecha_entrega: string; direccion_entrega: string; condiciones_pago: string; notas: string }
+  d: {
+    id_partida: number | null;
+    fecha_entrega: string;
+    direccion_entrega: string;
+    contacto_entrega: string;
+    telefono_entrega: string;
+    email_entrega: string;
+    condiciones_pago: string;
+    notas: string;
+  }
 ) {
   await requerirVendedor();
   const supabase = await createClient();
@@ -63,6 +72,9 @@ export async function guardarCabeceraOC(
       id_partida: d.id_partida,
       fecha_entrega: d.fecha_entrega || null,
       direccion_entrega: d.direccion_entrega.trim() || null,
+      contacto_entrega: d.contacto_entrega.trim() || null,
+      telefono_entrega: d.telefono_entrega.trim() || null,
+      email_entrega: d.email_entrega.trim() || null,
       condiciones_pago: d.condiciones_pago.trim() || null,
       notas: d.notas.trim() || null,
     })
@@ -187,7 +199,10 @@ export async function solicitarPagoOC(
 }
 
 // Cabecera de una orden ya emitida: entrega, direccion y notas.
-export async function actualizarCabeceraOC(id: number, d: { fecha_entrega: string; direccion_entrega: string; notas: string }) {
+export async function actualizarCabeceraOC(
+  id: number,
+  d: { fecha_entrega: string; direccion_entrega: string; notas: string; contacto_entrega: string; telefono_entrega: string; email_entrega: string }
+) {
   await requerirVendedor();
   const supabase = await createClient();
   const { error } = await supabase.rpc("oc_actualizar_cabecera", {
@@ -195,6 +210,9 @@ export async function actualizarCabeceraOC(id: number, d: { fecha_entrega: strin
     p_fecha: d.fecha_entrega || null,
     p_direccion: d.direccion_entrega,
     p_notas: d.notas,
+    p_contacto: d.contacto_entrega,
+    p_telefono: d.telefono_entrega,
+    p_email: d.email_entrega,
   });
   if (error) return { error: error.message };
   refrescar(id);

@@ -66,6 +66,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     proveedor: prov?.razon_social ?? "",
     fechaEntrega: o.fecha_entrega,
     direccion: o.direccion_entrega || proy?.direccion || null,
+    recibe: { nombre: o.contacto_entrega, telefono: o.telefono_entrega, email: o.email_entrega },
     emisor: { nombre: v.nombre, cargo: v.cargo, email: v.email, telefono: v.telefono },
   });
 
@@ -143,6 +144,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             estado: o.estado,
             fecha_entrega: o.fecha_entrega,
             direccion_entrega: o.direccion_entrega,
+            contacto_entrega: o.contacto_entrega,
+            telefono_entrega: o.telefono_entrega,
+            email_entrega: o.email_entrega,
             condiciones_pago: o.condiciones_pago,
             notas: o.notas,
             total: Number(o.total),
