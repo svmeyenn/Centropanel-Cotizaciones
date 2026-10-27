@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0161-20261027**
+Version vigente: **v0162-20261027**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0162-20261027 | 27-10-2026 | La pantalla Enviar de cada proveedor tambien muestra el detalle de los items de cada solicitud --descripcion, unidad, cantidad, precio de ese proveedor y subtotal-- | (pendiente) |
 | v0161-20261027 | 27-10-2026 | La necesidad, la solicitud y la OC rescatan de la obra la direccion --la de despacho del pedido, la de la obra o la del cliente, con comuna y ciudad-- y el contacto en destino --nombre, telefono y correo del cliente de la obra--; salen en los PDF y en los mensajes, y se pueden editar en la cabecera de la necesidad y de la OC | (pendiente) |
 | v0160-20261027 | 27-10-2026 | La edicion de la cabecera pasa a un boton "Editar cabecera" junto a "Anular", en la necesidad, en cada solicitud y en la OC --en la OC, los campos solo se habilitan al pulsarlo-- | (pendiente) |
 | v0159-20261027 | 27-10-2026 | Necesidades de material: "Editar cabecera" de la necesidad --fecha de entrega, direccion de destino y notas-- mientras no este cerrada ni anulada | (pendiente) |
