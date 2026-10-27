@@ -79,6 +79,7 @@ export default function EditorOC({
   // Emitida --pendiente, aprobada o enviada--: la entrega, la direccion y las notas aun se pueden corregir.
   const emitida = ["Pendiente aprobacion", "Aprobada", "Enviada"].includes(oc.estado);
   const editaCab = borrador || emitida;
+  const [editando, setEditando] = useState(false);
 
   const [cab, setCab] = useState({
     id_partida: oc.id_partida ? String(oc.id_partida) : "",
@@ -159,6 +160,11 @@ export default function EditorOC({
             Marcar como enviada al proveedor
           </button>
         )}
+        {editaCab && puedeCrear && (
+          <button className={botonGris} disabled={pendiente} onClick={() => setEditando(!editando)}>
+            {editando ? "Cerrar edicion" : "Editar cabecera"}
+          </button>
+        )}
         {anulable && puedeCrear && (
           <button
             className={botonGris}
@@ -188,7 +194,7 @@ export default function EditorOC({
       <div className="bg-white border border-gray-200 rounded p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
         <label className="text-xs">
           <span className="block font-semibold mb-1">Partida</span>
-          <select className={input} disabled={!borrador} value={cab.id_partida} onChange={(e) => setCab({ ...cab, id_partida: e.target.value })}>
+          <select className={input} disabled={!(editando && borrador)} value={cab.id_partida} onChange={(e) => setCab({ ...cab, id_partida: e.target.value })}>
             <option value="">-- sin partida --</option>
             {partidas.map((p) => (
               <option key={p.id} value={p.id}>
@@ -199,23 +205,23 @@ export default function EditorOC({
         </label>
         <label className="text-xs">
           <span className="block font-semibold mb-1">Fecha de entrega en destino</span>
-          <input type="date" className={input} disabled={!editaCab} value={cab.fecha_entrega} onChange={(e) => setCab({ ...cab, fecha_entrega: e.target.value })} />
+          <input type="date" className={input} disabled={!(editando && editaCab)} value={cab.fecha_entrega} onChange={(e) => setCab({ ...cab, fecha_entrega: e.target.value })} />
         </label>
         <label className="text-xs md:col-span-2">
           <span className="block font-semibold mb-1">Direccion de destino</span>
-          <input className={input} disabled={!editaCab} value={cab.direccion_entrega} onChange={(e) => setCab({ ...cab, direccion_entrega: e.target.value })} maxLength={300} placeholder="Si queda vacia, se usa la de la obra" />
+          <input className={input} disabled={!(editando && editaCab)} value={cab.direccion_entrega} onChange={(e) => setCab({ ...cab, direccion_entrega: e.target.value })} maxLength={300} placeholder="Si queda vacia, se usa la de la obra" />
         </label>
         <label className="text-xs md:col-span-2">
           <span className="block font-semibold mb-1">Condiciones de pago</span>
-          <input className={input} disabled={!borrador} value={cab.condiciones_pago} onChange={(e) => setCab({ ...cab, condiciones_pago: e.target.value })} />
+          <input className={input} disabled={!(editando && borrador)} value={cab.condiciones_pago} onChange={(e) => setCab({ ...cab, condiciones_pago: e.target.value })} />
         </label>
         <label className="text-xs md:col-span-4">
           <span className="block font-semibold mb-1">Notas para el proveedor</span>
-          <textarea className={input} rows={2} disabled={!editaCab} value={cab.notas} onChange={(e) => setCab({ ...cab, notas: e.target.value })} />
+          <textarea className={input} rows={2} disabled={!(editando && editaCab)} value={cab.notas} onChange={(e) => setCab({ ...cab, notas: e.target.value })} />
         </label>
-        {emitida && (
+        {editando && emitida && (
           <div className="md:col-span-4 flex flex-wrap items-center gap-3">
-            <button className={boton} disabled={pendiente} onClick={() => ejecutar(() => actualizarCabeceraOC(oc.id, { fecha_entrega: cab.fecha_entrega, direccion_entrega: cab.direccion_entrega, notas: cab.notas }))}>
+            <button className={boton} disabled={pendiente} onClick={() => ejecutar(() => actualizarCabeceraOC(oc.id, { fecha_entrega: cab.fecha_entrega, direccion_entrega: cab.direccion_entrega, notas: cab.notas }), () => setEditando(false))}>
               Grabar entrega, direccion y notas
             </button>
             <span className="text-gray-500 text-xs">
@@ -223,14 +229,15 @@ export default function EditorOC({
             </span>
           </div>
         )}
-        {borrador && (
+        {editando && borrador && (
           <div className="md:col-span-4">
             <button
               className={boton}
               disabled={pendiente}
               onClick={() =>
                 ejecutar(() =>
-                  guardarCabeceraOC(oc.id, { ...cab, id_partida: cab.id_partida ? Number(cab.id_partida) : null })
+                  guardarCabeceraOC(oc.id, { ...cab, id_partida: cab.id_partida ? Number(cab.id_partida) : null }),
+                  () => setEditando(false)
                 )
               }
             >
