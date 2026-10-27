@@ -93,3 +93,15 @@ export async function registrarWhatsAppOc(idOc: number, destino: string, texto: 
   if (!doc) return;
   await despuesDeEnviarOc(idOc, doc.idNecesidad, doc.idSc, doc.idParticipante, "whatsapp", destino, texto.slice(0, 200), doc.d.estado);
 }
+
+// Vuelve a "Aprobada" una orden enviada, mientras no tenga pagos solicitados. Lo ya enviado no se retira.
+export async function reversarEnvioOc(idOc: number): Promise<{ ok: boolean; error?: string }> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("oc_reversar_envio", { p_oc: idOc });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/compras/${idOc}`);
+  revalidatePath("/compras");
+  revalidatePath("/necesidades", "layout");
+  return { ok: true };
+}

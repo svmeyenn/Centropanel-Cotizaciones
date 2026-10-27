@@ -4,8 +4,9 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import EditorOC from "@/components/EditorOC";
 import EnvioDocumento from "@/components/EnvioDocumento";
+import BotonReversar from "@/components/BotonReversar";
 import { textosOrden } from "@/lib/textosCompra";
-import { enviarOcPorCorreo, registrarWhatsAppOc } from "@/app/necesidades/envios";
+import { enviarOcPorCorreo, registrarWhatsAppOc, reversarEnvioOc } from "@/app/necesidades/envios";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { COLOR_ESTADO } from "@/lib/compras";
@@ -112,6 +113,12 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
               <a href={`/compras/${id}/pdf/archivo`} target="_blank" rel="noopener noreferrer" className="border border-gray-300 bg-white text-gray-800 text-[11px] font-semibold px-2 py-0.5 rounded">
                 PDF de la orden
               </a>
+              {o.estado === "Enviada" && (
+                <BotonReversar
+                  confirmacion={`Reversar el envio de ${o.num_oc}? Vuelve a Aprobada. Lo que ya se envio al proveedor no se puede retirar.`}
+                  accion={reversarEnvioOc.bind(null, id)}
+                />
+              )}
               <EnvioDocumento
                 etiqueta="Enviar al proveedor"
                 titulo={`Enviar ${o.num_oc}`}
