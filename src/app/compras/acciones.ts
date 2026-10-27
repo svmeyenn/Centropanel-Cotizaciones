@@ -185,3 +185,18 @@ export async function solicitarPagoOC(
   revalidatePath("/egresos");
   return { ok: true };
 }
+
+// Cabecera de una orden ya emitida: entrega, direccion y notas.
+export async function actualizarCabeceraOC(id: number, d: { fecha_entrega: string; direccion_entrega: string; notas: string }) {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("oc_actualizar_cabecera", {
+    p_oc: id,
+    p_fecha: d.fecha_entrega || null,
+    p_direccion: d.direccion_entrega,
+    p_notas: d.notas,
+  });
+  if (error) return { error: error.message };
+  refrescar(id);
+  return { ok: true };
+}

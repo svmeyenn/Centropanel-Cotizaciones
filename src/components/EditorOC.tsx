@@ -9,6 +9,7 @@ import {
   borrarOC,
   enviarAprobacion,
   facturarOC,
+  actualizarCabeceraOC,
   guardarCabeceraOC,
   guardarLineaOC,
   marcarEnviadaOC,
@@ -75,6 +76,9 @@ export default function EditorOC({
   const [pendiente, empezar] = useTransition();
   const m = oc.moneda;
   const borrador = oc.estado === "Borrador";
+  // Emitida --pendiente, aprobada o enviada--: la entrega, la direccion y las notas aun se pueden corregir.
+  const emitida = ["Pendiente aprobacion", "Aprobada", "Enviada"].includes(oc.estado);
+  const editaCab = borrador || emitida;
 
   const [cab, setCab] = useState({
     id_partida: oc.id_partida ? String(oc.id_partida) : "",
@@ -195,11 +199,11 @@ export default function EditorOC({
         </label>
         <label className="text-xs">
           <span className="block font-semibold mb-1">Fecha de entrega en destino</span>
-          <input type="date" className={input} disabled={!borrador} value={cab.fecha_entrega} onChange={(e) => setCab({ ...cab, fecha_entrega: e.target.value })} />
+          <input type="date" className={input} disabled={!editaCab} value={cab.fecha_entrega} onChange={(e) => setCab({ ...cab, fecha_entrega: e.target.value })} />
         </label>
         <label className="text-xs md:col-span-2">
           <span className="block font-semibold mb-1">Direccion de destino</span>
-          <input className={input} disabled={!borrador} value={cab.direccion_entrega} onChange={(e) => setCab({ ...cab, direccion_entrega: e.target.value })} maxLength={300} placeholder="Si queda vacia, se usa la de la obra" />
+          <input className={input} disabled={!editaCab} value={cab.direccion_entrega} onChange={(e) => setCab({ ...cab, direccion_entrega: e.target.value })} maxLength={300} placeholder="Si queda vacia, se usa la de la obra" />
         </label>
         <label className="text-xs md:col-span-2">
           <span className="block font-semibold mb-1">Condiciones de pago</span>
@@ -207,8 +211,18 @@ export default function EditorOC({
         </label>
         <label className="text-xs md:col-span-4">
           <span className="block font-semibold mb-1">Notas para el proveedor</span>
-          <textarea className={input} rows={2} disabled={!borrador} value={cab.notas} onChange={(e) => setCab({ ...cab, notas: e.target.value })} />
+          <textarea className={input} rows={2} disabled={!editaCab} value={cab.notas} onChange={(e) => setCab({ ...cab, notas: e.target.value })} />
         </label>
+        {emitida && (
+          <div className="md:col-span-4 flex flex-wrap items-center gap-3">
+            <button className={boton} disabled={pendiente} onClick={() => ejecutar(() => actualizarCabeceraOC(oc.id, { fecha_entrega: cab.fecha_entrega, direccion_entrega: cab.direccion_entrega, notas: cab.notas }))}>
+              Grabar entrega, direccion y notas
+            </button>
+            <span className="text-gray-500 text-xs">
+              {oc.estado === "Enviada" ? "La orden ya se envio: si cambia algo, vuelva a enviarla al proveedor." : "Las condiciones de pago y la partida solo cambian en borrador."}
+            </span>
+          </div>
+        )}
         {borrador && (
           <div className="md:col-span-4">
             <button

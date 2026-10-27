@@ -60,6 +60,11 @@ export async function actualizarDestino(idNm: number, fecha: string, direccion: 
   return llamar((s) => s.rpc("nm_actualizar_destino", { p_nm: idNm, p_fecha: fecha || null, p_direccion: direccion }), idNm);
 }
 
+// Fecha de entrega, direccion y notas propias de una solicitud; vacias, valen las de la necesidad.
+export async function actualizarCabeceraSolicitud(idNm: number, idSc: number, fecha: string, direccion: string, notas: string) {
+  return llamar((s) => s.rpc("sc_actualizar_cabecera", { p_sc: idSc, p_fecha: fecha || null, p_direccion: direccion, p_notas: notas }), idNm);
+}
+
 export async function agregarItems(idNm: number, items: ItemNuevo[]) {
   return llamar((s) => s.rpc("nm_agregar_items", { p_nm: idNm, p_items: items }), idNm);
 }
