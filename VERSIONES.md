@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0155-20261027**
+Version vigente: **v0156-20261027**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0156-20261027 | 27-10-2026 | Necesidades de material: "Reversar envio" de una solicitud --vuelve de En cotizacion a Borrador mientras ningun proveedor haya puesto precios-- y el registro de envios marca lo reversado | (pendiente) |
 | v0155-20261027 | 27-10-2026 | Compras: solicitud de cotizacion y orden de compra salen como PDF para cada proveedor, con fecha de entrega en destino y direccion de destino (editables en la necesidad y en la OC; la OC generada los hereda); envio por correo (con el PDF adjunto) o WhatsApp a cada proveedor invitado, anotado en un registro; pantalla de detalle por proveedor con sus solicitudes, precios, OC y lo enviado | (pendiente) |
 | v0154-20261027 | 27-10-2026 | Nueva materia prima desde la necesidad: se pueden crear tipos nuevos en la misma ventana ("+ Nuevo tipo"); se quita la lista cerrada EPS/Placa/Adhesivo de la base, de modo que los tipos nuevos tambien sirven en Parametros de materias primas | (pendiente) |
 | v0153-20261027 | 27-10-2026 | Necesidades de material: crear una materia prima desde la misma necesidad, en una ventana emergente --al buscar un item que no esta, "Crear la materia prima"--; entra con costo cero y se agrega sola a la necesidad; solo quien compra puede hacerlo | (pendiente) |
