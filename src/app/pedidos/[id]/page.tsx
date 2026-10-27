@@ -171,6 +171,10 @@ export default async function Pagina({
     };
   }
 
+  // Las necesidades de material que ya salieron de este pedido.
+  const { data: nmsDb } = await supabase.from("necesidades_material").select("id, folio, estado").eq("id_pedido", id).order("id");
+  const necesidadesPedido = (nmsDb ?? []).map((n) => ({ id: Number(n.id), folio: n.folio as string, estado: n.estado as string }));
+
   const filas: LineaVista[] = (lineas ?? []).map((l) => ({
     id: Number(l.id),
     sku: (l.sku as string | null) ?? null,
@@ -300,6 +304,7 @@ export default async function Pagina({
         puedeCrear={v.puede_crear || tienePerfilAdmin(v)}
         esAdmin={tienePerfilAdmin(v)}
         autorizacionSinPie={sinPie}
+        necesidadesPedido={necesidadesPedido}
         costoPorLinea={costoPorLinea}
         fichaCliente={cli ? (cli as unknown as FichaCliente) : null}
         prefijoTelefono={uno<{ prefijo_telefono: string }>(ped.paises)?.prefijo_telefono ?? "+56"}
