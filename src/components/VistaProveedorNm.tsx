@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 type Det = {
   nm: { id: number; folio: string; id_pais: number; proyecto: string | null; estado: string; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
-  items: { id: number; orden: number; descripcion: string; unidad: string | null; cantidad: number; id_sc: number | null }[];
+  items: { id: number; orden: number; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; id_sc: number | null }[];
   proveedores: {
     id: number;
     nombre: string;
@@ -170,7 +170,7 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                       const pr = precio.get(i.id);
                       return (
                         <tr key={i.id} className="border-t border-gray-100">
-                          <td className="px-3 py-1.5">{i.descripcion}</td>
+                          <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                           <td className="px-3 py-1.5">{i.unidad}</td>
                           <td className="px-3 py-1.5 text-right">{fmtUnid(i.cantidad)}</td>
                           <td className="px-3 py-1.5 text-right">{pr != null ? dinero(pr, moneda) : <span className="text-gray-400">sin precio</span>}</td>

@@ -69,6 +69,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         <table className="w-full mt-6 text-xs border-collapse">
           <thead>
             <tr className="border-b-2 border-gray-800 text-left">
+              <th className="py-1">SKU</th>
               <th className="py-1">Descripcion</th>
               <th className="py-1 text-right">Cant.</th>
               <th className="py-1 text-right">Precio unit.</th>
@@ -78,6 +79,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           <tbody>
             {(lineas ?? []).map((l) => (
               <tr key={l.id} className="border-b border-gray-200">
+                <td className="py-1 font-mono">{l.sku}</td>
                 <td className="py-1">{l.descripcion}</td>
                 <td className="py-1 text-right">{fmtUnid(Number(l.unidades))}</td>
                 <td className="py-1 text-right">{dinero(Number(l.costo_unitario), o.moneda)}</td>
@@ -87,7 +89,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} className="py-2 text-right font-bold">
+              <td colSpan={4} className="py-2 text-right font-bold">
                 Total (neto)
               </td>
               <td className="py-2 text-right font-bold">{dinero(Number(o.total), o.moneda)}</td>

@@ -60,6 +60,7 @@ type Item = {
   id: number;
   orden: number;
   descripcion: string;
+  sku: string | null;
   unidad: string | null;
   cantidad: number;
   partida: string | null;
@@ -248,7 +249,7 @@ export default function FichaNecesidad({
             <tbody>
               {items.map((i) => (
                 <tr key={i.id} className="border-t border-gray-100">
-                  <td className="px-3 py-1.5">{i.descripcion}</td>
+                  <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")}</td>
                   <td className="px-3 py-1.5">{i.unidad ?? ""}</td>
                   <td className="px-3 py-1.5 text-gray-600">{i.partida ?? ""}</td>
@@ -556,7 +557,7 @@ function TarjetaSolicitud({
               const mejor = Math.min(...precios.filter((x): x is number => x != null));
               return (
                 <tr key={i.id} className="border-t border-gray-100">
-                  <td className="px-3 py-1.5">{i.descripcion}</td>
+                  <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")} {i.unidad ?? ""}</td>
                   {proveedores.map((p, k) => {
                     const v = precios[k];
@@ -693,7 +694,7 @@ function VentanaCotizacion({
             <tbody>
               {items.map((i) => (
                 <tr key={i.id} className="border-t border-gray-100">
-                  <td className="px-3 py-1">{i.descripcion}</td>
+                  <td className="px-3 py-1">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                   <td className="px-3 py-1 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")}</td>
                   <td className="px-3 py-1">
                     <input
@@ -776,7 +777,7 @@ function VentanaApertura({
           <tbody>
             {items.map((i) => (
               <tr key={i.id} className="border-t border-gray-100">
-                <td className="px-3 py-1">{i.descripcion}</td>
+                <td className="px-3 py-1">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                 <td className="px-3 py-1 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")}</td>
                 <td className="px-3 py-1">
                   <select

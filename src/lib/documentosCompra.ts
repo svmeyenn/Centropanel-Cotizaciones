@@ -44,7 +44,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
   if (error || !data) return null;
   const det = data as {
     nm: { folio: string; id_pais: number; proyecto: string | null; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; notas: string | null };
-    items: { id: number; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; id_sc: number | null }[];
+    items: { id: number; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; id_sc: number | null }[];
     proveedores: ProveedorNm[];
     solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; notas: string | null }[];
   };
@@ -64,7 +64,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
       direccionDestino: sc.direccion_destino ?? det.nm.direccion_destino,
       contactoDestino: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino },
       notas: [det.nm.notas, sc.notas].filter(Boolean).join("\n") || null,
-      items: items.map((i) => ({ descripcion: i.descripcion, unidad: i.unidad, cantidad: Number(i.cantidad), nota: i.nota })),
+      items: items.map((i) => ({ sku: i.sku, descripcion: i.descripcion, unidad: i.unidad, cantidad: Number(i.cantidad), nota: i.nota })),
       emisor: await emisor(),
     },
     p,
@@ -95,7 +95,7 @@ export async function leerOrdenDoc(idOc: number): Promise<OrdenParaEnviar | null
     .eq("id", idOc)
     .single();
   if (!o) return null;
-  const { data: lineas } = await supabase.from("oc_detalle").select("descripcion, unidades, costo_unitario").eq("id_oc", idOc).order("orden").order("id");
+  const { data: lineas } = await supabase.from("oc_detalle").select("sku, descripcion, unidades, costo_unitario").eq("id_oc", idOc).order("orden").order("id");
   const prov = uno<{ razon_social: string; nombre_referencia: string | null; rut: string | null; contacto: string | null; email: string | null; telefono: string | null; direccion: string | null }>(o.entidades);
   const proy = uno<{ nombre: string; direccion: string | null }>(o.proyectos);
   const { data: sc } = await supabase.from("solicitudes_cotizacion").select("id, id_necesidad, id_participante").eq("id_oc", idOc).maybeSingle();
@@ -115,7 +115,7 @@ export async function leerOrdenDoc(idOc: number): Promise<OrdenParaEnviar | null
       condicionesPago: o.condiciones_pago,
       notas: o.notas,
       total: Number(o.total),
-      lineas: (lineas ?? []).map((l) => ({ descripcion: l.descripcion, unidades: Number(l.unidades), costo: Number(l.costo_unitario) })),
+      lineas: (lineas ?? []).map((l) => ({ sku: l.sku as string | null, descripcion: l.descripcion, unidades: Number(l.unidades), costo: Number(l.costo_unitario) })),
       emisor: await emisor(),
     },
     p,
