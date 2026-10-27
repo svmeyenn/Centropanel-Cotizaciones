@@ -321,8 +321,13 @@ export default function FichaNecesidad({
                   </td>
                   <td className="px-3 py-1.5 text-right whitespace-nowrap space-x-1.5">
                     <Link href={`/necesidades/${nm.id}/proveedor/${p.id}`} className={BTN}>
-                      Ver detalle y enviar
+                      Ver detalle
                     </Link>
+                    {comprador && (
+                      <Link href={`/necesidades/${nm.id}/proveedor/${p.id}/enviar`} className={BTN}>
+                        Enviar
+                      </Link>
+                    )}
                     {comprador && abierta && p.estado !== "Declino" && (
                       <button type="button" className={BTN_VERDE} onClick={() => setCotizando(p)}>
                         {p.estado === "Respondio" ? "Editar cotizacion" : "Registrar cotizacion"}
