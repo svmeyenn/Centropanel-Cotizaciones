@@ -18,6 +18,7 @@ export default function NuevaNecesidad({
   partidas,
   pedidos,
   puedeCrearMateria,
+  bodegas,
 }: {
   proyectoInicial: number | null;
   proyectos: { id: number; nombre: string; id_pais: number; direccion: string }[];
@@ -25,6 +26,8 @@ export default function NuevaNecesidad({
   pedidos: { id: number; num: string; id_pais: number }[];
   // Quien compra puede dar de alta una materia prima que todavia no esta en la maestra.
   puedeCrearMateria: boolean;
+  // La bodega de Centro Panel por mercado: el destino de todo pedido de materia prima.
+  bodegas: Record<number, string>;
 }) {
   const router = useRouter();
   const [origen, setOrigen] = useState<"obra" | "pedido">("obra");
@@ -32,7 +35,8 @@ export default function NuevaNecesidad({
   const [pedido, setPedido] = useState<number | "">("");
   const [fecha, setFecha] = useState("");
   const [direccion, setDireccion] = useState("");
-  // Se propone la direccion de la obra; quien crea puede cambiarla.
+  const [modalidad, setModalidad] = useState<"Despacho" | "Retiro">("Despacho");
+  // Se propone la bodega de Centro Panel; quien crea puede cambiarla o pedir retiro.
   const [direccionTocada, setDireccionTocada] = useState(false);
   const [notas, setNotas] = useState("");
   const [lineas, setLineas] = useState<Linea[]>([]);
@@ -46,9 +50,11 @@ export default function NuevaNecesidad({
 
   const pais = origen === "obra" ? proyectos.find((p) => p.id === proyecto)?.id_pais : pedidos.find((p) => p.id === pedido)?.id_pais;
   const direccionObra = origen === "obra" ? proyectos.find((p) => p.id === proyecto)?.direccion ?? "" : "";
+  // Sin bodega configurada para el mercado, se propone la de la obra, como antes.
+  const direccionDefecto = modalidad === "Retiro" ? "" : (pais ? bodegas[pais] : undefined) ?? direccionObra;
   useEffect(() => {
-    if (!direccionTocada) setDireccion(direccionObra);
-  }, [direccionObra, direccionTocada]);
+    if (!direccionTocada) setDireccion(direccionDefecto);
+  }, [direccionDefecto, direccionTocada]);
   const partidasDe = useMemo(() => (origen === "obra" ? partidas.filter((x) => x.id_proyecto === proyecto) : []), [partidas, proyecto, origen]);
 
   // Busca al escribir, con una pequena espera para no pedir una busqueda por tecla.
@@ -92,7 +98,8 @@ export default function NuevaNecesidad({
         id_proyecto: origen === "obra" ? Number(proyecto) : null,
         id_pedido: origen === "pedido" ? Number(pedido) : null,
         fecha,
-        direccion,
+        direccion: modalidad === "Retiro" ? "" : direccion,
+        modalidad,
         notas,
         items,
       });
@@ -140,6 +147,13 @@ export default function NuevaNecesidad({
           <label htmlFor="nm-fecha" className={ROTULO}>Fecha de entrega en destino</label>
           <input id="nm-fecha" type="date" className={CAMPO} value={fecha} onChange={(e) => setFecha(e.target.value)} />
         </div>
+        <div>
+          <label htmlFor="nm-modalidad" className={ROTULO}>Entrega</label>
+          <select id="nm-modalidad" className={CAMPO} value={modalidad} onChange={(e) => { setModalidad(e.target.value as "Despacho" | "Retiro"); setDireccionTocada(false); }}>
+            <option value="Despacho">Despacho a la bodega de Centro Panel</option>
+            <option value="Retiro">Retiro en el proveedor</option>
+          </select>
+        </div>
         <div className="sm:col-span-2">
           <label htmlFor="nm-dir" className={ROTULO}>Direccion de destino</label>
           <input
@@ -148,7 +162,8 @@ export default function NuevaNecesidad({
             value={direccion}
             onChange={(e) => { setDireccion(e.target.value); setDireccionTocada(true); }}
             maxLength={300}
-            placeholder={origen === "pedido" ? "Si queda vacia, se usa la del pedido o la de su obra" : "Donde se entrega el material"}
+            disabled={modalidad === "Retiro"}
+            placeholder={modalidad === "Retiro" ? "Retira Centro Panel en las instalaciones del proveedor" : origen === "pedido" ? "Si queda vacia, se usa la del pedido o la de su obra" : "Donde se entrega el material"}
           />
         </div>
         <div>

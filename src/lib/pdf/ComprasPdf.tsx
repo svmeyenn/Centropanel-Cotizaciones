@@ -90,6 +90,8 @@ export interface SolicitudDoc {
   fechaEntrega: string | null;
   direccionDestino: string | null;
   contactoDestino?: ContactoDoc;
+  // Despacho a la bodega de Centro Panel, o retiro en el proveedor.
+  modalidad?: "Despacho" | "Retiro";
   notas: string | null;
   items: { sku?: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; precio?: number | null }[];
   // Con destinatario, la solicitud sale valorizada con el costo que ese proveedor tiene registrado.
@@ -111,6 +113,7 @@ export interface OrdenDoc {
   fechaEntrega: string | null;
   direccionDestino: string | null;
   contactoDestino?: ContactoDoc;
+  modalidad?: "Despacho" | "Retiro";
   condicionesPago: string | null;
   notas: string | null;
   total: number;
@@ -159,20 +162,21 @@ function BloqueProveedor({ pr }: { pr: ProveedorDoc }) {
   );
 }
 
-function BloqueEntrega({ obra, fechaEntrega, direccion, etiquetaFecha, contacto }: { obra: string | null; fechaEntrega: string | null; direccion: string | null; etiquetaFecha: string; contacto?: ContactoDoc }) {
+function BloqueEntrega({ fechaEntrega, direccion, etiquetaFecha, contacto, modalidad, proveedor }: { fechaEntrega: string | null; direccion: string | null; etiquetaFecha: string; contacto?: ContactoDoc; modalidad?: "Despacho" | "Retiro"; proveedor: ProveedorDoc }) {
+  const retiro = modalidad === "Retiro";
   return (
     <View style={s.bloque}>
-      <Text style={s.rotuloBloque}>ENTREGA EN DESTINO</Text>
+      <Text style={s.rotuloBloque}>{retiro ? "RETIRO EN SUS INSTALACIONES" : "DESPACHO A BODEGA CENTRO PANEL"}</Text>
       <Text style={s.destacado}>{fechaEntrega ? fmtFecha(fechaEntrega) : "Por coordinar"}</Text>
-      <Text style={s.chico}>{etiquetaFecha}</Text>
+      <Text style={s.chico}>{retiro ? etiquetaFecha.replace("entrega", "retiro") : etiquetaFecha}</Text>
       <Text style={[s.campo, { marginTop: 4 }]}>
-        <Text style={{ color: GRIS }}>Direccion de destino: </Text>
-        {direccion || "Por informar"}
+        <Text style={{ color: GRIS }}>{retiro ? "Retira Centro Panel en: " : "Direccion de destino: "}</Text>
+        {(retiro ? proveedor.direccion : direccion) || "Por informar"}
       </Text>
-      <Campo rotulo="Obra" valor={obra} />
-      <Campo rotulo="Recibe" valor={contacto?.nombre} />
-      <Campo rotulo="Telefono" valor={contacto?.telefono} />
-      <Campo rotulo="Correo" valor={contacto?.email} />
+      {retiro ? null : <Text style={[s.chico, { marginBottom: 2 }]}>Si no puede despachar, indiquelo para coordinar el retiro en sus instalaciones.</Text>}
+      <Campo rotulo="Recibe" valor={retiro ? null : contacto?.nombre} />
+      <Campo rotulo="Telefono" valor={retiro ? null : contacto?.telefono} />
+      <Campo rotulo="Correo" valor={retiro ? null : contacto?.email} />
     </View>
   );
 }
@@ -218,7 +222,7 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
         <Cabecera p={p} titulo="SOLICITUD DE COTIZACION" numero={d.folio} sub={`Necesidad ${d.folioNecesidad}`} fecha={d.fecha} />
         <View style={s.bloques}>
           <BloqueProveedor pr={d.proveedor} />
-          <BloqueEntrega obra={d.obra} fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} contacto={d.contactoDestino} etiquetaFecha="Fecha de entrega requerida en destino" />
+          <BloqueEntrega fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} contacto={d.contactoDestino} modalidad={d.modalidad} proveedor={d.proveedor} etiquetaFecha="Fecha de entrega requerida" />
           <BloqueEmisor e={d.emisor} p={p} />
         </View>
 
@@ -284,7 +288,7 @@ export function OrdenCompraPdf({ d, p }: { d: OrdenDoc; p: Parametros }) {
         {!d.aprobada ? <Text style={s.aviso}>DOCUMENTO NO VALIDO: la orden aun no esta aprobada ({d.estado}).</Text> : null}
         <View style={s.bloques}>
           <BloqueProveedor pr={d.proveedor} />
-          <BloqueEntrega obra={d.obra} fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} contacto={d.contactoDestino} etiquetaFecha="Fecha de entrega comprometida en destino" />
+          <BloqueEntrega fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} contacto={d.contactoDestino} modalidad={d.modalidad} proveedor={d.proveedor} etiquetaFecha="Fecha de entrega comprometida" />
           <BloqueEmisor e={d.emisor} p={p} />
         </View>
         {d.condicionesPago ? <Text style={[s.campo, { marginBottom: 8 }]}><Text style={{ color: GRIS }}>Condiciones de pago: </Text>{d.condicionesPago}</Text> : null}

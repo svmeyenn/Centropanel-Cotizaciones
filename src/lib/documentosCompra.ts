@@ -46,7 +46,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
   const { data, error } = await supabase.rpc("nm_detalle", { p_nm: idNm });
   if (error || !data) return null;
   const det = data as {
-    nm: { folio: string; id_pais: number; proyecto: string | null; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; notas: string | null; iva_pct: number };
+    nm: { folio: string; id_pais: number; proyecto: string | null; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; notas: string | null; iva_pct: number; modalidad_entrega?: "Despacho" | "Retiro" };
     items: { id: number; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; id_sc: number | null }[];
     proveedores: ProveedorNm[];
     solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; notas: string | null }[];
@@ -75,7 +75,8 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
       proveedor: proveedorDoc(prov),
       obra: det.nm.proyecto,
       fechaEntrega: sc.fecha_entrega ?? det.nm.fecha_requerida,
-      direccionDestino: sc.direccion_destino ?? det.nm.direccion_destino,
+      direccionDestino: det.nm.modalidad_entrega === "Retiro" ? null : sc.direccion_destino ?? det.nm.direccion_destino,
+      modalidad: det.nm.modalidad_entrega ?? "Despacho",
       contactoDestino: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino },
       notas: [det.nm.notas, sc.notas].filter(Boolean).join("\n") || null,
       impuesto: { nombre: impuestoDelPais(Number(det.nm.id_pais)), pct: Number(det.nm.iva_pct ?? 0) },
@@ -127,7 +128,8 @@ export async function leerOrdenDoc(idOc: number): Promise<OrdenParaEnviar | null
       proveedor: proveedorDoc({ nombre: prov?.nombre_referencia ?? "", razon_social: prov?.razon_social, rut: prov?.rut, contacto: prov?.contacto, email: prov?.email, telefono: prov?.telefono, direccion: prov?.direccion }),
       obra: proy?.nombre ?? null,
       fechaEntrega: o.fecha_entrega,
-      direccionDestino: o.direccion_entrega || proy?.direccion || null,
+      direccionDestino: o.modalidad_entrega === "Retiro" ? null : o.direccion_entrega || proy?.direccion || null,
+      modalidad: (o.modalidad_entrega as "Despacho" | "Retiro") ?? "Despacho",
       contactoDestino: { nombre: o.contacto_entrega, telefono: o.telefono_entrega, email: o.email_entrega },
       condicionesPago: o.condiciones_pago,
       notas: o.notas,

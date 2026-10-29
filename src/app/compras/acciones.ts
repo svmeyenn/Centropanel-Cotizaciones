@@ -60,6 +60,7 @@ export async function guardarCabeceraOC(
     contacto_entrega: string;
     telefono_entrega: string;
     email_entrega: string;
+    modalidad_entrega: "Despacho" | "Retiro";
     condiciones_pago: string;
     notas: string;
     descuento_tipo: "pct" | "monto";
@@ -77,6 +78,7 @@ export async function guardarCabeceraOC(
       contacto_entrega: d.contacto_entrega.trim() || null,
       telefono_entrega: d.telefono_entrega.trim() || null,
       email_entrega: d.email_entrega.trim() || null,
+      modalidad_entrega: d.modalidad_entrega,
       condiciones_pago: d.condiciones_pago.trim() || null,
       descuento_tipo: d.descuento_tipo,
       descuento_valor: Math.max(0, Number(d.descuento_valor) || 0),
@@ -205,7 +207,7 @@ export async function solicitarPagoOC(
 // Cabecera de una orden ya emitida: entrega, direccion y notas.
 export async function actualizarCabeceraOC(
   id: number,
-  d: { fecha_entrega: string; direccion_entrega: string; notas: string; contacto_entrega: string; telefono_entrega: string; email_entrega: string }
+  d: { fecha_entrega: string; direccion_entrega: string; notas: string; contacto_entrega: string; telefono_entrega: string; email_entrega: string; modalidad_entrega?: "Despacho" | "Retiro" }
 ) {
   await requerirVendedor();
   const supabase = await createClient();
@@ -217,6 +219,7 @@ export async function actualizarCabeceraOC(
     p_contacto: d.contacto_entrega,
     p_telefono: d.telefono_entrega,
     p_email: d.email_entrega,
+    p_modalidad: d.modalidad_entrega ?? null,
   });
   if (error) return { error: error.message };
   refrescar(id);

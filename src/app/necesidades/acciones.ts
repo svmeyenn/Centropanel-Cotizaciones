@@ -38,13 +38,13 @@ export interface ItemNuevo {
   nota?: string;
 }
 
-export async function crearNecesidad(d: { id_proyecto: number | null; id_pedido: number | null; fecha: string; direccion?: string; notas: string; items: ItemNuevo[] }) {
+export async function crearNecesidad(d: { id_proyecto: number | null; id_pedido: number | null; fecha: string; direccion?: string; modalidad?: "Despacho" | "Retiro"; notas: string; items: ItemNuevo[] }) {
   const r = await llamar((s) =>
     s.rpc("nm_crear", { p_proyecto: d.id_proyecto, p_pedido: d.id_pedido, p_fecha: d.fecha || null, p_notas: d.notas, p_items: d.items })
   );
-  // La direccion de la obra entra sola; si quien crea la cambio, se guarda la suya.
-  if (r.ok && r.id && d.direccion?.trim()) {
-    await llamar((s) => s.rpc("nm_actualizar_destino", { p_nm: r.id!, p_fecha: d.fecha || null, p_direccion: d.direccion! }), r.id);
+  // La bodega de Centro Panel entra sola como destino; si quien crea pide retiro, o cambio la direccion, se guarda eso.
+  if (r.ok && r.id && (d.modalidad === "Retiro" || d.direccion?.trim())) {
+    await llamar((s) => s.rpc("nm_definir_entrega", { p_nm: r.id!, p_modalidad: d.modalidad ?? "Despacho", p_direccion: d.direccion ?? "" }), r.id);
   }
   return r;
 }
@@ -62,9 +62,9 @@ export interface ContactoDestino {
   email: string;
 }
 
-export async function actualizarCabeceraNecesidad(idNm: number, fecha: string, direccion: string, notas: string, c: ContactoDestino) {
+export async function actualizarCabeceraNecesidad(idNm: number, fecha: string, direccion: string, notas: string, c: ContactoDestino, modalidad?: "Despacho" | "Retiro") {
   return llamar(
-    (s) => s.rpc("nm_actualizar_cabecera", { p_nm: idNm, p_fecha: fecha || null, p_direccion: direccion, p_notas: notas, p_contacto: c.contacto, p_telefono: c.telefono, p_email: c.email }),
+    (s) => s.rpc("nm_actualizar_cabecera", { p_nm: idNm, p_fecha: fecha || null, p_direccion: direccion, p_notas: notas, p_contacto: c.contacto, p_telefono: c.telefono, p_email: c.email, p_modalidad: modalidad ?? null }),
     idNm
   );
 }

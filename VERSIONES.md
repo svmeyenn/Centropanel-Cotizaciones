@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0174-20261029**
+Version vigente: **v0175-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0175-20261029 | 29-10-2026 | Todo pedido de materia prima se despacha a la bodega de Centro Panel --El Roble 165, Lampa, Santiago, configurable por mercado en Parametros-- o se retira en el proveedor: la necesidad y la OC llevan la modalidad de entrega, la bodega entra sola como destino, y la solicitud y la OC piden el despacho a la bodega --o el retiro en el proveedor-- en el PDF y en los mensajes | (pendiente) |
 | v0174-20261029 | 29-10-2026 | El catalogo de materias primas filtra tambien por SKU, ademas de nombre y etiqueta | 9872ac8 |
 | v0173-20261029 | 29-10-2026 | Solicitudes y OC solo a proveedores con el item asignado en su maestra --solo se invita a quien tiene algun item de la necesidad, cada proveedor recibe solo lo que tiene asignado, no se cotiza lo que no tiene y la OC rechaza items que el proveedor no tiene--; la solicitud sale valorizada con el costo que el proveedor tiene registrado; al registrar una cotizacion que difiere de la maestra, el sistema pregunta si actualiza el costo | 952f934 |
 | v0172-20261029 | 29-10-2026 | "Sin seguimiento" solo para lo vivo: los leads Otros, Visitante, Stand By, Cliente y los perdidos --Lead perdido, Cliente perdido, Lead no califica-- salen del listado de leads sin seguimiento de los ultimos 15 dias, y sus cotizaciones en juego salen del listado unificado de seguimiento; Stand By deja de llevar la marca "en seguimiento" | d691cd3 |

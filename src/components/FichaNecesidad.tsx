@@ -46,6 +46,7 @@ export type Detalle = {
     estado: string;
     fecha_requerida: string | null;
     direccion_destino: string | null;
+    modalidad_entrega: "Despacho" | "Retiro";
     contacto_destino: string | null;
     telefono_destino: string | null;
     email_destino: string | null;
@@ -197,8 +198,8 @@ export default function FichaNecesidad({
           {nm.fecha_requerida ? fmtFecha(nm.fecha_requerida) : "—"}
         </div>
         <div className="max-w-sm">
-          <span className={ROTULO}>Direccion de destino</span>
-          {nm.direccion_destino ?? "—"}
+          <span className={ROTULO}>Entrega</span>
+          {nm.modalidad_entrega === "Retiro" ? "Retiro en el proveedor" : <>Despacho a bodega{nm.direccion_destino ? `: ${nm.direccion_destino}` : ""}</>}
         </div>
         <div className="max-w-xs">
           <span className={ROTULO}>Contacto en destino</span>
@@ -464,7 +465,7 @@ export default function FichaNecesidad({
           pendiente={pendiente}
         />
       )}
-      {editandoDestino && <VentanaCabeceraNecesidad idNm={nm.id} fecha={nm.fecha_requerida} direccion={nm.direccion_destino} notas={nm.notas} contacto={{ contacto: nm.contacto_destino ?? "", telefono: nm.telefono_destino ?? "", email: nm.email_destino ?? "" }} alCerrar={(hecho) => { setEditandoDestino(false); if (hecho) router.refresh(); }} />}
+      {editandoDestino && <VentanaCabeceraNecesidad idNm={nm.id} fecha={nm.fecha_requerida} direccion={nm.direccion_destino} modalidad={nm.modalidad_entrega} notas={nm.notas} contacto={{ contacto: nm.contacto_destino ?? "", telefono: nm.telefono_destino ?? "", email: nm.email_destino ?? "" }} alCerrar={(hecho) => { setEditandoDestino(false); if (hecho) router.refresh(); }} />}
       {agregando && <VentanaAgregarItems idNm={nm.id} idPais={nm.id_pais} puedeCrearMateria={comprador} alCerrar={(hecho) => { setAgregando(false); if (hecho) router.refresh(); }} />}
     </div>
   );
@@ -983,17 +984,18 @@ function VentanaApertura({
 }
 
 // Fecha de entrega en destino y direccion de destino: van en la solicitud y en la orden de compra.
-function VentanaCabeceraNecesidad({ idNm, fecha, direccion, notas, contacto, alCerrar }: { idNm: number; fecha: string | null; direccion: string | null; notas: string | null; contacto: { contacto: string; telefono: string; email: string }; alCerrar: (hecho: boolean) => void }) {
+function VentanaCabeceraNecesidad({ idNm, fecha, direccion, modalidad, notas, contacto, alCerrar }: { idNm: number; fecha: string | null; direccion: string | null; modalidad: "Despacho" | "Retiro"; notas: string | null; contacto: { contacto: string; telefono: string; email: string }; alCerrar: (hecho: boolean) => void }) {
   const [f, setF] = useState(fecha ?? "");
   const [d, setD] = useState(direccion ?? "");
   const [n, setN] = useState(notas ?? "");
+  const [mod, setMod] = useState<"Despacho" | "Retiro">(modalidad);
   const [c, setC] = useState(contacto);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
   function guardar() {
     setError(null);
     empezar(async () => {
-      const r = await actualizarCabeceraNecesidad(idNm, f, d, n, c);
+      const r = await actualizarCabeceraNecesidad(idNm, f, mod === "Retiro" ? "" : d, n, c, mod);
       if (!r.ok) return setError(r.error ?? "No se pudo guardar.");
       alCerrar(true);
     });
@@ -1002,12 +1004,19 @@ function VentanaCabeceraNecesidad({ idNm, fecha, direccion, notas, contacto, alC
     <Ventana titulo="Cabecera de la necesidad" subtitulo="La entrega y la direccion van en las solicitudes y en las ordenes de compra" onCerrar={() => alCerrar(false)} ancho="max-w-2xl">
       <form className="space-y-3 text-xs" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
         <div>
+          <label htmlFor="nm-dest-mod" className={ROTULO}>Entrega</label>
+          <select id="nm-dest-mod" className="border border-gray-300 rounded px-2 py-1 text-xs bg-white" value={mod} onChange={(e) => setMod(e.target.value as "Despacho" | "Retiro")}>
+            <option value="Despacho">Despacho a la bodega de Centro Panel</option>
+            <option value="Retiro">Retiro en el proveedor</option>
+          </select>
+        </div>
+        <div>
           <label htmlFor="nm-dest-fecha" className={ROTULO}>Fecha de entrega en destino</label>
           <input id="nm-dest-fecha" type="date" className="border border-gray-300 rounded px-2 py-1 text-xs bg-white" value={f} onChange={(e) => setF(e.target.value)} />
         </div>
         <div>
           <label htmlFor="nm-dest-dir" className={ROTULO}>Direccion de destino</label>
-          <textarea id="nm-dest-dir" rows={2} className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white" value={d} onChange={(e) => setD(e.target.value)} maxLength={300} />
+          <textarea id="nm-dest-dir" rows={2} disabled={mod === "Retiro"} placeholder={mod === "Retiro" ? "Retira Centro Panel en el proveedor" : "Si queda vacia, la bodega de Centro Panel"} className="border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white disabled:bg-gray-100" value={d} onChange={(e) => setD(e.target.value)} maxLength={300} />
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
