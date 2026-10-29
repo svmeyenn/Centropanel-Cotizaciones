@@ -19,13 +19,12 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   const supabase = await createClient();
   const { data: o } = await supabase
     .from("ordenes_compra")
-    .select("*, proyectos(nombre, direccion), entidades(razon_social, rut, contacto, email, telefono, direccion)")
+    .select("*, entidades(razon_social, rut, contacto, email, telefono, direccion)")
     .eq("id", id)
     .single();
   if (!o) notFound();
   const { data: lineas } = await supabase.from("oc_detalle").select("*").eq("id_oc", id).order("orden").order("id");
   const prov = uno<{ razon_social: string; rut: string | null; contacto: string | null; email: string | null; telefono: string | null; direccion: string | null }>(o.entidades);
-  const proy = uno<{ nombre: string; direccion: string | null }>(o.proyectos);
   const sinAprobar = !["Aprobada", "Enviada", "Recibida parcial", "Recibida", "Facturada", "Pagada"].includes(o.estado);
 
   return (
@@ -58,12 +57,21 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           </div>
           <div>
             <div className="font-bold uppercase text-gray-500 mb-1">Entrega</div>
-            <div className="font-semibold">{proy?.nombre}</div>
-            {(o.direccion_entrega || proy?.direccion) && <div>Direccion de destino: {o.direccion_entrega || proy?.direccion}</div>}
-            {o.fecha_entrega && <div>Fecha de entrega en destino: {fecha(o.fecha_entrega)}</div>}
-            {o.contacto_entrega && <div>Recibe: {o.contacto_entrega}</div>}
-            {o.telefono_entrega && <div>Telefono: {o.telefono_entrega}</div>}
-            {o.email_entrega && <div>Correo: {o.email_entrega}</div>}
+            {/* Todo pedido de materia prima se despacha a la bodega de Centro Panel o se retira en el proveedor: el documento
+                que sale al proveedor no lleva el nombre de la obra ni del cliente. */}
+            <div className="font-semibold">{o.modalidad_entrega === "Retiro" ? "Retiro en sus instalaciones" : "Despacho a bodega Centro Panel"}</div>
+            {o.modalidad_entrega === "Retiro" ? (
+              <div>Retira Centro Panel en: {prov?.direccion ?? "por informar"}</div>
+            ) : (
+              <>
+                <div>Direccion de destino: {o.direccion_entrega ?? "por informar"}</div>
+                <div className="text-gray-600">Si no puede despachar, indiquelo para coordinar el retiro en sus instalaciones.</div>
+              </>
+            )}
+            {o.fecha_entrega && <div>Fecha de entrega: {fecha(o.fecha_entrega)}</div>}
+            {o.modalidad_entrega !== "Retiro" && o.contacto_entrega && <div>Recibe: {o.contacto_entrega}</div>}
+            {o.modalidad_entrega !== "Retiro" && o.telefono_entrega && <div>Telefono: {o.telefono_entrega}</div>}
+            {o.modalidad_entrega !== "Retiro" && o.email_entrega && <div>Correo: {o.email_entrega}</div>}
             {o.condiciones_pago && <div>Pago: {o.condiciones_pago}</div>}
           </div>
         </div>

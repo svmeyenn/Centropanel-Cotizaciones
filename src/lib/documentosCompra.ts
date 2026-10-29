@@ -4,7 +4,6 @@ import { leerParametros, type Parametros } from "@/lib/parametros";
 import { uno } from "@/lib/relaciones";
 import { impuestoDelPais } from "@/lib/factura";
 import { monedaDelPais } from "@/lib/formato";
-import { etiquetaProyecto } from "@/lib/compras";
 import { numerosSolicitud } from "@/lib/numerosSolicitud";
 import type { EmisorDoc, OrdenDoc, ProveedorDoc, SolicitudDoc } from "@/lib/pdf/ComprasPdf";
 
@@ -72,7 +71,6 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
     d: {
       folio: numero,
       folioNecesidad: det.nm.folio,
-      referencia: etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente) || undefined,
       fecha: new Date().toLocaleDateString("sv-SE", { timeZone: "America/Santiago" }),
       proveedor: proveedorDoc(prov),
       obra: det.nm.proyecto,
@@ -123,7 +121,6 @@ export async function leerOrdenDoc(idOc: number): Promise<OrdenParaEnviar | null
   return {
     d: {
       numero: o.num_oc,
-      referencia: etiquetaProyecto(proy?.nombre, proy?.cliente) || undefined,
       fecha: o.fecha,
       estado: o.estado,
       aprobada: ["Aprobada", "Enviada", "Recibida parcial", "Recibida", "Facturada", "Pagada"].includes(o.estado),
