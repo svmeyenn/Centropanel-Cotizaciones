@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0170-20261029**
+Version vigente: **v0171-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0171-20261029 | 29-10-2026 | Los leads que ya son Cliente (confirmaron pedido) salen del listado "Leads sin seguimiento asignado" del inicio --los demas cuadros de sin seguimiento ya los excluian por su estado-- | (pendiente) |
 | v0170-20261029 | 29-10-2026 | Documentos tributarios del pedido: Factura, Boleta y Nota de credito, cada uno con su propia serie de folios por mercado --un folio no se repite dentro de su serie, pero una factura 8 y una boleta 8 conviven--; el formulario ofrece Boleta, muestra el ultimo folio de la serie elegida y la lista de documentos distingue la boleta; la boleta cuenta como facturado igual que la factura | (pendiente) |
 | v0169-20261029 | 29-10-2026 | Lista estandar de partidas para los proyectos de paneles --PAN-01 Nucleo EPS, PAN-02 Placas, PAN-03 Adhesivo, PAN-04 Otros insumos y productos, PAN-05 Transporte y despacho--: el proyecto que nace de un pedido la trae, y cada item de la necesidad de un pedido toma su partida segun lo que es; las obras no la llevan | (pendiente) |
 | v0168-20261029 | 29-10-2026 | Cada solicitud de cotizacion que sale a un proveedor lleva su propio numero --SC-00001-1, SC-00001-2, fijo y unico--: aparece en el PDF, en el asunto y texto de los mensajes, en el nombre del archivo, en la pantalla de envio y en el registro de envios; la OC cita el numero de la solicitud del proveedor ganador | (pendiente) |
