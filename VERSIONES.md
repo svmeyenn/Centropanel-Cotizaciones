@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0168-20261029**
+Version vigente: **v0169-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0169-20261029 | 29-10-2026 | Lista estandar de partidas para los proyectos de paneles --PAN-01 Nucleo EPS, PAN-02 Placas, PAN-03 Adhesivo, PAN-04 Otros insumos y productos, PAN-05 Transporte y despacho--: el proyecto que nace de un pedido la trae, y cada item de la necesidad de un pedido toma su partida segun lo que es; las obras no la llevan | (pendiente) |
 | v0168-20261029 | 29-10-2026 | Cada solicitud de cotizacion que sale a un proveedor lleva su propio numero --SC-00001-1, SC-00001-2, fijo y unico--: aparece en el PDF, en el asunto y texto de los mensajes, en el nombre del archivo, en la pantalla de envio y en el registro de envios; la OC cita el numero de la solicitud del proveedor ganador | (pendiente) |
 | v0167-20261029 | 29-10-2026 | Solicitud, cuadro comparativo, cotizacion del proveedor y OC con la estructura de una factura: detalle con subtotal por linea, subtotal, descuento, subtotal despues del descuento, IVA o IGV segun el pais y total a pagar --en la solicitud en PDF queda en blanco para que el proveedor lo complete--; la OC guarda el descuento y su total pasa a ser el total con impuesto | (pendiente) |
 | v0166-20261029 | 29-10-2026 | Un pedido de paneles que compra materias primas recibe su proyecto solo --"Pedido NNN", con el cliente del pedido y el aprobador maestro "Paneles"; si ya habia un proyecto de ese pedido sin enlazar, se reutiliza--: al crear su necesidad de material o, si quedo sin proyecto, al generar la OC. Las obras siguen eligiendo su proyecto a mano | (pendiente) |
