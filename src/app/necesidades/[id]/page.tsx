@@ -27,6 +27,10 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     .eq("id_pais", detalle.nm.id_pais)
     .order("nombre_referencia");
 
+  // Solo pueden recibir la solicitud los proveedores que tienen asignado, en su maestra, algun item de la necesidad.
+  const { data: conItems } = await supabase.rpc("nm_proveedores_con_items", { p_nm: id });
+  const cubre = new Map(((conItems ?? []) as { id_proveedor: number; n: number }[]).map((x) => [Number(x.id_proveedor), Number(x.n)]));
+
   return (
     <div className="min-h-screen">
       <Cabecera titulo={detalle.nm.folio} subtitulo="Necesidad de material" />
@@ -35,7 +39,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         <FichaNecesidad
           detalle={detalle}
           moneda={monedaDelPais(Number(detalle.nm.id_pais))}
-          proveedoresDisponibles={(provs ?? []).map((p) => ({ id: Number(p.id_entidad), nombre: p.nombre_referencia as string }))}
+          proveedoresDisponibles={(provs ?? []).filter((p) => cubre.has(Number(p.id_entidad))).map((p) => ({ id: Number(p.id_entidad), nombre: `${p.nombre_referencia as string} (${cubre.get(Number(p.id_entidad))} de ${detalle.items.length} items)` }))}
         />
       </div>
     </div>

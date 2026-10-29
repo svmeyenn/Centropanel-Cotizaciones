@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { pTxt, type Parametros } from "@/lib/parametros";
 import { dinero, fecha as fmtFecha, unidades as fmtUnid } from "@/lib/formato";
-import { porcentajeImpuesto, rotuloDescuento } from "@/lib/factura";
+import { porcentajeImpuesto, rotuloDescuento, subtotalLinea, totalesFactura } from "@/lib/factura";
 import { LOGO_PDF } from "@/lib/logo";
 
 // Los dos documentos que salen hacia el proveedor: la solicitud de cotizacion y la orden de compra.
@@ -91,7 +91,10 @@ export interface SolicitudDoc {
   direccionDestino: string | null;
   contactoDestino?: ContactoDoc;
   notas: string | null;
-  items: { sku?: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null }[];
+  items: { sku?: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; precio?: number | null }[];
+  // Con destinatario, la solicitud sale valorizada con el costo que ese proveedor tiene registrado.
+  valorizada?: boolean;
+  moneda?: string;
   // IVA o IGV del mercado, para dejar la estructura de la factura lista para completar.
   impuesto: { nombre: string; pct: number };
   emisor: EmisorDoc;
@@ -202,6 +205,13 @@ function BloqueTotales({ filas }: { filas: { rotulo: string; valor: string | nul
 }
 
 export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
+  const mon = d.moneda ?? "CLP";
+  const fac = totalesFactura(
+    d.items.reduce((a, it) => a + (it.precio ? subtotalLinea(it.cantidad, it.precio, mon) : 0), 0),
+    { tipo: "pct", valor: 0 },
+    d.impuesto.pct,
+    mon
+  );
   return (
     <Document title={`${d.folio} - ${d.proveedor.nombre}`} author={pTxt(p, "EmpresaNombre")}>
       <Page size="A4" style={s.pagina}>
@@ -231,24 +241,34 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
             </View>
             <Text style={[s.celda, s.cUnid]}>{it.unidad ?? ""}</Text>
             <Text style={[s.celda, s.cCant]}>{fmtUnid(it.cantidad)}</Text>
-            <Text style={[s.celda, s.cPrecio]} />
-            <Text style={[s.celda, s.cTotal]} />
+            <Text style={[s.celda, s.cPrecio]}>{it.precio ? dinero(it.precio, mon) : ""}</Text>
+            <Text style={[s.celda, s.cTotal]}>{it.precio ? dinero(subtotalLinea(it.cantidad, it.precio, mon), mon) : ""}</Text>
           </View>
         ))}
         <BloqueTotales
-          filas={[
-            { rotulo: "Subtotal", valor: null },
-            { rotulo: "Descuento", valor: null },
-            { rotulo: "Subtotal despues del descuento", valor: null },
-            { rotulo: `${d.impuesto.nombre} ${porcentajeImpuesto(d.impuesto.pct)}`, valor: null },
-            { rotulo: "TOTAL A PAGAR", valor: null, fuerte: true },
-          ]}
+          filas={
+            d.valorizada
+              ? [
+                  { rotulo: "Subtotal", valor: dinero(fac.subtotal, mon) },
+                  { rotulo: "Descuento", valor: dinero(0, mon) },
+                  { rotulo: "Subtotal despues del descuento", valor: dinero(fac.subtotalNeto, mon) },
+                  { rotulo: `${d.impuesto.nombre} ${porcentajeImpuesto(d.impuesto.pct)}`, valor: dinero(fac.iva, mon) },
+                  { rotulo: "TOTAL A PAGAR", valor: dinero(fac.total, mon), fuerte: true },
+                ]
+              : [
+                  { rotulo: "Subtotal", valor: null },
+                  { rotulo: "Descuento", valor: null },
+                  { rotulo: "Subtotal despues del descuento", valor: null },
+                  { rotulo: `${d.impuesto.nombre} ${porcentajeImpuesto(d.impuesto.pct)}`, valor: null },
+                  { rotulo: "TOTAL A PAGAR", valor: null, fuerte: true },
+                ]
+          }
         />
 
         <Text style={s.nota}>
-          Le pedimos cotizar los items indicados, con entrega en la direccion y la fecha de destino senaladas. Indique en su respuesta el precio unitario de cada
-          item, la moneda, el plazo de entrega, las condiciones de pago y la validez de la oferta. Los precios deben incluir el despacho al destino, salvo que
-          indique lo contrario.
+          {d.valorizada
+            ? "Los precios indicados son los que tenemos registrados para su empresa. Le pedimos confirmarlos o indicarnos el precio vigente de cada item, junto con el plazo de entrega, las condiciones de pago y la validez de la oferta. Los precios deben incluir el despacho al destino, salvo que indique lo contrario."
+            : "Le pedimos cotizar los items indicados, con entrega en la direccion y la fecha de destino senaladas. Indique en su respuesta el precio unitario de cada item, la moneda, el plazo de entrega, las condiciones de pago y la validez de la oferta. Los precios deben incluir el despacho al destino, salvo que indique lo contrario."}
         </Text>
         {d.notas ? <Text style={s.nota}>Notas: {d.notas}</Text> : null}
       </Page>
