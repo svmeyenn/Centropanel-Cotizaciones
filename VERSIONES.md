@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0171-20261029**
+Version vigente: **v0172-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0172-20261029 | 29-10-2026 | "Sin seguimiento" solo para lo vivo: los leads Otros, Visitante, Stand By, Cliente y los perdidos --Lead perdido, Cliente perdido, Lead no califica-- salen del listado de leads sin seguimiento de los ultimos 15 dias, y sus cotizaciones en juego salen del listado unificado de seguimiento; Stand By deja de llevar la marca "en seguimiento" | (pendiente) |
 | v0171-20261029 | 29-10-2026 | Los leads que ya son Cliente (confirmaron pedido) salen del listado "Leads sin seguimiento asignado" del inicio --los demas cuadros de sin seguimiento ya los excluian por su estado-- | (pendiente) |
 | v0170-20261029 | 29-10-2026 | Documentos tributarios del pedido: Factura, Boleta y Nota de credito, cada uno con su propia serie de folios por mercado --un folio no se repite dentro de su serie, pero una factura 8 y una boleta 8 conviven--; el formulario ofrece Boleta, muestra el ultimo folio de la serie elegida y la lista de documentos distingue la boleta; la boleta cuenta como facturado igual que la factura | (pendiente) |
 | v0169-20261029 | 29-10-2026 | Lista estandar de partidas para los proyectos de paneles --PAN-01 Nucleo EPS, PAN-02 Placas, PAN-03 Adhesivo, PAN-04 Otros insumos y productos, PAN-05 Transporte y despacho--: el proyecto que nace de un pedido la trae, y cada item de la necesidad de un pedido toma su partida segun lo que es; las obras no la llevan | (pendiente) |
