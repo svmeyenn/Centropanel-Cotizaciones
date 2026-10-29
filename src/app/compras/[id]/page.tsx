@@ -6,6 +6,7 @@ import EditorOC from "@/components/EditorOC";
 import EnvioDocumento from "@/components/EnvioDocumento";
 import BotonReversar from "@/components/BotonReversar";
 import { textosOrden } from "@/lib/textosCompra";
+import { impuestoDelPais } from "@/lib/factura";
 import { enviarOcPorCorreo, registrarEnvioOc, reversarEnvioOc } from "@/app/necesidades/envios";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
@@ -157,6 +158,14 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             factura_fecha: o.factura_fecha,
             factura_monto: o.factura_monto != null ? Number(o.factura_monto) : null,
             moneda: o.moneda,
+            subtotal: Number(o.subtotal),
+            descuento_tipo: (o.descuento_tipo as "pct" | "monto") ?? "pct",
+            descuento_valor: Number(o.descuento_valor ?? 0),
+            descuento_monto: Number(o.descuento_monto ?? 0),
+            subtotal_neto: Number(o.subtotal_neto),
+            iva_pct: Number(o.iva_pct ?? 0),
+            iva_monto: Number(o.iva_monto ?? 0),
+            impuesto: impuestoDelPais(Number(o.id_pais)),
           }}
           lineas={(lineas ?? []).map((l) => ({
             id: Number(l.id),

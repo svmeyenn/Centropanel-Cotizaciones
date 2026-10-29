@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
 import { leerParametros, type Parametros } from "@/lib/parametros";
 import { uno } from "@/lib/relaciones";
+import { impuestoDelPais } from "@/lib/factura";
 import type { EmisorDoc, OrdenDoc, ProveedorDoc, SolicitudDoc } from "@/lib/pdf/ComprasPdf";
 
 // Arma, desde la base, los datos de la solicitud de cotizacion y de la orden de compra que van a un proveedor.
@@ -43,7 +44,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
   const { data, error } = await supabase.rpc("nm_detalle", { p_nm: idNm });
   if (error || !data) return null;
   const det = data as {
-    nm: { folio: string; id_pais: number; proyecto: string | null; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; notas: string | null };
+    nm: { folio: string; id_pais: number; proyecto: string | null; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; notas: string | null; iva_pct: number };
     items: { id: number; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; id_sc: number | null }[];
     proveedores: ProveedorNm[];
     solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; notas: string | null }[];
@@ -68,6 +69,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
       direccionDestino: sc.direccion_destino ?? det.nm.direccion_destino,
       contactoDestino: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino },
       notas: [det.nm.notas, sc.notas].filter(Boolean).join("\n") || null,
+      impuesto: { nombre: impuestoDelPais(Number(det.nm.id_pais)), pct: Number(det.nm.iva_pct ?? 0) },
       items: items.map((i) => ({ sku: i.sku, descripcion: i.descripcion, unidad: i.unidad, cantidad: Number(i.cantidad), nota: i.nota })),
       emisor: await emisor(),
     },
@@ -119,6 +121,10 @@ export async function leerOrdenDoc(idOc: number): Promise<OrdenParaEnviar | null
       condicionesPago: o.condiciones_pago,
       notas: o.notas,
       total: Number(o.total),
+      subtotal: Number(o.subtotal),
+      descuento: { tipo: (o.descuento_tipo as "pct" | "monto") ?? "pct", valor: Number(o.descuento_valor ?? 0), monto: Number(o.descuento_monto ?? 0) },
+      subtotalNeto: Number(o.subtotal_neto),
+      impuesto: { nombre: impuestoDelPais(Number(o.id_pais)), pct: Number(o.iva_pct ?? 0), monto: Number(o.iva_monto ?? 0) },
       lineas: (lineas ?? []).map((l) => ({ sku: l.sku as string | null, descripcion: l.descripcion, unidades: Number(l.unidades), costo: Number(l.costo_unitario) })),
       emisor: await emisor(),
     },

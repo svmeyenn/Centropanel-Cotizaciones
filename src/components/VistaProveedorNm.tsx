@@ -9,13 +9,14 @@ import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { dinero, fecha as fmtFecha, monedaDelPais, unidades as fmtUnid } from "@/lib/formato";
 import { COLOR_NM } from "@/lib/compras";
+import { impuestoDelPais, porcentajeImpuesto, rotuloDescuento, subtotalLinea, totalesFactura } from "@/lib/factura";
 import { textosOrden, textosSolicitud } from "@/lib/textosCompra";
 import { enviarOcPorCorreo, enviarSolicitudPorCorreo, registrarEnvioOc, registrarEnvioSolicitud, reversarEnvioOc } from "@/app/necesidades/envios";
 
 export const dynamic = "force-dynamic";
 
 type Det = {
-  nm: { id: number; folio: string; id_pais: number; proyecto: string | null; estado: string; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
+  nm: { id: number; folio: string; id_pais: number; proyecto: string | null; estado: string; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean; iva_pct: number };
   items: { id: number; orden: number; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; id_sc: number | null }[];
   proveedores: {
     id: number;
@@ -29,6 +30,7 @@ type Det = {
     estado: string;
     moneda: string | null;
     plazo_dias: number | null;
+    descuento_pct: number;
     condiciones_pago: string | null;
     validez: string | null;
     archivo_nombre: string | null;
@@ -111,7 +113,8 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
         {solicitudes.map((s) => {
           const items = det.items.filter((i) => i.id_sc === s.id);
           const suyo = s.id_participante === idPart;
-          const total = items.reduce((a, i) => a + (precio.get(i.id) ?? 0) * Number(i.cantidad), 0);
+          const sub = items.reduce((a, i) => a + (precio.has(i.id) ? subtotalLinea(Number(i.cantidad), precio.get(i.id)!, moneda) : 0), 0);
+          const fac = totalesFactura(sub, { tipo: "pct", valor: Number(prov.descuento_pct ?? 0) }, Number(det.nm.iva_pct ?? 0), moneda);
           const sinPrecio = items.filter((i) => !precio.has(i.id)).length;
           const oc = suyo && s.id_oc ? ocPor.get(s.id_oc) : undefined;
           const base = `/necesidades/${idNm}/solicitud/${s.id}/${idPart}/pdf`;
@@ -175,17 +178,28 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                           <td className="px-3 py-1.5">{i.unidad}</td>
                           <td className="px-3 py-1.5 text-right">{fmtUnid(i.cantidad)}</td>
                           <td className="px-3 py-1.5 text-right">{pr != null ? dinero(pr, moneda) : <span className="text-gray-400">sin precio</span>}</td>
-                          <td className="px-3 py-1.5 text-right">{pr != null ? dinero(pr * Number(i.cantidad), moneda) : ""}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums">{pr != null ? dinero(subtotalLinea(Number(i.cantidad), pr, moneda), moneda) : ""}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                   <tfoot>
+                    {[
+                      ["Subtotal", dinero(fac.subtotal, moneda)],
+                      [rotuloDescuento({ tipo: "pct", valor: Number(prov.descuento_pct ?? 0) }), fac.descuento > 0 ? `- ${dinero(fac.descuento, moneda)}` : dinero(0, moneda)],
+                      ["Subtotal despues del descuento", dinero(fac.subtotalNeto, moneda)],
+                      [`${impuestoDelPais(Number(det.nm.id_pais))} ${porcentajeImpuesto(Number(det.nm.iva_pct ?? 0))}`, dinero(fac.iva, moneda)],
+                    ].map(([r, v], i) => (
+                      <tr key={r} className={i === 0 ? "border-t-2 border-gray-300" : ""}>
+                        <td colSpan={4} className="px-3 py-1 text-right text-gray-600">{r}</td>
+                        <td className="px-3 py-1 text-right tabular-nums">{v}</td>
+                      </tr>
+                    ))}
                     <tr className="border-t-2 border-gray-300 font-semibold">
                       <td colSpan={4} className="px-3 py-1.5 text-right">
-                        Total {sinPrecio > 0 ? `(faltan ${sinPrecio} precios)` : ""}
+                        TOTAL A PAGAR {sinPrecio > 0 ? `(faltan ${sinPrecio} precios)` : ""}
                       </td>
-                      <td className="px-3 py-1.5 text-right">{dinero(total, moneda)}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">{dinero(fac.total, moneda)}</td>
                     </tr>
                   </tfoot>
                 </table>

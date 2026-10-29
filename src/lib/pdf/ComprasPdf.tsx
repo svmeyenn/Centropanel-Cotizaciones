@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { pTxt, type Parametros } from "@/lib/parametros";
 import { dinero, fecha as fmtFecha, unidades as fmtUnid } from "@/lib/formato";
+import { porcentajeImpuesto, rotuloDescuento } from "@/lib/factura";
 import { LOGO_PDF } from "@/lib/logo";
 
 // Los dos documentos que salen hacia el proveedor: la solicitud de cotizacion y la orden de compra.
@@ -39,6 +40,8 @@ const s = StyleSheet.create({
   cCant: { width: 56, textAlign: "right" },
   cPrecio: { width: 82, textAlign: "right" },
   cTotal: { width: 82, textAlign: "right" },
+  fTot: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2.5, paddingHorizontal: 5, borderBottomWidth: 0.5, borderBottomColor: "#D1D5DB" },
+  fTotFuerte: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, paddingHorizontal: 5, backgroundColor: VERDE, color: "white", fontFamily: "Helvetica-Bold", fontSize: 9 },
   total: { alignSelf: "flex-end", width: 250, marginTop: 10, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 5, fontSize: 9, fontFamily: "Helvetica-Bold" },
   nota: { marginTop: 14, fontSize: 7.5, lineHeight: 1.45 },
   aviso: { marginBottom: 10, borderWidth: 1, borderColor: DORADO, color: DORADO_OSC, padding: 5, fontSize: 8, textAlign: "center", fontFamily: "Helvetica-Bold" },
@@ -89,6 +92,8 @@ export interface SolicitudDoc {
   contactoDestino?: ContactoDoc;
   notas: string | null;
   items: { sku?: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null }[];
+  // IVA o IGV del mercado, para dejar la estructura de la factura lista para completar.
+  impuesto: { nombre: string; pct: number };
   emisor: EmisorDoc;
 }
 
@@ -107,6 +112,10 @@ export interface OrdenDoc {
   notas: string | null;
   total: number;
   lineas: { sku?: string | null; descripcion: string; unidades: number; costo: number }[];
+  subtotal: number;
+  descuento: { tipo: "pct" | "monto"; valor: number; monto: number };
+  subtotalNeto: number;
+  impuesto: { nombre: string; pct: number; monto: number };
   emisor: EmisorDoc;
 }
 
@@ -176,6 +185,21 @@ function BloqueEmisor({ e, p }: { e: EmisorDoc; p: Parametros }) {
   );
 }
 
+// Subtotal, descuento, subtotal despues del descuento, impuesto y total: los cierres de una factura. Sin valor, la
+// linea queda en blanco para que el proveedor la complete.
+function BloqueTotales({ filas }: { filas: { rotulo: string; valor: string | null; fuerte?: boolean }[] }) {
+  return (
+    <View style={{ alignSelf: "flex-end", width: 260, marginTop: 10 }}>
+      {filas.map((f, i) => (
+        <View key={i} style={f.fuerte ? s.fTotFuerte : s.fTot}>
+          <Text>{f.rotulo}</Text>
+          <Text>{f.valor ?? "______________"}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
   return (
     <Document title={`${d.folio} - ${d.proveedor.nombre}`} author={pTxt(p, "EmpresaNombre")}>
@@ -194,6 +218,7 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
           <Text style={[s.celda, s.cUnid]}>Unidad</Text>
           <Text style={[s.celda, s.cCant]}>Cantidad</Text>
           <Text style={[s.celda, s.cPrecio]}>Precio unitario</Text>
+          <Text style={[s.celda, s.cTotal]}>Subtotal</Text>
         </View>
         {d.items.map((it, i) => (
           <View key={i} style={s.fila_} wrap={false}>
@@ -206,8 +231,18 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
             <Text style={[s.celda, s.cUnid]}>{it.unidad ?? ""}</Text>
             <Text style={[s.celda, s.cCant]}>{fmtUnid(it.cantidad)}</Text>
             <Text style={[s.celda, s.cPrecio]} />
+            <Text style={[s.celda, s.cTotal]} />
           </View>
         ))}
+        <BloqueTotales
+          filas={[
+            { rotulo: "Subtotal", valor: null },
+            { rotulo: "Descuento", valor: null },
+            { rotulo: "Subtotal despues del descuento", valor: null },
+            { rotulo: `${d.impuesto.nombre} ${porcentajeImpuesto(d.impuesto.pct)}`, valor: null },
+            { rotulo: "TOTAL A PAGAR", valor: null, fuerte: true },
+          ]}
+        />
 
         <Text style={s.nota}>
           Le pedimos cotizar los items indicados, con entrega en la direccion y la fecha de destino senaladas. Indique en su respuesta el precio unitario de cada
@@ -251,10 +286,15 @@ export function OrdenCompraPdf({ d, p }: { d: OrdenDoc; p: Parametros }) {
             <Text style={[s.celda, s.cTotal]}>{dinero(l.unidades * l.costo, d.moneda)}</Text>
           </View>
         ))}
-        <View style={s.total}>
-          <Text>Total (neto)</Text>
-          <Text>{dinero(d.total, d.moneda)}</Text>
-        </View>
+        <BloqueTotales
+          filas={[
+            { rotulo: "Subtotal", valor: dinero(d.subtotal, d.moneda) },
+            { rotulo: rotuloDescuento(d.descuento), valor: d.descuento.monto > 0 ? `- ${dinero(d.descuento.monto, d.moneda)}` : dinero(0, d.moneda) },
+            { rotulo: "Subtotal despues del descuento", valor: dinero(d.subtotalNeto, d.moneda) },
+            { rotulo: `${d.impuesto.nombre} ${porcentajeImpuesto(d.impuesto.pct)}`, valor: dinero(d.impuesto.monto, d.moneda) },
+            { rotulo: "TOTAL A PAGAR", valor: dinero(d.total, d.moneda), fuerte: true },
+          ]}
+        />
         {d.notas ? <Text style={s.nota}>Notas: {d.notas}</Text> : null}
         <Text style={s.nota}>Confirme la recepcion de esta orden y la fecha de entrega respondiendo al contacto indicado. Indique el numero de la orden en su factura.</Text>
       </Page>

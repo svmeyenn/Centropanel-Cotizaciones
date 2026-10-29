@@ -7,6 +7,7 @@ import Ventana from "@/components/Ventana";
 import VentanaNuevaMateria from "@/components/VentanaNuevaMateria";
 import { COLOR_NM } from "@/lib/compras";
 import { dinero, fecha as fmtFecha } from "@/lib/formato";
+import { impuestoDelPais, porcentajeImpuesto, rotuloDescuento, subtotalLinea, totalesFactura } from "@/lib/factura";
 import {
   abrirSolicitud,
   adjudicarSolicitud,
@@ -50,6 +51,7 @@ export type Detalle = {
     num_pedido: string | null;
     solicitante: string | null;
     puede_comprar: boolean;
+    iva_pct: number;
   };
   items: Item[];
   proveedores: Prov[];
@@ -75,6 +77,7 @@ type Prov = {
   estado: "Invitado" | "Respondio" | "Declino";
   moneda: string | null;
   plazo_dias: number | null;
+  descuento_pct: number;
   condiciones_pago: string | null;
   validez: string | null;
   archivo_ruta: string | null;
@@ -389,6 +392,8 @@ export default function FichaNecesidad({
           precio={precio}
           total={total}
           moneda={moneda}
+          ivaPct={Number(nm.iva_pct ?? 0)}
+          impuesto={impuestoDelPais(nm.id_pais)}
           comprador={comprador}
           pendiente={pendiente}
           ejecutar={ejecutar}
@@ -424,6 +429,8 @@ export default function FichaNecesidad({
           precio={precio}
           idNm={nm.id}
           moneda={moneda}
+          ivaPct={Number(nm.iva_pct ?? 0)}
+          impuesto={impuestoDelPais(nm.id_pais)}
           alCerrar={(hecho) => {
             setCotizando(null);
             if (hecho) {
@@ -453,7 +460,7 @@ export default function FichaNecesidad({
 // Una solicitud con su cuadro comparativo: items en filas, proveedores en columnas, el mejor precio de cada item
 // destacado, y el total de cada proveedor si cotizo todo.
 function TarjetaSolicitud({
-  s, destinoNm, items, proveedores, precio, total, moneda, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
+  s, destinoNm, items, proveedores, precio, total, moneda, ivaPct, impuesto, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
 }: {
   s: Sol;
   destinoNm: { fecha: string | null; direccion: string | null };
@@ -462,6 +469,8 @@ function TarjetaSolicitud({
   precio: Map<string, number>;
   total: (s: Sol, idPart: number) => number | null;
   moneda: string;
+  ivaPct: number;
+  impuesto: string;
   comprador: boolean;
   pendiente: boolean;
   ejecutar: (f: () => Promise<Resultado>, ok?: string, fin?: () => void) => void;
@@ -470,7 +479,12 @@ function TarjetaSolicitud({
   alAbrir: () => void;
   hayCotizaciones: boolean;
 }) {
-  const totales = proveedores.map((p) => total(s, p.id));
+  // Cada proveedor con la estructura de una factura: subtotal, descuento, subtotal despues del descuento, impuesto y total.
+  const desglose = proveedores.map((p) => {
+    const sub = total(s, p.id);
+    return sub == null ? null : totalesFactura(sub, { tipo: "pct", valor: Number(p.descuento_pct ?? 0) }, ivaPct, moneda);
+  });
+  const totales = desglose.map((d) => (d ? d.total : null));
   const mejorTotal = Math.min(...totales.filter((t): t is number => t != null));
   const enCotizacion = s.estado === "En cotizacion";
   const adj = s.estado === "Adjudicada";
@@ -581,8 +595,24 @@ function TarjetaSolicitud({
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
-              <td className="px-3 py-1.5" colSpan={2}>Total de la solicitud</td>
+            {[
+              { r: "Subtotal", v: (d: ReturnType<typeof totalesFactura>, p: Prov) => dinero(d.subtotal, moneda) },
+              { r: "Descuento", v: (d: ReturnType<typeof totalesFactura>, p: Prov) => (d.descuento > 0 ? `- ${dinero(d.descuento, moneda)}` : dinero(0, moneda)), rot: (p: Prov) => rotuloDescuento({ tipo: "pct", valor: Number(p.descuento_pct ?? 0) }) },
+              { r: "Subtotal despues del descuento", v: (d: ReturnType<typeof totalesFactura>, p: Prov) => dinero(d.subtotalNeto, moneda) },
+              { r: `${impuesto} ${porcentajeImpuesto(ivaPct)}`, v: (d: ReturnType<typeof totalesFactura>, p: Prov) => dinero(d.iva, moneda) },
+            ].map((f, i) => (
+              <tr key={f.r} className={`bg-gray-50 ${i === 0 ? "border-t-2 border-gray-200" : ""}`}>
+                <td className="px-3 py-1 text-right text-gray-600" colSpan={2}>{f.r}</td>
+                {proveedores.map((p, k) => (
+                  <td key={p.id} className="px-3 py-1 text-right tabular-nums text-gray-700">
+                    {desglose[k] ? f.v(desglose[k]!, p) : <span className="text-gray-300">—</span>}
+                    {f.rot && desglose[k] && Number(p.descuento_pct ?? 0) > 0 ? <span className="block text-[10px] text-gray-400">{f.rot(p)}</span> : null}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            <tr className="border-t-2 border-gray-300 bg-gray-50 font-semibold">
+              <td className="px-3 py-1.5 text-right" colSpan={2}>TOTAL A PAGAR</td>
               {proveedores.map((p, k) => {
                 const t = totales[k];
                 return (
@@ -620,13 +650,15 @@ function TarjetaSolicitud({
 }
 
 function VentanaCotizacion({
-  prov, items, precio, idNm, moneda, alCerrar,
+  prov, items, precio, idNm, moneda, ivaPct, impuesto, alCerrar,
 }: {
   prov: Prov;
   items: Item[];
   precio: Map<string, number>;
   idNm: number;
   moneda: string;
+  ivaPct: number;
+  impuesto: string;
   alCerrar: (hecho: boolean) => void;
 }) {
   const [cab, setCab] = useState({
@@ -634,6 +666,7 @@ function VentanaCotizacion({
     plazo_dias: prov.plazo_dias != null ? String(prov.plazo_dias) : "",
     condiciones_pago: prov.condiciones_pago ?? "",
     validez: prov.validez ?? "",
+    descuento_pct: prov.descuento_pct ? String(prov.descuento_pct) : "",
     notas: prov.notas ?? "",
   });
   const [valores, setValores] = useState<Record<number, string>>(() => {
@@ -647,6 +680,16 @@ function VentanaCotizacion({
   const archivo = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
+
+  // El precio escrito en un item, o nada si esta en blanco.
+  function valorDe(id: number): number | null {
+    const t = (valores[id] ?? "").trim().replace(",", ".");
+    const n = Number(t);
+    return t === "" || !Number.isFinite(n) ? null : n;
+  }
+  // La cotizacion con la estructura de una factura, a medida que se escriben los precios.
+  const subtotalLineas = items.reduce((a, i) => a + (valorDe(i.id) != null ? subtotalLinea(Number(i.cantidad), valorDe(i.id)!, cab.moneda) : 0), 0);
+  const factura = totalesFactura(subtotalLineas, { tipo: "pct", valor: Number(cab.descuento_pct) || 0 }, ivaPct, cab.moneda);
 
   function guardar() {
     setError(null);
@@ -672,7 +715,7 @@ function VentanaCotizacion({
   return (
     <Ventana titulo={`Cotizacion de ${prov.nombre}`} subtitulo="Precio unitario por item; deje en blanco lo que no cotizo" onCerrar={() => alCerrar(false)} ancho="max-w-4xl">
       <div className="space-y-3 text-xs">
-        <div className="grid gap-2 sm:grid-cols-4">
+        <div className="grid gap-2 sm:grid-cols-5">
           <div>
             <label htmlFor="cz-moneda" className={ROTULO}>Moneda</label>
             <input id="cz-moneda" className={CAMPO} value={cab.moneda} onChange={(e) => setCab({ ...cab, moneda: e.target.value.toUpperCase() })} maxLength={3} />
@@ -689,6 +732,10 @@ function VentanaCotizacion({
             <label htmlFor="cz-valida" className={ROTULO}>Valida hasta</label>
             <input id="cz-valida" type="date" className={CAMPO} value={cab.validez} onChange={(e) => setCab({ ...cab, validez: e.target.value })} />
           </div>
+          <div>
+            <label htmlFor="cz-desc" className={ROTULO}>Descuento (%)</label>
+            <input id="cz-desc" inputMode="decimal" className={CAMPO} value={cab.descuento_pct} onChange={(e) => setCab({ ...cab, descuento_pct: e.target.value.replace(",", ".") })} />
+          </div>
         </div>
         <div className="max-h-[50vh] overflow-y-auto border border-gray-200 rounded">
           <table className="w-full">
@@ -697,6 +744,7 @@ function VentanaCotizacion({
                 <th className="text-left px-3 py-1.5">Item</th>
                 <th className="text-right px-3 py-1.5 w-24">Cantidad</th>
                 <th className="text-right px-3 py-1.5 w-36">Precio unitario</th>
+                <th className="text-right px-3 py-1.5 w-32">Subtotal</th>
               </tr>
             </thead>
             <tbody>
@@ -713,10 +761,28 @@ function VentanaCotizacion({
                       onChange={(e) => setValores({ ...valores, [i.id]: e.target.value })}
                     />
                   </td>
+                  <td className="px-3 py-1 text-right tabular-nums">{valorDe(i.id) != null ? dinero(subtotalLinea(Number(i.cantidad), valorDe(i.id)!, cab.moneda), cab.moneda) : ""}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="ml-auto w-72 text-xs">
+          {[
+            ["Subtotal", dinero(factura.subtotal, cab.moneda)],
+            [rotuloDescuento({ tipo: "pct", valor: Number(cab.descuento_pct) || 0 }), factura.descuento > 0 ? `- ${dinero(factura.descuento, cab.moneda)}` : dinero(0, cab.moneda)],
+            ["Subtotal despues del descuento", dinero(factura.subtotalNeto, cab.moneda)],
+            [`${impuesto} ${porcentajeImpuesto(ivaPct)}`, dinero(factura.iva, cab.moneda)],
+          ].map(([r, v]) => (
+            <div key={r} className="flex justify-between py-0.5 border-b border-gray-100">
+              <span className="text-gray-600">{r}</span>
+              <span className="tabular-nums">{v}</span>
+            </div>
+          ))}
+          <div className="flex justify-between py-1 font-semibold">
+            <span>TOTAL A PAGAR</span>
+            <span className="tabular-nums">{dinero(factura.total, cab.moneda)}</span>
+          </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
           <div>
