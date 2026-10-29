@@ -83,8 +83,6 @@ export interface ContactoDoc {
 export interface SolicitudDoc {
   folio: string;
   folioNecesidad: string;
-  // Proyecto o cliente al que corresponde.
-  referencia?: string;
   fecha: string;
   proveedor: ProveedorDoc;
   obra: string | null;
@@ -106,7 +104,6 @@ export interface SolicitudDoc {
 
 export interface OrdenDoc {
   numero: string;
-  referencia?: string;
   fecha: string;
   estado: string;
   aprobada: boolean;
@@ -222,7 +219,7 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
   return (
     <Document title={`${d.folio} - ${d.proveedor.nombre}`} author={pTxt(p, "EmpresaNombre")}>
       <Page size="A4" style={s.pagina}>
-        <Cabecera p={p} titulo="SOLICITUD DE COTIZACION" numero={d.folio} sub={[`Necesidad ${d.folioNecesidad}`, d.referencia].filter(Boolean).join(" · ")} fecha={d.fecha} />
+        <Cabecera p={p} titulo="SOLICITUD DE COTIZACION" numero={d.folio} sub={`Necesidad ${d.folioNecesidad}`} fecha={d.fecha} />
         <View style={s.bloques}>
           <BloqueProveedor pr={d.proveedor} />
           <BloqueEntrega fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} contacto={d.contactoDestino} modalidad={d.modalidad} proveedor={d.proveedor} etiquetaFecha="Fecha de entrega requerida" />
@@ -287,7 +284,7 @@ export function OrdenCompraPdf({ d, p }: { d: OrdenDoc; p: Parametros }) {
   return (
     <Document title={`${d.numero} - ${d.proveedor.nombre}`} author={pTxt(p, "EmpresaNombre")}>
       <Page size="A4" style={s.pagina}>
-        <Cabecera p={p} titulo="ORDEN DE COMPRA" numero={d.numero} sub={d.referencia} fecha={d.fecha} />
+        <Cabecera p={p} titulo="ORDEN DE COMPRA" numero={d.numero} fecha={d.fecha} />
         {!d.aprobada ? <Text style={s.aviso}>DOCUMENTO NO VALIDO: la orden aun no esta aprobada ({d.estado}).</Text> : null}
         <View style={s.bloques}>
           <BloqueProveedor pr={d.proveedor} />
