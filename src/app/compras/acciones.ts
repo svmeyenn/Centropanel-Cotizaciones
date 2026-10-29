@@ -116,6 +116,17 @@ export async function guardarLineaOC(
   return { ok: true };
 }
 
+// Deja las lineas elegidas en la maestra del proveedor de la orden, con costo cero.
+export async function asignarMaestraOC(idOc: number, lineas: number[]) {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("oc_asignar_maestra", { p_oc: idOc, p_lineas: lineas });
+  if (error) return { error: error.message };
+  refrescar(idOc);
+  revalidatePath("/proveedores");
+  return { ok: true };
+}
+
 export async function borrarLineaOC(idOc: number, idLinea: number) {
   await requerirVendedor();
   const supabase = await createClient();
