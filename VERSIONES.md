@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0167-20261029**
+Version vigente: **v0168-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0168-20261029 | 29-10-2026 | Cada solicitud de cotizacion que sale a un proveedor lleva su propio numero --SC-00001-1, SC-00001-2, fijo y unico--: aparece en el PDF, en el asunto y texto de los mensajes, en el nombre del archivo, en la pantalla de envio y en el registro de envios; la OC cita el numero de la solicitud del proveedor ganador | (pendiente) |
 | v0167-20261029 | 29-10-2026 | Solicitud, cuadro comparativo, cotizacion del proveedor y OC con la estructura de una factura: detalle con subtotal por linea, subtotal, descuento, subtotal despues del descuento, IVA o IGV segun el pais y total a pagar --en la solicitud en PDF queda en blanco para que el proveedor lo complete--; la OC guarda el descuento y su total pasa a ser el total con impuesto | (pendiente) |
 | v0166-20261029 | 29-10-2026 | Un pedido de paneles que compra materias primas recibe su proyecto solo --"Pedido NNN", con el cliente del pedido y el aprobador maestro "Paneles"; si ya habia un proyecto de ese pedido sin enlazar, se reutiliza--: al crear su necesidad de material o, si quedo sin proyecto, al generar la OC. Las obras siguen eligiendo su proyecto a mano | (pendiente) |
 | v0165-20261027 | 27-10-2026 | El envio de solicitudes y OC usa el ayudante igual que los mensajes a leads: WhatsApp abre el chat con el PDF pegado --antes solo si el ayudante informaba WhatsApp-- y el correo se abre en Outlook con el PDF adjunto; se valida que el PDF se genere bien antes de enviarlo y se respeta la pausa de 20 segundos entre WhatsApp | b330868 |

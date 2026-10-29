@@ -9,6 +9,7 @@ import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { dinero, fecha as fmtFecha, monedaDelPais, unidades as fmtUnid } from "@/lib/formato";
 import { COLOR_NM } from "@/lib/compras";
+import { numerosSolicitud } from "@/lib/numerosSolicitud";
 import { impuestoDelPais, porcentajeImpuesto, rotuloDescuento, subtotalLinea, totalesFactura } from "@/lib/factura";
 import { textosOrden, textosSolicitud } from "@/lib/textosCompra";
 import { enviarOcPorCorreo, enviarSolicitudPorCorreo, registrarEnvioOc, registrarEnvioSolicitud, reversarEnvioOc } from "@/app/necesidades/envios";
@@ -79,6 +80,8 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
   const comprador = det.nm.puede_comprar;
   const emisor = { nombre: v.nombre, cargo: v.cargo, email: v.email, telefono: v.telefono };
   const folioSc = new Map(det.solicitudes.map((s) => [s.id, s.folio]));
+  // El numero propio de cada solicitud para este proveedor; quien compra lo asigna al abrir la pantalla de envio.
+  const numeros = await numerosSolicitud(det.solicitudes.filter((s) => s.estado !== "Abierta" && s.estado !== "Anulada").map((s) => ({ idSc: s.id, idPart })), comprador && modo === "enviar");
   const contacto = { nombre: prov.nombre, email: prov.email, telefono: prov.telefono };
 
   return (
@@ -118,7 +121,8 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
           const sinPrecio = items.filter((i) => !precio.has(i.id)).length;
           const oc = suyo && s.id_oc ? ocPor.get(s.id_oc) : undefined;
           const base = `/necesidades/${idNm}/solicitud/${s.id}/${idPart}/pdf`;
-          const t = textosSolicitud({ folio: s.folio, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: s.fecha_entrega ?? det.nm.fecha_requerida, direccion: s.direccion_destino ?? det.nm.direccion_destino, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
+          const num = numeros.get(`${s.id}:${idPart}`) ?? s.folio;
+          const t = textosSolicitud({ folio: num, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: s.fecha_entrega ?? det.nm.fecha_requerida, direccion: s.direccion_destino ?? det.nm.direccion_destino, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
           const bloqueoSc = s.estado === "Adjudicada" ? "La solicitud ya esta adjudicada." : prov.estado === "Declino" ? "El proveedor declino." : null;
           const to = oc
             ? textosOrden({ numero: oc.num_oc, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: oc.fecha_entrega ?? det.nm.fecha_requerida, direccion: det.nm.direccion_destino, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor })
@@ -126,7 +130,8 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
           return (
             <section key={s.id} className="bg-white border border-gray-200 rounded">
               <header className="flex flex-wrap items-center gap-2 px-3 py-2 bg-crema border-b border-gray-200">
-                <span className="font-semibold text-verde">{s.folio}</span>
+                <span className="font-semibold text-verde">{num}</span>
+                {num !== s.folio && <span className="text-gray-500">de {s.folio}</span>}
                 <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${COLOR_NM[s.estado] ?? "bg-gray-100 text-gray-700"}`}>{s.estado}</span>
                 {s.estado === "Adjudicada" && <span>{suyo ? "Adjudicada a este proveedor" : "Adjudicada a otro proveedor"}</span>}
                 <span className="ml-auto flex flex-wrap items-center gap-1.5">
@@ -142,11 +147,11 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                   {comprador && modo === "enviar" && (
                     <EnvioDocumento
                       etiqueta="Enviar solicitud"
-                      titulo={`Enviar ${s.folio}`}
+                      titulo={`Enviar ${num}`}
                       proveedor={contacto}
                       prefijoTelefono={prefijo}
                       pdfUrl={base}
-                      nombreArchivo={`${s.folio}.pdf`}
+                      nombreArchivo={`${num}.pdf`}
                       asunto={t.asunto}
                       cuerpo={t.cuerpo}
                       textoWhatsApp={t.whatsapp}
@@ -269,7 +274,7 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                       {new Date(e.creado as string).toLocaleString("es-CL", { timeZone: "America/Santiago", dateStyle: "short", timeStyle: "short" })}
                     </td>
                     <td className="px-3 py-1.5">
-                      {e.tipo === "OC" ? `Orden de compra ${e.id_oc ? (ocPor.get(Number(e.id_oc))?.num_oc ?? "") : ""}` : `Solicitud ${folioSc.get(Number(e.id_sc)) ?? ""}`}
+                      {e.tipo === "OC" ? `Orden de compra ${e.id_oc ? (ocPor.get(Number(e.id_oc))?.num_oc ?? "") : ""}` : `Solicitud ${numeros.get(`${e.id_sc}:${idPart}`) ?? folioSc.get(Number(e.id_sc)) ?? ""}`}
                     </td>
                     <td className="px-3 py-1.5">{e.canal === "email" ? "Correo" : "WhatsApp"}{e.reversado_en ? <span className="ml-1.5 px-1.5 rounded bg-gray-200 text-gray-600 text-[10px] font-semibold">Reversado</span> : null}</td>
                     <td className="px-3 py-1.5">{e.destino}</td>

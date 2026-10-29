@@ -3,6 +3,7 @@ import { requerirVendedor } from "@/lib/sesion";
 import { leerParametros, type Parametros } from "@/lib/parametros";
 import { uno } from "@/lib/relaciones";
 import { impuestoDelPais } from "@/lib/factura";
+import { numerosSolicitud } from "@/lib/numerosSolicitud";
 import type { EmisorDoc, OrdenDoc, ProveedorDoc, SolicitudDoc } from "@/lib/pdf/ComprasPdf";
 
 // Arma, desde la base, los datos de la solicitud de cotizacion y de la orden de compra que van a un proveedor.
@@ -57,10 +58,12 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
       : det.proveedores.find((x) => x.id === idPart);
   if (!sc || !prov) return null;
   const items = det.items.filter((i) => i.id_sc === idSc);
+  // El numero propio de esta solicitud para este proveedor; sin destinatario, el de la solicitud.
+  const numero = (await numerosSolicitud([{ idSc, idPart }], true)).get(`${idSc}:${idPart}`) ?? sc.folio;
   const p = await leerParametros(Number(det.nm.id_pais));
   return {
     d: {
-      folio: sc.folio,
+      folio: numero,
       folioNecesidad: det.nm.folio,
       fecha: new Date().toLocaleDateString("sv-SE", { timeZone: "America/Santiago" }),
       proveedor: proveedorDoc(prov),

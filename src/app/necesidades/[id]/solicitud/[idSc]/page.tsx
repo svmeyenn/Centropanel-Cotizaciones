@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fecha as fmtFecha } from "@/lib/formato";
 import { COLOR_NM } from "@/lib/compras";
 import { textosSolicitud } from "@/lib/textosCompra";
+import { numerosSolicitud } from "@/lib/numerosSolicitud";
 import { reversarEnvioSolicitud } from "@/app/necesidades/acciones";
 import { enviarSolicitudPorCorreo, registrarEnvioSolicitud } from "@/app/necesidades/envios";
 
@@ -53,6 +54,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
   const fechaEntrega = sc.fecha_entrega ?? det.nm.fecha_requerida;
   const direccion = sc.direccion_destino ?? det.nm.direccion_destino;
   const proveedores = det.proveedores.filter((p) => p.estado !== "Declino");
+  // Cada solicitud que sale a un proveedor lleva su propio numero.
+  const numeros = await numerosSolicitud(proveedores.map((p) => ({ idSc, idPart: p.id })), comprador);
   const bloqueo = sc.estado === "Adjudicada" ? "La solicitud ya esta adjudicada." : sc.estado === "Anulada" ? "La solicitud esta anulada." : null;
 
   return (
@@ -83,6 +86,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
           <table className="w-full">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
+                <th className={TH}>N° de solicitud</th>
                 <th className={TH}>Proveedor</th>
                 <th className={TH}>Correo</th>
                 <th className={TH}>Telefono</th>
@@ -93,17 +97,19 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
             <tbody>
               {proveedores.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-4 text-center text-gray-500">
+                  <td colSpan={6} className="px-3 py-4 text-center text-gray-500">
                     Invite proveedores en la <Link href={`/necesidades/${idNm}`} className="text-verde underline">necesidad</Link> para poder enviarles la solicitud.
                   </td>
                 </tr>
               )}
               {proveedores.map((p) => {
                 const u = ultimo.get(p.id);
-                const t = textosSolicitud({ folio: sc.folio, contacto: p.contacto, proveedor: p.nombre, fechaEntrega, direccion, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
+                const num = numeros.get(`${idSc}:${p.id}`) ?? sc.folio;
+                const t = textosSolicitud({ folio: num, contacto: p.contacto, proveedor: p.nombre, fechaEntrega, direccion, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
                 const base = `/necesidades/${idNm}/solicitud/${idSc}/${p.id}/pdf`;
                 return (
                   <tr key={p.id} className="border-t border-gray-100">
+                    <td className="px-3 py-1.5 font-mono font-semibold">{num}</td>
                     <td className="px-3 py-1.5 font-semibold">{p.nombre}</td>
                     <td className="px-3 py-1.5">{p.email ?? <span className="text-gray-400">sin correo</span>}</td>
                     <td className="px-3 py-1.5">{p.telefono ?? <span className="text-gray-400">sin telefono</span>}</td>
@@ -117,11 +123,11 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
                       {comprador && (
                         <EnvioDocumento
                           etiqueta="Enviar"
-                          titulo={`Enviar ${sc.folio}`}
+                          titulo={`Enviar ${num}`}
                           proveedor={{ nombre: p.nombre, email: p.email, telefono: p.telefono }}
                           prefijoTelefono={prefijo}
                           pdfUrl={base}
-                          nombreArchivo={`${sc.folio}.pdf`}
+                          nombreArchivo={`${num}.pdf`}
                           asunto={t.asunto}
                           cuerpo={t.cuerpo}
                           textoWhatsApp={t.whatsapp}
