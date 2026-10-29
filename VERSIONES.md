@@ -9,6 +9,7 @@ Version vigente: **v0178-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0180-20261029 | 29-10-2026 | Solicitudes y ordenes de compra mas flexibles: en la solicitud de un proveedor se pueden incluir a mano items que no tiene en su maestra --salen sin precio y se pueden cotizar y pasar a la orden--, quitar un item de toda la solicitud, y eliminar una orden en borrador aunque haya salido de una solicitud --que queda adjudicada, lista para otra orden--. Base de datos: columna incluir en nm_exclusiones, funciones nm_incluir_manual, sc_quitar_items y oc_borrar | (pendiente) |
 | v0179-20261029 | 29-10-2026 | Al preparar el envio de una solicitud se puede sacar a un proveedor completo o solo algunas lineas: el PDF, el correo y el WhatsApp llevan lo que queda, el proveedor sacado no recibe numero y el cuadro comparativo lo marca como excluido; se puede revertir mientras no haya cotizado ni se adjudique. Base de datos: tabla nm_exclusiones y funcion nm_excluir | ec441a1 |
 | v0178-20261029 | 29-10-2026 | Los documentos que van al proveedor --PDF de la solicitud y de la OC, y la OC impresa-- no llevan el nombre del cliente ni de la obra; la OC impresa sigue la regla de despacho a la bodega o retiro | 5d3d046 |
 | v0177-20261029 | 29-10-2026 | El titulo de la necesidad, de la solicitud de cotizacion y de la OC lleva el proyecto o cliente --el cliente cuando el proyecto es un pedido de paneles, y la obra con su cliente en los demas casos--; tambien aparece bajo el numero del PDF de la solicitud y de la OC | f5545d5 |

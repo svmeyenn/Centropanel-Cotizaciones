@@ -91,6 +91,16 @@ export async function excluirItemsProveedor(idNm: number, idParticipante: number
   return llamar((s) => s.rpc("nm_excluir", { p_part: idParticipante, p_items: items, p_excluir: excluir }), idNm);
 }
 
+// Incluye en la solicitud de un proveedor items que no tiene en su maestra --salen sin precio--, o deja de incluirlos.
+export async function incluirItemsManual(idNm: number, idParticipante: number, items: number[], incluir: boolean) {
+  return llamar((s) => s.rpc("nm_incluir_manual", { p_part: idParticipante, p_items: items, p_incluir: incluir }), idNm);
+}
+
+// Quita items de la solicitud para todos los proveedores: quedan sin solicitud en la necesidad.
+export async function quitarItemsSolicitud(idNm: number, idSc: number, items: number[]) {
+  return llamar((s) => s.rpc("sc_quitar_items", { p_sc: idSc, p_items: items }), idNm);
+}
+
 export async function invitarProveedor(idNm: number, idProveedor: number) {
   return llamar((s) => s.rpc("nm_invitar", { p_nm: idNm, p_proveedor: idProveedor }), idNm);
 }
