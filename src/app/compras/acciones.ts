@@ -156,12 +156,14 @@ export async function facturarOC(id: number, numero: string, fecha: string, mont
   return llamar("oc_facturar", { p_oc: id, p_numero: numero, p_fecha: fecha || null, p_monto: monto }, id);
 }
 
+// Elimina una orden en borrador; si salio de una solicitud, esta queda adjudicada y sin orden.
 export async function borrarOC(id: number) {
   await requerirVendedor();
   const supabase = await createClient();
-  const { error } = await supabase.from("ordenes_compra").delete().eq("id", id);
+  const { error } = await supabase.rpc("oc_borrar", { p_oc: id });
   if (error) return { error: error.message };
   refrescar();
+  revalidatePath("/necesidades");
   return { ok: true };
 }
 

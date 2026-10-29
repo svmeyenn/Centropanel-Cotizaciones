@@ -21,6 +21,7 @@ type Det = {
   items: { id: number; id_sc: number | null; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; orden: number }[];
   precios: { p: number; i: number }[];
   excluidos?: { p: number; i: number }[];
+  forzados?: { p: number; i: number }[];
   maestra: { p: number; i: number; c: number; m: string | null }[];
   proveedores: { id: number; nombre: string; direccion?: string | null; email: string | null; telefono: string | null; contacto: string | null; estado: string }[];
   solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; id_participante: number | null }[];
@@ -45,6 +46,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
   const items = det.items.filter((i) => i.id_sc === idSc).length;
   const itemsSc = new Set(det.items.filter((i) => i.id_sc === idSc).map((i) => i.id));
   const excluidosDe = new Set((det.excluidos ?? []).map((x) => `${x.p}:${x.i}`));
+  const forzadosDe = new Set((det.forzados ?? []).map((x) => `${x.p}:${x.i}`));
   const cotizados = new Set((det.precios ?? []).map((x) => `${x.p}:${x.i}`));
   const editable = comprador && (sc.estado === "Borrador" || sc.estado === "En cotizacion");
 
@@ -156,8 +158,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
                               descripcion: i.descripcion,
                               unidad: i.unidad,
                               cantidad: Number(i.cantidad),
-                              asignado: (det.maestra ?? []).some((x) => x.p === p.id && x.i === i.id) || excluidosDe.has(`${p.id}:${i.id}`),
+                              asignado: ((det.maestra ?? []).some((x) => x.p === p.id && x.i === i.id) && !forzadosDe.has(`${p.id}:${i.id}`)) || excluidosDe.has(`${p.id}:${i.id}`),
                               excluido: excluidosDe.has(`${p.id}:${i.id}`),
+                              forzado: forzadosDe.has(`${p.id}:${i.id}`),
                               cotizado: cotizados.has(`${p.id}:${i.id}`),
                             }))}
                         />

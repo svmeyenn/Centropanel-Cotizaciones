@@ -28,6 +28,7 @@ import {
   generarOC,
   invitarProveedor,
   quitarItem,
+  quitarItemsSolicitud,
   quitarProveedor,
   registrarCotizacion,
   revocarAdjudicacion,
@@ -599,7 +600,20 @@ function TarjetaSolicitud({
               const mejor = Math.min(...precios.filter((x): x is number => x != null));
               return (
                 <tr key={i.id} className="border-t border-gray-100">
-                  <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
+                  <td className="px-3 py-1.5">
+                    {i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}
+                    {comprador && (s.estado === "Borrador" || enCotizacion) && (
+                      <button
+                        type="button"
+                        className="ml-2 text-red-700 underline text-[11px] disabled:opacity-40"
+                        disabled={pendiente}
+                        title="Quita el item de esta solicitud para todos los proveedores"
+                        onClick={() => confirm(`Quitar "${i.descripcion}" de ${s.folio}? Queda sin solicitud.`) && ejecutar(() => quitarItemsSolicitud(idNm, s.id, [i.id]), "Item quitado de la solicitud.")}
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")} {i.unidad ?? ""}</td>
                   {proveedores.map((p, k) => {
                     const v = precios[k];
