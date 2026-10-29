@@ -73,7 +73,8 @@ export default function GestorMateriasPrimas({
         (!familiaFiltro || (m.familia ?? "") === familiaFiltro) &&
         (!q ||
           m.nombre.toLowerCase().includes(q) ||
-          (m.etiqueta ?? "").toLowerCase().includes(q))
+          (m.etiqueta ?? "").toLowerCase().includes(q) ||
+          (m.sku ?? "").toLowerCase().includes(q))
     );
   }, [busca, tipo, familiaFiltro, materias]);
 
@@ -284,7 +285,7 @@ export default function GestorMateriasPrimas({
       <div className="flex flex-wrap gap-2 items-center">
         <input
           className="border border-gray-300 rounded px-3 py-1.5 text-sm w-64"
-          placeholder="Buscar por nombre o etiqueta"
+          placeholder="Buscar por nombre, SKU o etiqueta"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
