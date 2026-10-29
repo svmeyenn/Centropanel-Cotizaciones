@@ -4,6 +4,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import EnvioDocumento from "@/components/EnvioDocumento";
 import BotonReversar from "@/components/BotonReversar";
+import ExcluirItemsProveedor from "@/components/ExcluirItemsProveedor";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { fecha as fmtFecha } from "@/lib/formato";
@@ -17,7 +18,9 @@ export const dynamic = "force-dynamic";
 
 type Det = {
   nm: { id: number; folio: string; proyecto: string | null; proyecto_cliente?: string | null; id_pais: number; fecha_requerida: string | null; direccion_destino: string | null; modalidad_entrega?: "Despacho" | "Retiro"; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
-  items: { id: number; id_sc: number | null }[];
+  items: { id: number; id_sc: number | null; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; orden: number }[];
+  precios: { p: number; i: number }[];
+  excluidos?: { p: number; i: number }[];
   maestra: { p: number; i: number; c: number; m: string | null }[];
   proveedores: { id: number; nombre: string; direccion?: string | null; email: string | null; telefono: string | null; contacto: string | null; estado: string }[];
   solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; id_participante: number | null }[];
@@ -41,6 +44,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
   const comprador = det.nm.puede_comprar;
   const items = det.items.filter((i) => i.id_sc === idSc).length;
   const itemsSc = new Set(det.items.filter((i) => i.id_sc === idSc).map((i) => i.id));
+  const excluidosDe = new Set((det.excluidos ?? []).map((x) => `${x.p}:${x.i}`));
+  const cotizados = new Set((det.precios ?? []).map((x) => `${x.p}:${x.i}`));
+  const editable = comprador && (sc.estado === "Borrador" || sc.estado === "En cotizacion");
 
   const [{ data: pais }, { data: envios }] = await Promise.all([
     supabase.from("paises").select("prefijo_telefono").eq("id", det.nm.id_pais).single(),
@@ -57,7 +63,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
   const direccion = sc.direccion_destino ?? det.nm.direccion_destino;
   const proveedores = det.proveedores.filter((p) => p.estado !== "Declino");
   // Cada solicitud que sale a un proveedor lleva su propio numero.
-  const numeros = await numerosSolicitud(proveedores.map((p) => ({ idSc, idPart: p.id })), comprador);
+  // Al proveedor que se saco de la solicitud no se le asigna numero.
+  const sacado = (idPart: number) => [...itemsSc].some((i) => excluidosDe.has(`${idPart}:${i}`)) && !(det.maestra ?? []).some((x) => x.p === idPart && itemsSc.has(x.i));
+  const numeros = await numerosSolicitud(proveedores.filter((p) => !sacado(p.id)).map((p) => ({ idSc, idPart: p.id })), comprador);
   const bloqueo = sc.estado === "Adjudicada" ? "La solicitud ya esta adjudicada." : sc.estado === "Anulada" ? "La solicitud esta anulada." : null;
 
   return (
@@ -107,7 +115,9 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
               )}
               {proveedores.map((p) => {
                 const u = ultimo.get(p.id);
-                const num = numeros.get(`${idSc}:${p.id}`) ?? sc.folio;
+                const out = sacado(p.id);
+                const num = out ? "—" : numeros.get(`${idSc}:${p.id}`) ?? sc.folio;
+                const nExcl = [...itemsSc].filter((i) => excluidosDe.has(`${p.id}:${i}`)).length;
                 // Cada proveedor recibe solo los items que tiene asignados en su maestra.
                 const cubre = (det.maestra ?? []).filter((x) => x.p === p.id && itemsSc.has(x.i)).length;
                 const t = textosSolicitud({ folio: num, contacto: p.contacto, proveedor: p.nombre, fechaEntrega, direccion, modalidad: det.nm.modalidad_entrega, direccionProveedor: (p as { direccion?: string | null }).direccion ?? null, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
@@ -116,17 +126,43 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
                   <tr key={p.id} className="border-t border-gray-100">
                     <td className="px-3 py-1.5 font-mono font-semibold">{num}</td>
                     <td className="px-3 py-1.5 font-semibold">{p.nombre}</td>
-                    <td className={`px-3 py-1.5 ${cubre === 0 ? "text-red-700" : ""}`}>{cubre} de {itemsSc.size}</td>
+                    <td className={`px-3 py-1.5 ${cubre === 0 ? "text-red-700" : ""}`}>
+                      {out ? "Fuera de esta solicitud" : `${cubre} de ${itemsSc.size}`}
+                      {!out && nExcl > 0 && <span className="block text-[10px] text-gray-500">{nExcl} excluido{nExcl === 1 ? "" : "s"} a mano</span>}
+                    </td>
                     <td className="px-3 py-1.5">{p.email ?? <span className="text-gray-400">sin correo</span>}</td>
                     <td className="px-3 py-1.5">{p.telefono ?? <span className="text-gray-400">sin telefono</span>}</td>
                     <td className="px-3 py-1.5">
                       {u ? `${u.canal === "email" ? "Correo" : "WhatsApp"} · ${new Date(u.creado).toLocaleString("es-CL", { timeZone: "America/Santiago", dateStyle: "short", timeStyle: "short" })}${u.reversado ? " (reversado)" : ""}` : <span className="text-gray-400">no enviada</span>}
                     </td>
                     <td className="px-3 py-1.5 text-right whitespace-nowrap space-x-1.5">
-                      <a href={base} target="_blank" rel="noopener noreferrer" className="border border-gray-300 bg-white text-gray-800 text-[11px] font-semibold px-2 py-0.5 rounded">
-                        PDF
-                      </a>
-                      {comprador && (
+                      {!out && (
+                        <a href={base} target="_blank" rel="noopener noreferrer" className="border border-gray-300 bg-white text-gray-800 text-[11px] font-semibold px-2 py-0.5 rounded">
+                          PDF
+                        </a>
+                      )}
+                      {editable && (
+                        <ExcluirItemsProveedor
+                          idNm={idNm}
+                          idPart={p.id}
+                          proveedor={p.nombre}
+                          folio={sc.folio}
+                          items={det.items
+                            .filter((i) => i.id_sc === idSc)
+                            .sort((a, b) => a.orden - b.orden)
+                            .map((i) => ({
+                              id: i.id,
+                              sku: i.sku,
+                              descripcion: i.descripcion,
+                              unidad: i.unidad,
+                              cantidad: Number(i.cantidad),
+                              asignado: (det.maestra ?? []).some((x) => x.p === p.id && x.i === i.id) || excluidosDe.has(`${p.id}:${i.id}`),
+                              excluido: excluidosDe.has(`${p.id}:${i.id}`),
+                              cotizado: cotizados.has(`${p.id}:${i.id}`),
+                            }))}
+                        />
+                      )}
+                      {comprador && !out && (
                         <EnvioDocumento
                           etiqueta="Enviar"
                           titulo={`Enviar ${num}`}

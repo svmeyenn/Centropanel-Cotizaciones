@@ -86,6 +86,11 @@ export async function crearSolicitud(idNm: number, items: number[] | null) {
   return llamar((s) => s.rpc("sc_crear", { p_nm: idNm, p_items: items }), idNm);
 }
 
+// Saca items de la solicitud de un proveedor --o los vuelve a incluir--: el documento que se le envia lleva el resto.
+export async function excluirItemsProveedor(idNm: number, idParticipante: number, items: number[], excluir: boolean) {
+  return llamar((s) => s.rpc("nm_excluir", { p_part: idParticipante, p_items: items, p_excluir: excluir }), idNm);
+}
+
 export async function invitarProveedor(idNm: number, idProveedor: number) {
   return llamar((s) => s.rpc("nm_invitar", { p_nm: idNm, p_proveedor: idProveedor }), idNm);
 }
