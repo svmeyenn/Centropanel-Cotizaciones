@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0165-20261027**
+Version vigente: **v0166-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0166-20261029 | 29-10-2026 | Un pedido de paneles que compra materias primas recibe su proyecto solo --"Pedido NNN", con el cliente del pedido y el aprobador maestro "Paneles"; si ya habia un proyecto de ese pedido sin enlazar, se reutiliza--: al crear su necesidad de material o, si quedo sin proyecto, al generar la OC. Las obras siguen eligiendo su proyecto a mano | (pendiente) |
 | v0165-20261027 | 27-10-2026 | El envio de solicitudes y OC usa el ayudante igual que los mensajes a leads: WhatsApp abre el chat con el PDF pegado --antes solo si el ayudante informaba WhatsApp-- y el correo se abre en Outlook con el PDF adjunto; se valida que el PDF se genere bien antes de enviarlo y se respeta la pausa de 20 segundos entre WhatsApp | b330868 |
 | v0164-20261027 | 27-10-2026 | Cada solicitud de cotizacion tiene su propia opcion de PDF --con o sin destinatario-- y una pantalla "Enviar a proveedores" con el PDF y el envio por correo o WhatsApp a cada invitado; el listado de OC suma accesos a PDF y envio | b58a77f |
 | v0163-20261027 | 27-10-2026 | El SKU de cada materia prima o producto aparece en los items de la necesidad, de las solicitudes, del detalle por proveedor y de la OC, y en los PDF de la solicitud y de la OC --se guarda en cada item para que lo vea tambien quien compra-- | 2b1d7a4 |
