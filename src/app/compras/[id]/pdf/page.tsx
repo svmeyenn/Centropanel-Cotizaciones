@@ -6,6 +6,7 @@ import { LOGO_PDF } from "@/lib/logo";
 import { dinero, fecha, unidades as fmtUnid } from "@/lib/formato";
 import BotonImprimir from "@/app/cotizaciones/[id]/pdf/BotonImprimir";
 import { uno } from "@/lib/relaciones";
+import { impuestoDelPais, porcentajeImpuesto, rotuloDescuento } from "@/lib/factura";
 
 export const dynamic = "force-dynamic";
 
@@ -89,9 +90,23 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={4} className="py-2 text-right font-bold">
-                Total (neto)
-              </td>
+              <td colSpan={4} className="pt-3 text-right">Subtotal</td>
+              <td className="pt-3 text-right">{dinero(Number(o.subtotal), o.moneda)}</td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="text-right">{rotuloDescuento({ tipo: o.descuento_tipo, valor: Number(o.descuento_valor) })}</td>
+              <td className="text-right">{Number(o.descuento_monto) > 0 ? `- ${dinero(Number(o.descuento_monto), o.moneda)}` : dinero(0, o.moneda)}</td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="text-right">Subtotal despues del descuento</td>
+              <td className="text-right">{dinero(Number(o.subtotal_neto), o.moneda)}</td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="text-right">{impuestoDelPais(Number(o.id_pais))} {porcentajeImpuesto(Number(o.iva_pct))}</td>
+              <td className="text-right">{dinero(Number(o.iva_monto), o.moneda)}</td>
+            </tr>
+            <tr className="border-t-2 border-gray-800">
+              <td colSpan={4} className="py-2 text-right font-bold">TOTAL A PAGAR</td>
               <td className="py-2 text-right font-bold">{dinero(Number(o.total), o.moneda)}</td>
             </tr>
           </tfoot>

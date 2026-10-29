@@ -103,6 +103,7 @@ export interface CabeceraCotizacion {
   plazo_dias?: string;
   condiciones_pago?: string;
   validez?: string;
+  descuento_pct?: string;
   notas?: string;
   archivo_ruta?: string | null;
   archivo_nombre?: string | null;

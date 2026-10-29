@@ -18,6 +18,7 @@ import {
   solicitarPagoOC,
 } from "@/app/compras/acciones";
 import { dinero, fecha as fmtFecha, unidades as fmtUnid } from "@/lib/formato";
+import { porcentajeImpuesto, rotuloDescuento } from "@/lib/factura";
 
 export interface OcDatos {
   id: number;
@@ -37,6 +38,14 @@ export interface OcDatos {
   factura_fecha: string | null;
   factura_monto: number | null;
   moneda: string;
+  subtotal: number;
+  descuento_tipo: "pct" | "monto";
+  descuento_valor: number;
+  descuento_monto: number;
+  subtotal_neto: number;
+  iva_pct: number;
+  iva_monto: number;
+  impuesto: "IVA" | "IGV";
 }
 export interface Linea {
   id: number;
@@ -92,6 +101,8 @@ export default function EditorOC({
     contacto_entrega: oc.contacto_entrega ?? "",
     telefono_entrega: oc.telefono_entrega ?? "",
     email_entrega: oc.email_entrega ?? "",
+    descuento_tipo: oc.descuento_tipo,
+    descuento_valor: oc.descuento_valor ? String(oc.descuento_valor) : "",
     condiciones_pago: oc.condiciones_pago ?? "",
     notas: oc.notas ?? "",
   });
@@ -230,6 +241,17 @@ export default function EditorOC({
           <span className="block font-semibold mb-1">Correo del contacto</span>
           <input type="email" className={input} disabled={!(editando && editaCab)} value={cab.email_entrega} onChange={(e) => setCab({ ...cab, email_entrega: e.target.value })} maxLength={120} />
         </label>
+        <label className="text-xs">
+          <span className="block font-semibold mb-1">Descuento</span>
+          <select className={input} disabled={!(editando && borrador)} value={cab.descuento_tipo} onChange={(e) => setCab({ ...cab, descuento_tipo: e.target.value as "pct" | "monto" })}>
+            <option value="pct">En porcentaje (%)</option>
+            <option value="monto">Monto fijo</option>
+          </select>
+        </label>
+        <label className="text-xs">
+          <span className="block font-semibold mb-1">{cab.descuento_tipo === "pct" ? "Descuento (%)" : "Descuento (monto)"}</span>
+          <input className={input} inputMode="decimal" disabled={!(editando && borrador)} value={cab.descuento_valor} onChange={(e) => setCab({ ...cab, descuento_valor: e.target.value })} />
+        </label>
         <label className="text-xs md:col-span-2">
           <span className="block font-semibold mb-1">Condiciones de pago</span>
           <input className={input} disabled={!(editando && borrador)} value={cab.condiciones_pago} onChange={(e) => setCab({ ...cab, condiciones_pago: e.target.value })} />
@@ -255,7 +277,7 @@ export default function EditorOC({
               disabled={pendiente}
               onClick={() =>
                 ejecutar(() =>
-                  guardarCabeceraOC(oc.id, { ...cab, id_partida: cab.id_partida ? Number(cab.id_partida) : null }),
+                  guardarCabeceraOC(oc.id, { ...cab, id_partida: cab.id_partida ? Number(cab.id_partida) : null, descuento_valor: num(cab.descuento_valor) }),
                   () => setEditando(false)
                 )
               }
@@ -329,12 +351,22 @@ export default function EditorOC({
                 </tr>
               )}
             </tbody>
-            <tfoot className="bg-gray-50 font-bold">
-              <tr className="border-t border-gray-200">
-                <td colSpan={3} className="px-3 py-2 text-right">
-                  Total
-                </td>
-                <td className="px-3 py-2 text-right">{dinero(oc.total, m)}</td>
+            <tfoot className="bg-gray-50">
+              {[
+                { r: "Subtotal", v: dinero(oc.subtotal, m) },
+                { r: rotuloDescuento({ tipo: oc.descuento_tipo, valor: oc.descuento_valor }), v: oc.descuento_monto > 0 ? `- ${dinero(oc.descuento_monto, m)}` : dinero(0, m) },
+                { r: "Subtotal despues del descuento", v: dinero(oc.subtotal_neto, m) },
+                { r: `${oc.impuesto} ${porcentajeImpuesto(oc.iva_pct)}`, v: dinero(oc.iva_monto, m) },
+              ].map((f, i) => (
+                <tr key={f.r} className={i === 0 ? "border-t border-gray-200" : ""}>
+                  <td colSpan={3} className="px-3 py-1 text-right">{f.r}</td>
+                  <td className="px-3 py-1 text-right tabular-nums">{f.v}</td>
+                  <td colSpan={1 + (recibible ? 1 : 0) + (borrador ? 1 : 0)} />
+                </tr>
+              ))}
+              <tr className="border-t-2 border-gray-300 font-bold">
+                <td colSpan={3} className="px-3 py-2 text-right">TOTAL A PAGAR</td>
+                <td className="px-3 py-2 text-right tabular-nums">{dinero(oc.total, m)}</td>
                 <td colSpan={1 + (recibible ? 1 : 0) + (borrador ? 1 : 0)} />
               </tr>
             </tfoot>

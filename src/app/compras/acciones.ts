@@ -62,6 +62,8 @@ export async function guardarCabeceraOC(
     email_entrega: string;
     condiciones_pago: string;
     notas: string;
+    descuento_tipo: "pct" | "monto";
+    descuento_valor: number;
   }
 ) {
   await requerirVendedor();
@@ -76,6 +78,8 @@ export async function guardarCabeceraOC(
       telefono_entrega: d.telefono_entrega.trim() || null,
       email_entrega: d.email_entrega.trim() || null,
       condiciones_pago: d.condiciones_pago.trim() || null,
+      descuento_tipo: d.descuento_tipo,
+      descuento_valor: Math.max(0, Number(d.descuento_valor) || 0),
       notas: d.notas.trim() || null,
     })
     .eq("id", id);
