@@ -289,12 +289,28 @@ export async function eliminarSolicitud(id: number, idPedido: number) {
 // varios documentos --anticipo, saldo-- y alguna nota de credito. El monto va
 // en bruto; sin monto se factura lo que falte. El pedido queda Facturado solo
 // cuando los documentos cubren el total: eso lo decide la base.
+// El ultimo folio registrado de cada serie --factura, boleta y nota de credito-- en el mercado del pedido. Cada serie
+// lleva su propia numeracion; sirve de referencia al escribir el siguiente.
+export async function ultimosFolios(idPedido: number): Promise<Record<string, string | null>> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data: ped } = await supabase.from("pedidos").select("id_pais").eq("id", idPedido).single();
+  const salida: Record<string, string | null> = { Factura: null, Boleta: null, "Nota de credito": null };
+  if (!ped) return salida;
+  const { data } = await supabase.from("facturas").select("tipo, numero").eq("id_pais", ped.id_pais).order("id", { ascending: false }).limit(60);
+  for (const f of data ?? []) {
+    const t = f.tipo as string;
+    if (t in salida && salida[t] == null) salida[t] = f.numero as string;
+  }
+  return salida;
+}
+
 export async function facturarPedido(
   idPedido: number,
   numero: string,
   fecha: string,
   monto?: number | null,
-  tipo: "Factura" | "Nota de credito" = "Factura",
+  tipo: "Factura" | "Boleta" | "Nota de credito" = "Factura",
   entrega?: string | null
 ) {
   const v = await requerirVendedor();
@@ -319,7 +335,9 @@ export async function facturarPedido(
     return {
       error:
         error.code === "23505"
-          ? `Ya existe un documento de esa serie con el numero ${numero.trim()}.`
+          ? error.message.startsWith("Ya existe")
+            ? error.message
+            : `Ya existe un documento de esa serie con el numero ${numero.trim()}.`
           : error.message,
     };
   }

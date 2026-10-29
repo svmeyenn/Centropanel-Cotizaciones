@@ -225,6 +225,8 @@ export default async function Pagina({
                           <span className="text-red-700 font-semibold">
                             Nota de credito
                           </span>
+                        ) : f.tipo === "Boleta" ? (
+                          <span className="text-dorado-osc font-semibold">Boleta</span>
                         ) : (
                           <span className="text-gray-600">Factura</span>
                         )}

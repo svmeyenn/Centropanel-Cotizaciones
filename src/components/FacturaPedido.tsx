@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { importe, leerMonto, redondea, fecha as fmtFecha, hoyISO } from "@/lib/formato";
 import {
@@ -9,6 +9,7 @@ import {
   subirArchivoFactura,
   quitarArchivoFactura,
   enlaceArchivoFactura,
+  ultimosFolios,
 } from "@/app/pedidos/acciones";
 
 export interface FacturaVista {
@@ -67,7 +68,17 @@ export default function FacturaPedido({
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const [tipo, setTipo] = useState<"Factura" | typeof NOTA>("Factura");
+  const [tipo, setTipo] = useState<"Factura" | "Boleta" | typeof NOTA>("Factura");
+  // El ultimo folio de cada serie, para escribir el siguiente sin equivocarse de serie.
+  const [ultimos, setUltimos] = useState<Record<string, string | null> | null>(null);
+  useEffect(() => {
+    if (!abierto || ultimos) return;
+    let vigente = true;
+    ultimosFolios(idPedido).then((u) => vigente && setUltimos(u));
+    return () => {
+      vigente = false;
+    };
+  }, [abierto, ultimos, idPedido]);
   const [numero, setNumero] = useState("");
   const [fecha, setFecha] = useState(hoyISO());
   const [monto, setMonto] = useState("");
@@ -108,7 +119,7 @@ export default function FacturaPedido({
         numero,
         fecha,
         monto.trim() === "" ? null : montoNum,
-        esNota ? NOTA : "Factura",
+        tipo,
         entrega
       );
       if (r?.error) {
@@ -174,6 +185,8 @@ export default function FacturaPedido({
                         <span className="text-red-700 font-semibold">
                           Nota de credito
                         </span>
+                      ) : f.tipo === "Boleta" ? (
+                        <span className="text-dorado-osc font-semibold">Boleta</span>
                       ) : (
                         <span className="text-verde font-semibold">Factura</span>
                       )}
@@ -257,11 +270,12 @@ export default function FacturaPedido({
                     className={input}
                     value={tipo}
                     onChange={(e) => {
-                      setTipo(e.target.value as "Factura" | typeof NOTA);
+                      setTipo(e.target.value as "Factura" | "Boleta" | typeof NOTA);
                       setMonto("");
                     }}
                   >
                     <option value="Factura">Factura</option>
+                    <option value="Boleta">Boleta</option>
                     <option value={NOTA}>Nota de credito</option>
                   </select>
                 </label>
@@ -275,6 +289,13 @@ export default function FacturaPedido({
                     value={numero}
                     onChange={(e) => setNumero(e.target.value)}
                   />
+                  <span className="block text-[10px] text-gray-500 mt-0.5">
+                    {ultimos
+                      ? ultimos[tipo]
+                        ? `Ultimo folio de ${tipo === "Boleta" ? "boletas" : tipo === NOTA ? "notas de credito" : "facturas"}: ${ultimos[tipo]}`
+                        : `Aun no hay ${tipo === "Boleta" ? "boletas" : tipo === NOTA ? "notas de credito" : "facturas"} registradas`
+                      : " "}
+                  </span>
                 </label>
                 <label className="text-xs">
                   <span className="block text-dorado-osc font-semibold mb-1">
