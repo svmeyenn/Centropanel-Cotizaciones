@@ -16,10 +16,10 @@ import { enviarSolicitudPorCorreo, registrarEnvioSolicitud } from "@/app/necesid
 export const dynamic = "force-dynamic";
 
 type Det = {
-  nm: { id: number; folio: string; id_pais: number; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
+  nm: { id: number; folio: string; id_pais: number; fecha_requerida: string | null; direccion_destino: string | null; modalidad_entrega?: "Despacho" | "Retiro"; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
   items: { id: number; id_sc: number | null }[];
   maestra: { p: number; i: number; c: number; m: string | null }[];
-  proveedores: { id: number; nombre: string; email: string | null; telefono: string | null; contacto: string | null; estado: string }[];
+  proveedores: { id: number; nombre: string; direccion?: string | null; email: string | null; telefono: string | null; contacto: string | null; estado: string }[];
   solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; id_participante: number | null }[];
 };
 
@@ -110,7 +110,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
                 const num = numeros.get(`${idSc}:${p.id}`) ?? sc.folio;
                 // Cada proveedor recibe solo los items que tiene asignados en su maestra.
                 const cubre = (det.maestra ?? []).filter((x) => x.p === p.id && itemsSc.has(x.i)).length;
-                const t = textosSolicitud({ folio: num, contacto: p.contacto, proveedor: p.nombre, fechaEntrega, direccion, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
+                const t = textosSolicitud({ folio: num, contacto: p.contacto, proveedor: p.nombre, fechaEntrega, direccion, modalidad: det.nm.modalidad_entrega, direccionProveedor: (p as { direccion?: string | null }).direccion ?? null, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
                 const base = `/necesidades/${idNm}/solicitud/${idSc}/${p.id}/pdf`;
                 return (
                   <tr key={p.id} className="border-t border-gray-100">

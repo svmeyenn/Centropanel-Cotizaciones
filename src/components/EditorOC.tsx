@@ -26,6 +26,7 @@ export interface OcDatos {
   estado: string;
   fecha_entrega: string | null;
   direccion_entrega: string | null;
+  modalidad_entrega: "Despacho" | "Retiro";
   contacto_entrega: string | null;
   telefono_entrega: string | null;
   email_entrega: string | null;
@@ -98,6 +99,7 @@ export default function EditorOC({
     id_partida: oc.id_partida ? String(oc.id_partida) : "",
     fecha_entrega: oc.fecha_entrega ?? "",
     direccion_entrega: oc.direccion_entrega ?? "",
+    modalidad_entrega: oc.modalidad_entrega,
     contacto_entrega: oc.contacto_entrega ?? "",
     telefono_entrega: oc.telefono_entrega ?? "",
     email_entrega: oc.email_entrega ?? "",
@@ -225,9 +227,16 @@ export default function EditorOC({
           <span className="block font-semibold mb-1">Fecha de entrega en destino</span>
           <input type="date" className={input} disabled={!(editando && editaCab)} value={cab.fecha_entrega} onChange={(e) => setCab({ ...cab, fecha_entrega: e.target.value })} />
         </label>
+        <label className="text-xs">
+          <span className="block font-semibold mb-1">Entrega</span>
+          <select className={input} disabled={!(editando && editaCab)} value={cab.modalidad_entrega} onChange={(e) => setCab({ ...cab, modalidad_entrega: e.target.value as "Despacho" | "Retiro", direccion_entrega: e.target.value === "Retiro" ? "" : cab.direccion_entrega })}>
+            <option value="Despacho">Despacho a la bodega de Centro Panel</option>
+            <option value="Retiro">Retiro en el proveedor</option>
+          </select>
+        </label>
         <label className="text-xs md:col-span-2">
           <span className="block font-semibold mb-1">Direccion de destino</span>
-          <input className={input} disabled={!(editando && editaCab)} value={cab.direccion_entrega} onChange={(e) => setCab({ ...cab, direccion_entrega: e.target.value })} maxLength={300} placeholder="Si queda vacia, se usa la de la obra" />
+          <input className={input} disabled={!(editando && editaCab) || cab.modalidad_entrega === "Retiro"} value={cab.direccion_entrega} onChange={(e) => setCab({ ...cab, direccion_entrega: e.target.value })} maxLength={300} placeholder={cab.modalidad_entrega === "Retiro" ? "Retira Centro Panel en el proveedor" : "Si queda vacia, la bodega de Centro Panel"} />
         </label>
         <label className="text-xs">
           <span className="block font-semibold mb-1">Contacto en destino</span>
@@ -262,7 +271,7 @@ export default function EditorOC({
         </label>
         {editando && emitida && (
           <div className="md:col-span-4 flex flex-wrap items-center gap-3">
-            <button className={boton} disabled={pendiente} onClick={() => ejecutar(() => actualizarCabeceraOC(oc.id, { fecha_entrega: cab.fecha_entrega, direccion_entrega: cab.direccion_entrega, notas: cab.notas, contacto_entrega: cab.contacto_entrega, telefono_entrega: cab.telefono_entrega, email_entrega: cab.email_entrega }), () => setEditando(false))}>
+            <button className={boton} disabled={pendiente} onClick={() => ejecutar(() => actualizarCabeceraOC(oc.id, { fecha_entrega: cab.fecha_entrega, direccion_entrega: cab.direccion_entrega, notas: cab.notas, contacto_entrega: cab.contacto_entrega, telefono_entrega: cab.telefono_entrega, email_entrega: cab.email_entrega, modalidad_entrega: cab.modalidad_entrega }), () => setEditando(false))}>
               Grabar entrega, direccion, contacto y notas
             </button>
             <span className="text-gray-500 text-xs">

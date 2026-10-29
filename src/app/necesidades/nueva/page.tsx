@@ -20,6 +20,14 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
     supabase.from("pedidos").select("id, num_pedido, id_pais, id_proyecto").order("id", { ascending: false }).limit(300),
   ]);
 
+  // La bodega de Centro Panel de cada mercado: a donde se despacha todo pedido de materia prima.
+  const bodegas: Record<number, string> = {};
+  for (const idPais of new Set((proyectos ?? []).map((p) => Number(p.id_pais)))) {
+    const { data: b } = await supabase.rpc("bodega_pais", { p_pais: idPais });
+    const dir = (b as { direccion?: string | null } | null)?.direccion;
+    if (dir) bodegas[idPais] = dir;
+  }
+
   return (
     <div className="min-h-screen">
       <Cabecera titulo="Nueva necesidad de material" subtitulo="Que se necesita, para que obra o pedido" />
@@ -30,6 +38,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
           proyectos={(proyectos ?? []).map((p) => ({ id: Number(p.id_proyecto), nombre: p.nombre as string, id_pais: Number(p.id_pais), direccion: (p.direccion as string | null) ?? "" }))}
           partidas={(partidas ?? []).map((p) => ({ id: Number(p.id), id_proyecto: Number(p.id_proyecto), nombre: p.nombre as string }))}
           pedidos={(pedidos ?? []).map((p) => ({ id: Number(p.id), num: p.num_pedido as string, id_pais: Number(p.id_pais) }))}
+          bodegas={bodegas}
           puedeCrearMateria={["Administrador", "Supervisor", "Comprador"].includes(v.rol)}
         />
       </div>
