@@ -244,3 +244,33 @@ export async function crearMateriaDesdeNecesidad(d: {
   const m = data as { id: number; nombre: string; unidad: string | null; sku: string | null };
   return { ok: true, item: { tipo: "materia_prima", id: Number(m.id), descripcion: m.nombre, unidad: m.unidad, sku: m.sku } };
 }
+
+export interface DiferenciaCosto {
+  id_item: number;
+  descripcion: string;
+  sku: string | null;
+  costo_actual: number;
+  precio: number;
+  moneda: string;
+  misma_moneda: boolean;
+  es_preferente: boolean;
+}
+
+// Lo cotizado que no coincide con el costo que el proveedor tiene en su maestra.
+export async function diferenciasCosto(idPart: number): Promise<DiferenciaCosto[]> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("nm_diferencias_costo", { p_part: idPart });
+  return ((data ?? []) as DiferenciaCosto[]).map((x) => ({ ...x, costo_actual: Number(x.costo_actual), precio: Number(x.precio) }));
+}
+
+// Deja en la maestra del proveedor, como costo, el precio que cotizo en los items elegidos.
+export async function actualizarCostos(idNm: number, idPart: number, items: number[]) {
+  const r = await llamar((s) => s.rpc("nm_actualizar_costos", { p_part: idPart, p_items: items }), idNm);
+  if (r.ok) {
+    revalidatePath("/proveedores");
+    revalidatePath("/materias-primas");
+    revalidatePath("/productos");
+  }
+  return r;
+}

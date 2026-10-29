@@ -13,6 +13,9 @@ import {
   adjudicarSolicitud,
   actualizarCabeceraSolicitud,
   actualizarCabeceraNecesidad,
+  actualizarCostos,
+  diferenciasCosto,
+  type DiferenciaCosto,
   agregarItems,
   anularNecesidad,
   anularSolicitud,
@@ -56,6 +59,8 @@ export type Detalle = {
   items: Item[];
   proveedores: Prov[];
   precios: { p: number; i: number; v: number }[];
+  // Lo que cada proveedor tiene asignado en su maestra, con su costo.
+  maestra: { p: number; i: number; c: number; m: string | null }[];
   solicitudes: Sol[];
 };
 type Item = {
@@ -132,6 +137,12 @@ export default function FichaNecesidad({
     for (const x of detalle.precios) m.set(`${x.p}:${x.i}`, Number(x.v));
     return m;
   }, [detalle.precios]);
+  // maestra[participante:item] = costo del item en la maestra del proveedor; sin entrada, no lo tiene asignado.
+  const maestra = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const x of detalle.maestra ?? []) m.set(`${x.p}:${x.i}`, Number(x.c));
+    return m;
+  }, [detalle.maestra]);
   const itemPor = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const provPor = useMemo(() => new Map(proveedores.map((p) => [p.id, p])), [proveedores]);
   const vigentes = solicitudes.filter((s) => s.estado !== "Abierta" && s.estado !== "Anulada");
@@ -390,6 +401,7 @@ export default function FichaNecesidad({
           items={s.items.map((id) => itemPor.get(id)).filter((x): x is Item => !!x)}
           proveedores={proveedores.filter((p) => p.estado !== "Declino")}
           precio={precio}
+          maestra={maestra}
           total={total}
           moneda={moneda}
           ivaPct={Number(nm.iva_pct ?? 0)}
@@ -427,6 +439,7 @@ export default function FichaNecesidad({
           prov={cotizando}
           items={items}
           precio={precio}
+          maestra={maestra}
           idNm={nm.id}
           moneda={moneda}
           ivaPct={Number(nm.iva_pct ?? 0)}
@@ -460,13 +473,14 @@ export default function FichaNecesidad({
 // Una solicitud con su cuadro comparativo: items en filas, proveedores en columnas, el mejor precio de cada item
 // destacado, y el total de cada proveedor si cotizo todo.
 function TarjetaSolicitud({
-  s, destinoNm, items, proveedores, precio, total, moneda, ivaPct, impuesto, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
+  s, destinoNm, items, proveedores, precio, maestra, total, moneda, ivaPct, impuesto, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
 }: {
   s: Sol;
   destinoNm: { fecha: string | null; direccion: string | null };
   items: Item[];
   proveedores: Prov[];
   precio: Map<string, number>;
+  maestra: Map<string, number>;
   total: (s: Sol, idPart: number) => number | null;
   moneda: string;
   ivaPct: number;
@@ -586,7 +600,7 @@ function TarjetaSolicitud({
                     const esMejor = v != null && v === mejor && precios.filter((x) => x != null).length > 1;
                     return (
                       <td key={p.id} className={`px-3 py-1.5 text-right tabular-nums ${esMejor ? "bg-emerald-50 text-emerald-800 font-semibold" : ""}`}>
-                        {v != null ? dinero(v, moneda) : <span className="text-gray-400">sin precio</span>}
+                        {v != null ? dinero(v, moneda) : maestra.has(`${p.id}:${i.id}`) ? <span className="text-gray-400">sin precio</span> : <span className="text-gray-300 italic" title="No lo tiene asignado en su maestra">no lo vende</span>}
                       </td>
                     );
                   })}
@@ -650,11 +664,12 @@ function TarjetaSolicitud({
 }
 
 function VentanaCotizacion({
-  prov, items, precio, idNm, moneda, ivaPct, impuesto, alCerrar,
+  prov, items, precio, maestra, idNm, moneda, ivaPct, impuesto, alCerrar,
 }: {
   prov: Prov;
   items: Item[];
   precio: Map<string, number>;
+  maestra: Map<string, number>;
   idNm: number;
   moneda: string;
   ivaPct: number;
@@ -680,6 +695,10 @@ function VentanaCotizacion({
   const archivo = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
+  // Lo cotizado que difiere de su maestra, para preguntar si se actualiza el costo.
+  const [diferencias, setDiferencias] = useState<DiferenciaCosto[] | null>(null);
+  const [elegidas, setElegidas] = useState<Set<number>>(new Set());
+  const asignado = (idItem: number) => maestra.has(`${prov.id}:${idItem}`);
 
   // El precio escrito en un item, o nada si esta en blanco.
   function valorDe(id: number): number | null {
@@ -693,7 +712,7 @@ function VentanaCotizacion({
 
   function guardar() {
     setError(null);
-    const precios = items.map((i) => {
+    const precios = items.filter((i) => asignado(i.id)).map((i) => {
       const t = (valores[i.id] ?? "").trim().replace(",", ".");
       return { id_item: i.id, precio: t === "" ? null : Number(t) };
     });
@@ -708,8 +727,86 @@ function VentanaCotizacion({
         const s = await subirCotizacionPdf(idNm, prov.id, d);
         if (!s.ok) return setError(`Los precios quedaron guardados, pero el archivo no: ${s.error}`);
       }
+      // Si lo cotizado no coincide con el costo de su maestra, se pregunta si se actualiza.
+      const dif = await diferenciasCosto(prov.id);
+      if (dif.length > 0) {
+        setDiferencias(dif);
+        setElegidas(new Set(dif.filter((x) => x.misma_moneda).map((x) => x.id_item)));
+        return;
+      }
       alCerrar(true);
     });
+  }
+
+  function actualizarMaestra() {
+    empezar(async () => {
+      const r = await actualizarCostos(idNm, prov.id, [...elegidas]);
+      if (!r.ok) return setError(r.error ?? "No se pudo actualizar.");
+      alCerrar(true);
+    });
+  }
+
+  if (diferencias) {
+    return (
+      <Ventana titulo="El costo cotizado difiere de la maestra" subtitulo={`${prov.nombre}: ¿actualiza su costo en la maestra de proveedores?`} onCerrar={() => alCerrar(true)} ancho="max-w-3xl">
+        <div className="space-y-3 text-xs">
+          <p className="text-gray-700">La cotizacion ya quedo guardada. Elija los items cuyo costo en la maestra del proveedor pasa a ser el cotizado.</p>
+          <table className="w-full">
+            <thead className="bg-gray-50 text-gray-600">
+              <tr>
+                <th className="w-8 px-2 py-1.5" />
+                <th className="text-left px-2 py-1.5">Item</th>
+                <th className="text-right px-2 py-1.5">Costo en maestra</th>
+                <th className="text-right px-2 py-1.5">Cotizado</th>
+                <th className="text-right px-2 py-1.5">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {diferencias.map((x) => {
+                const dif = x.precio - x.costo_actual;
+                return (
+                  <tr key={x.id_item} className="border-t border-gray-100">
+                    <td className="px-2 py-1">
+                      <input
+                        type="checkbox"
+                        aria-label={`Actualizar ${x.descripcion}`}
+                        disabled={!x.misma_moneda}
+                        checked={elegidas.has(x.id_item)}
+                        onChange={(e) => {
+                          const n = new Set(elegidas);
+                          if (e.target.checked) n.add(x.id_item);
+                          else n.delete(x.id_item);
+                          setElegidas(n);
+                        }}
+                      />
+                    </td>
+                    <td className="px-2 py-1">
+                      {x.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{x.sku}</span>}
+                      {x.descripcion}
+                      {x.es_preferente && <span className="ml-1.5 text-[10px] text-amber-700">preferente: recostea paneles y cotizaciones sin pedido</span>}
+                      {!x.misma_moneda && <span className="ml-1.5 text-[10px] text-gray-500">moneda distinta ({x.moneda}): no se actualiza aqui</span>}
+                    </td>
+                    <td className="px-2 py-1 text-right tabular-nums">{dinero(x.costo_actual, x.moneda)}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">{dinero(x.precio, x.moneda)}</td>
+                    <td className={`px-2 py-1 text-right tabular-nums ${dif > 0 ? "text-red-700" : "text-emerald-700"}`}>
+                      {dif > 0 ? "+" : ""}
+                      {dinero(dif, x.moneda)} ({x.costo_actual > 0 ? `${dif > 0 ? "+" : ""}${Math.round((dif / x.costo_actual) * 1000) / 10}%` : "nuevo"})
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {error && <p className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2" role="alert">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <button type="button" className={BTN} disabled={pendiente} onClick={() => alCerrar(true)}>No actualizar</button>
+            <button type="button" className={BTN_VERDE} disabled={pendiente || elegidas.size === 0} onClick={actualizarMaestra}>
+              {pendiente ? "Actualizando..." : `Actualizar ${elegidas.size} costo${elegidas.size === 1 ? "" : "s"}`}
+            </button>
+          </div>
+        </div>
+      </Ventana>
+    );
   }
 
   return (
@@ -756,10 +853,15 @@ function VentanaCotizacion({
                     <input
                       aria-label={`Precio de ${i.descripcion}`}
                       inputMode="decimal"
-                      className={`${CAMPO} text-right`}
+                      className={`${CAMPO} text-right ${asignado(i.id) ? "" : "bg-gray-100"}`}
+                      disabled={!asignado(i.id)}
+                      placeholder={asignado(i.id) ? "" : "sin asignar"}
                       value={valores[i.id] ?? ""}
                       onChange={(e) => setValores({ ...valores, [i.id]: e.target.value })}
                     />
+                    <span className="block text-[10px] text-right text-gray-500 mt-0.5">
+                      {asignado(i.id) ? `Maestra: ${dinero(maestra.get(`${prov.id}:${i.id}`) ?? 0, cab.moneda)}` : "No lo tiene en su maestra"}
+                    </span>
                   </td>
                   <td className="px-3 py-1 text-right tabular-nums">{valorDe(i.id) != null ? dinero(subtotalLinea(Number(i.cantidad), valorDe(i.id)!, cab.moneda), cab.moneda) : ""}</td>
                 </tr>

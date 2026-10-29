@@ -3,6 +3,7 @@ import { requerirVendedor } from "@/lib/sesion";
 import { leerParametros, type Parametros } from "@/lib/parametros";
 import { uno } from "@/lib/relaciones";
 import { impuestoDelPais } from "@/lib/factura";
+import { monedaDelPais } from "@/lib/formato";
 import { numerosSolicitud } from "@/lib/numerosSolicitud";
 import type { EmisorDoc, OrdenDoc, ProveedorDoc, SolicitudDoc } from "@/lib/pdf/ComprasPdf";
 
@@ -49,6 +50,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
     items: { id: number; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; id_sc: number | null }[];
     proveedores: ProveedorNm[];
     solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; notas: string | null }[];
+    maestra: { p: number; i: number; c: number; m: string | null }[];
   };
   const sc = det.solicitudes.find((x) => x.id === idSc);
   // idPart = 0: el PDF sin destinatario, para quien quiere verlo o mandarlo por su cuenta.
@@ -57,7 +59,11 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
       ? { id: 0, id_proveedor: 0, nombre: "(Proveedor)", razon_social: null, rut: null, direccion: null, email: null, telefono: null, contacto: null, estado: "Invitado" }
       : det.proveedores.find((x) => x.id === idPart);
   if (!sc || !prov) return null;
-  const items = det.items.filter((i) => i.id_sc === idSc);
+  // Con destinatario, solo salen los items que ese proveedor tiene asignados en su maestra, valorizados con su costo.
+  // Sin destinatario no hay maestra que consultar: sale la lista sin valorizar.
+  const costos = new Map((det.maestra ?? []).filter((x) => x.p === idPart).map((x) => [x.i, { c: Number(x.c), m: x.m }]));
+  const items = det.items.filter((i) => i.id_sc === idSc && (idPart === 0 || costos.has(i.id)));
+  const moneda = [...costos.values()].find((x) => x.m)?.m ?? monedaDelPais(Number(det.nm.id_pais));
   // El numero propio de esta solicitud para este proveedor; sin destinatario, el de la solicitud.
   const numero = (await numerosSolicitud([{ idSc, idPart }], true)).get(`${idSc}:${idPart}`) ?? sc.folio;
   const p = await leerParametros(Number(det.nm.id_pais));
@@ -73,7 +79,9 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
       contactoDestino: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino },
       notas: [det.nm.notas, sc.notas].filter(Boolean).join("\n") || null,
       impuesto: { nombre: impuestoDelPais(Number(det.nm.id_pais)), pct: Number(det.nm.iva_pct ?? 0) },
-      items: items.map((i) => ({ sku: i.sku, descripcion: i.descripcion, unidad: i.unidad, cantidad: Number(i.cantidad), nota: i.nota })),
+      moneda,
+      valorizada: idPart > 0,
+      items: items.map((i) => ({ sku: i.sku, descripcion: i.descripcion, unidad: i.unidad, cantidad: Number(i.cantidad), nota: i.nota, precio: idPart > 0 && (costos.get(i.id)?.c ?? 0) > 0 ? costos.get(i.id)!.c : null })),
       emisor: await emisor(),
     },
     p,

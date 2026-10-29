@@ -38,6 +38,7 @@ type Det = {
     notas: string | null;
   }[];
   precios: { p: number; i: number; v: number }[];
+  maestra: { p: number; i: number; c: number; m: string | null }[];
   solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; id_padre: number | null; id_participante: number | null; id_oc: number | null; num_oc: string | null }[];
 };
 
@@ -56,6 +57,8 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
 
   const moneda = prov.moneda || monedaDelPais(Number(det.nm.id_pais));
   const precio = new Map(det.precios.filter((x) => x.p === idPart).map((x) => [x.i, Number(x.v)]));
+  // Lo que este proveedor tiene asignado en su maestra, con su costo.
+  const maestraProv = new Map((det.maestra ?? []).filter((x) => x.p === idPart).map((x) => [x.i, Number(x.c)]));
   const solicitudes = det.solicitudes.filter((s) => s.estado !== "Abierta" && s.estado !== "Anulada");
   const idsOc = solicitudes.filter((s) => s.id_participante === idPart && s.id_oc).map((s) => s.id_oc as number);
 
@@ -123,7 +126,8 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
           const base = `/necesidades/${idNm}/solicitud/${s.id}/${idPart}/pdf`;
           const num = numeros.get(`${s.id}:${idPart}`) ?? s.folio;
           const t = textosSolicitud({ folio: num, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: s.fecha_entrega ?? det.nm.fecha_requerida, direccion: s.direccion_destino ?? det.nm.direccion_destino, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
-          const bloqueoSc = s.estado === "Adjudicada" ? "La solicitud ya esta adjudicada." : prov.estado === "Declino" ? "El proveedor declino." : null;
+          const cubre = items.filter((i) => maestraProv.has(i.id)).length;
+          const bloqueoSc = s.estado === "Adjudicada" ? "La solicitud ya esta adjudicada." : prov.estado === "Declino" ? "El proveedor declino." : cubre === 0 ? "No tiene asignado ningun item de esta solicitud en su maestra." : null;
           const to = oc
             ? textosOrden({ numero: oc.num_oc, contacto: prov.contacto, proveedor: prov.nombre, fechaEntrega: oc.fecha_entrega ?? det.nm.fecha_requerida, direccion: det.nm.direccion_destino, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor })
             : null;
@@ -182,7 +186,10 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                           <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                           <td className="px-3 py-1.5">{i.unidad}</td>
                           <td className="px-3 py-1.5 text-right">{fmtUnid(i.cantidad)}</td>
-                          <td className="px-3 py-1.5 text-right">{pr != null ? dinero(pr, moneda) : <span className="text-gray-400">sin precio</span>}</td>
+                          <td className="px-3 py-1.5 text-right">
+                            {pr != null ? dinero(pr, moneda) : maestraProv.has(i.id) ? <span className="text-gray-400">sin precio</span> : <span className="text-gray-300 italic">no lo tiene en su maestra</span>}
+                            {maestraProv.has(i.id) && (maestraProv.get(i.id) ?? 0) > 0 && <span className="block text-[10px] text-gray-400">maestra: {dinero(maestraProv.get(i.id) ?? 0, moneda)}</span>}
+                          </td>
                           <td className="px-3 py-1.5 text-right tabular-nums">{pr != null ? dinero(subtotalLinea(Number(i.cantidad), pr, moneda), moneda) : ""}</td>
                         </tr>
                       );

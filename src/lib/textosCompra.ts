@@ -35,7 +35,7 @@ export function textosSolicitud(d: { folio: string; contacto: string | null; pro
   const saludo = `Estimados ${d.contacto || d.proveedor}:`;
   return {
     asunto: `Solicitud de cotizacion ${d.folio} - Centro Panel`,
-    cuerpo: `${saludo}\n\nLes solicitamos cotizar los materiales del documento adjunto (${d.folio}), para entrega ${dest}.${recibe(d.recibe) ? ` Recibe en destino: ${recibe(d.recibe)}.` : ""}\n\nIndiquen el precio unitario de cada item, el plazo de entrega, las condiciones de pago y la validez de la oferta.\n\nQuedamos atentos a su respuesta.\n\nSaludos cordiales,\n${firma(d.emisor)}`,
+    cuerpo: `${saludo}\n\nLes solicitamos cotizar los materiales del documento adjunto (${d.folio}), para entrega ${dest}.${recibe(d.recibe) ? ` Recibe en destino: ${recibe(d.recibe)}.` : ""}\n\nLos precios del documento son los que tenemos registrados para su empresa: confirmenlos o indiquennos el precio vigente de cada item, junto con el plazo de entrega, las condiciones de pago y la validez de la oferta.\n\nQuedamos atentos a su respuesta.\n\nSaludos cordiales,\n${firma(d.emisor)}`,
     whatsapp: `Hola ${d.contacto || d.proveedor}, le enviamos la solicitud de cotizacion ${d.folio} de Centro Panel (PDF adjunto). Entrega ${dest}. Quedamos atentos a su cotizacion. ${d.emisor.nombre}`,
   };
 }

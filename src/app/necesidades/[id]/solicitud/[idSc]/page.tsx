@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 type Det = {
   nm: { id: number; folio: string; id_pais: number; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
   items: { id: number; id_sc: number | null }[];
+  maestra: { p: number; i: number; c: number; m: string | null }[];
   proveedores: { id: number; nombre: string; email: string | null; telefono: string | null; contacto: string | null; estado: string }[];
   solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; id_participante: number | null }[];
 };
@@ -39,6 +40,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
   if (!sc) notFound();
   const comprador = det.nm.puede_comprar;
   const items = det.items.filter((i) => i.id_sc === idSc).length;
+  const itemsSc = new Set(det.items.filter((i) => i.id_sc === idSc).map((i) => i.id));
 
   const [{ data: pais }, { data: envios }] = await Promise.all([
     supabase.from("paises").select("prefijo_telefono").eq("id", det.nm.id_pais).single(),
@@ -88,6 +90,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
               <tr>
                 <th className={TH}>N° de solicitud</th>
                 <th className={TH}>Proveedor</th>
+                <th className={TH}>Items que cubre</th>
                 <th className={TH}>Correo</th>
                 <th className={TH}>Telefono</th>
                 <th className={TH}>Ultimo envio</th>
@@ -97,7 +100,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
             <tbody>
               {proveedores.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-gray-500">
+                  <td colSpan={7} className="px-3 py-4 text-center text-gray-500">
                     Invite proveedores en la <Link href={`/necesidades/${idNm}`} className="text-verde underline">necesidad</Link> para poder enviarles la solicitud.
                   </td>
                 </tr>
@@ -105,12 +108,15 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
               {proveedores.map((p) => {
                 const u = ultimo.get(p.id);
                 const num = numeros.get(`${idSc}:${p.id}`) ?? sc.folio;
+                // Cada proveedor recibe solo los items que tiene asignados en su maestra.
+                const cubre = (det.maestra ?? []).filter((x) => x.p === p.id && itemsSc.has(x.i)).length;
                 const t = textosSolicitud({ folio: num, contacto: p.contacto, proveedor: p.nombre, fechaEntrega, direccion, recibe: { nombre: det.nm.contacto_destino, telefono: det.nm.telefono_destino, email: det.nm.email_destino }, emisor });
                 const base = `/necesidades/${idNm}/solicitud/${idSc}/${p.id}/pdf`;
                 return (
                   <tr key={p.id} className="border-t border-gray-100">
                     <td className="px-3 py-1.5 font-mono font-semibold">{num}</td>
                     <td className="px-3 py-1.5 font-semibold">{p.nombre}</td>
+                    <td className={`px-3 py-1.5 ${cubre === 0 ? "text-red-700" : ""}`}>{cubre} de {itemsSc.size}</td>
                     <td className="px-3 py-1.5">{p.email ?? <span className="text-gray-400">sin correo</span>}</td>
                     <td className="px-3 py-1.5">{p.telefono ?? <span className="text-gray-400">sin telefono</span>}</td>
                     <td className="px-3 py-1.5">
@@ -131,7 +137,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
                           asunto={t.asunto}
                           cuerpo={t.cuerpo}
                           textoWhatsApp={t.whatsapp}
-                          bloqueo={bloqueo}
+                          bloqueo={cubre === 0 ? "No tiene asignado ningun item de esta solicitud en su maestra." : bloqueo}
                           enviarCorreo={enviarSolicitudPorCorreo.bind(null, idNm, idSc, p.id)}
                           registrar={registrarEnvioSolicitud.bind(null, idNm, idSc, p.id, sc.estado)}
                           emailRemitente={v.email}
