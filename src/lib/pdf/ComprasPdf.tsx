@@ -119,7 +119,7 @@ export interface OrdenDoc {
   emisor: EmisorDoc;
 }
 
-function Cabecera({ p, titulo, numero, fecha }: { p: Parametros; titulo: string; numero: string; fecha: string }) {
+function Cabecera({ p, titulo, numero, fecha, sub }: { p: Parametros; titulo: string; numero: string; fecha: string; sub?: string }) {
   return (
     <View style={s.cabecera}>
       <View style={s.fila}>
@@ -134,6 +134,7 @@ function Cabecera({ p, titulo, numero, fecha }: { p: Parametros; titulo: string;
       <View style={s.folio}>
         <Text style={{ fontSize: 7, color: DORADO, fontFamily: "Helvetica-Bold" }}>{titulo}</Text>
         <Text style={s.folioNum}>{numero}</Text>
+        {sub ? <Text style={{ fontSize: 7, color: "white" }}>{sub}</Text> : null}
         <Text style={{ fontSize: 7, color: DORADO }}>{pTxt(p, "EmpresaNombre")}   {pTxt(p, "EtiquetaIdTributario", "RUT")} {pTxt(p, "EmpresaRUT")}</Text>
         <Text style={{ fontSize: 7 }}>Fecha {fmtFecha(fecha)}</Text>
       </View>
@@ -204,7 +205,7 @@ export function SolicitudPdf({ d, p }: { d: SolicitudDoc; p: Parametros }) {
   return (
     <Document title={`${d.folio} - ${d.proveedor.nombre}`} author={pTxt(p, "EmpresaNombre")}>
       <Page size="A4" style={s.pagina}>
-        <Cabecera p={p} titulo="SOLICITUD DE COTIZACION" numero={d.folio} fecha={d.fecha} />
+        <Cabecera p={p} titulo="SOLICITUD DE COTIZACION" numero={d.folio} sub={`Necesidad ${d.folioNecesidad}`} fecha={d.fecha} />
         <View style={s.bloques}>
           <BloqueProveedor pr={d.proveedor} />
           <BloqueEntrega obra={d.obra} fechaEntrega={d.fechaEntrega} direccion={d.direccionDestino} contacto={d.contactoDestino} etiquetaFecha="Fecha de entrega requerida en destino" />
