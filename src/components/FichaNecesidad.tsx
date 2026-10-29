@@ -62,6 +62,8 @@ export type Detalle = {
   precios: { p: number; i: number; v: number }[];
   // Lo que cada proveedor tiene asignado en su maestra, con su costo.
   maestra: { p: number; i: number; c: number; m: string | null }[];
+  // Items que se sacaron a mano de la solicitud de un proveedor.
+  excluidos?: { p: number; i: number }[];
   solicitudes: Sol[];
 };
 type Item = {
@@ -144,6 +146,7 @@ export default function FichaNecesidad({
     for (const x of detalle.maestra ?? []) m.set(`${x.p}:${x.i}`, Number(x.c));
     return m;
   }, [detalle.maestra]);
+  const excluidos = useMemo(() => new Set((detalle.excluidos ?? []).map((x) => `${x.p}:${x.i}`)), [detalle.excluidos]);
   const itemPor = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const provPor = useMemo(() => new Map(proveedores.map((p) => [p.id, p])), [proveedores]);
   const vigentes = solicitudes.filter((s) => s.estado !== "Abierta" && s.estado !== "Anulada");
@@ -403,6 +406,7 @@ export default function FichaNecesidad({
           proveedores={proveedores.filter((p) => p.estado !== "Declino")}
           precio={precio}
           maestra={maestra}
+          excluidos={excluidos}
           total={total}
           moneda={moneda}
           ivaPct={Number(nm.iva_pct ?? 0)}
@@ -474,7 +478,7 @@ export default function FichaNecesidad({
 // Una solicitud con su cuadro comparativo: items en filas, proveedores en columnas, el mejor precio de cada item
 // destacado, y el total de cada proveedor si cotizo todo.
 function TarjetaSolicitud({
-  s, destinoNm, items, proveedores, precio, maestra, total, moneda, ivaPct, impuesto, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
+  s, destinoNm, items, proveedores, precio, maestra, excluidos, total, moneda, ivaPct, impuesto, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
 }: {
   s: Sol;
   destinoNm: { fecha: string | null; direccion: string | null };
@@ -482,6 +486,7 @@ function TarjetaSolicitud({
   proveedores: Prov[];
   precio: Map<string, number>;
   maestra: Map<string, number>;
+  excluidos: Set<string>;
   total: (s: Sol, idPart: number) => number | null;
   moneda: string;
   ivaPct: number;
@@ -601,7 +606,7 @@ function TarjetaSolicitud({
                     const esMejor = v != null && v === mejor && precios.filter((x) => x != null).length > 1;
                     return (
                       <td key={p.id} className={`px-3 py-1.5 text-right tabular-nums ${esMejor ? "bg-emerald-50 text-emerald-800 font-semibold" : ""}`}>
-                        {v != null ? dinero(v, moneda) : maestra.has(`${p.id}:${i.id}`) ? <span className="text-gray-400">sin precio</span> : <span className="text-gray-300 italic" title="No lo tiene asignado en su maestra">no lo vende</span>}
+                        {v != null ? dinero(v, moneda) : maestra.has(`${p.id}:${i.id}`) ? <span className="text-gray-400">sin precio</span> : excluidos.has(`${p.id}:${i.id}`) ? <span className="text-gray-400 italic" title="Se saco de su solicitud">excluido</span> : <span className="text-gray-300 italic" title="No lo tiene asignado en su maestra">no lo vende</span>}
                       </td>
                     );
                   })}
