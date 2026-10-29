@@ -8,7 +8,7 @@ import { reversarEnvioSolicitud } from "@/app/necesidades/acciones";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { dinero, fecha as fmtFecha, monedaDelPais, unidades as fmtUnid } from "@/lib/formato";
-import { COLOR_NM } from "@/lib/compras";
+import { COLOR_NM, etiquetaProyecto } from "@/lib/compras";
 import { numerosSolicitud } from "@/lib/numerosSolicitud";
 import { impuestoDelPais, porcentajeImpuesto, rotuloDescuento, subtotalLinea, totalesFactura } from "@/lib/factura";
 import { textosOrden, textosSolicitud } from "@/lib/textosCompra";
@@ -17,7 +17,7 @@ import { enviarOcPorCorreo, enviarSolicitudPorCorreo, registrarEnvioOc, registra
 export const dynamic = "force-dynamic";
 
 type Det = {
-  nm: { id: number; folio: string; id_pais: number; proyecto: string | null; estado: string; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean; iva_pct: number; modalidad_entrega?: "Despacho" | "Retiro" };
+  nm: { id: number; folio: string; id_pais: number; proyecto: string | null; proyecto_cliente?: string | null; estado: string; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean; iva_pct: number; modalidad_entrega?: "Despacho" | "Retiro" };
   items: { id: number; orden: number; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; id_sc: number | null }[];
   proveedores: {
     id: number;
@@ -89,7 +89,7 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo={prov.nombre} subtitulo={`${modo === "enviar" ? "Enviar documentos" : "Detalle"} del proveedor en ${det.nm.folio}`} />
+      <Cabecera titulo={prov.nombre} subtitulo={`${modo === "enviar" ? "Enviar documentos" : "Detalle"} del proveedor en ${det.nm.folio}${etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente) ? ` · ${etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente)}` : ""}`} />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4 text-xs">
         <BarraNavegacion volverA={`/necesidades/${idNm}`} />
         <div className="flex gap-2">

@@ -4,6 +4,7 @@ import { leerParametros, type Parametros } from "@/lib/parametros";
 import { uno } from "@/lib/relaciones";
 import { impuestoDelPais } from "@/lib/factura";
 import { monedaDelPais } from "@/lib/formato";
+import { etiquetaProyecto } from "@/lib/compras";
 import { numerosSolicitud } from "@/lib/numerosSolicitud";
 import type { EmisorDoc, OrdenDoc, ProveedorDoc, SolicitudDoc } from "@/lib/pdf/ComprasPdf";
 
@@ -46,7 +47,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
   const { data, error } = await supabase.rpc("nm_detalle", { p_nm: idNm });
   if (error || !data) return null;
   const det = data as {
-    nm: { folio: string; id_pais: number; proyecto: string | null; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; notas: string | null; iva_pct: number; modalidad_entrega?: "Despacho" | "Retiro" };
+    nm: { folio: string; id_pais: number; proyecto: string | null; fecha_requerida: string | null; direccion_destino: string | null; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; notas: string | null; proyecto_cliente?: string | null; iva_pct: number; modalidad_entrega?: "Despacho" | "Retiro" };
     items: { id: number; sku: string | null; descripcion: string; unidad: string | null; cantidad: number; nota: string | null; id_sc: number | null }[];
     proveedores: ProveedorNm[];
     solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; notas: string | null }[];
@@ -71,6 +72,7 @@ export async function leerSolicitudDoc(idNm: number, idSc: number, idPart: numbe
     d: {
       folio: numero,
       folioNecesidad: det.nm.folio,
+      referencia: etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente) || undefined,
       fecha: new Date().toLocaleDateString("sv-SE", { timeZone: "America/Santiago" }),
       proveedor: proveedorDoc(prov),
       obra: det.nm.proyecto,
@@ -109,18 +111,19 @@ export async function leerOrdenDoc(idOc: number): Promise<OrdenParaEnviar | null
   const supabase = await createClient();
   const { data: o } = await supabase
     .from("ordenes_compra")
-    .select("*, proyectos(nombre, direccion), entidades(razon_social, nombre_referencia, rut, contacto, email, telefono, direccion)")
+    .select("*, proyectos(nombre, cliente, direccion), entidades(razon_social, nombre_referencia, rut, contacto, email, telefono, direccion)")
     .eq("id", idOc)
     .single();
   if (!o) return null;
   const { data: lineas } = await supabase.from("oc_detalle").select("sku, descripcion, unidades, costo_unitario").eq("id_oc", idOc).order("orden").order("id");
   const prov = uno<{ razon_social: string; nombre_referencia: string | null; rut: string | null; contacto: string | null; email: string | null; telefono: string | null; direccion: string | null }>(o.entidades);
-  const proy = uno<{ nombre: string; direccion: string | null }>(o.proyectos);
+  const proy = uno<{ nombre: string; cliente: string | null; direccion: string | null }>(o.proyectos);
   const { data: sc } = await supabase.from("solicitudes_cotizacion").select("id, id_necesidad, id_participante").eq("id_oc", idOc).maybeSingle();
   const p = await leerParametros(Number(o.id_pais));
   return {
     d: {
       numero: o.num_oc,
+      referencia: etiquetaProyecto(proy?.nombre, proy?.cliente) || undefined,
       fecha: o.fecha,
       estado: o.estado,
       aprobada: ["Aprobada", "Enviada", "Recibida parcial", "Recibida", "Facturada", "Pagada"].includes(o.estado),
