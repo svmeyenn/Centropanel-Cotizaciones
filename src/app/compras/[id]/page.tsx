@@ -10,7 +10,7 @@ import { impuestoDelPais } from "@/lib/factura";
 import { enviarOcPorCorreo, registrarEnvioOc, reversarEnvioOc } from "@/app/necesidades/envios";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
-import { COLOR_ESTADO } from "@/lib/compras";
+import { COLOR_ESTADO, etiquetaProyecto } from "@/lib/compras";
 import { fecha } from "@/lib/formato";
 import { uno } from "@/lib/relaciones";
 
@@ -24,7 +24,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   const { data: o } = await supabase
     .from("ordenes_compra")
-    .select("*, proyectos(id_proyecto, nombre, direccion), entidades(razon_social, nombre_referencia, email, telefono, contacto), solicitudes(num_solicitud)")
+    .select("*, proyectos(id_proyecto, nombre, cliente, direccion), entidades(razon_social, nombre_referencia, email, telefono, contacto), solicitudes(num_solicitud)")
     .eq("id", id)
     .single();
   if (!o) notFound();
@@ -57,7 +57,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   const desc = new Map((lineas ?? []).map((l) => [Number(l.id), l.descripcion as string]));
   const nombre = (idv: number | null) => (quienes ?? []).find((x) => Number(x.id) === idv)?.nombre;
-  const proy = uno<{ id_proyecto: number; nombre: string; direccion: string | null }>(o.proyectos);
+  const proy = uno<{ id_proyecto: number; nombre: string; cliente: string | null; direccion: string | null }>(o.proyectos);
   const prov = uno<{ razon_social: string; nombre_referencia: string | null; email: string | null; telefono: string | null; contacto: string | null }>(o.entidades);
   const puedeEnviar = ["Administrador", "Supervisor", "Comprador"].includes(v.rol);
   const { data: pais } = await supabase.from("paises").select("prefijo_telefono").eq("id", o.id_pais).single();
@@ -76,8 +76,8 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   return (
     <div className="min-h-screen">
       <Cabecera
-        titulo={`${o.num_oc}`}
-        subtitulo={`${uno<{ razon_social: string }>(o.entidades)?.razon_social ?? ""} · ${proy?.nombre ?? ""}`}
+        titulo={[o.num_oc, etiquetaProyecto(proy?.nombre, proy?.cliente)].filter(Boolean).join(" · ")}
+        subtitulo={`Proveedor: ${uno<{ razon_social: string }>(o.entidades)?.razon_social ?? ""}`}
       />
       <div className="max-w-screen-xl mx-auto p-6 space-y-4">
         <BarraNavegacion volverA="/compras" />

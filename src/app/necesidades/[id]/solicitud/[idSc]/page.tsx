@@ -7,7 +7,7 @@ import BotonReversar from "@/components/BotonReversar";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { fecha as fmtFecha } from "@/lib/formato";
-import { COLOR_NM } from "@/lib/compras";
+import { COLOR_NM, etiquetaProyecto } from "@/lib/compras";
 import { textosSolicitud } from "@/lib/textosCompra";
 import { numerosSolicitud } from "@/lib/numerosSolicitud";
 import { reversarEnvioSolicitud } from "@/app/necesidades/acciones";
@@ -16,7 +16,7 @@ import { enviarSolicitudPorCorreo, registrarEnvioSolicitud } from "@/app/necesid
 export const dynamic = "force-dynamic";
 
 type Det = {
-  nm: { id: number; folio: string; id_pais: number; fecha_requerida: string | null; direccion_destino: string | null; modalidad_entrega?: "Despacho" | "Retiro"; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
+  nm: { id: number; folio: string; proyecto: string | null; proyecto_cliente?: string | null; id_pais: number; fecha_requerida: string | null; direccion_destino: string | null; modalidad_entrega?: "Despacho" | "Retiro"; contacto_destino: string | null; telefono_destino: string | null; email_destino: string | null; puede_comprar: boolean };
   items: { id: number; id_sc: number | null }[];
   maestra: { p: number; i: number; c: number; m: string | null }[];
   proveedores: { id: number; nombre: string; direccion?: string | null; email: string | null; telefono: string | null; contacto: string | null; estado: string }[];
@@ -62,7 +62,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo={sc.folio} subtitulo={`Solicitud de cotizacion de ${det.nm.folio}`} />
+      <Cabecera titulo={[sc.folio, etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente)].filter(Boolean).join(" · ")} subtitulo={`Solicitud de cotizacion de ${det.nm.folio}`} />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4 text-xs">
         <BarraNavegacion volverA={`/necesidades/${idNm}`} />
         <section className="bg-white border border-gray-200 rounded p-3 flex flex-wrap items-center gap-x-8 gap-y-2">

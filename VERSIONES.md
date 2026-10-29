@@ -5,10 +5,11 @@ produccion --un cambio de codigo o uno solo de base de datos-- y la fecha es
 la de esa entrega, en hora de Chile. Los cambios que quedan en el ambiente de
 pruebas no suben la version hasta que se aprueban.
 
-Version vigente: **v0176-20261029**
+Version vigente: **v0177-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0177-20261029 | 29-10-2026 | El titulo de la necesidad, de la solicitud de cotizacion y de la OC lleva el proyecto o cliente --el cliente cuando el proyecto es un pedido de paneles, y la obra con su cliente en los demas casos--; tambien aparece bajo el numero del PDF de la solicitud y de la OC | (pendiente) |
 | v0176-20261029 | 29-10-2026 | Gastos financieros por pago y margen real del pedido: cada pago lleva su gasto financiero --con IVA incluido, por definir hasta que llega la liquidacion; lo define solo un administrador o supervisor--, los medios de pago indican cuales llevan gasto y a que tasa, el pedido muestra su margen real --venta neta menos los egresos aprobados de su proyecto, entre ellos las facturas de transportistas, y los gastos financieros, todo sin IVA-- junto al teorico, y el panel de desempeno suma el margen real del mes; nueva categoria de egresos "Transporte y fletes"; contacto de la bodega: Ignacio Barahona o Gustavo Marchant | (pendiente) |
 | v0175-20261029 | 29-10-2026 | Todo pedido de materia prima se despacha a la bodega de Centro Panel --El Roble 165, Lampa, Santiago, configurable por mercado en Parametros-- o se retira en el proveedor: la necesidad y la OC llevan la modalidad de entrega, la bodega entra sola como destino, y la solicitud y la OC piden el despacho a la bodega --o el retiro en el proveedor-- en el PDF y en los mensajes | 25883fa |
 | v0174-20261029 | 29-10-2026 | El catalogo de materias primas filtra tambien por SKU, ademas de nombre y etiqueta | 9872ac8 |

@@ -5,6 +5,7 @@ import FichaNecesidad, { type Detalle } from "@/components/FichaNecesidad";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { monedaDelPais } from "@/lib/formato";
+import { etiquetaProyecto } from "@/lib/compras";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo={detalle.nm.folio} subtitulo="Necesidad de material" />
+      <Cabecera titulo={[detalle.nm.folio, etiquetaProyecto(detalle.nm.proyecto, (detalle.nm as { proyecto_cliente?: string | null }).proyecto_cliente)].filter(Boolean).join(" · ")} subtitulo="Necesidad de material" />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion volverA="/necesidades" />
         <FichaNecesidad

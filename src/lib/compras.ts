@@ -43,3 +43,14 @@ export const COLOR_NM: Record<string, string> = {
   Anulada: "bg-gray-200 text-gray-500",
   Abierta: "bg-indigo-100 text-indigo-800",
 };
+
+// El nombre con que se identifica un proyecto en un titulo: el cliente cuando el proyecto es un pedido de paneles --su
+// nombre es generico: "Paneles" o "Pedido NNN"--, y el nombre de la obra, con su cliente, en los demas.
+export function etiquetaProyecto(nombre: string | null | undefined, cliente: string | null | undefined): string {
+  const n = (nombre ?? "").trim();
+  const c = (cliente ?? "").trim();
+  if (!n) return c;
+  if (!c) return n;
+  if (/^(paneles|pedido\s)/i.test(n)) return c;
+  return n.toLowerCase() === c.toLowerCase() ? n : `${n} · ${c}`;
+}
