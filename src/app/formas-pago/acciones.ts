@@ -84,7 +84,8 @@ export async function actualizarMedioPago(
   id: number,
   nombre: string,
   comisionPct: number,
-  activo: boolean
+  activo: boolean,
+  gasto?: { conGasto: boolean; costoPct: number }
 ) {
   const err = await soloAdmin();
   if (err) return { error: err };
@@ -92,11 +93,14 @@ export async function actualizarMedioPago(
   if (comisionPct < 0 || comisionPct >= 100) {
     return { error: "La comision debe estar entre 0 y 100." };
   }
+  if (gasto && (gasto.costoPct < 0 || gasto.costoPct >= 100)) {
+    return { error: "El costo para la empresa debe estar entre 0 y 100." };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("medios_pago")
-    .update({ nombre: nombre.trim(), comision_pct: comisionPct, activo })
+    .update({ nombre: nombre.trim(), comision_pct: comisionPct, activo, ...(gasto ? { con_gasto: gasto.conGasto, costo_pct: gasto.costoPct } : {}) })
     .eq("id", id);
   if (error) {
     return {

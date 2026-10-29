@@ -6,6 +6,7 @@ import { importe, pesos, decimalesDe, porcentaje, fecha as fmtFecha, hoyISO } fr
 import {
   registrarPago,
   anularPago,
+  definirGastoFinanciero,
   type DatosPago,
 } from "@/app/pedidos/acciones";
 
@@ -38,6 +39,10 @@ export interface PagoVista {
   medio: string | null;
   referencia: string | null;
   quien: string | null;
+  // Lo que cobro el procesador por este pago, con IVA incluido; vacio = por definir.
+  gasto: number | null;
+  requiereGasto: boolean;
+  sugerido: number;
 }
 
 const MEDIOS = [
@@ -58,6 +63,7 @@ export default function CuentaCorrientePedido({
   medioPago,
   cuenta,
   impuesto = "IVA",
+  tasaIva = 0,
   pagos,
   puedeCrear,
   esAdmin,
@@ -70,12 +76,16 @@ export default function CuentaCorrientePedido({
   cuenta: Cuenta;
   // IVA en Chile, IGV en Peru.
   impuesto?: string;
+  tasaIva?: number;
   pagos: PagoVista[];
   puedeCrear: boolean;
   esAdmin: boolean;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
+  // El gasto financiero que se esta editando: un administrador o supervisor lo define cuando llega la liquidacion.
+  const [editandoGasto, setEditandoGasto] = useState<number | null>(null);
+  const [valorGasto, setValorGasto] = useState("");
   const [d, setD] = useState<DatosPago>({
     fecha: hoyISO(),
     monto: 0,
@@ -283,6 +293,7 @@ export default function CuentaCorrientePedido({
                 <th className="text-left px-3 py-2">Medio</th>
                 <th className="text-left px-3 py-2">Referencia</th>
                 <th className="text-left px-3 py-2">Registro</th>
+                {esAdmin && <th className="text-left px-3 py-2 w-44">Gasto financiero</th>}
                 {esAdmin && <th className="px-3" />}
               </tr>
             </thead>
@@ -290,7 +301,7 @@ export default function CuentaCorrientePedido({
               {pagos.length === 0 && (
                 <tr>
                   <td
-                    colSpan={esAdmin ? 6 : 5}
+                    colSpan={esAdmin ? 7 : 5}
                     className="text-center text-gray-400 py-6"
                   >
                     Sin pagos registrados.
@@ -308,6 +319,66 @@ export default function CuentaCorrientePedido({
                     {p.referencia ?? ""}
                   </td>
                   <td className="px-3 py-2 text-gray-500">{p.quien ?? ""}</td>
+                  {esAdmin && (
+                    <td className="px-3 py-2">
+                      {editandoGasto === p.id ? (
+                        <span className="inline-flex items-center gap-1">
+                          <input
+                            aria-label="Gasto financiero"
+                            autoFocus
+                            inputMode="decimal"
+                            className="border border-gray-300 rounded px-1.5 py-0.5 w-24 text-right"
+                            value={valorGasto}
+                            onChange={(e) => setValorGasto(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="bg-verde text-white font-semibold px-2 py-0.5 rounded"
+                            onClick={() =>
+                              empezar(async () => {
+                                const n = valorGasto.trim() === "" ? null : Number(valorGasto.replace(/\./g, "").replace(",", "."));
+                                const r = await definirGastoFinanciero(p.id, idPedido, n);
+                                if (r?.error) setError(r.error);
+                                else {
+                                  setEditandoGasto(null);
+                                  router.refresh();
+                                }
+                              })
+                            }
+                          >
+                            OK
+                          </button>
+                          <button type="button" className="border border-gray-300 px-1.5 py-0.5 rounded" onClick={() => setEditandoGasto(null)}>
+                            x
+                          </button>
+                        </span>
+                      ) : (
+                        <span>
+                          {p.gasto != null ? (
+                            <>
+                              {importe(p.gasto, moneda)}
+                              <span className="block text-[10px] text-gray-500">sin {impuesto}: {importe(Math.round(p.gasto / (1 + tasaIva)), moneda)}</span>
+                            </>
+                          ) : p.requiereGasto ? (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold">Por definir</span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                          <button
+                            type="button"
+                            className="ml-2 text-verde underline"
+                            onClick={() => {
+                              setError(null);
+                              setEditandoGasto(p.id);
+                              setValorGasto(p.gasto != null ? String(p.gasto) : p.sugerido > 0 ? String(p.sugerido) : "");
+                            }}
+                          >
+                            {p.gasto != null ? "Editar" : "Definir"}
+                          </button>
+                        </span>
+                      )}
+                    </td>
+                  )}
                   {esAdmin && (
                     <td className="px-2 py-2 text-right">
                       <button

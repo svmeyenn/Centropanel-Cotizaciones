@@ -35,6 +35,8 @@ export interface Desempeno {
     neto: number;
     costo: number;
     objetivo: number;
+    // El margen de los pedidos del mes con los costos reales ya ingresados; solo para administradores y supervisores.
+    real?: { pct: number | null; monto: number; neto: number; costo: number; pedidos_con_costos: number; pedidos: number } | null;
   };
   cobranza: {
     comprometido: number;
@@ -164,7 +166,7 @@ export default async function PanelDesempeno({
         <SelectorMes mes={d.mes} meses={d.meses} />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+      <div className={`grid grid-cols-2 gap-2 ${d.margen.real ? "lg:grid-cols-6" : "lg:grid-cols-5"}`}>
         <Tarjeta
           titulo="Cotizado del mes"
           valor={pesos(d.venta.cotizado)}
@@ -208,7 +210,7 @@ export default async function PanelDesempeno({
           }
         />
         <Tarjeta
-          titulo="Margen del mes"
+          titulo="Margen teorico del mes"
           valor={d.margen.pct == null ? "--" : `${porcentaje(d.margen.pct)} %`}
           pie={`${pesos(d.margen.monto)} sobre neto ${pesos(d.margen.neto)}`}
           nota={
@@ -222,6 +224,14 @@ export default async function PanelDesempeno({
           }
           signo={bajoObjetivo ? -1 : 0}
         />
+        {d.margen.real && (
+          <Tarjeta
+            titulo="Margen real del mes"
+            valor={d.margen.real.pct == null ? "--" : `${porcentaje(d.margen.real.pct)} %`}
+            pie={d.margen.real.pedidos_con_costos > 0 ? `${pesos(d.margen.real.monto)} sobre neto ${pesos(d.margen.real.neto)}` : "Sin costos ingresados todavia"}
+            nota={`${d.margen.real.pedidos_con_costos} de ${d.margen.real.pedidos} pedidos del mes con costos ingresados`}
+          />
+        )}
       </div>
 
       <div className="grid lg:grid-cols-[1.3fr_1fr] gap-2.5">
