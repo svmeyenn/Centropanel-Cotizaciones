@@ -12,6 +12,7 @@ import type { FichaCliente } from "@/components/VentanaCliente";
 import Link from "next/link";
 import ProyectoDelPedido from "@/components/ProyectoDelPedido";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
+import type { MargenReal } from "@/components/EditorPedido";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/relaciones";
 
@@ -59,7 +60,7 @@ export default async function Pagina({
       supabase.from("v_pedido_cuenta").select("*").eq("id", id).single(),
       supabase
         .from("pagos_pedido")
-        .select("id, fecha, monto, medio, referencia, vendedores(nombre)")
+        .select("id, fecha, monto, medio, referencia, gasto_financiero, vendedores(nombre)")
         .eq("id_pedido", id)
         .order("fecha")
         .order("id"),
@@ -173,6 +174,11 @@ export default async function Pagina({
 
   // Las necesidades de material que ya salieron de este pedido.
   const { data: nmsDb } = await supabase.from("necesidades_material").select("id, folio, estado").eq("id_pedido", id).order("id");
+  // Medios de pago que llevan gasto financiero para la empresa, y la tasa con que se sugiere.
+  const { data: mediosDb } = await supabase.from("medios_pago").select("nombre, con_gasto, costo_pct").eq("id_pais", ped.id_pais);
+  const mediosGasto = new Map((mediosDb ?? []).map((m) => [m.nombre as string, { con_gasto: Boolean(m.con_gasto), costo_pct: Number(m.costo_pct ?? 0) }]));
+  // El margen real, con los costos que ya se ingresaron: solo para administradores y supervisores.
+  const margenReal = tienePerfilAdmin(v) ? ((await supabase.rpc("pedido_margen_real", { p_pedido: id })).data as MargenReal | null) : null;
   const necesidadesPedido = (nmsDb ?? []).map((n) => ({ id: Number(n.id), folio: n.folio as string, estado: n.estado as string }));
 
   const filas: LineaVista[] = (lineas ?? []).map((l) => ({
@@ -277,7 +283,11 @@ export default async function Pagina({
           facturado: Number(cta?.facturado ?? 0),
           por_facturar: Number(cta?.por_facturar ?? 0),
         }}
+        margenReal={margenReal}
         pagos={(pagos ?? []).map((g) => ({
+          gasto: g.gasto_financiero != null ? Number(g.gasto_financiero) : null,
+          requiereGasto: Boolean(mediosGasto.get(g.medio as string)?.con_gasto),
+          sugerido: Math.round((Number(g.monto) * Number(mediosGasto.get(g.medio as string)?.costo_pct ?? 0)) / 100),
           id: Number(g.id),
           fecha: g.fecha as string,
           monto: Number(g.monto),

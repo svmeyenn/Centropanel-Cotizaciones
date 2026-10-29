@@ -550,3 +550,16 @@ export async function eliminarPedido(id: number) {
   revalidatePath("/cotizaciones");
   return { ok: true, num: r.num ?? "" };
 }
+
+// El gasto financiero de un pago --lo que cobro el procesador, con IVA incluido--. Lo define solo un administrador o
+// supervisor, cuando llega la liquidacion; vacio, queda por definir.
+export async function definirGastoFinanciero(idPago: number, idPedido: number, monto: number | null) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) return { error: "Solo un administrador o supervisor define el gasto financiero." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("pago_definir_gasto", { p_pago: idPago, p_monto: monto });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/");
+  return { ok: true };
+}

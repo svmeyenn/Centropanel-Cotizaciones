@@ -35,6 +35,22 @@ import {
   type DatosPedido,
 } from "@/app/pedidos/acciones";
 
+// El margen real del pedido: lo vendido, neto, menos lo que realmente costo --egresos aprobados de su proyecto, entre ellos
+// las facturas de los transportistas, y los gastos financieros de sus pagos--, todo sin IVA.
+export interface MargenReal {
+  neto_vendido: number;
+  costos: { categoria: string; bruto: number; neto: number; n: number }[];
+  costos_neto: number;
+  egresos: number;
+  gastos_financieros: { bruto: number; neto: number; pagos_definidos: number; por_definir: number; monto_por_definir: number };
+  costo_total: number;
+  margen: number;
+  margen_pct: number | null;
+  con_costos: boolean;
+  provisorio: boolean;
+  iva_incluido: boolean;
+}
+
 export interface LineaVista {
   id: number;
   sku?: string | null;
@@ -85,6 +101,7 @@ export default function EditorPedido({
   necesidadesPedido = [],
   costoPorLinea,
   verMargen,
+  margenReal,
   lineasSinCosto = 0,
   fichaCliente = null,
   prefijoTelefono = "+56",
@@ -126,6 +143,8 @@ export default function EditorPedido({
   // pedido no lo guarda. Solo llega a quien puede ver costos.
   costoPorLinea?: Record<number, number>;
   verMargen?: boolean;
+  // El margen con los costos reales ya ingresados; solo lo reciben administradores y supervisores.
+  margenReal?: MargenReal | null;
   // Lineas sin costo conocido: el margen las cuenta como costo cero.
   lineasSinCosto?: number;
   // Ficha completa del cliente, para editarla desde el pedido.
@@ -563,7 +582,7 @@ export default function EditorPedido({
               <Fila label="Costo de lo pedido" valor={importe(costoPedido, moneda)} />
               <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
                 <span>
-                  MARGEN {porcentaje(margenPct)} %
+                  MARGEN TEORICO {porcentaje(margenPct)} %
                   {lineasSinCosto > 0 && (
                     <span className="ml-2 font-normal text-[11px] text-amber-700">
                       ({lineasSinCosto} linea{lineasSinCosto > 1 ? "s" : ""} sin
@@ -573,6 +592,31 @@ export default function EditorPedido({
                 </span>
                 <span>{importe(margen, moneda)}</span>
               </div>
+            </div>
+          )}
+
+          {margenReal && (
+            <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-dorado-osc">Margen real, con los costos ya ingresados (sin {impuesto})</div>
+              <Fila label="Venta neta" valor={importe(margenReal.neto_vendido, moneda)} />
+              {margenReal.costos.map((c) => (
+                <Fila key={c.categoria} label={`− ${c.categoria} (${c.n})`} valor={importe(c.neto, moneda)} />
+              ))}
+              <Fila
+                label={`− Gastos financieros${margenReal.gastos_financieros.por_definir > 0 ? ` (${margenReal.gastos_financieros.por_definir} pago${margenReal.gastos_financieros.por_definir > 1 ? "s" : ""} por definir)` : ""}`}
+                valor={importe(margenReal.gastos_financieros.neto, moneda)}
+              />
+              <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
+                <span>MARGEN REAL {margenReal.margen_pct != null ? `${porcentaje(margenReal.margen_pct)} %` : ""}</span>
+                <span>{importe(margenReal.margen, moneda)}</span>
+              </div>
+              {margenReal.provisorio && (
+                <p className="text-[11px] text-amber-700">
+                  {margenReal.egresos === 0
+                    ? "Todavia no hay costos ingresados para este pedido: el margen real sube a medida que se ingresan."
+                    : "Provisorio: hay gastos financieros por definir."}
+                </p>
+              )}
             </div>
           )}
 
@@ -616,6 +660,7 @@ export default function EditorPedido({
         pagos={pagos}
         puedeCrear={puedeCrear}
         esAdmin={esAdmin}
+        tasaIva={tasaIva}
       />
 
       {/* abastecimiento */}

@@ -11,6 +11,9 @@ export interface MedioPago {
   id: number;
   nombre: string;
   comision_pct: number;
+  // Si el medio cobra a la empresa --no al cliente--, y a que tasa: referencia para sugerir el gasto de cada pago.
+  con_gasto?: boolean;
+  costo_pct?: number;
   activo: boolean;
   id_pais?: number;
 }
@@ -30,6 +33,8 @@ export default function GestorMediosPago({
   const [edit, setEdit] = useState<number | null>(null);
   const [nombre, setNombre] = useState("");
   const [comision, setComision] = useState("0");
+  const [conGasto, setConGasto] = useState(false);
+  const [costo, setCosto] = useState("0");
   const [nuevo, setNuevo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
@@ -119,6 +124,7 @@ export default function GestorMediosPago({
             <tr>
               <th className="text-left px-3 py-2">Medio</th>
               <th className="text-right px-3 py-2 w-28">Comision</th>
+              <th className="text-left px-3 py-2 w-48">Gasto para la empresa</th>
               <th className="text-left px-3 py-2 w-20">Estado</th>
               {esAdmin && <th className="w-28" />}
             </tr>
@@ -153,6 +159,30 @@ export default function GestorMediosPago({
                   )}
                 </td>
                 <td className="px-3 py-2">
+                  {edit === m.id ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <label className="inline-flex items-center gap-1">
+                        <input type="checkbox" checked={conGasto} onChange={(e) => setConGasto(e.target.checked)} />
+                        lleva gasto
+                      </label>
+                      <input
+                        aria-label="Costo para la empresa (%)"
+                        type="number"
+                        step="0.01"
+                        className={`${input} w-20 text-right`}
+                        value={costo}
+                        disabled={!conGasto}
+                        onChange={(e) => setCosto(e.target.value)}
+                      />
+                      %
+                    </span>
+                  ) : m.con_gasto ? (
+                    <span>Lleva gasto{Number(m.costo_pct) > 0 ? ` · ${porcentaje(Number(m.costo_pct))} %` : " · tasa sin definir"}</span>
+                  ) : (
+                    <span className="text-gray-400">no lleva</span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
                   {m.activo ? (
                     <span className="text-green-700">Activo</span>
                   ) : (
@@ -170,7 +200,8 @@ export default function GestorMediosPago({
                                 m.id,
                                 nombre,
                                 Number(comision) || 0,
-                                m.activo
+                                m.activo,
+                                { conGasto, costoPct: conGasto ? Number(costo) || 0 : 0 }
                               );
                               if (r?.error) setError(r.error);
                               else setEdit(null);
@@ -195,6 +226,8 @@ export default function GestorMediosPago({
                             setEdit(m.id);
                             setNombre(m.nombre);
                             setComision(String(m.comision_pct));
+                            setConGasto(Boolean(m.con_gasto));
+                            setCosto(String(m.costo_pct ?? 0));
                           }}
                           className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
                         >
