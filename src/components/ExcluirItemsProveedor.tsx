@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Ventana from "@/components/Ventana";
-import { excluirItemsProveedor, incluirItemsManual } from "@/app/necesidades/acciones";
+import { asignarMaestraProveedor, excluirItemsProveedor, incluirItemsManual } from "@/app/necesidades/acciones";
 
 export interface ItemExcluible {
   id: number;
@@ -39,6 +39,17 @@ export default function ExcluirItemsProveedor({ idNm, idPart, proveedor, folio, 
     setIncluidos(new Set(items.filter(estaIncluido).map((i) => i.id)));
     setError(null);
     setAbierta(true);
+  }
+
+  // Deja el item en la maestra del proveedor; los cambios de la ventana que aun no se guardan se conservan al volver.
+  function agregarMaestra(idItem: number) {
+    setError(null);
+    empezar(async () => {
+      const r = await asignarMaestraProveedor(idNm, idPart, [idItem]);
+      if (!r.ok) return setError(r.error ?? "No se pudo agregar.");
+      setAbierta(false);
+      router.refresh();
+    });
   }
 
   function guardar() {
@@ -112,6 +123,11 @@ export default function ExcluirItemsProveedor({ idNm, idPart, proveedor, folio, 
                         <td className="px-2 py-1 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")} {i.unidad ?? ""}</td>
                         <td className="px-2 py-1 text-gray-600">
                           {i.cotizado ? "ya cotizado" : incluidos.has(i.id) ? (i.asignado ? "va en la solicitud" : <span className="text-amber-700">va sin precio: no esta en su maestra</span>) : i.asignado ? <span className="text-red-700">no va en la solicitud</span> : <span className="italic text-gray-400">no lo tiene en su maestra</span>}
+                          {!i.asignado && !i.cotizado && (
+                            <button type="button" className="ml-2 text-verde underline disabled:opacity-40" disabled={pendiente} onClick={() => agregarMaestra(i.id)}>
+                              Agregar a su maestra
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );

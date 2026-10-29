@@ -101,6 +101,13 @@ export async function quitarItemsSolicitud(idNm: number, idSc: number, items: nu
   return llamar((s) => s.rpc("sc_quitar_items", { p_sc: idSc, p_items: items }), idNm);
 }
 
+// Deja el item en la maestra del proveedor, con costo cero: el costo lo fija su cotizacion.
+export async function asignarMaestraProveedor(idNm: number, idParticipante: number, items: number[]) {
+  const r = await llamar((s) => s.rpc("nm_asignar_maestra", { p_part: idParticipante, p_items: items }), idNm);
+  if (r.ok) revalidatePath("/proveedores");
+  return r;
+}
+
 export async function invitarProveedor(idNm: number, idProveedor: number) {
   return llamar((s) => s.rpc("nm_invitar", { p_nm: idNm, p_proveedor: idProveedor }), idNm);
 }

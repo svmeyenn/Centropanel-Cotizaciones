@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   anularOC,
+  asignarMaestraOC,
   aprobarOC,
   borrarLineaOC,
   borrarOC,
@@ -55,6 +56,8 @@ export interface Linea {
   unidades: number;
   costo_unitario: number;
   recibido: number;
+  // El proveedor de la orden no tiene este item en su maestra.
+  sinMaestra?: boolean;
 }
 
 const input = "border border-gray-300 rounded px-2 py-1 text-xs w-full";
@@ -315,7 +318,19 @@ export default function EditorOC({
             <tbody>
               {lineas.map((l) => (
                 <tr key={l.id} className="border-t border-gray-100">
-                  <td className="px-3 py-2">{l.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{l.sku}</span>}{l.descripcion}</td>
+                  <td className="px-3 py-2">
+                    {l.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{l.sku}</span>}{l.descripcion}
+                    {l.sinMaestra && (
+                      <span className="block text-[10px] text-amber-700">
+                        No esta en la maestra del proveedor.
+                        {puedeCrear && (
+                          <button className="ml-1.5 underline disabled:opacity-40" disabled={pendiente} onClick={() => ejecutar(() => asignarMaestraOC(oc.id, [l.id]))}>
+                            Agregar a su maestra
+                          </button>
+                        )}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-right">{fmtUnid(l.unidades)}</td>
                   <td className="px-3 py-2 text-right">{dinero(l.costo_unitario, m)}</td>
                   <td className="px-3 py-2 text-right">{dinero(l.unidades * l.costo_unitario, m)}</td>

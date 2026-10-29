@@ -55,6 +55,10 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
       supabase.from("vendedores").select("id, nombre").in("id", [o.id_solicitante ?? 0, o.id_aprobador ?? 0]),
     ]);
 
+  // Lo que el proveedor de la orden no tiene asignado en su maestra.
+  const { data: maestraProv } = await supabase.from("proveedor_items").select("id_materia_prima, id_producto, activo, costo").eq("id_proveedor", o.id_proveedor);
+  const asignadas = new Set((maestraProv ?? []).filter((x) => x.activo || Number(x.costo) === 0).map((x) => `${x.id_materia_prima ?? ""}:${x.id_producto ?? ""}`));
+
   const desc = new Map((lineas ?? []).map((l) => [Number(l.id), l.descripcion as string]));
   const nombre = (idv: number | null) => (quienes ?? []).find((x) => Number(x.id) === idv)?.nombre;
   const proy = uno<{ id_proyecto: number; nombre: string; cliente: string | null; direccion: string | null }>(o.proyectos);
@@ -177,6 +181,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             unidades: Number(l.unidades),
             costo_unitario: Number(l.costo_unitario),
             recibido: Number(l.recibido),
+            sinMaestra: (l.id_materia_prima != null || l.id_producto != null) && !asignadas.has(`${l.id_materia_prima ?? ""}:${l.id_producto ?? ""}`),
           }))}
           partidas={(partidas ?? []).map((p) => ({ id: Number(p.id), nombre: p.nombre as string }))}
           recepciones={(recs ?? []).map((r) => ({
