@@ -9,6 +9,7 @@ Version vigente: **v0178-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0182-20261030 | 30-10-2026 | En el detalle del pedido, la lista de proyectos para asociar muestra el cliente y el pedido de cada proyecto de paneles, que antes aparecian todos como "Paneles". Solo codigo | (pendiente) |
 | v0181-20261029 | 29-10-2026 | Agregar a la maestra del proveedor un item que no tiene, desde la ventana Items de la solicitud y desde las lineas de la orden de compra: entra con costo cero e inactivo, y el costo lo fija su cotizacion. Base de datos: funciones nm_asignar_maestra y oc_asignar_maestra | (pendiente) |
 | v0180-20261029 | 29-10-2026 | Solicitudes y ordenes de compra mas flexibles: en la solicitud de un proveedor se pueden incluir a mano items que no tiene en su maestra --salen sin precio y se pueden cotizar y pasar a la orden--, quitar un item de toda la solicitud, y eliminar una orden en borrador aunque haya salido de una solicitud --que queda adjudicada, lista para otra orden--. Base de datos: columna incluir en nm_exclusiones, funciones nm_incluir_manual, sc_quitar_items y oc_borrar | (pendiente) |
 | v0179-20261029 | 29-10-2026 | Al preparar el envio de una solicitud se puede sacar a un proveedor completo o solo algunas lineas: el PDF, el correo y el WhatsApp llevan lo que queda, el proveedor sacado no recibe numero y el cuadro comparativo lo marca como excluido; se puede revertir mientras no haya cotizado ni se adjudique. Base de datos: tabla nm_exclusiones y funcion nm_excluir | ec441a1 |
