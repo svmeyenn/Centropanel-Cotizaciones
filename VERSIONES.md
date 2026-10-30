@@ -9,6 +9,7 @@ Version vigente: **v0178-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0185-20261030 | 30-10-2026 | Egresos: filtro por estado de aprobacion --aprobado, por aprobar, rechazado o todos--; al entrar solo se ven los aprobados, los por aprobar y los ejecutados, y los rechazados aparecen solo al aplicar el filtro. Solo codigo | (pendiente) |
 | v0184-20261030 | 30-10-2026 | Linea del proceso en la cabecera de las pantallas de venta --lead, cotizacion, pedido y factura de venta-- y de compra --necesidad, solicitud de cotizacion, orden de compra y recepcion y pago--: muestra todas las etapas, destaca en dorado donde se esta parado, marca las ya recorridas con enlace y numero del documento, y deja en trazo hueco las que siguen. Solo codigo | (pendiente) |
 | v0183-20261030 | 30-10-2026 | Pedidos: las solicitudes anteriores quedan solo como dato historico de los pedidos antiguos, sin adjudicar ni eliminar, y no aparecen en los nuevos; el adhesivo no se compra por pedido, asi que no entra a la necesidad de material y su costo teorico se mantiene como costo real en el margen real; boton para cargar la factura del transportista desde el margen real del pedido. Base de datos: pedido_margen_real y necesidades_pedido | d386d64 |
 | v0182-20261030 | 30-10-2026 | En el detalle del pedido, la lista de proyectos para asociar muestra el cliente y el pedido de cada proyecto de paneles, que antes aparecian todos como "Paneles". Solo codigo | 348ea09 |
