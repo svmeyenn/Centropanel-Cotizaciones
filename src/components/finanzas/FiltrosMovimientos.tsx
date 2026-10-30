@@ -23,6 +23,7 @@ export default function FiltrosMovimientos({
   interlocutores,
   etiquetaEstados,
   mostrarEstado = true,
+  conAprobacion = false,
   extra,
 }: {
   base: string;
@@ -30,6 +31,8 @@ export default function FiltrosMovimientos({
   proyectos: Proyecto[];
   // La cartola no lo usa: alli solo entra lo pagado.
   mostrarEstado?: boolean;
+  // Solo egresos: filtro por el estado de aprobacion. Sin elegir, los rechazados no se muestran.
+  conAprobacion?: boolean;
   // Sin esta lista no se dibuja el filtro de origen/destino: la cartola no la
   // pasa, y ahi el filtro no aparece.
   interlocutores?: Interlocutor[];
@@ -113,6 +116,22 @@ export default function FiltrosMovimientos({
               <option value="">Todos</option>
               <option value="Pagado">{etiquetaEstados.pagado}</option>
               <option value="Pendiente">{etiquetaEstados.pendiente}</option>
+            </select>
+          </Campo>
+        )}
+
+        {conAprobacion && (
+          <Campo rotulo="Aprobacion">
+            <select
+              name="aprobacion"
+              defaultValue={params.get("aprobacion") ?? ""}
+              className={campo}
+            >
+              <option value="">Aprobados y por aprobar</option>
+              <option value="Aprobado">Aprobado</option>
+              <option value="Pendiente">Por aprobar</option>
+              <option value="Rechazado">Rechazado</option>
+              <option value="Todos">Todos, con rechazados</option>
             </select>
           </Campo>
         )}

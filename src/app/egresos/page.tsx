@@ -106,6 +106,7 @@ export default async function Pagina({
           proyectos={proyectos}
           interlocutores={interlocutores}
           etiquetaEstados={{ pagado: "Pagado", pendiente: "Pendiente" }}
+          conAprobacion
           extra={
             <BotonExportarFilas
               nombre="egresos"

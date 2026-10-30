@@ -31,6 +31,8 @@ export type Filtro = {
   interlocutor?: string;
   // Todos los que coincidan con este texto.
   destino?: string;
+  // Solo en egresos: Aprobado, Pendiente --por aprobar--, Rechazado o Todos. Sin elegir, no se ven los rechazados.
+  aprobacion?: string;
 };
 
 // Codigo de cada mercado --CL, PE-- para poder decir de cual es una fila
@@ -116,6 +118,10 @@ export async function cargarMovimientos(
     q = q.in("id_interlocutor", ids);
   }
   if (filtro.estado) q = q.eq("estado_pago", filtro.estado);
+  if (tipo === "Egreso") {
+    if (filtro.aprobacion === "Aprobado" || filtro.aprobacion === "Pendiente" || filtro.aprobacion === "Rechazado") q = q.eq("aprobacion", filtro.aprobacion);
+    else if (filtro.aprobacion !== "Todos") q = q.or("aprobacion.is.null,aprobacion.neq.Rechazado");
+  }
 
   // Los que estan pendientes no tienen fecha todavia: quedan primero.
   const { data } = await q
