@@ -32,6 +32,7 @@ const ROTULO = "block text-xs font-semibold text-dorado-osc mb-0.5";
 // respaldo obligatorio al crearla.
 export default function FormularioEgreso({
   movimiento,
+  inicial,
   cuentas,
   proyectos,
   categorias,
@@ -40,6 +41,8 @@ export default function FormularioEgreso({
   alCerrar,
 }: {
   movimiento: Movimiento | null;
+  // Valores con que arranca una solicitud nueva, por ejemplo la factura de transporte de un pedido.
+  inicial?: { id_proyecto?: number | null; id_categoria?: number | null; comentario?: string };
   cuentas: Cuenta[];
   proyectos: Proyecto[];
   categorias: Categoria[];
@@ -158,7 +161,7 @@ export default function FormularioEgreso({
           <select
             name="id_proyecto"
             className={CAMPO}
-            defaultValue={movimiento?.id_proyecto ?? ""}
+            defaultValue={movimiento?.id_proyecto ?? inicial?.id_proyecto ?? ""}
           >
             <option value="">Sin proyecto</option>
             {proyectosDisponibles.map((p) => (
@@ -174,7 +177,7 @@ export default function FormularioEgreso({
           <select
             name="id_categoria"
             className={CAMPO}
-            defaultValue={movimiento?.id_categoria ?? ""}
+            defaultValue={movimiento?.id_categoria ?? inicial?.id_categoria ?? ""}
             required
           >
             <option value="">Elija una categoria</option>
@@ -245,7 +248,7 @@ export default function FormularioEgreso({
             name="comentario"
             className={CAMPO}
             rows={2}
-            defaultValue={movimiento?.comentario ?? ""}
+            defaultValue={movimiento?.comentario ?? inicial?.comentario ?? ""}
             required
           />
         </div>

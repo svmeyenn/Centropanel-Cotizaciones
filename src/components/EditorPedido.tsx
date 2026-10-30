@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fecha as fmtFecha, porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia } from "@/lib/formato";
@@ -30,8 +30,6 @@ import {
   quitarLineaPedido,
   autorizarSinPie,
   revocarSinPie,
-  cambiarEstadoSolicitud,
-  eliminarSolicitud,
   type DatosPedido,
 } from "@/app/pedidos/acciones";
 
@@ -41,6 +39,8 @@ export interface MargenReal {
   neto_vendido: number;
   costos: { categoria: string; bruto: number; neto: number; n: number }[];
   costos_neto: number;
+  // El adhesivo no se compra por pedido: su costo teorico es el real.
+  adhesivo_teorico?: number;
   egresos: number;
   gastos_financieros: { bruto: number; neto: number; pagos_definidos: number; por_definir: number; monto_por_definir: number };
   costo_total: number;
@@ -102,6 +102,7 @@ export default function EditorPedido({
   costoPorLinea,
   verMargen,
   margenReal,
+  facturaTransporte,
   lineasSinCosto = 0,
   fichaCliente = null,
   prefijoTelefono = "+56",
@@ -145,6 +146,8 @@ export default function EditorPedido({
   verMargen?: boolean;
   // El margen con los costos reales ya ingresados; solo lo reciben administradores y supervisores.
   margenReal?: MargenReal | null;
+  // Boton para cargar la factura del transportista, para quien puede hacerlo.
+  facturaTransporte?: ReactNode;
   // Lineas sin costo conocido: el margen las cuenta como costo cero.
   lineasSinCosto?: number;
   // Ficha completa del cliente, para editarla desde el pedido.
@@ -602,6 +605,7 @@ export default function EditorPedido({
               {margenReal.costos.map((c) => (
                 <Fila key={c.categoria} label={`− ${c.categoria} (${c.n})`} valor={importe(c.neto, moneda)} />
               ))}
+              {(margenReal.adhesivo_teorico ?? 0) > 0 && <Fila label="− Adhesivo (costo teorico)" valor={importe(margenReal.adhesivo_teorico ?? 0, moneda)} />}
               <Fila
                 label={`− Gastos financieros${margenReal.gastos_financieros.por_definir > 0 ? ` (${margenReal.gastos_financieros.por_definir} pago${margenReal.gastos_financieros.por_definir > 1 ? "s" : ""} por definir)` : ""}`}
                 valor={importe(margenReal.gastos_financieros.neto, moneda)}
@@ -617,6 +621,7 @@ export default function EditorPedido({
                     : "Provisorio: hay gastos financieros por definir."}
                 </p>
               )}
+              {facturaTransporte}
             </div>
           )}
 
@@ -852,91 +857,40 @@ export default function EditorPedido({
         </div>
       </div>
 
-      {/* solicitudes */}
-      <div className="bg-white border border-gray-200 rounded overflow-hidden">
-        <div className="bg-verde text-white text-xs font-semibold px-3 py-2">
-          SOLICITUDES ANTERIORES (HISTORIAL)
-        </div>
-        <table className="w-full text-xs">
-          <thead className="bg-gray-50 text-gray-600">
-            <tr>
-              <th className="text-left px-3 py-2">N</th>
-              <th className="text-left px-3 py-2">Proveedor</th>
-              <th className="text-right px-3 py-2">Items</th>
-              <th className="text-left px-3 py-2">Estado</th>
-              <th className="px-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {solicitudes.length === 0 && (
+      {/* Las solicitudes de antes de las necesidades de material: solo se consultan, no se generan ni se modifican. */}
+      {solicitudes.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded overflow-hidden">
+          <div className="bg-verde text-white text-xs font-semibold px-3 py-2">
+            SOLICITUDES ANTERIORES (HISTORIAL)
+          </div>
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 text-gray-600">
               <tr>
-                <td colSpan={5} className="text-center text-gray-400 py-6">
-                  Todavia no se han generado solicitudes.
-                </td>
+                <th className="text-left px-3 py-2">N</th>
+                <th className="text-left px-3 py-2">Proveedor</th>
+                <th className="text-right px-3 py-2">Items</th>
+                <th className="text-left px-3 py-2">Estado</th>
+                <th className="px-3" />
               </tr>
-            )}
-            {solicitudes.map((s) => (
-              <tr key={s.id} className="border-t border-gray-100 hover:bg-crema">
-                <td className="px-3 py-2 font-semibold text-verde">{s.num}</td>
-                <td className="px-3 py-2">{s.proveedor}</td>
-                <td className="px-3 py-2 text-right">{s.lineas}</td>
-                <td className="px-3 py-2">
-                  {s.estado === "Adjudicada" ? (
-                    <span className="bg-verde text-white px-1.5 py-0.5 rounded text-[10px] font-semibold">
-                      ADJUDICADA
-                    </span>
-                  ) : (
-                    s.estado
-                  )}
-                </td>
-                <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <Link
-                    href={`/solicitudes/${s.id}`}
-                    target="_blank"
-                    className="text-verde underline mr-2"
-                  >
-                    ver
-                  </Link>
-                  {puedeEditar && (
-                    <>
-                      <button
-                        onClick={() =>
-                          empezar(async () => {
-                            const r = await cambiarEstadoSolicitud(
-                              s.id,
-                              id,
-                              s.estado === "Adjudicada" ? "Respondida" : "Adjudicada"
-                            );
-                            if (r?.error) setError(r.error);
-                            else router.refresh();
-                          })
-                        }
-                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded mr-2"
-                        title="La adjudicada es a la que se le compra"
-                      >
-                        {s.estado === "Adjudicada" ? "quitar adjudicacion" : "adjudicar"}
-                      </button>
-                      <button
-                        onClick={() =>
-                          empezar(async () => {
-                            const r = await eliminarSolicitud(s.id, id);
-                            if (r?.error) setError(r.error);
-                            else router.refresh();
-                          })
-                        }
-                        className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
-                        title="Eliminarla permite volver a pedirle a este proveedor"
-                      >
-                        eliminar
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {solicitudes.map((s) => (
+                <tr key={s.id} className="border-t border-gray-100 hover:bg-crema">
+                  <td className="px-3 py-2 font-semibold text-verde">{s.num}</td>
+                  <td className="px-3 py-2">{s.proveedor}</td>
+                  <td className="px-3 py-2 text-right">{s.lineas}</td>
+                  <td className="px-3 py-2">{s.estado === "Adjudicada" ? "Adjudicada" : s.estado}</td>
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                    <Link href={`/solicitudes/${s.id}`} target="_blank" className="text-verde underline">
+                      ver
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <FacturaPedido
         idPedido={id}

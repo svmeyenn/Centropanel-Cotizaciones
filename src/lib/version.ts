@@ -1,3 +1,3 @@
 // Version vigente en produccion, formato vNNNN-AAAAMMDD. Sube en uno con cada
 // entrega a produccion; el historial completo esta en VERSIONES.md.
-export const VERSION = "v0182-20261030";
+export const VERSION = "v0183-20261030";
