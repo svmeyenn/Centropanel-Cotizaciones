@@ -41,6 +41,8 @@ export interface MargenReal {
   costos_neto: number;
   // El adhesivo no se compra por pedido: su costo teorico es el real.
   adhesivo_teorico?: number;
+  // Costo de transporte registrado a mano, sin factura aprobada todavia.
+  transporte_sin_factura?: { bruto: number; neto: number; n: number };
   egresos: number;
   gastos_financieros: { bruto: number; neto: number; pagos_definidos: number; por_definir: number; monto_por_definir: number };
   costo_total: number;
@@ -606,6 +608,7 @@ export default function EditorPedido({
                 <Fila key={c.categoria} label={`− ${c.categoria} (${c.n})`} valor={importe(c.neto, moneda)} />
               ))}
               {(margenReal.adhesivo_teorico ?? 0) > 0 && <Fila label="− Adhesivo (costo teorico)" valor={importe(margenReal.adhesivo_teorico ?? 0, moneda)} />}
+              {(margenReal.transporte_sin_factura?.n ?? 0) > 0 && <Fila label="− Transporte (valor estimado, sin factura aprobada)" valor={importe(margenReal.transporte_sin_factura?.neto ?? 0, moneda)} />}
               <Fila
                 label={`− Gastos financieros${margenReal.gastos_financieros.por_definir > 0 ? ` (${margenReal.gastos_financieros.por_definir} pago${margenReal.gastos_financieros.por_definir > 1 ? "s" : ""} por definir)` : ""}`}
                 valor={importe(margenReal.gastos_financieros.neto, moneda)}
@@ -616,9 +619,11 @@ export default function EditorPedido({
               </div>
               {margenReal.provisorio && (
                 <p className="text-[11px] text-amber-700">
-                  {margenReal.egresos === 0
-                    ? "Todavia no hay costos ingresados para este pedido: el margen real sube a medida que se ingresan."
-                    : "Provisorio: hay gastos financieros por definir."}
+                  {margenReal.gastos_financieros.por_definir > 0
+                    ? "Provisorio: hay gastos financieros por definir."
+                    : (margenReal.transporte_sin_factura?.n ?? 0) > 0
+                      ? "Provisorio: el transporte aun no tiene factura aprobada."
+                      : "Todavia no hay costos ingresados para este pedido: el margen real sube a medida que se ingresan."}
                 </p>
               )}
               {facturaTransporte}

@@ -217,6 +217,17 @@ export async function crearSolicitudEgreso(
     return resultado;
   }
 
+  // La factura de un costo de transporte ya registrado: el egreso pasa a ser su respaldo y reemplaza al costo provisorio.
+  const idTransporte = numeroONulo(datos.get("id_transporte"));
+  if (idTransporte) {
+    const { error: errorEnlace } = await supabase.rpc("transporte_vincular", { p_id: idTransporte, p_mov: fila.id_mov });
+    if (errorEnlace) {
+      refrescarFinanzas();
+      return { ok: true, mensaje: `Solicitud registrada, pero no se pudo enlazar al costo de transporte: ${errorEnlace.message}` };
+    }
+    revalidatePath("/pedidos");
+  }
+
   refrescarFinanzas();
   return { ok: true, mensaje: "Solicitud registrada, queda pendiente de pago." };
 }
