@@ -105,6 +105,7 @@ export default function EditorPedido({
   verMargen,
   margenReal,
   facturaTransporte,
+  gastoPorMedio,
   lineasSinCosto = 0,
   fichaCliente = null,
   prefijoTelefono = "+56",
@@ -150,6 +151,8 @@ export default function EditorPedido({
   margenReal?: MargenReal | null;
   // Boton para cargar la factura del transportista, para quien puede hacerlo.
   facturaTransporte?: ReactNode;
+  // Medios de pago que llevan gasto financiero, con su tasa (%): el gasto se define al registrar el pago.
+  gastoPorMedio?: Record<string, number>;
   // Lineas sin costo conocido: el margen las cuenta como costo cero.
   lineasSinCosto?: number;
   // Ficha completa del cliente, para editarla desde el pedido.
@@ -671,6 +674,7 @@ export default function EditorPedido({
         puedeCrear={puedeCrear}
         esAdmin={esAdmin}
         tasaIva={tasaIva}
+        gastoPorMedio={gastoPorMedio}
       />
 
       {/* abastecimiento */}

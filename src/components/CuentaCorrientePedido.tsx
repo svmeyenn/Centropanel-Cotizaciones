@@ -68,7 +68,10 @@ export default function CuentaCorrientePedido({
   puedeCrear,
   esAdmin,
   moneda = "CLP",
+  gastoPorMedio = {},
 }: {
+  // Medios de pago que llevan gasto financiero, con la tasa (%) con que se sugiere.
+  gastoPorMedio?: Record<string, number>;
   idPedido: number;
   moneda?: string;
   formaPago: string | null;
@@ -93,11 +96,15 @@ export default function CuentaCorrientePedido({
     referencia: "",
     notas: "",
   });
+  const [gastoTexto, setGastoTexto] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
   const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
   const faltaPie = Math.max(cuenta.pie_monto - cuenta.abonado, 0);
+  // El gasto financiero se define al registrar el pago, si el medio lo lleva y quien registra es administrador o supervisor.
+  const llevaGasto = esAdmin && d.medio in gastoPorMedio;
+  const gastoSugerido = llevaGasto ? Math.round((d.monto * gastoPorMedio[d.medio]) / 100) : 0;
 
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden">
@@ -243,17 +250,46 @@ export default function CuentaCorrientePedido({
                   />
                 </label>
               </div>
+              {llevaGasto && (
+                <label className="text-xs block md:w-1/2">
+                  <span className="block text-dorado-osc font-semibold mb-1">
+                    Gasto financiero de este pago, con {impuesto} incluido (opcional)
+                  </span>
+                  <input
+                    inputMode="decimal"
+                    className={`${input} text-right`}
+                    placeholder={gastoSugerido > 0 ? `sugerido ${importe(gastoSugerido, moneda)}` : "0"}
+                    value={gastoTexto}
+                    onChange={(e) => setGastoTexto(e.target.value)}
+                  />
+                  <span className="block text-[11px] text-gray-600 mt-0.5">
+                    Lo que cobra el procesador. Si aun no llega la liquidacion, dejelo vacio y se define despues; mientras tanto el margen real queda provisorio.
+                    {gastoSugerido > 0 && (
+                      <button type="button" className="ml-1 text-verde underline" onClick={() => setGastoTexto(String(gastoSugerido))}>
+                        usar el sugerido
+                      </button>
+                    )}
+                  </span>
+                </label>
+              )}
               <div className="flex gap-2">
                 <button
                   onClick={() =>
                     empezar(async () => {
                       setError(null);
-                      const r = await registrarPago(idPedido, d);
+                      const texto = gastoTexto.trim();
+                      const gasto = llevaGasto && texto !== "" ? Number(texto.replace(/\./g, "").replace(",", ".")) : null;
+                      if (gasto != null && (!Number.isFinite(gasto) || gasto < 0)) {
+                        setError("El gasto financiero no es valido.");
+                        return;
+                      }
+                      const r = await registrarPago(idPedido, { ...d, gasto });
                       if (r?.error) {
                         setError(r.error);
                         return;
                       }
                       setAbierto(false);
+                      setGastoTexto("");
                       setD({ ...d, monto: 0, referencia: "" });
                       router.refresh();
                     })

@@ -302,6 +302,7 @@ export default async function Pagina({
           por_facturar: Number(cta?.por_facturar ?? 0),
         }}
         margenReal={margenReal}
+        gastoPorMedio={Object.fromEntries([...mediosGasto].filter(([, m]) => m.con_gasto).map(([nombre, m]) => [nombre, m.costo_pct]))}
         facturaTransporte={
           tienePerfilAdmin(v) ? (
             <BotonFacturaTransporte
