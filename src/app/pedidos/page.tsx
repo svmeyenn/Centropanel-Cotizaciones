@@ -165,7 +165,7 @@ export default async function Pagina({
 
   return (
     <div className="min-h-screen">
-      <Cabecera
+      <Cabecera proceso={{ tipo: "venta", etapa: "pedido" }}
         titulo="Pedidos"
         subtitulo="Cotizaciones aceptadas y sus solicitudes a proveedores"
       />

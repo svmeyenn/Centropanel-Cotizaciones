@@ -79,7 +79,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="min-h-screen">
-      <Cabecera
+      <Cabecera proceso={{ tipo: "compras", etapa: ["Recibida parcial", "Recibida", "Facturada", "Pagada"].includes(o.estado as string) ? "recepcion" : "oc", enlaces: { necesidad: origenSC ? { href: `/necesidades/${origenSC.idNm}`, ref: origenSC.folioNm } : undefined, solicitud: origenSC && o.id_sc ? { href: `/necesidades/${origenSC.idNm}/solicitud/${o.id_sc}`, ref: origenSC.folio } : undefined, oc: { ref: o.num_oc as string } } }}
         titulo={[o.num_oc, etiquetaProyecto(proy?.nombre, proy?.cliente)].filter(Boolean).join(" · ")}
         subtitulo={`Proveedor: ${uno<{ razon_social: string }>(o.entidades)?.razon_social ?? ""}`}
       />

@@ -1,4 +1,6 @@
 import CabeceraBase from "@/components/CabeceraBase";
+import RutaProceso from "@/components/RutaProceso";
+import type { UbicacionProceso } from "@/lib/procesos";
 import { colorMercado } from "@/components/Bandera";
 import SelectorMercado from "@/components/SelectorMercado";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
@@ -9,14 +11,18 @@ import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 export default async function Cabecera({
   titulo,
   subtitulo,
+  proceso,
 }: {
   titulo: string;
   subtitulo?: string;
+  // La linea del proceso a la que pertenece la pantalla, con la etapa en que se esta.
+  proceso?: UbicacionProceso;
 }) {
   const v = await requerirVendedor();
   const { accesibles, esAdminGeneral, activo } = await contextoMercado(v);
 
   return (
+    <>
     <CabeceraBase
       titulo={titulo}
       subtitulo={subtitulo}
@@ -30,5 +36,7 @@ export default async function Cabecera({
       }
       franja={colorMercado(activo?.codigo ?? null)}
     />
+    {proceso && <RutaProceso proceso={proceso} />}
+    </>
   );
 }

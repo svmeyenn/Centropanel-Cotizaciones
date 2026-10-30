@@ -218,7 +218,7 @@ export default async function Pagina({
 
   return (
     <div className="min-h-screen">
-      <Cabecera
+      <Cabecera proceso={{ tipo: "venta", etapa: "pedido", enlaces: { cotizacion: cot ? { href: `/cotizaciones/${cot.id}`, ref: cot.num_cotizacion } : undefined, pedido: { ref: ped.num_pedido as string }, factura: (fact ?? []).length > 0 ? { href: "/facturas", ref: (fact ?? []).length > 1 ? `${(fact ?? []).length} documentos` : undefined } : undefined } }}
         titulo="Detalle del pedido"
         subtitulo="Items, abastecimiento y solicitudes a proveedores"
       />

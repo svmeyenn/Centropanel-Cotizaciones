@@ -282,7 +282,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="min-h-screen">
-      <Cabecera
+      <Cabecera proceso={{ tipo: "venta", etapa: "lead" }}
         titulo={c.nombre_completo || "(sin nombre)"}
         subtitulo={[c.empresa, c.cargo].filter(Boolean).join(" · ") || "Lead"}
       />

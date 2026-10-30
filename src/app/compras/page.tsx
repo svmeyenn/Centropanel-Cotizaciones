@@ -29,7 +29,7 @@ export default async function Pagina({
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo="Ordenes de compra" subtitulo="Compras a proveedores por proyecto, con aprobacion" />
+      <Cabecera proceso={{ tipo: "compras", etapa: "oc" }} titulo="Ordenes de compra" subtitulo="Compras a proveedores por proyecto, con aprobacion" />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion />
         <div className="flex flex-wrap items-center justify-between gap-3">
