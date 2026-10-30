@@ -551,6 +551,31 @@ export async function eliminarPedido(id: number) {
   return { ok: true, num: r.num ?? "" };
 }
 
+// El costo del transporte de un pedido, con IVA incluido, cuando todavia no se tiene la factura. Entra al margen real de
+// inmediato; al cargar la factura y aprobarse el egreso, este registro deja de contar y lo reemplaza el egreso.
+export async function registrarCostoTransporte(idPedido: number, monto: number, comentario: string) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) return { error: "Solo un administrador o supervisor registra el costo de transporte." };
+  if (!Number.isFinite(monto) || monto <= 0) return { error: "El monto no es valido." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("transporte_registrar", { p_pedido: idPedido, p_monto: monto, p_comentario: comentario });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function quitarCostoTransporte(id: number, idPedido: number) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) return { error: "Solo un administrador o supervisor quita el costo de transporte." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("transporte_quitar", { p_id: id });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
 // El gasto financiero de un pago --lo que cobro el procesador, con IVA incluido--. Lo define solo un administrador o
 // supervisor, cuando llega la liquidacion; vacio, queda por definir.
 export async function definirGastoFinanciero(idPago: number, idPedido: number, monto: number | null) {

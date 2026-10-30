@@ -42,7 +42,7 @@ export default function FormularioEgreso({
 }: {
   movimiento: Movimiento | null;
   // Valores con que arranca una solicitud nueva, por ejemplo la factura de transporte de un pedido.
-  inicial?: { id_proyecto?: number | null; id_categoria?: number | null; comentario?: string };
+  inicial?: { id_proyecto?: number | null; id_categoria?: number | null; comentario?: string; monto?: number; id_transporte?: number };
   cuentas: Cuenta[];
   proyectos: Proyecto[];
   categorias: Categoria[];
@@ -102,6 +102,9 @@ export default function FormularioEgreso({
         {movimiento && (
           <input type="hidden" name="id_mov" value={movimiento.id_mov} />
         )}
+        {!movimiento && inicial?.id_transporte != null && (
+          <input type="hidden" name="id_transporte" value={inicial.id_transporte} />
+        )}
 
         {/* La fecha de pago la fija quien paga, no quien solicita: no existe al
             crear la solicitud ni mientras siga pendiente. Una vez pagado, aqui
@@ -125,7 +128,7 @@ export default function FormularioEgreso({
             name="monto"
             inputMode="decimal"
             className={CAMPO}
-            defaultValue={movimiento ? String(movimiento.monto) : ""}
+            defaultValue={movimiento ? String(movimiento.monto) : inicial?.monto != null ? String(inicial.monto) : ""}
             placeholder="0"
             required
           />

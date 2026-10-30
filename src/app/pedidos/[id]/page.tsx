@@ -190,6 +190,14 @@ export default async function Pagina({
   // Quien puede cargar egresos carga aqui la factura del transportista; queda pendiente de aprobacion.
   const puedeCargarFlete = tienePerfilAdmin(v) && v.fin_solicitar_gastos && ped.id_proyecto != null;
   const maestrosFlete = puedeCargarFlete ? await cargarMaestros(Number(ped.id_pais)) : null;
+  // El costo de transporte puede registrarse antes de tener la factura; cada uno sigue su camino hasta quedar aprobado.
+  const { data: transporteDb } = tienePerfilAdmin(v)
+    ? await supabase.from("pedido_transporte").select("id, monto, comentario, id_mov, movimientos(aprobacion, estado_pago)").eq("id_pedido", id).order("id")
+    : { data: null };
+  const costosTransporte = (transporteDb ?? []).map((t) => {
+    const m = uno<{ aprobacion: string | null; estado_pago: string }>(t.movimientos);
+    return { id: Number(t.id), monto: Number(t.monto), comentario: (t.comentario as string | null) ?? "", idMov: t.id_mov != null ? Number(t.id_mov) : null, aprobacion: m?.aprobacion ?? null, estadoPago: m?.estado_pago ?? null };
+  });
   const necesidadesPedido = (nmsDb ?? []).map((n) => ({ id: Number(n.id), folio: n.folio as string, estado: n.estado as string }));
 
   const filas: LineaVista[] = (lineas ?? []).map((l) => ({
@@ -295,15 +303,15 @@ export default async function Pagina({
         }}
         margenReal={margenReal}
         facturaTransporte={
-          maestrosFlete ? (
+          tienePerfilAdmin(v) ? (
             <BotonFacturaTransporte
+              idPedido={id}
               numPedido={ped.num_pedido as string}
-              idProyecto={Number(ped.id_proyecto)}
-              idCategoria={maestrosFlete.categorias.find((c) => c.nombre === "Transporte y fletes" && c.tipo === "Egreso" && !c.borrado)?.id_categoria ?? null}
-              cuentas={maestrosFlete.cuentas}
-              proyectos={maestrosFlete.proyectos}
-              categorias={maestrosFlete.categorias}
-              interlocutores={maestrosFlete.interlocutores}
+              idProyecto={ped.id_proyecto != null ? Number(ped.id_proyecto) : null}
+              idCategoria={maestrosFlete?.categorias.find((c) => c.nombre === "Transporte y fletes" && c.tipo === "Egreso" && !c.borrado)?.id_categoria ?? null}
+              moneda={(ped.moneda as string | null) ?? monedaDelPais(Number(ped.id_pais))}
+              costos={costosTransporte}
+              formulario={maestrosFlete ? { cuentas: maestrosFlete.cuentas, proyectos: maestrosFlete.proyectos, categorias: maestrosFlete.categorias, interlocutores: maestrosFlete.interlocutores } : null}
             />
           ) : null
         }
