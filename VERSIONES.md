@@ -9,6 +9,7 @@ Version vigente: **v0178-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0187-20261030 | 30-10-2026 | Pedido: el gasto financiero se ingresa al registrar el pago (Tarjeta y Link de Pago), con el sugerido segun la tasa del medio; vacio queda por definir. Solo codigo | (pendiente) |
 | v0186-20261030 | 30-10-2026 | Pedido: el costo de transporte se ingresa como valor (con IVA) sin factura y cuenta de inmediato en el margen real como estimado; la factura se carga y se envia a pago despues, y al aprobarse reemplaza al valor estimado. Base: pedido_transporte y margen real | (pendiente) |
 | v0185-20261030 | 30-10-2026 | Egresos: filtro por estado de aprobacion --aprobado, por aprobar, rechazado o todos--; al entrar solo se ven los aprobados, los por aprobar y los ejecutados, y los rechazados aparecen solo al aplicar el filtro. Solo codigo | 1883ef0 |
 | v0184-20261030 | 30-10-2026 | Linea del proceso en la cabecera de las pantallas de venta --lead, cotizacion, pedido y factura de venta-- y de compra --necesidad, solicitud de cotizacion, orden de compra y recepcion y pago--: muestra todas las etapas, destaca en dorado donde se esta parado, marca las ya recorridas con enlace y numero del documento, y deja en trazo hueco las que siguen. Solo codigo | d0419ac |

@@ -225,6 +225,8 @@ export interface DatosPago {
   medio: string;
   referencia: string;
   notas: string;
+  // Lo que cobra el procesador por este pago, con IVA incluido. Solo lo define un administrador o supervisor; vacio queda por definir.
+  gasto?: number | null;
 }
 
 export async function registrarPago(idPedido: number, d: DatosPago) {
@@ -234,17 +236,32 @@ export async function registrarPago(idPedido: number, d: DatosPago) {
   }
   if (!d.monto) return { error: "Indique el monto." };
 
+  const conGasto = d.gasto != null && Number.isFinite(d.gasto);
+  if (conGasto && !tienePerfilAdmin(v)) return { error: "Solo un administrador o supervisor define el gasto financiero." };
+
   const supabase = await createClient();
-  const { error } = await supabase.from("pagos_pedido").insert({
-    id_pedido: idPedido,
-    fecha: d.fecha,
-    monto: d.monto,
-    medio: d.medio.trim() || null,
-    referencia: d.referencia.trim() || null,
-    notas: d.notas.trim() || null,
-    id_vendedor: v.id,
-  });
+  const { data: pago, error } = await supabase
+    .from("pagos_pedido")
+    .insert({
+      id_pedido: idPedido,
+      fecha: d.fecha,
+      monto: d.monto,
+      medio: d.medio.trim() || null,
+      referencia: d.referencia.trim() || null,
+      notas: d.notas.trim() || null,
+      id_vendedor: v.id,
+    })
+    .select("id")
+    .single();
   if (error) return { error: error.message };
+
+  if (conGasto && pago) {
+    const { error: errorGasto } = await supabase.rpc("pago_definir_gasto", { p_pago: pago.id, p_monto: d.gasto });
+    if (errorGasto) {
+      revalidatePath(`/pedidos/${idPedido}`);
+      return { error: `El pago quedo registrado, pero el gasto financiero no: ${errorGasto.message} Definalo desde la tabla de pagos.` };
+    }
+  }
 
   revalidatePath(`/pedidos/${idPedido}`);
   revalidatePath("/pedidos");
