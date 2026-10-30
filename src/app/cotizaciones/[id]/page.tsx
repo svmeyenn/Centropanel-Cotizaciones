@@ -34,6 +34,9 @@ export default async function Pagina({
 
   const supabase = await createClient();
 
+  // El pedido que salio de esta cotizacion, si ya se vendio.
+  const { data: pedDeCot } = await supabase.from("pedidos").select("id, num_pedido").eq("id_cotizacion", id).maybeSingle();
+
   const { data: bitacora } = await supabase
     .from("v_cotizacion_actividad")
     .select("*")
@@ -178,7 +181,7 @@ export default async function Pagina({
 
   return (
     <div className="min-h-screen">
-      <Cabecera
+      <Cabecera proceso={{ tipo: "venta", etapa: "cotizacion", enlaces: { pedido: pedDeCot ? { href: `/pedidos/${pedDeCot.id}`, ref: pedDeCot.num_pedido as string } : undefined } }}
         titulo="Detalle de cotizacion"
         subtitulo="Datos del cliente, items y valorizacion"
       />

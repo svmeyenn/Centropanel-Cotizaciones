@@ -84,7 +84,7 @@ export default async function Pagina({
 
   return (
     <div className="min-h-screen">
-      <Cabecera
+      <Cabecera proceso={{ tipo: "venta", etapa: "factura" }}
         titulo="Facturas y notas de credito"
         subtitulo="Lo emitido, por cuanto y contra que pedido"
       />

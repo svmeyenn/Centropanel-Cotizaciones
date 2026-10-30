@@ -34,7 +34,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo={[detalle.nm.folio, etiquetaProyecto(detalle.nm.proyecto, (detalle.nm as { proyecto_cliente?: string | null }).proyecto_cliente)].filter(Boolean).join(" · ")} subtitulo="Necesidad de material" />
+      <Cabecera proceso={{ tipo: "compras", etapa: "necesidad", enlaces: { necesidad: { ref: detalle.nm.folio }, solicitud: (detalle.solicitudes ?? []).find((s) => s.estado !== "Abierta" && s.estado !== "Anulada") ? { href: `/necesidades/${detalle.nm.id}/solicitud/${(detalle.solicitudes ?? []).find((s) => s.estado !== "Abierta" && s.estado !== "Anulada")!.id}`, ref: (detalle.solicitudes ?? []).find((s) => s.estado !== "Abierta" && s.estado !== "Anulada")!.folio } : undefined } }} titulo={[detalle.nm.folio, etiquetaProyecto(detalle.nm.proyecto, (detalle.nm as { proyecto_cliente?: string | null }).proyecto_cliente)].filter(Boolean).join(" · ")} subtitulo="Necesidad de material" />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion volverA="/necesidades" />
         <FichaNecesidad

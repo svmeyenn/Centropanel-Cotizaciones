@@ -91,7 +91,7 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo={prov.nombre} subtitulo={`${modo === "enviar" ? "Enviar documentos" : "Detalle"} del proveedor en ${det.nm.folio}${etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente) ? ` · ${etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente)}` : ""}`} />
+      <Cabecera proceso={{ tipo: "compras", etapa: "solicitud", enlaces: { necesidad: { href: `/necesidades/${idNm}`, ref: det.nm.folio } } }} titulo={prov.nombre} subtitulo={`${modo === "enviar" ? "Enviar documentos" : "Detalle"} del proveedor en ${det.nm.folio}${etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente) ? ` · ${etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente)}` : ""}`} />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4 text-xs">
         <BarraNavegacion volverA={`/necesidades/${idNm}`} />
         <div className="flex gap-2">

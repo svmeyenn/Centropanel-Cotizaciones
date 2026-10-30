@@ -194,3 +194,13 @@ table.datos tbody tr:nth-child(even) {
 .vista-config table { font-variant-numeric: tabular-nums; }
 .vista-config h2,
 .vista-config h3 { letter-spacing: 0.01em; }
+
+/* Linea del proceso en la cabecera: nodos de cada etapa y el trazo que las une */
+.ruta-nodo.ruta-antes { background: #1D4E4A; color: #fff; }
+.ruta-nodo.ruta-actual { background: #C9A84C; }
+.ruta-nodo.ruta-despues { border: 1.5px solid #9CA3AF; background: transparent; }
+.ruta-tramo { display: inline-block; height: 2px; width: 1.75rem; margin: 0 0.25rem; border-radius: 1px; flex: none; }
+.ruta-tramo-hecho { background: #1D4E4A; transform-origin: left center; animation: ruta-trazo 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.ruta-tramo-falta { background: repeating-linear-gradient(90deg, #9CA3AF 0 4px, transparent 4px 8px); }
+@keyframes ruta-trazo { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .ruta-tramo-hecho { animation: none; } }

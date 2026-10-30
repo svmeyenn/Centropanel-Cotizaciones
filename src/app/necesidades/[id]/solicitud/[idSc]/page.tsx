@@ -24,7 +24,7 @@ type Det = {
   forzados?: { p: number; i: number }[];
   maestra: { p: number; i: number; c: number; m: string | null }[];
   proveedores: { id: number; nombre: string; direccion?: string | null; email: string | null; telefono: string | null; contacto: string | null; estado: string }[];
-  solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; id_participante: number | null }[];
+  solicitudes: { id: number; folio: string; estado: string; fecha_entrega: string | null; direccion_destino: string | null; id_participante: number | null; id_oc: number | null; num_oc: string | null }[];
 };
 
 const TH = "px-3 py-1.5 text-left font-semibold";
@@ -72,7 +72,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo={[sc.folio, etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente)].filter(Boolean).join(" · ")} subtitulo={`Solicitud de cotizacion de ${det.nm.folio}`} />
+      <Cabecera proceso={{ tipo: "compras", etapa: "solicitud", enlaces: { necesidad: { href: `/necesidades/${idNm}`, ref: det.nm.folio }, solicitud: { ref: sc.folio }, oc: sc.id_oc ? { href: `/compras/${sc.id_oc}`, ref: sc.num_oc } : undefined } }} titulo={[sc.folio, etiquetaProyecto(det.nm.proyecto, det.nm.proyecto_cliente)].filter(Boolean).join(" · ")} subtitulo={`Solicitud de cotizacion de ${det.nm.folio}`} />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4 text-xs">
         <BarraNavegacion volverA={`/necesidades/${idNm}`} />
         <section className="bg-white border border-gray-200 rounded p-3 flex flex-wrap items-center gap-x-8 gap-y-2">

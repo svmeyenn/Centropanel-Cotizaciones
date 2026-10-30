@@ -58,7 +58,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
 
   return (
     <div className="min-h-screen">
-      <Cabecera titulo="Necesidades de material" subtitulo="Lo que se necesita comprar, cotizado y adjudicado antes de la orden de compra" />
+      <Cabecera proceso={{ tipo: "compras", etapa: "necesidad" }} titulo="Necesidades de material" subtitulo="Lo que se necesita comprar, cotizado y adjudicado antes de la orden de compra" />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion />
         <div className="flex flex-wrap items-center justify-between gap-3">
