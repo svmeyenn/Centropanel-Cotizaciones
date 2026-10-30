@@ -11,6 +11,8 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import type { FichaCliente } from "@/components/VentanaCliente";
 import Link from "next/link";
 import ProyectoDelPedido from "@/components/ProyectoDelPedido";
+import BotonFacturaTransporte from "@/components/BotonFacturaTransporte";
+import { cargarMaestros } from "@/lib/finanzas/consultas";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import type { MargenReal } from "@/components/EditorPedido";
 import { createClient } from "@/lib/supabase/server";
@@ -185,6 +187,9 @@ export default async function Pagina({
   const mediosGasto = new Map((mediosDb ?? []).map((m) => [m.nombre as string, { con_gasto: Boolean(m.con_gasto), costo_pct: Number(m.costo_pct ?? 0) }]));
   // El margen real, con los costos que ya se ingresaron: solo para administradores y supervisores.
   const margenReal = tienePerfilAdmin(v) ? ((await supabase.rpc("pedido_margen_real", { p_pedido: id })).data as MargenReal | null) : null;
+  // Quien puede cargar egresos carga aqui la factura del transportista; queda pendiente de aprobacion.
+  const puedeCargarFlete = tienePerfilAdmin(v) && v.fin_solicitar_gastos && ped.id_proyecto != null;
+  const maestrosFlete = puedeCargarFlete ? await cargarMaestros(Number(ped.id_pais)) : null;
   const necesidadesPedido = (nmsDb ?? []).map((n) => ({ id: Number(n.id), folio: n.folio as string, estado: n.estado as string }));
 
   const filas: LineaVista[] = (lineas ?? []).map((l) => ({
@@ -289,6 +294,19 @@ export default async function Pagina({
           por_facturar: Number(cta?.por_facturar ?? 0),
         }}
         margenReal={margenReal}
+        facturaTransporte={
+          maestrosFlete ? (
+            <BotonFacturaTransporte
+              numPedido={ped.num_pedido as string}
+              idProyecto={Number(ped.id_proyecto)}
+              idCategoria={maestrosFlete.categorias.find((c) => c.nombre === "Transporte y fletes" && c.tipo === "Egreso" && !c.borrado)?.id_categoria ?? null}
+              cuentas={maestrosFlete.cuentas}
+              proyectos={maestrosFlete.proyectos}
+              categorias={maestrosFlete.categorias}
+              interlocutores={maestrosFlete.interlocutores}
+            />
+          ) : null
+        }
         pagos={(pagos ?? []).map((g) => ({
           gasto: g.gasto_financiero != null ? Number(g.gasto_financiero) : null,
           requiereGasto: Boolean(mediosGasto.get(g.medio as string)?.con_gasto),
