@@ -18,6 +18,12 @@ import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
 
+// Los proyectos de paneles se llaman todos "Paneles": se distinguen por su cliente y por el pedido al que pertenecen.
+function rotuloProyecto(x: { nombre: unknown; cliente?: unknown; pedidos?: unknown }): string {
+  const peds = (Array.isArray(x.pedidos) ? x.pedidos : x.pedidos ? [x.pedidos] : []).map((p) => (p as { num_pedido: string }).num_pedido).filter(Boolean);
+  return [x.nombre as string, x.cliente as string | null, peds.length ? peds.join(", ") : null].filter(Boolean).join(" · ");
+}
+
 export default async function Pagina({
   params,
 }: {
@@ -76,7 +82,7 @@ export default async function Pagina({
         .order("id"),
       supabase
         .from("proyectos")
-        .select("id_proyecto, nombre")
+        .select("id_proyecto, nombre, cliente, pedidos(num_pedido)")
         .eq("borrado", false)
         .eq("activo", true)
         .eq("tipo", "obra")
@@ -226,12 +232,11 @@ export default async function Pagina({
             (proyectosAct ?? []).find((x) => Number(x.id_proyecto) === Number(ped.id_proyecto))
               ? {
                   id: Number(ped.id_proyecto),
-                  nombre: (proyectosAct ?? []).find((x) => Number(x.id_proyecto) === Number(ped.id_proyecto))!
-                    .nombre as string,
+                  nombre: rotuloProyecto((proyectosAct ?? []).find((x) => Number(x.id_proyecto) === Number(ped.id_proyecto))!),
                 }
               : null
           }
-          proyectos={(proyectosAct ?? []).map((x) => ({ id: Number(x.id_proyecto), nombre: x.nombre as string }))}
+          proyectos={(proyectosAct ?? []).map((x) => ({ id: Number(x.id_proyecto), nombre: rotuloProyecto(x) }))}
           puedeEditar={tienePerfilAdmin(v)}
         />
       </div>
