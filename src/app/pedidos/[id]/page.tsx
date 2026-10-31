@@ -68,7 +68,8 @@ export default async function Pagina({
       supabase.from("v_pedido_cuenta").select("*").eq("id", id).single(),
       supabase
         .from("pagos_pedido")
-        .select("id, fecha, monto, medio, referencia, gasto_financiero, vendedores(nombre)")
+        // Dos relaciones con vendedores (quien registro y quien definio el gasto): se nombra la del registro.
+        .select("id, fecha, monto, medio, referencia, gasto_financiero, vendedores!pagos_pedido_id_vendedor_fkey(nombre)")
         .eq("id_pedido", id)
         .order("fecha")
         .order("id"),
