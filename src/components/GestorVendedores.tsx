@@ -8,7 +8,8 @@ import {
   blanquearClave,
   type DatosVendedor,
 } from "@/app/vendedores/acciones";
-import type { Rol, Vendedor } from "@/types/database";
+import type { PerfilAcceso, Rol, Vendedor } from "@/types/database";
+import { AREAS, CASILLAS_FIN, NIVELES, TEXTO_NIVEL, esSuperAdmin } from "@/lib/permisos";
 import CampoTelefono from "@/components/CampoTelefono";
 import BotonExportar from "@/components/BotonExportar";
 
@@ -34,9 +35,13 @@ function privilegiosDeRol(rol: Rol) {
 export default function GestorVendedores({
   vendedores,
   miId,
+  perfiles,
+  soySuper,
 }: {
   vendedores: Vendedor[];
   miId: number;
+  perfiles: PerfilAcceso[];
+  soySuper: boolean;
 }) {
   // "crear" cuando se esta dando de alta a alguien nuevo; el id cuando se
   // modifica a alguien existente.
@@ -84,6 +89,11 @@ export default function GestorVendedores({
       puede_editar: v.puede_editar,
       puede_admin: v.puede_admin,
       activo: v.activo,
+      id_perfil: v.id_perfil,
+      permisos: { ...(v.permisos ?? {}) },
+      fin: Object.fromEntries(
+        CASILLAS_FIN.map(([k]) => [k, !!(v as unknown as Record<string, boolean>)[k]])
+      ),
     });
   }
 
@@ -103,6 +113,21 @@ export default function GestorVendedores({
       mercado: "Chile",
       ...privilegiosDeRol("Vendedor"),
       activo: true,
+      id_perfil: 6,
+      ...desdePlantilla(perfiles.find((x) => x.id === 6)),
+    });
+  }
+
+  // Elegir un perfil carga su plantilla: nivel por area, casillas de finanzas y el
+  // rol con que opera el cotizador. Despues se afina area por area.
+  function cambiarPerfil(id: number | null) {
+    if (!form) return;
+    const p = perfiles.find((x) => x.id === id);
+    setForm({
+      ...form,
+      id_perfil: id,
+      ...desdePlantilla(p),
+      ...(p ? { rol: p.rol_base, ...privilegiosDeRol(p.rol_base) } : {}),
     });
   }
 
@@ -315,7 +340,28 @@ export default function GestorVendedores({
               </select>
             </label>
             <label className="text-sm">
-              <span className="block text-dorado-osc font-semibold mb-1">Perfil</span>
+              <span className="block text-dorado-osc font-semibold mb-1">Perfil de acceso</span>
+              <select
+                className={input}
+                value={form.id_perfil ?? ""}
+                onChange={(e) => cambiarPerfil(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">Sin perfil (queda como estaba)</option>
+                {perfiles.map((p) => (
+                  <option key={p.id} value={p.id} disabled={p.es_super && !soySuper}>
+                    {p.orden}. {p.nombre}
+                  </option>
+                ))}
+              </select>
+              <span className="block text-[11px] text-gray-500 mt-0.5">
+                {perfiles.find((p) => p.id === form.id_perfil)?.ejemplo
+                  ? `Por ejemplo: ${perfiles.find((p) => p.id === form.id_perfil)?.ejemplo}. `
+                  : ""}
+                Carga la plantilla; abajo se ajusta a esta persona.
+              </span>
+            </label>
+            <label className="text-sm">
+              <span className="block text-dorado-osc font-semibold mb-1">Rol en el cotizador</span>
               <select
                 className={input}
                 value={form.rol}
@@ -359,6 +405,45 @@ export default function GestorVendedores({
               />
               <span className="text-gray-700">Cuenta activa</span>
             </label>
+          </div>
+
+          <div className="border-t border-gray-100 pt-3 space-y-3">
+            <div className="text-xs text-dorado-osc font-semibold">ACCESO POR AREA</div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {AREAS.map((a) => (
+                <label key={a.k} className="text-sm">
+                  <span className="block text-gray-700 mb-1">{a.t}</span>
+                  <select
+                    className={input}
+                    value={form.permisos[a.k] ?? "ninguno"}
+                    onChange={(e) =>
+                      setForm({ ...form, permisos: { ...form.permisos, [a.k]: e.target.value } })
+                    }
+                  >
+                    {NIVELES.map((n) => (
+                      <option key={n} value={n}>
+                        {TEXTO_NIVEL[n]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <fieldset>
+              <legend className="text-xs text-dorado-osc font-semibold mb-2">FINANZAS</legend>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                {CASILLAS_FIN.map(([k, t]) => (
+                  <label key={k} className="text-sm flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={!!form.fin[k]}
+                      onChange={(e) => setForm({ ...form, fin: { ...form.fin, [k]: e.target.checked } })}
+                    />
+                    <span className="text-gray-700">{t}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </div>
 
           <div className="border-t border-gray-100 pt-3">
@@ -465,7 +550,7 @@ export default function GestorVendedores({
                 <th className="text-left px-3 py-2">Nombre</th>
                 <th className="text-left px-3 py-2">Cargo</th>
                 <th className="text-left px-3 py-2">Correo</th>
-                <th className="text-left px-3 py-2 w-32">Perfil</th>
+                <th className="text-left px-3 py-2 w-48">Perfil de acceso</th>
                 <th className="text-left px-3 py-2 w-24">Mercado</th>
                 <th className="text-center px-3 py-2 w-40">Privilegios</th>
                 <th className="text-left px-3 py-2 w-20">Estado</th>
@@ -485,7 +570,16 @@ export default function GestorVendedores({
                   </td>
                   <td className="px-3 py-2 text-gray-600">{v.cargo}</td>
                   <td className="px-3 py-2 text-gray-600">{v.email}</td>
-                  <td className="px-3 py-2">{v.rol}</td>
+                  <td className="px-3 py-2">
+                    {perfiles.find((p) => p.id === v.id_perfil)?.nombre ?? (
+                      <span className="text-gray-400">{v.rol}</span>
+                    )}
+                    {esSuperAdmin(v) && (
+                      <span className="ml-2 text-[10px] bg-verde text-white px-1.5 py-0.5 rounded">
+                        socio
+                      </span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-gray-600">
                     <span className="inline-flex items-center gap-1">
                       {v.mercado !== "Peru" && <BanderaDe idPais={1} />}
@@ -562,6 +656,14 @@ function Campo({
       <input className={cls} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
   );
+}
+
+// Nivel por area y casillas de finanzas de una plantilla.
+function desdePlantilla(p?: PerfilAcceso) {
+  return {
+    permisos: { ...(p?.permisos ?? {}) },
+    fin: { ...(p?.fin ?? {}) },
+  };
 }
 
 // Clave de un solo uso para entrar la primera vez. Se muestra al administrador

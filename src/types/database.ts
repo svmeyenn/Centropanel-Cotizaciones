@@ -43,6 +43,24 @@ export interface Vendedor {
   fin_ver_todo: boolean;
   // A quien se le paga cuando esta persona rinde gastos.
   id_interlocutor: number | null;
+  // Plantilla de acceso de la que parte esta persona (1 = super administrador) y
+  // el nivel que tiene en cada area, ya ajustado a ella. Sin permisos, nada
+  // restringe el menu.
+  id_perfil: number | null;
+  permisos: Record<string, string> | null;
+}
+
+export interface PerfilAcceso {
+  id: number;
+  codigo: string;
+  nombre: string;
+  ejemplo: string | null;
+  alcance: string;
+  rol_base: Rol;
+  es_super: boolean;
+  permisos: Record<string, string>;
+  fin: Record<string, boolean>;
+  orden: number;
 }
 
 export interface Pais {

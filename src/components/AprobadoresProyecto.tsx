@@ -13,7 +13,7 @@ export default function AprobadoresProyecto({
 }: {
   idProyecto: number;
   aprobadores: { id: number; nombre: string }[];
-  // Personas con perfil Administrador que aun no aprueban este proyecto.
+  // Administradores y supervisores que aun no aprueban este proyecto.
   candidatos: { id: number; nombre: string }[];
   // Proyecto cuyos aprobadores valen aqui (los paneles aprueban como uno solo).
   heredaDe: { id: number; nombre: string } | null;
@@ -40,7 +40,7 @@ export default function AprobadoresProyecto({
       <div className="font-semibold text-dorado-osc text-sm">Aprobadores de gastos</div>
       <div className="text-xs text-gray-600">
         Ninguna orden de compra ni egreso de este proyecto se paga sin la aprobacion de alguien de esta lista. Solo
-        pueden ser personas con perfil Administrador.
+        pueden ser administradores o supervisores; los que no son socios aprueban hasta su tope.
       </div>
       {error && <div className="text-xs text-red-700 font-semibold">{error}</div>}
       <ul className="text-sm">

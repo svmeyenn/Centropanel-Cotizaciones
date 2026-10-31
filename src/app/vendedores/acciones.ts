@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 import type { Rol } from "@/types/database";
+import { AREAS, CASILLAS_FIN, NIVELES, PERFIL_SUPER, esSuperAdmin } from "@/lib/permisos";
 
 export interface DatosVendedor {
   nombre: string;
@@ -21,6 +22,23 @@ export interface DatosVendedor {
   puede_editar: boolean;
   puede_admin: boolean;
   activo: boolean;
+  // Plantilla de acceso de la que parte (null = sin perfil), el nivel por area ya
+  // ajustado a la persona y sus casillas de finanzas.
+  id_perfil: number | null;
+  permisos: Record<string, string>;
+  fin: Record<string, boolean>;
+}
+
+// Solo lo conocido llega a la base: areas, niveles y casillas validos.
+function accesoLimpio(d: DatosVendedor) {
+  const permisos: Record<string, string> = {};
+  for (const a of AREAS) {
+    const n = d.permisos[a.k] ?? "ninguno";
+    permisos[a.k] = (NIVELES as readonly string[]).includes(n) ? n : "ninguno";
+  }
+  const fin: Record<string, boolean> = {};
+  for (const [k] of CASILLAS_FIN) fin[k] = !!d.fin[k];
+  return { permisos, fin };
 }
 
 export async function actualizarVendedor(id: number, d: DatosVendedor) {
@@ -29,6 +47,7 @@ export async function actualizarVendedor(id: number, d: DatosVendedor) {
     return { error: "Solo el administrador puede cambiar los accesos." };
   }
   if (!d.nombre.trim()) return { error: "Indique el nombre." };
+  const acceso = accesoLimpio(d);
 
   // Un administrador no puede quitarse a si mismo el rol ni desactivarse: si lo
   // hiciera y fuera el unico, nadie podria volver a administrar el sistema.
@@ -39,6 +58,21 @@ export async function actualizarVendedor(id: number, d: DatosVendedor) {
     if (!d.activo) {
       return { error: "No puede desactivar su propia cuenta." };
     }
+  }
+
+  // Ser super administrador lo concede otro super administrador, y no se puede
+  // dejar de serlo a uno mismo.
+  const actual = await (await createClient())
+    .from("vendedores")
+    .select("id_perfil")
+    .eq("id", id)
+    .single();
+  const eraSuper = actual.data?.id_perfil === PERFIL_SUPER;
+  if ((d.id_perfil === PERFIL_SUPER) !== eraSuper && !esSuperAdmin(yo)) {
+    return { error: "Solo un super administrador concede o quita ese perfil." };
+  }
+  if (id === yo.id && esSuperAdmin(yo) && d.id_perfil !== PERFIL_SUPER) {
+    return { error: "No puede quitarse a usted mismo el perfil de super administrador." };
   }
 
   const supabase = await createClient();
@@ -73,6 +107,9 @@ export async function actualizarVendedor(id: number, d: DatosVendedor) {
       puede_editar: d.puede_editar,
       puede_admin: d.puede_admin,
       activo: d.activo,
+      id_perfil: d.id_perfil,
+      permisos: acceso.permisos,
+      ...acceso.fin,
     })
     .eq("id", id);
   if (error) return { error: error.message };
@@ -100,6 +137,10 @@ export async function crearVendedor(d: DatosVendedor, password: string) {
   const email = d.email.trim().toLowerCase();
   if (!nombre) return { error: "Indique el nombre." };
   if (!email) return { error: "Indique el correo: es con lo que entra al sistema." };
+  if (d.id_perfil === PERFIL_SUPER && !esSuperAdmin(yo)) {
+    return { error: "Solo un super administrador concede ese perfil." };
+  }
+  const acceso = accesoLimpio(d);
   if (password.length < 8) {
     return { error: "La clave temporal debe tener al menos 8 caracteres." };
   }
@@ -161,6 +202,9 @@ export async function crearVendedor(d: DatosVendedor, password: string) {
     puede_editar: d.puede_editar,
     puede_admin: d.puede_admin,
     activo: d.activo,
+    id_perfil: d.id_perfil,
+    permisos: acceso.permisos,
+    ...acceso.fin,
     debe_cambiar_password: true,
   });
 
