@@ -9,7 +9,7 @@ Version vigente: **v0178-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
-| v0190-20261031 | 31-10-2026 | Cuadro comparativo de cada solicitud: no aparece la columna de un proveedor que no vende ningun item del listado. Solo codigo | (pendiente) |
+| v0190-20261031 | 31-10-2026 | Cuadro comparativo de cada solicitud: no aparece la columna de un proveedor que no vende ningun item del listado. Solo codigo | bc79b58 |
 | v0189-20261031 | 31-10-2026 | Maestra del proveedor: columna SKU de Centropanel y SKU en los selectores para agregar items. Solo codigo | 0e62ffc |
 | v0188-20261030 | 30-10-2026 | Pedido: la tabla de pagos no aparecia --decia "Sin pagos registrados"-- porque la consulta quedo ambigua al tener dos relaciones con vendedores; se nombra la del registro. Solo codigo | 010fa73 |
 | v0187-20261030 | 30-10-2026 | Pedido: el gasto financiero se ingresa al registrar el pago (Tarjeta y Link de Pago), con el sugerido segun la tasa del medio; vacio queda por definir. Solo codigo | 7ff020c |
