@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.009-20261031**
+Version vigente: **v008.010-20261031**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.009-20261031**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.009 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.010 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.010-20261031 | — | 31-10-2026 | Jerarquia Mercado > Unidad de negocio > Centro de costo, menu por modulos, finanzas etapas 1 a 4 (perfiles y topes, plan de cuentas IFRS, contabilidad devengada, flujo de efectivo, cierre de periodos, presupuesto, exportacion al contador), "Otros ingresos" reclasificado a anticipos de clientes y aportes de socios, revision de UX y rendimiento. Base: 14 tablas y 38 funciones nuevas, columnas de cuenta y centro en categorias, movimientos y proyectos; respaldo en tablas zz_respaldo_20261031_* | 68e084f |
 | v008.009-20261031 | — | 31-10-2026 | Nueva nomenclatura de versiones vHHH.SSS-AAAAMMDD (gran hito y subhito): historial reenumerado en 8 grandes hitos, con el numero antiguo en la columna Antes. Solo codigo | 4b468fc |
 | v008.008-20261031 | v0191-20261031 | 31-10-2026 | Conciliacion bancaria: solo se proponen movimientos por el monto exacto del banco y el cuadre manual valida monto y tipo. "Pasar al sistema" fallaba por la politica de egresos: ahora lo hace la funcion fin_pasar_linea_al_sistema. Base: funcion nueva | 4cc7b6c |
 | v008.007-20261031 | v0190-20261031 | 31-10-2026 | Cuadro comparativo de cada solicitud: no aparece la columna de un proveedor que no vende ningun item del listado. Solo codigo | bc79b58 |
