@@ -85,10 +85,12 @@ export default function GestorTransportistas({
     if (!existente) return;
     setError(null);
     empezar(async () => {
-      const r = await marcarProveedorTransportista(Number(existente));
-      if (r?.error) setError(r.error);
-      else {
-        router.push(`/transportistas/${existente}`);
+      try {
+        const r = await marcarProveedorTransportista(Number(existente));
+        if (r?.error) setError(r.error);
+        else router.push(`/transportistas/${existente}`);
+      } catch {
+        setError("No se pudo marcar al proveedor como transportista. Recargue la pagina e intente de nuevo.");
       }
     });
   }
