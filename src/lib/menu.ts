@@ -148,6 +148,15 @@ export const GRUPOS: Grupo[] = [
         ve: (v) => v.fin_ver_informes || v.fin_mantenedores,
       },
       {
+        texto: "Estado de resultados",
+        href: "/estado-resultados",
+        ve: (v) => v.fin_ver_informes && v.fin_ver_todo,
+      },
+      { texto: "Balance", href: "/balance", ve: (v) => v.fin_ver_informes && v.fin_ver_todo },
+      { texto: "Libro diario", href: "/libro-diario", ve: (v) => v.fin_ver_informes && v.fin_ver_todo },
+      { texto: "Activos fijos", href: "/activos-fijos", ve: (v) => v.fin_ver_informes },
+      { texto: "Avance de obras", href: "/avance-obras", ve: (v) => v.fin_ver_informes },
+      {
         texto: "Resumen por proyecto",
         href: "/resumen-proyecto",
         ve: (v) => v.fin_ver_informes,
