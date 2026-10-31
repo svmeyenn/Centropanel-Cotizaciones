@@ -5,6 +5,8 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import EditorOC from "@/components/EditorOC";
 import EnvioDocumento from "@/components/EnvioDocumento";
 import BotonReversar from "@/components/BotonReversar";
+import RetiroOC from "@/components/transportes/RetiroOC";
+import { cargarTransportes } from "@/lib/transportes";
 import { textosOrden } from "@/lib/textosCompra";
 import { impuestoDelPais } from "@/lib/factura";
 import { enviarOcPorCorreo, registrarEnvioOc, reversarEnvioOc } from "@/app/necesidades/envios";
@@ -144,6 +146,17 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
               />
             </span>
           </div>
+        )}
+        {o.modalidad_entrega === "Retiro" && (
+          <RetiroOC
+            idOC={id}
+            inicial={{
+              idTransportista: o.id_transportista == null ? null : Number(o.id_transportista),
+              idVehiculo: o.id_vehiculo == null ? null : Number(o.id_vehiculo),
+            }}
+            transportistas={await cargarTransportes(supabase, Number(o.id_pais))}
+            puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
+          />
         )}
         <EditorOC
           oc={{

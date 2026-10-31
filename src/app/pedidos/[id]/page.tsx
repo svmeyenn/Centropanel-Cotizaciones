@@ -12,6 +12,8 @@ import type { FichaCliente } from "@/components/VentanaCliente";
 import Link from "next/link";
 import ProyectoDelPedido from "@/components/ProyectoDelPedido";
 import BotonFacturaTransporte from "@/components/BotonFacturaTransporte";
+import DespachoPedido from "@/components/transportes/DespachoPedido";
+import { cargarTransportes } from "@/lib/transportes";
 import { cargarMaestros } from "@/lib/finanzas/consultas";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import type { MargenReal } from "@/components/EditorPedido";
@@ -252,6 +254,19 @@ export default async function Pagina({
           }
           proyectos={(proyectosAct ?? []).map((x) => ({ id: Number(x.id_proyecto), nombre: rotuloProyecto(x) }))}
           puedeEditar={tienePerfilAdmin(v)}
+        />
+        <DespachoPedido
+          idPedido={id}
+          moneda={(ped.moneda as string | null) ?? monedaDelPais(Number(ped.id_pais))}
+          inicial={{
+            modalidad: (ped.modalidad_despacho as string) ?? "Despacho propio",
+            idTransportista: ped.id_transportista == null ? null : Number(ped.id_transportista),
+            idVehiculo: ped.id_vehiculo == null ? null : Number(ped.id_vehiculo),
+            flete: ped.flete_estimado == null ? null : Number(ped.flete_estimado),
+          }}
+          transportistas={await cargarTransportes(supabase, Number(ped.id_pais))}
+          puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
+          puedeRegistrarCosto={tienePerfilAdmin(v)}
         />
       </div>
       <EditorPedido

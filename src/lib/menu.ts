@@ -75,7 +75,11 @@ export const GRUPOS: Grupo[] = [
     titulo: "Operaciones y proyectos",
     area: "operaciones",
     nota: "Obras, presupuesto y cronograma",
-    opciones: [{ texto: "Proyectos", href: "/proyectos" }],
+    opciones: [
+      { texto: "Proyectos", href: "/proyectos" },
+      // Empresas de transporte, sus vehiculos y tarifas; se eligen en el pedido y en el retiro de una OC.
+      { texto: "Transportistas", href: "/transportistas" },
+    ],
   },
   {
     titulo: "Compras",
