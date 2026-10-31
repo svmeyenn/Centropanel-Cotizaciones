@@ -7,6 +7,7 @@ import { BanderaDe } from "@/components/Bandera";
 import Ventana from "@/components/Ventana";
 import CampoTelefono from "@/components/CampoTelefono";
 import { rut as fmtRut } from "@/lib/formato";
+import ListaBuscable from "@/components/transportes/ListaBuscable";
 import { crearTransportista, marcarProveedorTransportista, type DatosTransportista } from "@/app/transportistas/acciones";
 import type { Pais } from "@/types/database";
 
@@ -129,19 +130,13 @@ export default function GestorTransportistas({
       {puedeEditar && proveedores.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
           <span>¿Ya es proveedor?</span>
-          <select
-            aria-label="Proveedor existente"
-            className="border border-gray-300 rounded px-2 py-1 text-xs bg-white max-w-xs"
-            value={existente}
-            onChange={(e) => setExistente(e.target.value)}
-          >
-            <option value="">Elegir un proveedor</option>
-            {proveedores.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.razon_social}
-              </option>
-            ))}
-          </select>
+          <ListaBuscable
+            etiqueta="Proveedor existente"
+            placeholder="Escribir para buscar un proveedor"
+            opciones={proveedores.map((p) => ({ id: p.id, texto: p.razon_social }))}
+            valor={existente ? Number(existente) : null}
+            onChange={(id) => setExistente(id == null ? "" : String(id))}
+          />
           <button
             onClick={marcar}
             disabled={!existente || pendiente}
