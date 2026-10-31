@@ -138,6 +138,16 @@ export const GRUPOS: Grupo[] = [
     opciones: [
       { texto: "Facturas y notas de credito", href: "/facturas" },
       {
+        texto: "Flujo de efectivo",
+        href: "/flujo-efectivo",
+        ve: (v) => v.fin_ver_informes && v.fin_ver_todo,
+      },
+      {
+        texto: "Plan de cuentas",
+        href: "/plan-cuentas",
+        ve: (v) => v.fin_ver_informes || v.fin_mantenedores,
+      },
+      {
         texto: "Resumen por proyecto",
         href: "/resumen-proyecto",
         ve: (v) => v.fin_ver_informes,
