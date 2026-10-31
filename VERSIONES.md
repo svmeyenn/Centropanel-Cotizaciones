@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.011-20261031**
+Version vigente: **v008.012-20261031**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.011-20261031**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.011 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.012 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.012-20261031 | — | 31-10-2026 | Transportes: administrador de transportistas (datos, vehiculos, tarifas), despacho propio / retiro / transportista en pedidos y OC, carga del viaje desde catalogos (peso y dimensiones en productos y materias primas), cotizacion de flete con varios transportistas y reporte de fletes. Base: 5 tablas, columnas en pedidos, ordenes de compra, productos y materias primas, 7 funciones | pendiente |
 | v008.011-20261031 | — | 31-10-2026 | Perfiles y permisos: crear perfiles nuevos (en blanco o como copia de otro), editar nombre, alcance y rol base, y eliminar los que no tienen personas. Base: funciones perfil_crear, perfil_actualizar y perfil_eliminar | c2b8175 |
 | v008.010-20261031 | — | 31-10-2026 | Jerarquia Mercado > Unidad de negocio > Centro de costo, menu por modulos, finanzas etapas 1 a 4 (perfiles y topes, plan de cuentas IFRS, contabilidad devengada, flujo de efectivo, cierre de periodos, presupuesto, exportacion al contador), "Otros ingresos" reclasificado a anticipos de clientes y aportes de socios, revision de UX y rendimiento. Base: 14 tablas y 38 funciones nuevas, columnas de cuenta y centro en categorias, movimientos y proyectos; respaldo en tablas zz_respaldo_20261031_* | 68e084f |
 | v008.009-20261031 | — | 31-10-2026 | Nueva nomenclatura de versiones vHHH.SSS-AAAAMMDD (gran hito y subhito): historial reenumerado en 8 grandes hitos, con el numero antiguo en la columna Antes. Solo codigo | 4b468fc |
