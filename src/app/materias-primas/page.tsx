@@ -72,6 +72,13 @@ export default async function Pagina() {
     });
   }
 
+  // Peso con que se cotiza el flete de cada insumo: el de la ficha o el calculado con la densidad.
+  const pesoUsado: Record<number, { peso: number | null; origen: string }> = {};
+  const { data: calc } = await supabase.rpc("logistica_catalogo");
+  for (const c of (calc ?? []) as { clase: string; id: number; peso_kg: number | null; origen: string }[]) {
+    if (c.clase === "materia") pesoUsado[Number(c.id)] = { peso: c.peso_kg == null ? null : Number(c.peso_kg), origen: c.origen };
+  }
+
   const { data: tipos } = await supabase
     .from("tipos_materia")
     .select("id, nombre, es_nucleo, es_cara, orden, activo")
@@ -96,6 +103,7 @@ export default async function Pagina() {
           esAdminGeneral={esAdminGeneral}
           preferentes={preferentes}
           proveedoresDe={proveedoresDe}
+          pesoUsado={pesoUsado}
         />
       </div>
     </div>

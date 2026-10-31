@@ -19,12 +19,18 @@ export interface DatosMateria {
   largo_mm: number | null;
   espesor_mm: number | null;
   espesor_nominal: number | null;
+  // Peso de la unidad y densidad (EPS): con ellos se calcula el peso de los paneles y el flete.
+  peso_kg: number | null;
+  densidad_kg_m3: number | null;
   costo: number;
   unidad: string;
   activo?: boolean;
   // Mercado del insumo. Solo lo elige el administrador general.
   id_pais?: number | null;
 }
+
+const datosCargaInvalidos = (d: DatosMateria) =>
+  [d.ancho_mm, d.largo_mm, d.espesor_mm, d.peso_kg, d.densidad_kg_m3].some((n) => n != null && (!Number.isFinite(n) || n <= 0));
 
 // Alta de insumos. El nombre no se puede repetir: la carga masiva de costos
 // empareja por nombre y con dos iguales no sabria cual actualizar. La base
@@ -46,11 +52,14 @@ export async function crearMateria(d: DatosMateria) {
     return { error: `El tipo "${d.tipo}" no esta en la lista de tipos.` };
   }
   if (d.costo < 0) return { error: "El costo no puede ser negativo." };
+  if (datosCargaInvalidos(d)) return { error: "Las medidas, el peso y la densidad deben ser mayores que cero." };
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("materias_primas")
     .insert({
+      peso_kg: d.peso_kg,
+      densidad_kg_m3: d.densidad_kg_m3,
       nombre,
       tipo: d.tipo,
       familia: d.familia.trim() || null,
@@ -84,6 +93,7 @@ export async function crearMateria(d: DatosMateria) {
 export async function actualizarMateria(id: number, d: DatosMateria) {
   const err = await soloAdmin();
   if (err) return { error: err };
+  if (datosCargaInvalidos(d)) return { error: "Las medidas, el peso y la densidad deben ser mayores que cero." };
 
   const supabase = await createClient();
 
@@ -114,6 +124,8 @@ export async function actualizarMateria(id: number, d: DatosMateria) {
       largo_mm: d.largo_mm,
       espesor_mm: d.espesor_mm,
       espesor_nominal: d.espesor_nominal,
+      peso_kg: d.peso_kg,
+      densidad_kg_m3: d.densidad_kg_m3,
       unidad: d.unidad.trim() || null,
     })
     .eq("id", id);

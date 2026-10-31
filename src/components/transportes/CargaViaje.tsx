@@ -36,9 +36,11 @@ export default function CargaViaje({
           {r.sinMedidas > 0 && `${r.sinMedidas} sin medidas. `}
           El total es lo que se pudo sumar, no la carga completa.{" "}
           {puedeCompletar && (
-            <Link href="/datos-carga" className="underline font-semibold">
-              Completar peso y dimensiones
-            </Link>
+            <>
+              Complete el peso y las medidas en la ficha de{" "}
+              <Link href="/productos" className="underline font-semibold">productos</Link> o de{" "}
+              <Link href="/materias-primas" className="underline font-semibold">materias primas</Link>.
+            </>
           )}
         </p>
       )}

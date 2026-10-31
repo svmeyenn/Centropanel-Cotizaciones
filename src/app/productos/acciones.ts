@@ -15,6 +15,11 @@ export interface DatosProducto {
   precio_venta: number;
   precio_manual: boolean;
   activo: boolean;
+  // Datos de carga para cotizar el flete. Vacio = no se sabe; en un panel, vacio = se calcula de sus placas y EPS.
+  ancho_mm: number | null;
+  largo_mm: number | null;
+  alto_mm: number | null;
+  peso_kg: number | null;
 }
 
 // Edita un producto del catalogo. Deliberadamente NO deja cambiar la
@@ -28,6 +33,9 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
   }
   if (!d.descripcion.trim()) return { error: "Indique la descripcion." };
   if (d.precio_venta < 0) return { error: "El precio no puede ser negativo." };
+  for (const n of [d.ancho_mm, d.largo_mm, d.alto_mm, d.peso_kg]) {
+    if (n != null && (!Number.isFinite(n) || n <= 0)) return { error: "Las medidas y el peso deben ser mayores que cero." };
+  }
 
   const supabase = await createClient();
 
@@ -70,6 +78,10 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
       precio_manual: d.precio_manual,
       margen_aplicado: d.precio_venta > 0 ? (d.precio_venta - costo) / d.precio_venta : 0,
       activo: d.activo,
+      ancho_mm: d.ancho_mm,
+      largo_mm: d.largo_mm,
+      alto_mm: d.alto_mm,
+      peso_kg: d.peso_kg,
     })
     .eq("id", id);
 

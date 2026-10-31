@@ -22,7 +22,7 @@ export default async function Pagina() {
         supabase
           .from("productos")
           .select(
-            "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais, grupo_descuento",
+            "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais, grupo_descuento, ancho_mm, largo_mm, alto_mm, peso_kg",
           ),
         idPaisActivo,
       )
@@ -44,6 +44,15 @@ export default async function Pagina() {
   const { data: malos } = await supabase.rpc("paneles_eps_erroneo");
   const advertencias: Record<number, string> = {};
   for (const m of (malos ?? []) as { id: number; mensaje: string }[]) advertencias[Number(m.id)] = m.mensaje;
+
+  // Peso que usa el flete de cada producto: el cargado en la ficha o, en un panel SIP, el calculado de sus componentes.
+  const pesoUsado: Record<number, { peso: number | null; origen: string }> = {};
+  if (esAdmin) {
+    const { data: calc } = await supabase.rpc("logistica_catalogo");
+    for (const c of (calc ?? []) as { clase: string; id: number; peso_kg: number | null; origen: string }[]) {
+      if (c.clase === "producto") pesoUsado[Number(c.id)] = { peso: c.peso_kg == null ? null : Number(c.peso_kg), origen: c.origen };
+    }
+  }
 
   // Grupo de descuento de cada familia del catalogo.
   const { data: familiasCat } = await supabase
@@ -147,6 +156,7 @@ export default async function Pagina() {
           esAdminGeneral={esAdminGeneral}
           gruposFamilia={gruposFamilia}
           advertencias={advertencias}
+          pesoUsado={pesoUsado}
           preferentes={preferentes}
           proveedoresDe={proveedoresDe}
         />

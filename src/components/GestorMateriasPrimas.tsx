@@ -40,7 +40,10 @@ export default function GestorMateriasPrimas({
   esAdminGeneral,
   preferentes,
   proveedoresDe,
+  pesoUsado = {},
 }: {
+  // Peso con que se cotiza el flete de cada insumo, y de donde sale (ficha, calculado o falta).
+  pesoUsado?: Record<number, { peso: number | null; origen: string }>;
   // Proveedor preferente de cada insumo que lo tiene, y el costo que cobra.
   preferentes: Record<number, { proveedor: string; costo: number }>;
   // Los proveedores de cada insumo, para elegir el preferente con un check.
@@ -57,6 +60,7 @@ export default function GestorMateriasPrimas({
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("");
   const [familiaFiltro, setFamiliaFiltro] = useState("");
+  const [soloSinPeso, setSoloSinPeso] = useState(false);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosMateria | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,12 +75,13 @@ export default function GestorMateriasPrimas({
       (m) =>
         (!tipo || m.tipo === tipo) &&
         (!familiaFiltro || (m.familia ?? "") === familiaFiltro) &&
+        (!soloSinPeso || pesoUsado[m.id]?.peso == null) &&
         (!q ||
           m.nombre.toLowerCase().includes(q) ||
           (m.etiqueta ?? "").toLowerCase().includes(q) ||
           (m.sku ?? "").toLowerCase().includes(q))
     );
-  }, [busca, tipo, familiaFiltro, materias]);
+  }, [busca, tipo, familiaFiltro, soloSinPeso, pesoUsado, materias]);
 
   function editar(m: MateriaPrima) {
     setEditando(m.id);
@@ -90,6 +95,8 @@ export default function GestorMateriasPrimas({
       largo_mm: m.largo_mm,
       espesor_mm: m.espesor_mm,
       espesor_nominal: m.espesor_nominal,
+      peso_kg: m.peso_kg ?? null,
+      densidad_kg_m3: m.densidad_kg_m3 ?? null,
       costo: m.costo,
       unidad: m.unidad ?? "",
     });
@@ -315,6 +322,10 @@ export default function GestorMateriasPrimas({
               </option>
             ))}
         </select>
+        <label className="text-sm text-gray-600 flex items-center gap-2">
+          <input type="checkbox" checked={soloSinPeso} onChange={(e) => setSoloSinPeso(e.target.checked)} />
+          Sin peso para el flete
+        </label>
         <BotonExportar
           nombre="materias-primas"
           columnas={[
@@ -326,6 +337,8 @@ export default function GestorMateriasPrimas({
             { titulo: "Espesor mm", valor: (m) => m.espesor_mm ?? "" },
             { titulo: "Ancho mm", valor: (m) => m.ancho_mm ?? "" },
             { titulo: "Largo mm", valor: (m) => m.largo_mm ?? "" },
+            { titulo: "Peso kg", valor: (m) => pesoUsado[m.id]?.peso ?? "" },
+            { titulo: "Densidad kg/m3", valor: (m) => m.densidad_kg_m3 ?? "" },
             { titulo: "Costo", valor: (m) => m.costo },
             { titulo: "Unidad", valor: (m) => m.unidad ?? "" },
             { titulo: "Estado", valor: (m) => (m.activo ? "Activo" : "Inactivo") },
@@ -440,6 +453,48 @@ export default function GestorMateriasPrimas({
               cls={input}
             />
           </div>
+          <fieldset className="border-t border-gray-200 pt-3">
+            <legend className="text-xs font-semibold text-verde pr-2">Peso y dimensiones (para cotizar el flete)</legend>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {(
+                [
+                  ["ancho_mm", "Ancho (mm)"],
+                  ["largo_mm", "Largo (mm)"],
+                  ["peso_kg", "Peso por unidad (kg)"],
+                  ["densidad_kg_m3", "Densidad (kg/m³)"],
+                ] as const
+              ).map(([k, etiqueta]) => (
+                <label key={k} className="text-sm">
+                  <span className="block text-dorado-osc font-semibold mb-1">{etiqueta}</span>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    className={input}
+                    value={form[k] ?? ""}
+                    onChange={(e) => setForm({ ...form, [k]: e.target.value === "" ? null : Number(e.target.value) })}
+                  />
+                </label>
+              ))}
+              <div className="text-sm">
+                <span className="block text-dorado-osc font-semibold mb-1">Peso que usa el flete</span>
+                {editando != null && pesoUsado[editando]?.peso != null ? (
+                  <span className="tabular-nums">
+                    {pesoUsado[editando].peso?.toLocaleString("es-CL", { maximumFractionDigits: 2 })} kg
+                    <span className="block text-[11px] text-gray-500">
+                      {pesoUsado[editando].origen === "calculado" ? "calculado con la densidad" : "de esta ficha"}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-red-700">Falta</span>
+                )}
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-500 mt-1">
+              El peso de los paneles SIP se calcula de sus partes: cargue el peso de cada placa y la densidad del poliestireno (EPS), y el panel queda resuelto.
+              El espesor se carga arriba.
+            </p>
+          </fieldset>
           {editando != null && (
             <ProveedoresDelItem
               proveedores={proveedoresDe[editando] ?? []}
@@ -484,6 +539,7 @@ export default function GestorMateriasPrimas({
                 <th className="text-left px-3 py-2 w-20">Tipo</th>
                 <th className="text-left px-3 py-2 w-24">Etiqueta</th>
                 <th className="text-right px-3 py-2 w-20">Esp.</th>
+                <th className="text-right px-3 py-2 w-24">Peso</th>
                 <th className="text-right px-3 py-2 w-28">Costo</th>
                 <th className="text-left px-3 py-2 w-20">Estado</th>
                 <th className="w-28" />
@@ -511,6 +567,15 @@ export default function GestorMateriasPrimas({
                     {m.espesor_mm != null
                       ? unidades(m.espesor_mm)
                       : (m.espesor_nominal ?? "")}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums text-gray-600">
+                    {pesoUsado[m.id]?.peso != null ? (
+                      <span title={pesoUsado[m.id].origen === "calculado" ? "Calculado con la densidad" : "Cargado en la ficha"}>
+                        {pesoUsado[m.id].peso?.toLocaleString("es-CL", { maximumFractionDigits: 2 })} kg
+                      </span>
+                    ) : (
+                      <span className="text-red-700">falta</span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-right font-semibold">
                     {pesos(m.costo)}
