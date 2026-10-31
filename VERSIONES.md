@@ -9,7 +9,7 @@ Version vigente: **v0178-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
-| v0188-20261030 | 30-10-2026 | Pedido: la tabla de pagos no aparecia --decia "Sin pagos registrados"-- porque la consulta quedo ambigua al tener dos relaciones con vendedores; se nombra la del registro. Solo codigo | (pendiente) |
+| v0188-20261030 | 30-10-2026 | Pedido: la tabla de pagos no aparecia --decia "Sin pagos registrados"-- porque la consulta quedo ambigua al tener dos relaciones con vendedores; se nombra la del registro. Solo codigo | 010fa73 |
 | v0187-20261030 | 30-10-2026 | Pedido: el gasto financiero se ingresa al registrar el pago (Tarjeta y Link de Pago), con el sugerido segun la tasa del medio; vacio queda por definir. Solo codigo | 7ff020c |
 | v0186-20261030 | 30-10-2026 | Pedido: el costo de transporte se ingresa como valor (con IVA) sin factura y cuenta de inmediato en el margen real como estimado; la factura se carga y se envia a pago despues, y al aprobarse reemplaza al valor estimado. Base: pedido_transporte y margen real | 2f06be7 |
 | v0185-20261030 | 30-10-2026 | Egresos: filtro por estado de aprobacion --aprobado, por aprobar, rechazado o todos--; al entrar solo se ven los aprobados, los por aprobar y los ejecutados, y los rechazados aparecen solo al aplicar el filtro. Solo codigo | 1883ef0 |
