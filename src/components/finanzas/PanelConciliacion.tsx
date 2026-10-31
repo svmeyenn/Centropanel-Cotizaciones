@@ -141,25 +141,19 @@ export default function PanelConciliacion({
   // cuadre termine.
   const saldoProyectado = saldoSistema + netoBanco;
 
-  // Candidatos de una linea: los movimientos sin cuadrar del tipo que
-  // corresponde, ordenados por lo cerca que estan en monto y en fecha.
+  // Candidatos de una linea: solo los movimientos sin cuadrar del tipo que
+  // corresponde y por el monto exacto del banco, los mas cercanos en fecha
+  // primero. Uno de otro monto no explica la linea, aunque se le parezca.
   function candidatos(l: LineaBanco) {
     const tipo = Number(l.cargo) > 0 ? "Egreso" : "Ingreso";
     const monto = Number(l.cargo) + Number(l.abono);
     return sinLinea
-      .filter((m) => m.tipo === tipo)
+      .filter((m) => m.tipo === tipo && Number(m.monto) === monto)
       .map((m) => ({
         mov: m,
-        calza: Number(m.monto) === monto,
         distancia: m.fecha ? dias(m.fecha, l.fecha) : 999,
       }))
-      .sort(
-        (a, b) =>
-          Number(b.calza) - Number(a.calza) ||
-          a.distancia - b.distancia ||
-          Math.abs(Number(a.mov.monto) - monto) -
-            Math.abs(Number(b.mov.monto) - monto)
-      )
+      .sort((a, b) => a.distancia - b.distancia)
       .slice(0, 25);
   }
 
@@ -454,10 +448,13 @@ export default function PanelConciliacion({
                                 }))
                               }
                             >
-                              <option value="">Elija el movimiento</option>
-                              {opciones.map(({ mov, calza, distancia }) => (
+                              <option value="">
+                                {opciones.length
+                                  ? "Elija el movimiento"
+                                  : "Sin movimiento por este monto"}
+                              </option>
+                              {opciones.map(({ mov, distancia }) => (
                                 <option key={mov.id_mov} value={mov.id_mov}>
-                                  {calza ? "= " : ""}
                                   {mov.fecha ? fechaCorta(mov.fecha) : ""}
                                   {" - "}
                                   {pesos(mov.monto)}

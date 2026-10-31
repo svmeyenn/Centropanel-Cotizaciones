@@ -177,6 +177,23 @@ export async function enlazarLinea(
   if (!v.fin_pagar_gastos) return { ok: false, mensaje: "Sin permiso para conciliar." };
 
   const supabase = await createClient();
+
+  // Un movimiento solo explica una linea si el monto y el tipo son los del
+  // banco, al peso.
+  const [{ data: linea }, { data: mov }] = await Promise.all([
+    supabase.from("cartola_banco").select("cargo, abono").eq("id_linea", idLinea).maybeSingle(),
+    supabase.from("movimientos").select("monto, tipo").eq("id_mov", idMov).maybeSingle(),
+  ]);
+  if (!linea || !mov) return { ok: false, mensaje: "No puede conciliar esta linea." };
+  const montoBanco = Number(linea.cargo) + Number(linea.abono);
+  const tipoBanco = Number(linea.cargo) > 0 ? "Egreso" : "Ingreso";
+  if (mov.tipo !== tipoBanco || Number(mov.monto) !== montoBanco)
+    return {
+      ok: false,
+      mensaje:
+        "El monto del movimiento no es el mismo que el de la linea del banco. Corrija el movimiento o use \"Pasar al sistema\".",
+    };
+
   const { error, data } = await supabase
     .from("cartola_banco")
     .update({
