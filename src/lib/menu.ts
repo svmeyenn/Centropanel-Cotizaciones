@@ -171,6 +171,19 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
+    // Datos sensibles: se abre solo con permiso expreso en el area; quien aun no tiene
+    // permisos definidos NO entra (a diferencia de las otras areas).
+    titulo: "Recursos humanos",
+    area: "rrhh",
+    nota: "Personal, contratos, honorarios y liquidaciones",
+    opciones: [
+      { texto: "Personal", href: "/rrhh", ve: (v) => puedeEn(v, "rrhh", "ver") },
+      { texto: "Liquidaciones y honorarios", href: "/rrhh/liquidaciones", ve: (v) => puedeEn(v, "rrhh", "ver") },
+      { texto: "Planilla previsional", href: "/rrhh/planilla", ve: (v) => puedeEn(v, "rrhh", "ver") },
+      { texto: "Parametros de remuneraciones", href: "/rrhh/parametros", ve: (v) => puedeEn(v, "rrhh", "administrar") },
+    ],
+  },
+  {
     titulo: "Administracion",
     nota: "Reglas del sistema y quien entra",
     pestanas: true,

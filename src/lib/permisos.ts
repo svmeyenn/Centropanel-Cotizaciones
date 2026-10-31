@@ -11,6 +11,7 @@ export const AREAS = [
   { k: "tesoreria", t: "Tesoreria" },
   { k: "contabilidad", t: "Contabilidad" },
   { k: "administracion", t: "Administracion" },
+  { k: "rrhh", t: "Recursos humanos" },
 ] as const;
 
 export type Area = (typeof AREAS)[number]["k"];

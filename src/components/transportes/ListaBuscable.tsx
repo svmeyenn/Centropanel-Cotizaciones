@@ -92,7 +92,7 @@ export default function ListaBuscable({
       </div>
       {abierto && (
         <ul id={idLista} role="listbox" className="absolute z-20 mt-1 max-h-56 w-72 overflow-auto rounded border border-gray-300 bg-white shadow text-xs">
-          {visibles.length === 0 && <li className="px-2 py-2 text-gray-500">Ningun proveedor coincide con lo escrito.</li>}
+          {visibles.length === 0 && <li className="px-2 py-2 text-gray-500">Nada coincide con lo escrito.</li>}
           {visibles.map((o, i) => (
             <li
               key={o.id}
