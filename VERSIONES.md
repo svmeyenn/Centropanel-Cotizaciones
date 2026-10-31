@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.008-20261031**
+Version vigente: **v008.009-20261031**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.008-20261031**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.008 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.009 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.009-20261031 | — | 31-10-2026 | Nueva nomenclatura de versiones vHHH.SSS-AAAAMMDD (gran hito y subhito): historial reenumerado en 8 grandes hitos, con el numero antiguo en la columna Antes. Solo codigo | pendiente |
 | v008.008-20261031 | v0191-20261031 | 31-10-2026 | Conciliacion bancaria: solo se proponen movimientos por el monto exacto del banco y el cuadre manual valida monto y tipo. "Pasar al sistema" fallaba por la politica de egresos: ahora lo hace la funcion fin_pasar_linea_al_sistema. Base: funcion nueva | 4cc7b6c |
 | v008.007-20261031 | v0190-20261031 | 31-10-2026 | Cuadro comparativo de cada solicitud: no aparece la columna de un proveedor que no vende ningun item del listado. Solo codigo | bc79b58 |
 | v008.006-20261031 | v0189-20261031 | 31-10-2026 | Maestra del proveedor: columna SKU de Centropanel y SKU en los selectores para agregar items. Solo codigo | 0e62ffc |
