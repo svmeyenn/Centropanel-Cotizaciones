@@ -50,7 +50,7 @@ export default async function Pagina({
     (contratos.data ?? []).filter((p) => Number(p.id_proyecto) === idProy).reduce((s, p) => s + (neto.get(Number(p.id)) ?? 0), 0);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen vista-fin">
       <Cabecera
         titulo="Avance de obras"
         subtitulo="El ingreso de cada obra se reconoce según lo avanzado (NIIF 15), no al facturar"

@@ -56,8 +56,8 @@ export default function PanelAvance({
         factura de más queda como pasivo del contrato y lo que falta por facturar, como activo. Una obra sin avance
         registrado reconoce su ingreso al facturar.
       </div>
-      {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>}
-      {aviso && <div role="status" className="bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">{aviso}</div>}
+      {error && <div role="alert" className="sticky top-2 z-10 shadow bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>}
+      {aviso && <div role="status" className="sticky top-2 z-10 shadow bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">{aviso}</div>}
 
       {paises.length > 1 && (
         <form method="get" className="flex items-end gap-2 text-xs">

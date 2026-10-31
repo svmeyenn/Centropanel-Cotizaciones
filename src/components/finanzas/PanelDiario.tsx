@@ -94,10 +94,10 @@ export default function PanelDiario({
       </div>
 
       {error && (
-        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>
+        <div role="alert" className="sticky top-2 z-10 shadow bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>
       )}
       {aviso && (
-        <div role="status" className="bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">{aviso}</div>
+        <div role="status" className="sticky top-2 z-10 shadow bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">{aviso}</div>
       )}
 
       <form className="flex flex-wrap items-end gap-3 text-xs" method="get">
@@ -120,6 +120,12 @@ export default function PanelDiario({
           <input id="hasta" type="date" name="hasta" defaultValue={hasta} className={campo} />
         </label>
         <button className="bg-verde text-white text-xs font-semibold px-3 py-1.5 rounded">Ver</button>
+        <a
+          href={`/libro-diario/exportar?pais=${pais.id}&desde=${desde}&hasta=${hasta}`}
+          className="text-verde underline text-xs py-1.5"
+        >
+          Descargar para el contador (CSV)
+        </a>
         {puedeEditar && (
           <span className="ml-auto flex gap-2">
             <button

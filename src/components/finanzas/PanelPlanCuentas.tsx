@@ -103,12 +103,12 @@ export default function PanelPlanCuentas({
       </div>
 
       {error && (
-        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
+        <div role="alert" className="sticky top-2 z-10 shadow bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
           {error}
         </div>
       )}
       {aviso && (
-        <div role="status" className="bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">
+        <div role="status" className="sticky top-2 z-10 shadow bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">
           {aviso}
         </div>
       )}

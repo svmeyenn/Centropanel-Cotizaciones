@@ -48,7 +48,7 @@ export default async function Pagina({
   ]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen vista-fin">
       <Cabecera
         titulo="Libro diario"
         subtitulo="Los asientos de partida doble que alimentan el estado de resultados y el balance"

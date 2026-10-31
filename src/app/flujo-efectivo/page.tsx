@@ -75,7 +75,7 @@ export default async function Pagina({
   const campo = "border border-gray-300 rounded px-2 py-1 text-xs bg-white";
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen vista-fin">
       <Cabecera
         titulo="Flujo de efectivo"
         subtitulo="Lo que entró y salió por el banco, y lo que se espera para las próximas 13 semanas"

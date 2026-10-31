@@ -76,8 +76,8 @@ export default function PanelActivos({
         entra como saldo inicial.
       </div>
 
-      {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>}
-      {aviso && <div role="status" className="bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">{aviso}</div>}
+      {error && <div role="alert" className="sticky top-2 z-10 shadow bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>}
+      {aviso && <div role="status" className="sticky top-2 z-10 shadow bg-green-50 border border-green-200 text-green-800 text-sm rounded p-3">{aviso}</div>}
 
       <div className="flex flex-wrap items-end gap-3 text-xs">
         {paises.length > 1 && (

@@ -204,3 +204,12 @@ table.datos tbody tr:nth-child(even) {
 .ruta-tramo-falta { background: repeating-linear-gradient(90deg, #9CA3AF 0 4px, transparent 4px 8px); }
 @keyframes ruta-trazo { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .ruta-tramo-hecho { animation: none; } }
+
+/* Pantallas de finanzas: en tablet y celular los controles llegan a 44px para poder tocarlos. */
+@media (pointer: coarse) {
+  .vista-fin button,
+  .vista-fin select,
+  .vista-fin input:not([type="checkbox"]) {
+    min-height: 44px;
+  }
+}

@@ -33,7 +33,7 @@ export default async function Pagina({
   ]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen vista-fin">
       <Cabecera
         titulo="Activos fijos"
         subtitulo="Maquinaria, vehículos y equipos, con su depreciación lineal mensual"

@@ -28,7 +28,7 @@ export default async function Pagina() {
   ]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen vista-fin">
       <Cabecera
         titulo="Perfiles y permisos"
         subtitulo="Quien puede hacer que, hasta cuanto aprueba y que excepciones se han usado"

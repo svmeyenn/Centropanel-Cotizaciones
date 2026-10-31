@@ -70,7 +70,7 @@ export default async function Pagina({
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen vista-fin">
       <Cabecera
         titulo="Balance"
         subtitulo="Estado de situación financiera: lo que la empresa tiene, lo que debe y lo que es de los socios"

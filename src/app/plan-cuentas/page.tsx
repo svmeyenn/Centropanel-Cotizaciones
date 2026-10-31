@@ -30,7 +30,7 @@ export default async function Pagina() {
   ]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen vista-fin">
       <Cabecera
         titulo="Plan de cuentas"
         subtitulo="Las cuentas IFRS, los conceptos del flujo de efectivo y a qué cuenta va cada categoría"
