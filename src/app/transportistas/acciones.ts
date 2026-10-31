@@ -68,15 +68,19 @@ export async function crearTransportista(d: DatosTransportista) {
 
 // Un proveedor que ya existe y que tambien transporta: no se duplica, se le suma la marca.
 export async function marcarProveedorTransportista(idEntidad: number) {
-  const err = await puedeAdministrar();
-  if (err) return { error: err };
-  const supabase = await createClient();
-  const { error } = await supabase.from("entidad_tipos").upsert({ id_entidad: idEntidad, tipo: "transportista" });
-  if (error) return { error: error.message };
-  const { error: e2 } = await supabase.from("transportistas").upsert({ id_entidad: idEntidad });
-  if (e2) return { error: e2.message };
-  revalidatePath("/transportistas");
-  return { ok: true };
+  try {
+    const err = await puedeAdministrar();
+    if (err) return { error: err };
+    const supabase = await createClient();
+    const { error } = await supabase.from("entidad_tipos").upsert({ id_entidad: idEntidad, tipo: "transportista" });
+    if (error) return { error: `entidad_tipos: ${error.message}` };
+    const { error: e2 } = await supabase.from("transportistas").upsert({ id_entidad: idEntidad });
+    if (e2) return { error: `transportistas: ${e2.message}` };
+    revalidatePath("/transportistas");
+    return { ok: true };
+  } catch (e) {
+    return { error: `Error inesperado: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }
 
 export async function actualizarTransportista(id: number, d: DatosTransportista) {
