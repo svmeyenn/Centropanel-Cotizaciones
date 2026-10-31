@@ -45,16 +45,23 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
 
   // Cuantos registros tiene hoy cada estado: es lo que impide eliminar uno en uso.
   const supabase = await createClient();
-  const cuentas = await Promise.all(
-    todos.map(async (e) => {
-      const { count } =
-        tipo === "lead"
-          ? await supabase.from("v_leads").select("id_clientify", { count: "exact", head: true }).eq("estado_efectivo", e.codigo)
-          : await supabase.from("cotizaciones").select("id", { count: "exact", head: true }).eq("estado", e.codigo);
-      return [e.codigo, count ?? 0] as const;
-    })
-  );
-  const usos = Object.fromEntries(cuentas);
+  // Una sola consulta que agrupa por estado, no un conteo completo de la vista por cada estado.
+  const usos: Record<string, number> = {};
+  if (tipo === "lead") {
+    const { data } = await supabase.rpc("leads_por_estado");
+    for (const f of (data ?? []) as { estado: string | null; n: number }[]) {
+      if (f.estado) usos[f.estado] = Number(f.n);
+    }
+  } else {
+    const cuentas = await Promise.all(
+      todos.map(async (e) => {
+        const { count } = await supabase.from("cotizaciones").select("id", { count: "exact", head: true }).eq("estado", e.codigo);
+        return [e.codigo, count ?? 0] as const;
+      })
+    );
+    Object.assign(usos, Object.fromEntries(cuentas));
+  }
+  for (const e of todos) usos[e.codigo] ??= 0;
   // Los de origen que se eliminaron: se pueden restaurar.
   const faltantes = CATALOGO_POR_DEFECTO[tipo].filter((x) => !todos.some((y) => y.codigo === x.codigo)).map((x) => x.etiqueta);
 
