@@ -479,7 +479,7 @@ export default function FichaNecesidad({
 // Una solicitud con su cuadro comparativo: items en filas, proveedores en columnas, el mejor precio de cada item
 // destacado, y el total de cada proveedor si cotizo todo.
 function TarjetaSolicitud({
-  s, destinoNm, items, proveedores, precio, maestra, excluidos, total, moneda, ivaPct, impuesto, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
+  s, destinoNm, items, proveedores: todosLosProveedores, precio, maestra, excluidos, total, moneda, ivaPct, impuesto, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
 }: {
   s: Sol;
   destinoNm: { fecha: string | null; direccion: string | null };
@@ -500,6 +500,9 @@ function TarjetaSolicitud({
   alAbrir: () => void;
   hayCotizaciones: boolean;
 }) {
+  // Solo las columnas de los proveedores a los que se les pide algo de esta solicitud: el que no vende ningun item del
+  // listado --o a quien se le sacaron todos-- no aparece.
+  const proveedores = todosLosProveedores.filter((p) => items.some((i) => precio.has(`${p.id}:${i.id}`) || maestra.has(`${p.id}:${i.id}`)));
   // Cada proveedor con la estructura de una factura: subtotal, descuento, subtotal despues del descuento, impuesto y total.
   const desglose = proveedores.map((p) => {
     const sub = total(s, p.id);
