@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MODALIDADES_PEDIDO, guardarDespachoPedido } from "@/app/transportistas/acciones";
+import { guardarDespachoPedido } from "@/app/transportistas/acciones";
+import { MODALIDADES_PEDIDO } from "@/lib/transportes";
 import { registrarCostoTransporte } from "@/app/pedidos/acciones";
 import type { OpcionTransportista } from "@/lib/transportes";
 import { ajusteVehiculo, resumirCarga, type LineaCarga } from "@/lib/carga";

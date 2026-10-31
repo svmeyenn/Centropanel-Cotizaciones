@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+// Listas fijas: viven aqui y no en acciones.ts porque un archivo "use server" solo puede exportar funciones async.
+export const TIPOS_VEHICULO = ["Camioneta", "Camion", "Camion con pluma", "Semirremolque", "Otro"] as const;
+export const TIPOS_COBRO = ["Viaje", "Por km", "Por dia", "Por hora"] as const;
+export const MODALIDADES_PEDIDO = ["Despacho propio", "Retiro del cliente", "Transportista"] as const;
+
 // Lo que se ofrece al elegir transportista en un pedido o una orden de compra: los activos del
 // mercado, con sus vehiculos disponibles y sus tarifas vigentes. Tipos planos, aptos para un componente de cliente.
 export interface OpcionTarifa {

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
+import { MODALIDADES_PEDIDO, TIPOS_COBRO, TIPOS_VEHICULO } from "@/lib/transportes";
 
 // Los transportistas son proveedores con una marca mas. Quien puede modificar pedidos
 // y ordenes de compra, o es administrador, administra los transportistas: es la misma
@@ -111,7 +112,6 @@ export async function actualizarTransportista(id: number, d: DatosTransportista)
   return { ok: true };
 }
 
-export const TIPOS_VEHICULO = ["Camioneta", "Camion", "Camion con pluma", "Semirremolque", "Otro"] as const;
 
 export interface DatosVehiculo {
   tipo: string;
@@ -152,7 +152,6 @@ export async function guardarVehiculo(idEntidad: number, id: number | null, d: D
   return { ok: true };
 }
 
-export const TIPOS_COBRO = ["Viaje", "Por km", "Por dia", "Por hora"] as const;
 
 export interface DatosTarifa {
   id_vehiculo: number | null; // vacio: tarifa general del transportista
@@ -207,7 +206,6 @@ export async function eliminarTarifa(idEntidad: number, id: number) {
   return { ok: true };
 }
 
-export const MODALIDADES_PEDIDO = ["Despacho propio", "Retiro del cliente", "Transportista"] as const;
 
 // Como sale el pedido: con camion de Centro Panel, lo retira el cliente, o lo lleva un transportista.
 export async function guardarDespachoPedido(

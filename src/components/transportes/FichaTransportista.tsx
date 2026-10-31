@@ -5,9 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CampoTelefono from "@/components/CampoTelefono";
 import { rut as fmtRut } from "@/lib/formato";
+import { TIPOS_COBRO, TIPOS_VEHICULO } from "@/lib/transportes";
 import {
-  TIPOS_COBRO,
-  TIPOS_VEHICULO,
   actualizarTransportista,
   eliminarTarifa,
   guardarTarifa,
