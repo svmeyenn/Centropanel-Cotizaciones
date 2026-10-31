@@ -10,7 +10,7 @@ import { GESTIONES, SIN_PROPIETARIO, aplicarFiltrosLeads } from "@/lib/filtrosLe
 import CargarContactosClientify from "@/components/CargarContactosClientify";
 import BotonEnlazarClientes from "@/components/BotonEnlazarClientes";
 import NuevoLead from "@/components/NuevoLead";
-import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, paisesDeOrigen, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { LINEAS, puedeCargarLeads, puedeEscribirLeads } from "@/lib/leads";
 import { etiquetaDe, estadosParaFiltros } from "@/lib/catalogoEstados";
@@ -88,7 +88,9 @@ export default async function Pagina({
   const diasEdad = Math.max(0, Math.min(3650, Number.parseInt(dias, 10) || 0));
   const v = await requerirVendedor();
   const supabase = await createClient();
-  const { activo, idPaisActivo, paises } = await contextoMercado(v);
+  const ctxMercado = await contextoMercado(v);
+  const { activo, idPaisActivo } = ctxMercado;
+  const paises = await paisesDeOrigen(ctxMercado);
   const esPeru = activo?.codigo === "PE";
   const puedeSincronizar = puedeCargarLeads(v);
   const puedeAsignar = puedeEscribirLeads(v);

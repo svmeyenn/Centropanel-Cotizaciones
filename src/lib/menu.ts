@@ -152,6 +152,11 @@ export const GRUPOS: Grupo[] = [
         ve: (v) => v.fin_mantenedores,
       },
       {
+        texto: "Unidades y centros de costo",
+        href: "/estructura",
+        ve: (v) => v.fin_mantenedores,
+      },
+      {
         texto: "Clientes y proveedores",
         href: "/clientes",
         ve: (v) => v.fin_mantenedores,

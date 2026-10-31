@@ -146,6 +146,7 @@ export async function guardarProyecto(
     // El folio del pedido que abrio la obra. Normalmente lo pone el sistema;
     // aqui se completa a mano para las obras anteriores a eso.
     num_pedido: texto(d.get("num_pedido")),
+    id_centro_costo: Number(d.get("id_centro_costo")) || null,
     activo: d.get("activo") === "on",
   };
 

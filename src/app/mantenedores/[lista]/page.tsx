@@ -8,6 +8,7 @@ import {
   cargarCuentasInterlocutores,
   cargarMaestros,
 } from "@/lib/finanzas/consultas";
+import { cargarEstructura } from "@/lib/estructura";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 
@@ -56,6 +57,7 @@ export default async function Pagina({
   const { cuentas, proyectos, categorias, interlocutores } =
     await cargarMaestros(idPaisActivo);
   const cuentasInterlocutores = await cargarCuentasInterlocutores();
+  const { unidades, centros } = await cargarEstructura(null);
 
   // La moneda que se propone al abrir una cuenta nueva sale del mercado.
   const moneda =
@@ -79,6 +81,8 @@ export default async function Pagina({
           moneda={moneda}
           mercados={accesibles.map((p) => ({ id: p.id, codigo: p.codigo }))}
           mercadoActivo={idPaisActivo}
+          unidades={unidades}
+          centros={centros}
         />
       </div>
     </div>

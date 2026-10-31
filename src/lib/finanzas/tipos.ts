@@ -35,6 +35,9 @@ export type Proyecto = {
   num_pedido: string | null;
   activo: boolean;
   borrado: boolean;
+  // El centro de costo del que cuelga la obra: de ahi salen la unidad de
+  // negocio y el mercado de todo lo que se le imputa.
+  id_centro_costo?: number | null;
 };
 
 // Como se nombra un proyecto en pantalla: la obra, su cliente y su pedido, en

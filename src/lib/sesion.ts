@@ -64,6 +64,9 @@ export const contextoMercado = cache(async function contextoMercado(v: Vendedor)
     .from("paises")
     .select("id, codigo, nombre, moneda_base, prefijo_telefono, etiqueta_id, activo")
     .eq("activo", true)
+    // Mercado es donde se opera; los paises que solo clasifican el origen de
+    // un lead no son un mercado que se pueda elegir.
+    .eq("opera", true)
     .order("orden");
 
   const todos = (data ?? []) as Pais[];
@@ -99,6 +102,23 @@ export const contextoMercado = cache(async function contextoMercado(v: Vendedor)
     idPaisTrabajo: activo?.id ?? accesibles[0]?.id ?? 1,
   };
 });
+
+// Paises con que se clasifica el origen de un lead: los mercados donde se
+// opera y los que se agregaron solo para eso. Quien trabaja un solo mercado ve
+// el suyo.
+export async function paisesDeOrigen(
+  ctx: { accesibles: Pais[]; esAdminGeneral: boolean }
+): Promise<Pais[]> {
+  if (!ctx.esAdminGeneral) return ctx.accesibles;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("paises")
+    .select("id, codigo, nombre, moneda_base, prefijo_telefono, etiqueta_id, activo")
+    .eq("activo", true)
+    .order("orden")
+    .order("nombre");
+  return (data ?? []) as Pais[];
+}
 
 // Pais que se administra en Parametros y Formas de pago. Con un mercado activo
 // es ese; en la vista Todos, el que se elija en la pantalla.
