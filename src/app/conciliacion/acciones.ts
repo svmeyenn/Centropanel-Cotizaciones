@@ -391,73 +391,24 @@ export async function pasarLineaAlSistema(
 
   const { data: linea } = await supabase
     .from("cartola_banco")
-    .select("*")
+    .select("cargo, abono")
     .eq("id_linea", idLinea)
     .maybeSingle();
-
   if (!linea) return { ok: false, mensaje: "Esa linea ya no esta." };
-  if (linea.id_mov)
-    return { ok: false, mensaje: "Esa linea ya esta cuadrada con un movimiento." };
-
-  // La cuenta manda el mercado: la linea es de una cuenta y una cuenta es de
-  // un pais.
-  const { data: cuenta } = await supabase
-    .from("cuentas")
-    .select("id_pais")
-    .eq("id_cuenta", linea.id_cuenta)
-    .maybeSingle();
-
-  if (!cuenta) return { ok: false, mensaje: "No encontre la cuenta de esa linea." };
 
   const cargo = Number(linea.cargo);
   const monto = cargo > 0 ? cargo : Number(linea.abono);
   const tipo = cargo > 0 ? "Egreso" : "Ingreso";
 
-  const idCategoria = Number(d.get("id_categoria")) || null;
-  const idProyecto = Number(d.get("id_proyecto")) || null;
-  const idInterlocutor = Number(d.get("id_interlocutor")) || null;
-
-  const { data: creado, error } = await supabase
-    .from("movimientos")
-    .insert({
-      id_pais: cuenta.id_pais,
-      tipo,
-      fecha: linea.fecha,
-      // El texto del banco es lo unico que se sabe de la contraparte cuando no
-      // se elige una ficha.
-      origen_destino: linea.descripcion,
-      monto,
-      comentario: `Creado desde la cartola del banco el ${new Date().toISOString().slice(0, 10)}`,
-      id_cuenta: linea.id_cuenta,
-      id_proyecto: idProyecto,
-      id_categoria: idCategoria,
-      id_interlocutor: idInterlocutor,
-      documento: linea.documento,
-      estado_pago: "Pagado",
-      fecha_pago: linea.fecha,
-      es_anticipo: false,
-      id_vendedor: v.id,
-    })
-    .select("id_mov")
-    .single();
-
+  // La funcion crea el movimiento ya pagado --el banco es la prueba-- con la
+  // fecha y el monto de la linea, y lo cuadra con ella de una vez.
+  const { error } = await supabase.rpc("fin_pasar_linea_al_sistema", {
+    p_linea: idLinea,
+    p_categoria: Number(d.get("id_categoria")) || null,
+    p_proyecto: Number(d.get("id_proyecto")) || null,
+    p_interlocutor: Number(d.get("id_interlocutor")) || null,
+  });
   if (error) return { ok: false, mensaje: error.message };
-
-  // Y queda cuadrada: para eso se creo.
-  const { error: errorEnlace } = await supabase
-    .from("cartola_banco")
-    .update({
-      id_mov: creado.id_mov,
-      conciliado_en: new Date().toISOString(),
-      id_conciliador: v.id,
-    })
-    .eq("id_linea", idLinea);
-
-  if (errorEnlace)
-    return {
-      ok: true,
-      mensaje: `Cree el ${tipo.toLowerCase()}, pero no pude cuadrarlo con la linea: ${errorEnlace.message}`,
-    };
 
   revalidatePath("/conciliacion");
   revalidatePath(tipo === "Egreso" ? "/egresos" : "/ingresos");
