@@ -58,6 +58,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             patente: x.patente as string,
             descripcion: (x.descripcion as string) ?? "",
             capacidad_kg: x.capacidad_kg == null ? null : Number(x.capacidad_kg),
+            capacidad_m3: x.capacidad_m3 == null ? null : Number(x.capacidad_m3),
             largo_carga_m: x.largo_carga_m == null ? null : Number(x.largo_carga_m),
             activo: Boolean(x.activo),
             notas: (x.notas as string) ?? "",

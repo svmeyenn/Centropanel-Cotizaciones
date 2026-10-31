@@ -14,6 +14,7 @@ import ProyectoDelPedido from "@/components/ProyectoDelPedido";
 import BotonFacturaTransporte from "@/components/BotonFacturaTransporte";
 import DespachoPedido from "@/components/transportes/DespachoPedido";
 import { cargarTransportes } from "@/lib/transportes";
+import { cargarCarga } from "@/lib/carga";
 import { cargarMaestros } from "@/lib/finanzas/consultas";
 import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import type { MargenReal } from "@/components/EditorPedido";
@@ -265,6 +266,12 @@ export default async function Pagina({
             flete: ped.flete_estimado == null ? null : Number(ped.flete_estimado),
           }}
           transportistas={await cargarTransportes(supabase, Number(ped.id_pais))}
+          carga={await cargarCarga(supabase, { pedido: id })}
+          cotizacion={{
+            destino: (ped.direccion_despacho as string | null) ?? "",
+            fecha: ((ped.fecha_entrega_esperada as string | null) ?? "").slice(0, 10),
+            existentes: ((await supabase.from("flete_cotizaciones").select("id, estado").eq("id_pedido", id).order("id", { ascending: false })).data ?? []).map((c) => ({ id: Number(c.id), estado: c.estado as string })),
+          }}
           puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
           puedeRegistrarCosto={tienePerfilAdmin(v)}
         />

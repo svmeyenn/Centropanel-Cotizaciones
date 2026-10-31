@@ -114,6 +114,7 @@ export interface DatosVehiculo {
   patente: string;
   descripcion: string;
   capacidad_kg: number | null;
+  capacidad_m3: number | null;
   largo_carga_m: number | null;
   activo: boolean;
   notas: string;
@@ -124,7 +125,7 @@ export async function guardarVehiculo(idEntidad: number, id: number | null, d: D
   if (err) return { error: err };
   if (!(TIPOS_VEHICULO as readonly string[]).includes(d.tipo)) return { error: "Elija el tipo de vehiculo." };
   if (!d.patente.trim()) return { error: "Indique la patente." };
-  for (const [n, t] of [[d.capacidad_kg, "La capacidad"], [d.largo_carga_m, "El largo de carga"]] as const) {
+  for (const [n, t] of [[d.capacidad_kg, "La capacidad"], [d.capacidad_m3, "El volumen"], [d.largo_carga_m, "El largo de carga"]] as const) {
     if (n != null && (!Number.isFinite(n) || n < 0)) return { error: `${t} debe ser un numero desde cero.` };
   }
   const fila = {
@@ -133,6 +134,7 @@ export async function guardarVehiculo(idEntidad: number, id: number | null, d: D
     patente: d.patente.trim().toUpperCase(),
     descripcion: d.descripcion.trim() || null,
     capacidad_kg: d.capacidad_kg,
+    capacidad_m3: d.capacidad_m3,
     largo_carga_m: d.largo_carga_m,
     activo: d.activo,
     notas: d.notas.trim() || null,
@@ -234,10 +236,8 @@ export async function guardarRetiroOC(idOC: number, idTransportista: number | nu
   const v = await requerirVendedor();
   if (!v.puede_editar && !tienePerfilAdmin(v)) return { error: "Su perfil no permite modificar ordenes de compra." };
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("ordenes_compra")
-    .update({ id_transportista: idTransportista, id_vehiculo: idTransportista == null ? null : idVehiculo })
-    .eq("id", idOC);
+  // La OC aprobada no se edita por tabla (solo el borrador): la asignacion pasa por una funcion que revisa perfil y mercado.
+  const { error } = await supabase.rpc("oc_asignar_transporte", { p_oc: idOC, p_transportista: idTransportista, p_vehiculo: idVehiculo });
   if (error) return { error: error.message };
   revalidatePath(`/compras/${idOC}`);
   return { ok: true };

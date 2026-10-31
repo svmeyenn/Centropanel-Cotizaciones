@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { MODALIDADES_PEDIDO, guardarDespachoPedido } from "@/app/transportistas/acciones";
 import { registrarCostoTransporte } from "@/app/pedidos/acciones";
 import type { OpcionTransportista } from "@/lib/transportes";
+import { ajusteVehiculo, resumirCarga, type LineaCarga } from "@/lib/carga";
+import CargaViaje from "@/components/transportes/CargaViaje";
+import CotizarFlete from "@/components/transportes/CotizarFlete";
 
 const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full bg-white";
 const BTN = "bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40";
@@ -23,6 +26,8 @@ export default function DespachoPedido({
   moneda,
   inicial,
   transportistas,
+  carga,
+  cotizacion,
   puedeEditar,
   puedeRegistrarCosto,
 }: {
@@ -30,6 +35,8 @@ export default function DespachoPedido({
   moneda: string;
   inicial: { modalidad: string; idTransportista: number | null; idVehiculo: number | null; flete: number | null };
   transportistas: OpcionTransportista[];
+  carga: LineaCarga[];
+  cotizacion: { destino: string; fecha: string; existentes: { id: number; estado: string }[] };
   puedeEditar: boolean;
   puedeRegistrarCosto: boolean;
 }) {
@@ -155,6 +162,22 @@ export default function DespachoPedido({
         </div>
       )}
 
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold text-dorado-osc">CARGA DEL VIAJE</h3>
+        <CargaViaje lineas={carga} vehiculo={t?.vehiculos.find((x) => x.id === idV) ?? null} puedeCompletar={puedeRegistrarCosto} />
+        {modalidad === "Transportista" && t && carga.length > 0 && <Sugeridos t={t} carga={carga} />}
+      </div>
+      <CotizarFlete
+        idPedido={idPedido}
+        origenInicial="Bodega Centro Panel"
+        destinoInicial={cotizacion.destino}
+        fechaInicial={cotizacion.fecha}
+        lineas={carga}
+        transportistas={transportistas}
+        existentes={cotizacion.existentes}
+        puedeEditar={puedeEditar}
+      />
+
       {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-2">{error}</div>}
       {aviso && <div role="status" className="bg-green-50 border border-green-200 text-green-800 text-sm rounded p-2">{aviso}</div>}
 
@@ -171,5 +194,17 @@ export default function DespachoPedido({
         </div>
       )}
     </section>
+  );
+}
+
+// Los vehiculos del transportista en que la carga cabe, segun lo que cada uno declara.
+function Sugeridos({ t, carga }: { t: OpcionTransportista; carga: LineaCarga[] }) {
+  const r = resumirCarga(carga);
+  if (t.vehiculos.length === 0) return null;
+  const caben = t.vehiculos.filter((v) => ajusteVehiculo(r, v).ok);
+  return (
+    <p className="text-xs text-gray-600">
+      Vehiculos de {t.nombre} en que cabe: {caben.length ? caben.map((v) => v.etiqueta).join(", ") : "ninguno con los datos cargados"}.
+    </p>
   );
 }

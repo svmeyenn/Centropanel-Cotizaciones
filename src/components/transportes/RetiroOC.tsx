@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { guardarRetiroOC } from "@/app/transportistas/acciones";
 import type { OpcionTransportista } from "@/lib/transportes";
+import type { LineaCarga } from "@/lib/carga";
+import CargaViaje from "@/components/transportes/CargaViaje";
+import CotizarFlete from "@/components/transportes/CotizarFlete";
 
 const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full bg-white";
 const num = (n: number) => n.toLocaleString("es-CL", { maximumFractionDigits: 2 });
@@ -15,11 +18,15 @@ export default function RetiroOC({
   idOC,
   inicial,
   transportistas,
+  carga,
+  cotizacion,
   puedeEditar,
 }: {
   idOC: number;
   inicial: { idTransportista: number | null; idVehiculo: number | null };
   transportistas: OpcionTransportista[];
+  carga: LineaCarga[];
+  cotizacion: { origen: string; destino: string; fecha: string; existentes: { id: number; estado: string }[] };
   puedeEditar: boolean;
 }) {
   const router = useRouter();
@@ -95,6 +102,20 @@ export default function RetiroOC({
           )}
         </div>
       )}
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold text-dorado-osc">CARGA A RETIRAR</h3>
+        <CargaViaje lineas={carga} vehiculo={propio ? null : (t?.vehiculos.find((x) => x.id === idV) ?? null)} puedeCompletar={puedeEditar} />
+      </div>
+      <CotizarFlete
+        idOc={idOC}
+        origenInicial={cotizacion.origen}
+        destinoInicial={cotizacion.destino}
+        fechaInicial={cotizacion.fecha}
+        lineas={carga}
+        transportistas={transportistas}
+        existentes={cotizacion.existentes}
+        puedeEditar={puedeEditar}
+      />
       {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-2">{error}</div>}
       {aviso && <div role="status" className="bg-green-50 border border-green-200 text-green-800 text-sm rounded p-2">{aviso}</div>}
       {puedeEditar && (

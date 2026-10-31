@@ -7,6 +7,7 @@ import EnvioDocumento from "@/components/EnvioDocumento";
 import BotonReversar from "@/components/BotonReversar";
 import RetiroOC from "@/components/transportes/RetiroOC";
 import { cargarTransportes } from "@/lib/transportes";
+import { cargarCarga } from "@/lib/carga";
 import { textosOrden } from "@/lib/textosCompra";
 import { impuestoDelPais } from "@/lib/factura";
 import { enviarOcPorCorreo, registrarEnvioOc, reversarEnvioOc } from "@/app/necesidades/envios";
@@ -155,6 +156,13 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
               idVehiculo: o.id_vehiculo == null ? null : Number(o.id_vehiculo),
             }}
             transportistas={await cargarTransportes(supabase, Number(o.id_pais))}
+            carga={await cargarCarga(supabase, { oc: id })}
+            cotizacion={{
+              origen: (prov as { direccion?: string | null } | null)?.direccion ?? "",
+              destino: (o.direccion_entrega as string | null) || proy?.direccion || "Bodega Centro Panel",
+              fecha: ((o.fecha_entrega as string | null) ?? "").slice(0, 10),
+              existentes: ((await supabase.from("flete_cotizaciones").select("id, estado").eq("id_oc", id).order("id", { ascending: false })).data ?? []).map((c) => ({ id: Number(c.id), estado: c.estado as string })),
+            }}
             puedeEditar={v.puede_editar || tienePerfilAdmin(v)}
           />
         )}

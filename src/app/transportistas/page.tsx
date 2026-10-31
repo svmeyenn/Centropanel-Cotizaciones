@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import GestorTransportistas from "@/components/transportes/GestorTransportistas";
+import PestanasTransportes from "@/components/transportes/PestanasTransportes";
 import { puedeVerRuta } from "@/lib/menu";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
@@ -46,6 +47,7 @@ export default async function Pagina() {
       <Cabecera titulo="Transportistas" subtitulo="Empresas de transporte, sus vehiculos y sus tarifas" />
       <div className="max-w-[120rem] mx-auto p-6 space-y-4">
         <BarraNavegacion />
+        <PestanasTransportes activa="/transportistas" />
         <GestorTransportistas
           filas={(transp ?? []).map((t) => ({
             id: Number(t.id_entidad),

@@ -29,7 +29,7 @@ const BTN = "bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded disab
 const BTN_CLARO = "border border-gray-300 bg-white text-gray-800 text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-40";
 const num = (n: number) => n.toLocaleString("es-CL", { maximumFractionDigits: 2 });
 
-const VEH_VACIO: DatosVehiculo = { tipo: "Camioneta", patente: "", descripcion: "", capacidad_kg: null, largo_carga_m: null, activo: true, notas: "" };
+const VEH_VACIO: DatosVehiculo = { tipo: "Camioneta", patente: "", descripcion: "", capacidad_kg: null, capacidad_m3: null, largo_carga_m: null, activo: true, notas: "" };
 const tarifaVacia = (moneda: string): DatosTarifa => ({
   id_vehiculo: null, origen: "", destino: "", tipo_cobro: "Viaje", monto: 0, moneda, vigente_desde: "", vigente_hasta: "", activa: true, notas: "",
 });
@@ -179,6 +179,7 @@ export default function FichaTransportista({
               <Campo label="Patente *" value={veh.d.patente} onChange={(v) => setVeh({ ...veh, d: { ...veh.d, patente: v.toUpperCase() } })} />
               <Campo label="Descripcion" value={veh.d.descripcion} placeholder="Marca, modelo, color" onChange={(v) => setVeh({ ...veh, d: { ...veh.d, descripcion: v } })} />
               <Numero label="Capacidad (kg)" value={veh.d.capacidad_kg} onChange={(n) => setVeh({ ...veh, d: { ...veh.d, capacidad_kg: n } })} />
+              <Numero label="Volumen (m³)" value={veh.d.capacidad_m3} onChange={(n) => setVeh({ ...veh, d: { ...veh.d, capacidad_m3: n } })} />
               <Numero label="Largo de carga (m)" value={veh.d.largo_carga_m} onChange={(n) => setVeh({ ...veh, d: { ...veh.d, largo_carga_m: n } })} ayuda="Un panel mide 2,44 m" />
               <Campo label="Notas" value={veh.d.notas} onChange={(v) => setVeh({ ...veh, d: { ...veh.d, notas: v } })} />
               <label className="text-sm flex items-end gap-2 pb-1">
@@ -202,6 +203,7 @@ export default function FichaTransportista({
                   <th scope="col" className="text-left px-3 py-2">Vehiculo</th>
                   <th scope="col" className="text-left px-3 py-2">Patente</th>
                   <th scope="col" className="text-right px-3 py-2">Capacidad (kg)</th>
+                  <th scope="col" className="text-right px-3 py-2">Volumen (m³)</th>
                   <th scope="col" className="text-right px-3 py-2">Largo de carga (m)</th>
                   <th scope="col" className="text-left px-3 py-2">Estado</th>
                   <th className="w-16" />
@@ -209,7 +211,7 @@ export default function FichaTransportista({
               </thead>
               <tbody>
                 {vehiculos.length === 0 && (
-                  <tr><td colSpan={6} className="px-3 py-6 text-center text-gray-500">Sin vehiculos registrados.</td></tr>
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-gray-500">Sin vehiculos registrados.</td></tr>
                 )}
                 {vehiculos.map((x) => (
                   <tr key={x.id} className={`border-t border-gray-100 hover:bg-crema ${x.activo ? "" : "text-gray-500"}`}>
@@ -219,6 +221,7 @@ export default function FichaTransportista({
                     </th>
                     <td className="px-3 py-1.5 tabular-nums">{x.patente}</td>
                     <td className="px-3 py-1.5 text-right tabular-nums">{x.capacidad_kg == null ? "—" : num(x.capacidad_kg)}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">{x.capacidad_m3 == null ? "—" : num(x.capacidad_m3)}</td>
                     <td className="px-3 py-1.5 text-right tabular-nums">{x.largo_carga_m == null ? "—" : num(x.largo_carga_m)}</td>
                     <td className="px-3 py-1.5">{x.activo ? "Disponible" : "No disponible"}</td>
                     <td className="px-2 py-1.5 text-right">

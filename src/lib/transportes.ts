@@ -12,10 +12,21 @@ export interface OpcionTarifa {
   moneda: string;
 }
 
+export interface OpcionVehiculo {
+  id: number;
+  etiqueta: string;
+  capacidad_kg: number | null;
+  capacidad_m3: number | null;
+  largo_carga_m: number | null;
+}
+
 export interface OpcionTransportista {
   id: number;
   nombre: string;
-  vehiculos: { id: number; etiqueta: string }[];
+  contacto: string;
+  telefono: string;
+  email: string;
+  vehiculos: OpcionVehiculo[];
   tarifas: OpcionTarifa[];
 }
 
@@ -23,7 +34,7 @@ export async function cargarTransportes(supabase: SupabaseClient, idPais: number
   const hoy = new Date().toISOString().slice(0, 10);
   let q = supabase
     .from("entidades")
-    .select("id_entidad, razon_social, entidad_tipos!inner(tipo)")
+    .select("id_entidad, razon_social, contacto, telefono, email, entidad_tipos!inner(tipo)")
     .eq("entidad_tipos.tipo", "transportista")
     .eq("activo", true)
     .order("razon_social");
@@ -32,7 +43,7 @@ export async function cargarTransportes(supabase: SupabaseClient, idPais: number
   if (!ts || ts.length === 0) return [];
   const ids = ts.map((t) => Number(t.id_entidad));
   const [{ data: vs }, { data: tf }] = await Promise.all([
-    supabase.from("transporte_vehiculos").select("id, id_entidad, tipo, patente").in("id_entidad", ids).eq("activo", true).order("patente"),
+    supabase.from("transporte_vehiculos").select("id, id_entidad, tipo, patente, capacidad_kg, capacidad_m3, largo_carga_m").in("id_entidad", ids).eq("activo", true).order("patente"),
     supabase
       .from("transporte_tarifas")
       .select("id, id_entidad, id_vehiculo, origen, destino, tipo_cobro, monto, moneda, vigente_desde, vigente_hasta")
@@ -45,7 +56,18 @@ export async function cargarTransportes(supabase: SupabaseClient, idPais: number
     return {
       id,
       nombre: t.razon_social as string,
-      vehiculos: (vs ?? []).filter((v) => Number(v.id_entidad) === id).map((v) => ({ id: Number(v.id), etiqueta: `${v.tipo} ${v.patente}` })),
+      contacto: (t.contacto as string) ?? "",
+      telefono: (t.telefono as string) ?? "",
+      email: (t.email as string) ?? "",
+      vehiculos: (vs ?? [])
+        .filter((v) => Number(v.id_entidad) === id)
+        .map((v) => ({
+          id: Number(v.id),
+          etiqueta: `${v.tipo} ${v.patente}`,
+          capacidad_kg: v.capacidad_kg == null ? null : Number(v.capacidad_kg),
+          capacidad_m3: v.capacidad_m3 == null ? null : Number(v.capacidad_m3),
+          largo_carga_m: v.largo_carga_m == null ? null : Number(v.largo_carga_m),
+        })),
       tarifas: (tf ?? [])
         .filter((x) => Number(x.id_entidad) === id)
         .filter((x) => (!x.vigente_desde || x.vigente_desde <= hoy) && (!x.vigente_hasta || x.vigente_hasta >= hoy))
