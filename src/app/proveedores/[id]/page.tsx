@@ -31,12 +31,12 @@ export default async function Pagina({
       supabase
         .from("proveedor_items")
         .select(
-          "id, codigo, costo, activo, moneda, es_preferente, id_materia_prima, id_producto, materias_primas(nombre, tipo), productos(descripcion, familia)"
+          "id, codigo, costo, activo, moneda, es_preferente, id_materia_prima, id_producto, materias_primas(nombre, tipo, sku), productos(descripcion, familia, sku)"
         )
         .eq("id_proveedor", id),
       supabase
         .from("materias_primas")
-        .select("id, nombre, tipo")
+        .select("id, nombre, tipo, sku")
         .eq("activo", true)
         .order("tipo")
         .order("nombre"),
@@ -44,7 +44,7 @@ export default async function Pagina({
       // arriba. A un proveedor solo se le pide lo que efectivamente vende.
       supabase
         .from("productos")
-        .select("id, descripcion, familia")
+        .select("id, descripcion, familia, sku")
         .eq("activo", true)
         .neq("tipo", "Panel SIP")
         .neq("familia", "Servicios")
@@ -87,10 +87,11 @@ export default async function Pagina({
   const otros = [...((otrosMp ?? []) as unknown as Otro[]), ...((otrosProd ?? []) as unknown as Otro[])];
 
   const filas: ItemMaestra[] = (items ?? []).map((it) => {
-    const mp = uno<{ nombre: string; tipo: string }>(it.materias_primas);
-    const pr = uno<{ descripcion: string; familia: string | null }>(it.productos);
+    const mp = uno<{ nombre: string; tipo: string; sku: string | null }>(it.materias_primas);
+    const pr = uno<{ descripcion: string; familia: string | null; sku: string | null }>(it.productos);
     return {
       id: Number(it.id),
+      sku: mp?.sku ?? pr?.sku ?? null,
       descripcion: mp?.nombre ?? pr?.descripcion ?? "",
       grupo: mp ? `Materia prima - ${mp.tipo}` : (pr?.familia ?? "Productos"),
       codigo: it.codigo as string | null,
@@ -122,12 +123,12 @@ export default async function Pagina({
   const candidatos: Candidato[] = [
     ...(materias ?? []).map((m) => ({
       clave: `mp:${m.id}`,
-      etiqueta: m.nombre as string,
+      etiqueta: m.sku ? `${m.sku} · ${m.nombre}` : (m.nombre as string),
       grupo: `Materia prima - ${m.tipo}`,
     })),
     ...(productos ?? []).map((p) => ({
       clave: `prod:${p.id}`,
-      etiqueta: p.descripcion as string,
+      etiqueta: p.sku ? `${p.sku} · ${p.descripcion}` : (p.descripcion as string),
       grupo: (p.familia as string | null) ?? "Productos",
     })),
   ].filter((c) => !yaEsta.has(c.clave));

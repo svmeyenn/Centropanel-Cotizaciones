@@ -19,6 +19,8 @@ export interface Candidato {
 
 export interface ItemMaestra {
   id: number;
+  // SKU de Centropanel del insumo o producto.
+  sku: string | null;
   descripcion: string;
   grupo: string;
   codigo: string | null;
@@ -386,8 +388,9 @@ export default function MaestraProveedor({
           <table className="w-full text-xs">
             <thead className="bg-verde text-white">
               <tr>
+                <th className="text-left px-3 py-2 w-28">SKU</th>
                 <th className="text-left px-3 py-2">Producto</th>
-                <th className="text-left px-3 py-2">Codigo</th>
+                <th className="text-left px-3 py-2">Codigo del proveedor</th>
                 <th className="text-right px-3 py-2">Costo</th>
                 <th className="text-left px-3 py-2">Preferente</th>
                 <th className="text-left px-3 py-2">Estado</th>
@@ -397,7 +400,7 @@ export default function MaestraProveedor({
             <tbody>
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center text-gray-400 py-8">
+                  <td colSpan={7} className="text-center text-gray-400 py-8">
                     Maestra vacia: este proveedor no recibira solicitudes.
                   </td>
                 </tr>
@@ -406,7 +409,7 @@ export default function MaestraProveedor({
                 <Fragment key={grupo}>
                   <tr className="bg-crema border-t border-dorado">
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-3 py-1.5 text-[11px] font-semibold text-verde uppercase tracking-wide"
                     >
                       {grupo}
@@ -420,7 +423,8 @@ export default function MaestraProveedor({
                       key={it.id}
                       className={`border-t border-gray-100 hover:bg-crema ${!(it.costo > 0) ? "bg-amber-50" : ""}`}
                     >
-                      <td className="px-3 py-2 pl-6">
+                      <td className="px-3 py-2 pl-6 font-mono text-[11px] text-gray-600 whitespace-nowrap">{it.sku ?? ""}</td>
+                      <td className="px-3 py-2">
                         {it.descripcion}
                         {it.otros.length > 0 && (
                           <div className="text-[10px] text-gray-500 mt-0.5">

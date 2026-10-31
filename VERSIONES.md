@@ -9,6 +9,7 @@ Version vigente: **v0178-20261029**
 
 | Version | Fecha | Cambio | Referencia |
 |---|---|---|---|
+| v0189-20261031 | 31-10-2026 | Maestra del proveedor: columna SKU de Centropanel y SKU en los selectores para agregar items. Solo codigo | (pendiente) |
 | v0188-20261030 | 30-10-2026 | Pedido: la tabla de pagos no aparecia --decia "Sin pagos registrados"-- porque la consulta quedo ambigua al tener dos relaciones con vendedores; se nombra la del registro. Solo codigo | 010fa73 |
 | v0187-20261030 | 30-10-2026 | Pedido: el gasto financiero se ingresa al registrar el pago (Tarjeta y Link de Pago), con el sugerido segun la tasa del medio; vacio queda por definir. Solo codigo | 7ff020c |
 | v0186-20261030 | 30-10-2026 | Pedido: el costo de transporte se ingresa como valor (con IVA) sin factura y cuenta de inmediato en el margen real como estimado; la factura se carga y se envia a pago despues, y al aprobarse reemplaza al valor estimado. Base: pedido_transporte y margen real | 2f06be7 |
