@@ -4,10 +4,9 @@ import { administraUsuarios, tienePerfilAdmin } from "@/lib/sesion";
 // El menu del sistema, en un solo lugar: lo usan la barra lateral --siempre a
 // la vista-- y la portada.
 //
-// El orden sigue el recorrido del negocio y lo que se usa a diario: se vende,
-// se arma lo que se vende, se mueve la plata del dia, se cobra y se factura, y
-// al final se mira la caja. La configuracion queda ultima porque se toca una
-// vez y no todos los dias.
+// El orden sigue el recorrido del negocio: se vende, se ejecuta, se compra, y
+// despues la plata y los numeros. La administracion queda ultima porque se
+// toca una vez y no todos los dias.
 export interface Opcion {
   texto: string;
   href: string;
@@ -45,10 +44,12 @@ export interface GrupoVisible {
   opciones: OpcionVisible[];
 }
 
+// Los grupos son modulos funcionales, como en un ERP: cada uno es un area de
+// la empresa con su dueno y su perfil. Las pantallas no cambian, solo de lugar.
 export const GRUPOS: Grupo[] = [
   {
-    titulo: "Vender",
-    nota: "Del presupuesto al pedido en produccion",
+    titulo: "Comercial",
+    nota: "Del lead al pedido",
     opciones: [
       // Los contactos del CRM, con sus cotizaciones, conversaciones y compromisos.
       // Los datos de Clientify se cargan por archivo; lo que se corrige aqui no se
@@ -57,25 +58,26 @@ export const GRUPOS: Grupo[] = [
       { texto: "Nueva cotizacion", href: "/cotizaciones/nueva" },
       { texto: "Cotizaciones", href: "/cotizaciones" },
       { texto: "Pedidos", href: "/pedidos" },
-      // La misma pantalla que "Clientes y proveedores" de Configuracion: la
+      // La misma pantalla que "Clientes y proveedores" de Administracion: la
       // ficha es una sola. Quien vende entra por aqui y la ve filtrada en los
       // clientes; quien maneja la plata entra por alla y ve todas.
       { texto: "Clientes", href: "/clientes" },
     ],
   },
   {
-    titulo: "Proyectos",
+    titulo: "Operaciones y proyectos",
     nota: "Obras, presupuesto y cronograma",
     opciones: [{ texto: "Proyectos", href: "/proyectos" }],
   },
   {
     titulo: "Compras",
-    nota: "Ordenes de compra a proveedores y su aprobacion",
+    nota: "Del requerimiento a la orden de compra",
     opciones: [
       // El paso previo a la orden de compra: lo que se necesita, cotizado y adjudicado por solicitud.
       { texto: "Necesidades de material", href: "/necesidades" },
       { texto: "Ordenes de compra", href: "/compras" },
       { texto: "Por aprobar", href: "/aprobaciones", ve: (v) => v.rol === "Administrador" },
+      { texto: "Proveedores", href: "/proveedores", soloAdmin: true },
     ],
   },
   {
@@ -94,8 +96,8 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
-    titulo: "Movimientos",
-    nota: "La plata que sale, la que entra y con quien",
+    titulo: "Tesoreria",
+    nota: "La plata que entra y sale, y el banco",
     opciones: [
       { texto: "Egresos", href: "/egresos", ve: (v) => v.fin_ver_egresos },
       { texto: "Ingresos", href: "/ingresos", ve: (v) => v.fin_ver_ingresos },
@@ -104,29 +106,21 @@ export const GRUPOS: Grupo[] = [
         href: "/rendiciones",
         ve: (v) => v.fin_rendir_gastos || v.fin_pagar_gastos,
       },
-      { texto: "Proveedores", href: "/proveedores", soloAdmin: true },
-      { texto: "Topes de gasto", href: "/topes", ve: (v) => v.fin_mantenedores },
-    ],
-  },
-  {
-    titulo: "Cobrar y facturar",
-    nota: "Estado de la cuenta de cada pedido",
-    opciones: [
       { texto: "Estado de pago", href: "/cobranza" },
-      { texto: "Facturas y notas de credito", href: "/facturas" },
-      { texto: "Formas de pago", href: "/formas-pago" },
-    ],
-  },
-  {
-    titulo: "Caja",
-    nota: "Saldos, banco y resultado por obra",
-    opciones: [
       { texto: "Cartola consolidada", href: "/cartola", ve: (v) => v.fin_ver_cartola },
       {
         texto: "Conciliacion bancaria",
         href: "/conciliacion",
         ve: (v) => v.fin_ver_cartola,
       },
+      { texto: "Topes de gasto", href: "/topes", ve: (v) => v.fin_mantenedores },
+    ],
+  },
+  {
+    titulo: "Contabilidad y control",
+    nota: "Documentos tributarios y resultado",
+    opciones: [
+      { texto: "Facturas y notas de credito", href: "/facturas" },
       {
         texto: "Resumen por proyecto",
         href: "/resumen-proyecto",
@@ -135,12 +129,17 @@ export const GRUPOS: Grupo[] = [
     ],
   },
   {
-    titulo: "Configuracion",
+    titulo: "Administracion",
     nota: "Reglas del sistema y quien entra",
     pestanas: true,
     opciones: [
-      // Las cuatro listas, cada una con su direccion: se entra derecho a la
-      // que se va a tocar en vez de elegir una pestana al llegar.
+      // Cada lista con su direccion: se entra derecho a la que se va a tocar
+      // en vez de elegir una pestana al llegar.
+      {
+        texto: "Unidades y centros de costo",
+        href: "/estructura",
+        ve: (v) => v.fin_mantenedores,
+      },
       {
         texto: "Cuentas bancarias",
         href: "/mantenedores/cuentas",
@@ -149,11 +148,6 @@ export const GRUPOS: Grupo[] = [
       {
         texto: "Proyectos y clientes",
         href: "/mantenedores/proyectos",
-        ve: (v) => v.fin_mantenedores,
-      },
-      {
-        texto: "Unidades y centros de costo",
-        href: "/estructura",
         ve: (v) => v.fin_mantenedores,
       },
       {
@@ -166,6 +160,7 @@ export const GRUPOS: Grupo[] = [
         href: "/mantenedores/categorias",
         ve: (v) => v.fin_mantenedores,
       },
+      { texto: "Formas de pago", href: "/formas-pago" },
       { texto: "Parametros", href: "/parametros", soloAdmin: true },
       // Los mismos en Chile y en Peru: los cambia solo quien administra ambos.
       {
