@@ -14,6 +14,8 @@ const vacio = (pais: number | null): DatosMateria => ({
   largo_mm: null,
   espesor_mm: null,
   espesor_nominal: null,
+  peso_kg: null,
+  densidad_kg_m3: null,
   costo: 0,
   unidad: "",
   activo: true,
@@ -208,6 +210,32 @@ export default function ModalNuevaMateria({
                     }
                   />
                 </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="text-sm">
+                  <span className="block text-dorado-osc font-semibold mb-1">Peso por unidad (kg)</span>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    className={input}
+                    value={form.peso_kg ?? ""}
+                    onChange={(e) => setForm({ ...form, peso_kg: e.target.value === "" ? null : Number(e.target.value) })}
+                  />
+                </label>
+                <label className="text-sm">
+                  <span className="block text-dorado-osc font-semibold mb-1">Densidad (kg/m³)</span>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    className={input}
+                    value={form.densidad_kg_m3 ?? ""}
+                    onChange={(e) => setForm({ ...form, densidad_kg_m3: e.target.value === "" ? null : Number(e.target.value) })}
+                  />
+                </label>
+                <p className="col-span-2 text-[11px] text-gray-500 -mt-1">Para el flete: placas con su peso, poliestireno con su densidad. Se puede completar despues en la ficha.</p>
               </div>
 
               <label className="text-sm flex items-center gap-2">

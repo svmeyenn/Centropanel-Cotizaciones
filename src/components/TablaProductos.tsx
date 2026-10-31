@@ -42,7 +42,14 @@ interface ProductoFila {
   id_pais?: number | null;
   // Excepcion de descuento del producto; null hereda el de su familia.
   grupo_descuento?: string | null;
+  // Datos de carga para el flete.
+  ancho_mm?: number | null;
+  largo_mm?: number | null;
+  alto_mm?: number | null;
+  peso_kg?: number | null;
 }
+
+const kg = (n: number) => `${n.toLocaleString("es-CL", { maximumFractionDigits: 2 })} kg`;
 
 export default function TablaProductos({
   productos,
@@ -53,9 +60,12 @@ export default function TablaProductos({
   esAdminGeneral = false,
   gruposFamilia = {},
   advertencias = {},
+  pesoUsado = {},
   preferentes = {},
   proveedoresDe = {},
 }: {
+  // Peso con que se cotiza el flete de cada producto, y de donde sale (ficha, calculado o falta).
+  pesoUsado?: Record<number, { peso: number | null; origen: string }>;
   productos: ProductoFila[];
   esAdmin: boolean;
   materias?: MateriaVenta[];
@@ -86,6 +96,7 @@ export default function TablaProductos({
     });
   const [soloActivos, setSoloActivos] = useState(true);
   const [soloAdvertidos, setSoloAdvertidos] = useState(false);
+  const [soloSinPeso, setSoloSinPeso] = useState(false);
   const [advComp, setAdvComp] = useState<string | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosProducto | null>(null);
@@ -128,6 +139,7 @@ export default function TablaProductos({
       (p) =>
         (!soloActivos || p.activo) &&
         (!soloAdvertidos || advertencias[p.id] != null) &&
+        (!soloSinPeso || (p.tipo !== "Servicio" && pesoUsado[p.id]?.peso == null)) &&
         (!familia || (p.familia ?? "Otros") === familia) &&
         (!q ||
           p.descripcion.toLowerCase().includes(q) ||
@@ -136,7 +148,7 @@ export default function TablaProductos({
           (p.familia ?? "").toLowerCase().includes(q) ||
           (p.subfamilia ?? "").toLowerCase().includes(q)),
     );
-  }, [busca, soloActivos, soloAdvertidos, advertencias, familia, productos]);
+  }, [busca, soloActivos, soloAdvertidos, soloSinPeso, advertencias, pesoUsado, familia, productos]);
 
   // El catalogo se lee en dos niveles: familia (Paneles SIP, Madera,
   // Tornillos...) y dentro de ella subfamilia (APA / Smart, Pino Bruta,
@@ -198,6 +210,10 @@ export default function TablaProductos({
       precio_manual: Boolean(p.precio_manual),
       activo: p.activo,
       id_pais: p.id_pais ?? null,
+      ancho_mm: p.ancho_mm ?? null,
+      largo_mm: p.largo_mm ?? null,
+      alto_mm: p.alto_mm ?? null,
+      peso_kg: p.peso_kg ?? null,
     });
   }
 
@@ -263,6 +279,12 @@ export default function TablaProductos({
           />
           Solo activos
         </label>
+        {esAdmin && (
+          <label className="text-sm text-gray-600 flex items-center gap-2">
+            <input type="checkbox" checked={soloSinPeso} onChange={(e) => setSoloSinPeso(e.target.checked)} />
+            Sin peso para el flete
+          </label>
+        )}
         <select
           className="border border-gray-300 rounded px-2 py-1 text-sm"
           value={familia}
@@ -288,6 +310,7 @@ export default function TablaProductos({
             { titulo: "Espesor", valor: (p) => p.espesor_total ?? "" },
             { titulo: "Costo", valor: (p) => p.costo_unitario ?? "" },
             { titulo: "Precio neto", valor: (p) => p.precio_venta },
+            { titulo: "Peso kg", valor: (p) => pesoUsado[p.id]?.peso ?? "" },
             {
               titulo: "Descuento",
               valor: (p) =>
@@ -646,6 +669,52 @@ export default function TablaProductos({
             </div>
           </div>
 
+          {enEdicion.tipo !== "Servicio" && (
+            <fieldset className="border-t border-gray-200 pt-3">
+              <legend className="text-xs font-semibold text-verde pr-2">Peso y dimensiones (para cotizar el flete)</legend>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {(
+                  [
+                    ["ancho_mm", "Ancho (mm)"],
+                    ["largo_mm", "Largo (mm)"],
+                    ["alto_mm", "Alto (mm)"],
+                    ["peso_kg", "Peso por unidad (kg)"],
+                  ] as const
+                ).map(([k, etiqueta]) => (
+                  <label key={k} className="text-sm">
+                    <span className="block text-dorado-osc font-semibold mb-1">{etiqueta}</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      className={input}
+                      value={form[k] ?? ""}
+                      onChange={(e) => setForm({ ...form, [k]: e.target.value === "" ? null : Number(e.target.value) })}
+                    />
+                  </label>
+                ))}
+                <div className="text-sm">
+                  <span className="block text-dorado-osc font-semibold mb-1">Peso que usa el flete</span>
+                  {pesoUsado[enEdicion.id]?.peso != null ? (
+                    <span className="tabular-nums">
+                      {kg(pesoUsado[enEdicion.id].peso as number)}
+                      <span className="block text-[11px] text-gray-500">
+                        {pesoUsado[enEdicion.id].origen === "calculado" ? "calculado de sus placas y EPS" : "de esta ficha"}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-red-700">Falta</span>
+                  )}
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">
+                {esPanel
+                  ? "En un panel SIP el peso se calcula solo de sus placas y su EPS: cargue el peso de las placas y la densidad del EPS en Materias primas. Complete el peso aqui solo si quiere fijarlo a mano."
+                  : "Si no se carga, el flete de este producto no se puede calcular."}
+              </p>
+            </fieldset>
+          )}
+
           <p className="text-xs text-gray-500">
             La composicion (EPS y placas) no se edita aqui: cambiarla
             convertiria el panel en otro y dejaria las cotizaciones viejas
@@ -706,6 +775,7 @@ export default function TablaProductos({
                 <th className="text-right px-3 py-2">Precio neto</th>
                 <th className="text-right px-3 py-2">PVP c/{impuestoLista}</th>
                 {esAdmin && <th className="text-right px-3 py-2">Margen</th>}
+                {esAdmin && <th className="text-right px-3 py-2">Peso</th>}
                 <th className="text-left px-3 py-2">Estado</th>
                 {esAdmin && <th className="px-3" />}
               </tr>
@@ -714,7 +784,7 @@ export default function TablaProductos({
               {filtrados.length === 0 && (
                 <tr>
                   <td
-                    colSpan={esAdmin ? 9 : 5}
+                    colSpan={esAdmin ? 10 : 5}
                     className="text-center text-gray-500 py-8"
                   >
                     Sin productos que coincidan.
@@ -725,7 +795,7 @@ export default function TablaProductos({
                 <Fragment key={g.familia}>
                   <tr className="bg-crema border-t border-dorado">
                     <td
-                      colSpan={esAdmin ? 9 : 5}
+                      colSpan={esAdmin ? 10 : 5}
                       className="px-3 py-1.5 text-[11px] font-semibold text-verde uppercase tracking-wide"
                     >
                       <button
@@ -753,7 +823,7 @@ export default function TablaProductos({
                       {sg.subfamilia && (
                         <tr className="border-t border-gray-100">
                           <td
-                            colSpan={esAdmin ? 9 : 5}
+                            colSpan={esAdmin ? 10 : 5}
                             className="px-3 pt-2 pb-1 pl-6 text-[11px] font-semibold text-dorado-osc"
                           >
                             <button
@@ -844,6 +914,19 @@ export default function TablaProductos({
                               {p.margen_aplicado != null
                                 ? `${porcentaje(p.margen_aplicado * 100)} %`
                                 : ""}
+                            </td>
+                          )}
+                          {esAdmin && (
+                            <td className="px-3 py-2 text-right tabular-nums text-gray-600">
+                              {p.tipo === "Servicio" ? (
+                                ""
+                              ) : pesoUsado[p.id]?.peso != null ? (
+                                <span title={pesoUsado[p.id].origen === "calculado" ? "Calculado de sus placas y EPS" : "Cargado en la ficha"}>
+                                  {kg(pesoUsado[p.id].peso as number)}
+                                </span>
+                              ) : (
+                                <span className="text-red-700">falta</span>
+                              )}
                             </td>
                           )}
                           <td className="px-3 py-2">

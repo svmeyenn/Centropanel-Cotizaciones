@@ -120,6 +120,9 @@ export interface MateriaPrima {
   largo_mm: number | null;
   espesor_mm: number | null;
   espesor_nominal: number | null;
+  // Datos de carga para el flete: peso de la unidad y, en el EPS, su densidad.
+  peso_kg?: number | null;
+  densidad_kg_m3?: number | null;
   costo: number;
   unidad: string | null;
   activo: boolean;
