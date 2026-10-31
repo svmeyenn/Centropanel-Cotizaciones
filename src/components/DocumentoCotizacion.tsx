@@ -92,19 +92,19 @@ export default function DocumentoCotizacion({
             <div className="text-xl font-bold text-verde leading-tight">
               {pTxt(p, "EmpresaMarca")}
             </div>
-            <div className="text-[10px] text-gray-600">{pTxt(p, "EmpresaGiro")}</div>
-            <div className="text-[10px] text-gray-600">
+            <div className="text-[11px] text-gray-600">{pTxt(p, "EmpresaGiro")}</div>
+            <div className="text-[11px] text-gray-600">
               {pTxt(p, "EmpresaDireccion")}
             </div>
           </div>
         </div>
         <div className="bg-verde text-white px-4 py-2.5 text-right min-w-[260px]">
-          {d.pedido && <div className="text-[10px] font-bold text-dorado">PEDIDO</div>}
+          {d.pedido && <div className="text-[11px] font-bold text-dorado">PEDIDO</div>}
           <div className="text-xl font-bold leading-tight">{d.num_cotizacion}</div>
-          <div className="text-[10px] text-dorado">
+          <div className="text-[11px] text-dorado">
             {pTxt(p, "EmpresaNombre")} &nbsp; {pTxt(p, "EtiquetaIdTributario", "RUT")} {pTxt(p, "EmpresaRUT")}
           </div>
-          <div className="text-[10px]">
+          <div className="text-[11px]">
             {d.pedido ? (
               <>Fecha {fmtFecha(d.fecha)}</>
             ) : (
@@ -117,7 +117,7 @@ export default function DocumentoCotizacion({
       {/* ---- cliente / ejecutivo: un campo por linea, rotulo y valor ---- */}
       <div className="grid grid-cols-2 gap-6 mb-5">
         <div>
-          <div className="bg-crema text-dorado-osc text-[10px] font-bold px-2 py-1 mb-1">
+          <div className="bg-crema text-dorado-osc text-[11px] font-bold px-2 py-1 mb-1">
             CLIENTE
           </div>
           <Campo rotulo="Razon social" valor={d.cliente?.razon_social} />
@@ -127,7 +127,7 @@ export default function DocumentoCotizacion({
           <Campo rotulo="Telefono" valor={d.cliente?.telefono} />
         </div>
         <div>
-          <div className="bg-crema text-dorado-osc text-[10px] font-bold px-2 py-1 mb-1">
+          <div className="bg-crema text-dorado-osc text-[11px] font-bold px-2 py-1 mb-1">
             EJECUTIVO
           </div>
           <Campo rotulo="Nombre" valor={d.vendedor?.nombre} />
@@ -144,7 +144,7 @@ export default function DocumentoCotizacion({
               --un codigo de ocho digitos, un monto de siete-- para dejarle el
               ancho restante a la descripcion: el nombre de un panel entra
               completo en una linea y la tabla no se desarma en el papel. */}
-          <tr className="bg-verde text-white text-[10px]">
+          <tr className="bg-verde text-white text-[11px]">
             <th className="text-left px-2 py-1.5 w-[4.5rem]">SKU</th>
             <th className="text-left px-2 py-1.5">DESCRIPCION</th>
             <th className="text-right px-2 py-1.5 w-16 whitespace-nowrap">
@@ -245,7 +245,7 @@ export default function DocumentoCotizacion({
       </div>
 
       {/* ---- pie: condiciones y datos bancarios ---- */}
-      <div className="grid grid-cols-2 gap-6 text-[10px] leading-relaxed">
+      <div className="grid grid-cols-2 gap-6 text-[11px] leading-relaxed">
         <div>
           <div className="text-dorado-osc font-bold mb-1">CONDICIONES COMERCIALES</div>
           {!d.pedido && (
@@ -272,7 +272,7 @@ export default function DocumentoCotizacion({
         </div>
       </div>
 
-      <div className="mt-5 text-[10px]">
+      <div className="mt-5 text-[11px]">
         <span className="text-dorado-osc font-bold">DESPACHAR A:</span>{" "}
         {d.direccion_despacho}
       </div>
@@ -295,7 +295,7 @@ export default function DocumentoCotizacion({
 function Campo({ rotulo, valor }: { rotulo: string; valor?: string | null }) {
   if (!valor) return null;
   return (
-    <div className="text-[10px] leading-snug">
+    <div className="text-[11px] leading-snug">
       <span className="text-gray-500">{rotulo}:</span>{" "}
       <span className="text-[#1A1A1A]">{valor}</span>
     </div>

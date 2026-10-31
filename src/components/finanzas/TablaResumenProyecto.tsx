@@ -101,7 +101,7 @@ export default function TablaResumenProyecto({
           <tbody>
             {grupos.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center text-gray-400 py-8">
+                <td colSpan={6} className="text-center text-gray-500 py-8">
                   Sin movimientos en el periodo.
                 </td>
               </tr>

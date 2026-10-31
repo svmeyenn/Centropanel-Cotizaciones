@@ -94,7 +94,7 @@ export default async function Pagina({
             alt="Centro Panel"
             className="h-[92px] w-auto shrink-0"
           />
-          <div className="text-right text-[10px] leading-snug">
+          <div className="text-right text-[11px] leading-snug">
             <div className="font-bold text-[#1D4E4A] text-sm">
               {pTxt(parametros, "EmpresaMarca", "CENTRO PANEL")}
             </div>
@@ -111,7 +111,7 @@ export default async function Pagina({
 
         <div className="grid grid-cols-2 gap-4 mt-3">
           <div>
-            <div className="text-[10px] font-bold text-[#7A5C10] mb-1">
+            <div className="text-[11px] font-bold text-[#7A5C10] mb-1">
               PROVEEDOR
             </div>
             <Campo rotulo="Razon social" valor={prov?.razon_social} />
@@ -124,7 +124,7 @@ export default async function Pagina({
             <Campo rotulo="Telefono" valor={prov?.telefono} />
           </div>
           <div>
-            <div className="text-[10px] font-bold text-[#7A5C10] mb-1">
+            <div className="text-[11px] font-bold text-[#7A5C10] mb-1">
               REFERENCIA
             </div>
             <Campo rotulo="Pedido" valor={ped?.num_pedido} />
@@ -136,13 +136,13 @@ export default async function Pagina({
           </div>
         </div>
 
-        <p className="text-[10px] text-gray-600 mt-3">
+        <p className="text-[11px] text-gray-600 mt-3">
           Solicitamos cotizacion por los siguientes productos. Indique precio
           unitario neto, plazo de entrega y validez de la oferta.
         </p>
 
         {/* items */}
-        <table className="w-full text-[10px] mt-2 border-collapse">
+        <table className="w-full text-[11px] mt-2 border-collapse">
           <thead>
             <tr className="bg-[#1D4E4A] text-white">
               <th className="text-left px-2 py-1 w-8">N</th>
@@ -172,13 +172,13 @@ export default async function Pagina({
           </tbody>
         </table>
 
-        <div className="mt-4 text-[9px] text-gray-500 print:hidden">
+        <div className="mt-4 text-[11px] text-gray-500 print:hidden">
           Referencia interna segun la maestra de este proveedor:{" "}
           {pesos(referencia)} netos. No se imprime en el documento.
         </div>
 
         {sol.notas != null && String(sol.notas).trim() !== "" && (
-          <div className="mt-3 text-[10px]">
+          <div className="mt-3 text-[11px]">
             <div className="font-bold text-[#7A5C10]">OBSERVACIONES</div>
             <div className="whitespace-pre-wrap">{String(sol.notas)}</div>
           </div>
@@ -197,7 +197,7 @@ function Campo({
 }) {
   if (!valor) return null;
   return (
-    <div className="text-[10px] leading-snug">
+    <div className="text-[11px] leading-snug">
       <span className="text-gray-500">{rotulo}:</span>{" "}
       <span className="text-[#1A1A1A]">{valor}</span>
     </div>

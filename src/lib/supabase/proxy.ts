@@ -34,9 +34,11 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims verifica la firma del token aqui mismo (el proyecto firma con clave asimetrica ES256) y
+  // solo viaja a Auth cuando hay que renovarlo. getUser() iba a Auth en cada peticion, y cada
+  // pantalla dispara varias (navegacion, precarga, acciones).
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims?.sub ? claims.claims : null;
 
   const ruta = request.nextUrl.pathname;
   const esLogin = ruta.startsWith("/login");

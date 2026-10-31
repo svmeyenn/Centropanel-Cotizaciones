@@ -165,7 +165,7 @@ export default function DetalleRendicion({
             <span className="text-gray-500">Cargada por </span>
             <strong>{rendicion.vendedor_nombre}</strong>
             {rendicion.cargada_por_tercero && (
-              <span className="ml-2 border border-dorado text-dorado-osc rounded px-1.5 py-0.5 text-[10px] font-semibold">
+              <span className="ml-2 border border-dorado text-dorado-osc rounded px-1.5 py-0.5 text-[11px] font-semibold">
                 EN NOMBRE DE UN TERCERO
               </span>
             )}
@@ -350,7 +350,7 @@ export default function DetalleRendicion({
             <tbody>
               {boletas.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center text-gray-400 py-8">
+                  <td colSpan={9} className="text-center text-gray-500 py-8">
                     Todavia no hay boletas en esta rendicion.
                   </td>
                 </tr>
@@ -397,7 +397,7 @@ export default function DetalleRendicion({
                         Ver
                       </a>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-gray-500">—</span>
                     )}
                     <span className="block text-[11px] text-gray-500 truncate">
                       {b.documento}
@@ -422,7 +422,7 @@ export default function DetalleRendicion({
                         revisa donde mirar. */}
                     {b.fuera_politica && (
                       <span
-                        className="block mt-1 border border-dorado text-dorado-osc rounded px-1 py-0.5 text-[10px] font-semibold"
+                        className="block mt-1 border border-dorado text-dorado-osc rounded px-1 py-0.5 text-[11px] font-semibold"
                         title={b.politica_motivo ?? ""}
                       >
                         FUERA DE POLITICA

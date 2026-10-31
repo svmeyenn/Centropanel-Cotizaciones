@@ -54,7 +54,7 @@ export default function ControlEspera({
           )}
         </div>
         {vigente.motivo && <p className="mt-1 text-gray-800 whitespace-pre-wrap break-words">{vigente.motivo}</p>}
-        <p className="mt-1 text-[10px] text-gray-600">
+        <p className="mt-1 text-[11px] text-gray-600">
           Mientras este asi no sale en los pendientes del inicio ni en sus compromisos. Agendar un compromiso nuevo lo retoma.
         </p>
         {error && (
@@ -97,7 +97,7 @@ export default function ControlEspera({
           <label htmlFor={`motivo-espera-${idLead ?? "c"}${idCot ?? ""}`} className="block font-semibold text-amber-900">
             Dejar en espera del cliente
           </label>
-          <p className="text-[10px] text-gray-700">
+          <p className="text-[11px] text-gray-700">
             Para cuando el cliente pidio que no lo molesten y se espera su respuesta. Sale de los pendientes del inicio y
             queda en el cuadro &quot;En espera del cliente&quot;. Sus compromisos sin cumplir dejan de aparecer en la agenda
             mientras tanto.

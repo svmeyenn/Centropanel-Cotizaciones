@@ -49,7 +49,7 @@ export default async function CotizacionesEnJuego({ g }: { g: Gestion }) {
               href={`/cotizaciones?estado=${encodeURIComponent(estado.codigo)}`}
               className="px-3 py-2 hover:bg-crema"
             >
-              <span className="block text-[10px] uppercase tracking-wide text-gray-500">{estado.etiqueta}</span>
+              <span className="block text-[11px] uppercase tracking-wide text-gray-500">{estado.etiqueta}</span>
               {/* Una linea por moneda: pesos y soles juntos no caben ni se suman. */}
               {e && Object.keys(e.montos ?? {}).length > 1 ? (
                 Object.entries(e.montos).map(([mon, v]) => (
@@ -69,7 +69,7 @@ export default async function CotizacionesEnJuego({ g }: { g: Gestion }) {
                   </>
                 )}
               </span>
-              <span className="block text-[10px] text-dorado-osc">
+              <span className="block text-[11px] text-dorado-osc">
                 Falta: {(estado.rol && QUE_HACER[estado.rol]) || "darle seguimiento"}
               </span>
             </Link>
@@ -77,7 +77,7 @@ export default async function CotizacionesEnJuego({ g }: { g: Gestion }) {
         })}
       </div>
 
-      <p className="px-3 py-1.5 text-[10px] text-gray-500">
+      <p className="px-3 py-1.5 text-[11px] text-gray-500">
         Las cotizaciones que nadie tiene comprometidas salen en{" "}
         <a href="#seguimiento" className="text-verde underline">
           Sin seguimiento

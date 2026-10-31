@@ -185,12 +185,12 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                       const pr = precio.get(i.id);
                       return (
                         <tr key={i.id} className="border-t border-gray-100">
-                          <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
+                          <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                           <td className="px-3 py-1.5">{i.unidad}</td>
                           <td className="px-3 py-1.5 text-right">{fmtUnid(i.cantidad)}</td>
                           <td className="px-3 py-1.5 text-right">
-                            {pr != null ? dinero(pr, moneda) : maestraProv.has(i.id) ? <span className="text-gray-400">sin precio</span> : <span className="text-gray-300 italic">{excluidos.has(i.id) ? "excluido de su solicitud" : "no lo tiene en su maestra"}</span>}
-                            {maestraProv.has(i.id) && (maestraProv.get(i.id) ?? 0) > 0 && <span className="block text-[10px] text-gray-400">maestra: {dinero(maestraProv.get(i.id) ?? 0, moneda)}</span>}
+                            {pr != null ? dinero(pr, moneda) : maestraProv.has(i.id) ? <span className="text-gray-500">sin precio</span> : <span className="text-gray-300 italic">{excluidos.has(i.id) ? "excluido de su solicitud" : "no lo tiene en su maestra"}</span>}
+                            {maestraProv.has(i.id) && (maestraProv.get(i.id) ?? 0) > 0 && <span className="block text-[11px] text-gray-500">maestra: {dinero(maestraProv.get(i.id) ?? 0, moneda)}</span>}
                           </td>
                           <td className="px-3 py-1.5 text-right tabular-nums">{pr != null ? dinero(subtotalLinea(Number(i.cantidad), pr, moneda), moneda) : ""}</td>
                         </tr>
@@ -285,7 +285,7 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
                     <td className="px-3 py-1.5">
                       {e.tipo === "OC" ? `Orden de compra ${e.id_oc ? (ocPor.get(Number(e.id_oc))?.num_oc ?? "") : ""}` : `Solicitud ${numeros.get(`${e.id_sc}:${idPart}`) ?? folioSc.get(Number(e.id_sc)) ?? ""}`}
                     </td>
-                    <td className="px-3 py-1.5">{e.canal === "email" ? "Correo" : "WhatsApp"}{e.reversado_en ? <span className="ml-1.5 px-1.5 rounded bg-gray-200 text-gray-600 text-[10px] font-semibold">Reversado</span> : null}</td>
+                    <td className="px-3 py-1.5">{e.canal === "email" ? "Correo" : "WhatsApp"}{e.reversado_en ? <span className="ml-1.5 px-1.5 rounded bg-gray-200 text-gray-600 text-[11px] font-semibold">Reversado</span> : null}</td>
                     <td className="px-3 py-1.5">{e.destino}</td>
                     <td className="px-3 py-1.5">{vendPor.get(Number(e.id_vendedor)) ?? "—"}</td>
                   </tr>
@@ -303,7 +303,7 @@ export default async function VistaProveedorNm({ idNm, idPart, modo }: { idNm: n
 function Dato({ rotulo, valor, extra }: { rotulo: string; valor?: string | null; extra?: string | null }) {
   return (
     <div>
-      <span className="block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5">{rotulo}</span>
+      <span className="block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5">{rotulo}</span>
       <div className="font-semibold">{valor || "—"}</div>
       {extra ? <div className="text-gray-600">{extra}</div> : null}
     </div>

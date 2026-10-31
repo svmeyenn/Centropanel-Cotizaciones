@@ -346,7 +346,7 @@ export default function BitacoraCotizacion({
       )}
 
       {actividad.length === 0 ? (
-        <p className="px-3 py-6 text-center text-xs text-gray-400">
+        <p className="px-3 py-6 text-center text-xs text-gray-500">
           Sin registros todavia. Lo que se converse con el cliente se anota aqui.
         </p>
       ) : (
@@ -364,7 +364,7 @@ export default function BitacoraCotizacion({
               {a.proxima_accion && (
                 <div className="mt-1 flex flex-wrap items-center gap-2 bg-crema border border-gray-200 rounded px-2 py-1">
                   <span
-                    className={`border rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                    className={`border rounded px-1.5 py-0.5 text-[11px] font-semibold ${
                       TONO[a.estado_proxima ?? "Vigente"]
                     }`}
                   >

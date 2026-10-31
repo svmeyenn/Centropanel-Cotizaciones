@@ -58,13 +58,13 @@ export default function FusionLead({ idLead, estados }: { idLead: number; estado
   return (
     <section aria-label="Fusionar con un duplicado" className="bg-white border border-gray-200 rounded overflow-hidden text-[11px]">
       <div className="bg-verde text-white px-3 py-1 flex items-center justify-between">
-        <h2 className="text-[10px] font-semibold uppercase">Fusionar con un duplicado</h2>
+        <h2 className="text-[11px] font-semibold uppercase">Fusionar con un duplicado</h2>
         <button type="button" onClick={() => setAbierto(false)} className="text-[11px] underline">
           Cerrar
         </button>
       </div>
       <div className="p-3 space-y-2">
-        <p className="text-[10px] text-gray-600">
+        <p className="text-[11px] text-gray-600">
           Este lead se conserva. El duplicado que elija deja de aparecer en las listas y sus conversaciones, compromisos,
           oportunidades, cotizaciones, archivos y datos que falten pasan a este. Queda anotado en el historial.
         </p>
@@ -111,13 +111,13 @@ export default function FusionLead({ idLead, estados }: { idLead: number; estado
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2">
                         <span className="font-semibold">{c.nombre}</span>
-                        {c.coincide && <span className="text-[10px] border border-amber-400 bg-amber-50 text-amber-900 rounded px-1">{c.coincide}</span>}
+                        {c.coincide && <span className="text-[11px] border border-amber-400 bg-amber-50 text-amber-900 rounded px-1">{c.coincide}</span>}
                         <span className="text-gray-500">{etiquetaDe(estados, c.estado)}</span>
                       </div>
-                      <p className="text-[10px] text-gray-600 break-words">
+                      <p className="text-[11px] text-gray-600 break-words">
                         {[c.empresa, lista(c.emails), lista(c.telefonos)].filter(Boolean).join(" · ") || "sin datos de contacto"}
                       </p>
-                      <p className="text-[10px] text-gray-500">
+                      <p className="text-[11px] text-gray-500">
                         {c.conversaciones} conversaciones · {c.oportunidades} oportunidades
                         {c.propietario ? ` · ${c.propietario}` : ""}
                         {c.creado ? ` · creado ${c.creado.slice(0, 10)}` : ""}

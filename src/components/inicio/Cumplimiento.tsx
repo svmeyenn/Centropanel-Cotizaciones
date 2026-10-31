@@ -45,7 +45,7 @@ export default function Cumplimiento({
         {total > 0 && <span className="font-normal normal-case">{Math.round((aTiempo / total) * 100)} % a tiempo</span>}
       </h3>
       {lista.length === 0 ? (
-        <p className="px-3 py-5 text-center text-xs text-gray-400">Nadie comprometio acciones para este mes.</p>
+        <p className="px-3 py-5 text-center text-xs text-gray-500">Nadie comprometio acciones para este mes.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[11px]">
@@ -78,7 +78,7 @@ export default function Cumplimiento({
                     <td className="px-2.5 py-1 font-semibold">{f.vendedor}</td>
                     <td className="px-2.5 py-1 text-right tabular-nums">
                       {prom}
-                      <span className="block text-[9px] text-gray-500">
+                      <span className="block text-[11px] text-gray-500">
                         {f.cot?.comprometidas ?? 0} cot. · {f.lead?.comprometidas ?? 0} leads
                       </span>
                     </td>

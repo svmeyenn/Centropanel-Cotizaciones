@@ -80,7 +80,7 @@ function Grupo({
 }) {
   return (
     <div>
-      <h2 className="text-[10px] font-semibold text-dorado-osc uppercase tracking-wide flex flex-wrap items-center gap-x-3">
+      <h2 className="text-[11px] font-semibold text-dorado-osc uppercase tracking-wide flex flex-wrap items-center gap-x-3">
         {titulo}
         {quitar && <span className="normal-case tracking-normal font-normal">{quitar}</span>}
       </h2>
@@ -91,7 +91,7 @@ function Grupo({
             <Link href={`/leads/${l.id_clientify}`} className="font-semibold text-verde underline break-words">
               {l.nombre}
             </Link>
-            <span className="text-[10px] border border-gray-300 rounded px-1 text-gray-700">{etiquetaDe(estados, l.estado)}</span>
+            <span className="text-[11px] border border-gray-300 rounded px-1 text-gray-700">{etiquetaDe(estados, l.estado)}</span>
             {l.propietario && <span className="text-[11px] text-gray-600">· {l.propietario}</span>}
             {l.oportunidad && (
               <span className="text-[11px] text-gray-500 break-words" title="Oportunidad del CRM que nombra esta cotizacion">
@@ -105,7 +105,7 @@ function Grupo({
         ))}
       </ul>
       {omitidos > 0 && (
-        <p className="text-[10px] text-gray-500">
+        <p className="text-[11px] text-gray-500">
           y {omitidos} lead{omitidos === 1 ? "" : "s"} mas de este cliente, en la lista de leads.
         </p>
       )}

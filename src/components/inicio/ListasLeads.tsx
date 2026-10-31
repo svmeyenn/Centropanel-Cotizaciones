@@ -21,14 +21,14 @@ function Fila({ l, hoy, verPropietario, estado, dato }: { l: LeadDeLista; hoy: s
         <Link href={`/leads/${l.id_clientify}`} className="font-semibold text-verde underline break-words">
           {l.nombre_completo || "(sin nombre)"}
         </Link>
-        <p className="text-[10px] text-gray-500">
+        <p className="text-[11px] text-gray-500">
           {estado}
           {verPropietario && <span className="text-gray-600"> · {l.propietario ?? "sin propietario"}</span>}
           {l.origen && <span> · {l.origen}</span>}
         </p>
-        {l.nota && <p className="text-[10px] text-gray-700 mt-0.5 break-words">{l.nota}</p>}
+        {l.nota && <p className="text-[11px] text-gray-700 mt-0.5 break-words">{l.nota}</p>}
       </div>
-      <span className={`shrink-0 text-[10px] text-right ${dato.alerta ? "text-red-700 font-semibold" : "text-gray-600"}`}>{dato.texto}</span>
+      <span className={`shrink-0 text-[11px] text-right ${dato.alerta ? "text-red-700 font-semibold" : "text-gray-600"}`}>{dato.texto}</span>
     </li>
   );
 }
@@ -60,7 +60,7 @@ function Cuadro({
           {titulo} · {n.toLocaleString("es-CL")}
         </h2>
       </div>
-      <p className="px-3 pt-1.5 text-[10px] text-gray-500">{explicacion}</p>
+      <p className="px-3 pt-1.5 text-[11px] text-gray-500">{explicacion}</p>
       {mostradas === 0 ? <p className="px-3 py-5 text-center text-xs text-gray-500">{vacio}</p> : <ul className="divide-y divide-gray-100 flex-1">{children}</ul>}
       {n > mostradas && (
         <p className="px-3 py-1.5 text-[11px] text-gray-500 border-t border-gray-100">

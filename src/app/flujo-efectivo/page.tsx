@@ -228,7 +228,7 @@ function ActividadFilas({
           <td className="px-3 py-1.5 pl-6">
             <span className="text-gray-500 mr-2">{l.codigo === "SIN" ? "" : l.codigo}</span>
             {l.nombre}
-            <span className="text-gray-400 ml-2">({l.movimientos})</span>
+            <span className="text-gray-500 ml-2">({l.movimientos})</span>
           </td>
           <td className="px-3 py-1.5 text-right">{fmt(l.cobros)}</td>
           <td className="px-3 py-1.5 text-right">{fmt(-l.pagos)}</td>

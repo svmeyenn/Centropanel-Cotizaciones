@@ -405,7 +405,7 @@ export default function PanelConciliacion({
               <tbody>
                 {pendientes.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-400 py-8">
+                    <td colSpan={5} className="text-center text-gray-500 py-8">
                       Nada pendiente: todo lo del banco tiene su movimiento.
                     </td>
                   </tr>
@@ -498,7 +498,7 @@ export default function PanelConciliacion({
                             </button>
                           </div>
                         ) : (
-                          <span className="text-gray-400">Sin cuadrar</span>
+                          <span className="text-gray-500">Sin cuadrar</span>
                         )}
                       </td>
                     </tr>
@@ -535,7 +535,7 @@ export default function PanelConciliacion({
                   <tr>
                     <td
                       colSpan={puedeConciliar ? 6 : 5}
-                      className="text-center text-gray-400 py-8"
+                      className="text-center text-gray-500 py-8"
                     >
                       Todo lo registrado aparece en la cartola del banco.
                     </td>

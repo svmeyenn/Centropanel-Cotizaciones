@@ -5,7 +5,7 @@ import Ventana from "@/components/Ventana";
 import { crearMateriaDesdeNecesidad, crearTipoDesdeNecesidad, listasMateria, type ItemBuscado, type ListasMateria } from "@/app/necesidades/acciones";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
-const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
+const ROTULO = "block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
 
 // Ventana para dar de alta una materia prima sin salir de la necesidad. Entra con costo cero --lo fija la
 // cotizacion o quien administra la maestra de materias primas--; al guardar, vuelve a la necesidad con el item

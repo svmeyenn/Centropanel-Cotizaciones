@@ -20,7 +20,7 @@ export default function GrupoCabecera({
     <section
       className={`bg-white border border-gray-200 rounded p-3 ${className ?? ""}`}
     >
-      <h2 className="text-[10px] font-bold tracking-wide text-dorado-osc mb-2">
+      <h2 className="text-[11px] font-bold tracking-wide text-dorado-osc mb-2">
         {titulo}
       </h2>
       <div className={`grid gap-3 ${columnas}`}>{children}</div>

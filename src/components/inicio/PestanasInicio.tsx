@@ -42,7 +42,7 @@ export default function PestanasInicio({
             }`}
           >
             {p.texto}
-            <span className="hidden md:inline text-[10px] font-normal text-gray-500"> · {p.ayuda}</span>
+            <span className="hidden md:inline text-[11px] font-normal text-gray-500"> · {p.ayuda}</span>
           </Link>
         );
       })}

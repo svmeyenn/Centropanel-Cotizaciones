@@ -319,9 +319,9 @@ export default function EditorOC({
               {lineas.map((l) => (
                 <tr key={l.id} className="border-t border-gray-100">
                   <td className="px-3 py-2">
-                    {l.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{l.sku}</span>}{l.descripcion}
+                    {l.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{l.sku}</span>}{l.descripcion}
                     {l.sinMaestra && (
-                      <span className="block text-[10px] text-amber-700">
+                      <span className="block text-[11px] text-amber-700">
                         No esta en la maestra del proveedor.
                         {puedeCrear && (
                           <button className="ml-1.5 underline disabled:opacity-40" disabled={pendiente} onClick={() => ejecutar(() => asignarMaestraOC(oc.id, [l.id]))}>

@@ -164,7 +164,7 @@ export default function GestorFormasPago({
                   {f.activo ? (
                     <span className="text-green-700">Activa</span>
                   ) : (
-                    <span className="text-gray-400">Inactiva</span>
+                    <span className="text-gray-500">Inactiva</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
@@ -183,7 +183,7 @@ export default function GestorFormasPago({
                       usar esta
                     </button>
                   ) : (
-                    <span className="text-gray-400">--</span>
+                    <span className="text-gray-500">--</span>
                   )}
                 </td>
                 {esAdmin && (

@@ -132,7 +132,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
                     <td className="px-3 py-2 text-right tabular-nums">{n.n_items}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{n.n_sc}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{n.n_oc}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{n.fecha_requerida ? fecha(n.fecha_requerida) : <span className="text-gray-400">—</span>}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{n.fecha_requerida ? fecha(n.fecha_requerida) : <span className="text-gray-500">—</span>}</td>
                     <td className="px-3 py-2">{n.solicitante}</td>
                   </tr>
                 ))}

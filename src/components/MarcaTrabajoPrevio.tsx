@@ -69,7 +69,7 @@ export default function MarcaTrabajoPrevio({
       {abierto && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[16rem]">
-            <label htmlFor={`nota-tp-${idLead}`} className="block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5">
+            <label htmlFor={`nota-tp-${idLead}`} className="block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5">
               Que hay que hacer antes de responder
             </label>
             <input

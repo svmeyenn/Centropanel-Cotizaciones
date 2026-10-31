@@ -130,12 +130,12 @@ export default async function Pagina({ params }: { params: Promise<{ id: string;
                     <td className="px-3 py-1.5 font-semibold">{p.nombre}</td>
                     <td className={`px-3 py-1.5 ${cubre === 0 ? "text-red-700" : ""}`}>
                       {out ? "Fuera de esta solicitud" : `${cubre} de ${itemsSc.size}`}
-                      {!out && nExcl > 0 && <span className="block text-[10px] text-gray-500">{nExcl} excluido{nExcl === 1 ? "" : "s"} a mano</span>}
+                      {!out && nExcl > 0 && <span className="block text-[11px] text-gray-500">{nExcl} excluido{nExcl === 1 ? "" : "s"} a mano</span>}
                     </td>
-                    <td className="px-3 py-1.5">{p.email ?? <span className="text-gray-400">sin correo</span>}</td>
-                    <td className="px-3 py-1.5">{p.telefono ?? <span className="text-gray-400">sin telefono</span>}</td>
+                    <td className="px-3 py-1.5">{p.email ?? <span className="text-gray-500">sin correo</span>}</td>
+                    <td className="px-3 py-1.5">{p.telefono ?? <span className="text-gray-500">sin telefono</span>}</td>
                     <td className="px-3 py-1.5">
-                      {u ? `${u.canal === "email" ? "Correo" : "WhatsApp"} · ${new Date(u.creado).toLocaleString("es-CL", { timeZone: "America/Santiago", dateStyle: "short", timeStyle: "short" })}${u.reversado ? " (reversado)" : ""}` : <span className="text-gray-400">no enviada</span>}
+                      {u ? `${u.canal === "email" ? "Correo" : "WhatsApp"} · ${new Date(u.creado).toLocaleString("es-CL", { timeZone: "America/Santiago", dateStyle: "short", timeStyle: "short" })}${u.reversado ? " (reversado)" : ""}` : <span className="text-gray-500">no enviada</span>}
                     </td>
                     <td className="px-3 py-1.5 text-right whitespace-nowrap space-x-1.5">
                       {!out && (

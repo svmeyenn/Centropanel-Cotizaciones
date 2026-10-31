@@ -155,7 +155,7 @@ export default function GestorMediosPago({
                   ) : Number(m.comision_pct) > 0 ? (
                     `${porcentaje(m.comision_pct)} %`
                   ) : (
-                    <span className="text-gray-400">sin comision</span>
+                    <span className="text-gray-500">sin comision</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
@@ -179,14 +179,14 @@ export default function GestorMediosPago({
                   ) : m.con_gasto ? (
                     <span>Lleva gasto{Number(m.costo_pct) > 0 ? ` · ${porcentaje(Number(m.costo_pct))} %` : " · tasa sin definir"}</span>
                   ) : (
-                    <span className="text-gray-400">no lleva</span>
+                    <span className="text-gray-500">no lleva</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
                   {m.activo ? (
                     <span className="text-green-700">Activo</span>
                   ) : (
-                    <span className="text-gray-400">Inactivo</span>
+                    <span className="text-gray-500">Inactivo</span>
                   )}
                 </td>
                 {esAdmin && (

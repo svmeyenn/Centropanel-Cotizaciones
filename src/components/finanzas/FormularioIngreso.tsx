@@ -209,7 +209,7 @@ export default function FormularioIngreso({
           <input
             type="date"
             name="fecha_pago"
-            className={`${CAMPO} disabled:bg-gray-50 disabled:text-gray-400`}
+            className={`${CAMPO} disabled:bg-gray-50 disabled:text-gray-500`}
             defaultValue={movimiento?.fecha_pago?.slice(0, 10) ?? ""}
             disabled={!recibido}
           />

@@ -83,7 +83,7 @@ export default function FiltrosCuadro({
   }
 
   return (
-    <div className="px-3 py-1.5 border-b border-gray-100 bg-gray-50 text-[10px]">
+    <div className="px-3 py-1.5 border-b border-gray-100 bg-gray-50 text-[11px]">
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -138,7 +138,7 @@ export default function FiltrosCuadro({
                   valor={ran[c.param].desde}
                   cambiar={(v) => setRan((x) => ({ ...x, [c.param]: { ...x[c.param], desde: v } }))}
                 />
-                <span className="text-gray-400">a</span>
+                <span className="text-gray-500">a</span>
                 <Dato
                   etiqueta={`${c.texto}, hasta`}
                   tipo={c.tipo}

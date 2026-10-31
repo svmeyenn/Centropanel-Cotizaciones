@@ -154,7 +154,7 @@ export default function Agenda({
           Agenda: esta semana y la proxima
           <span className="ml-2 normal-case font-normal opacity-80">· la barra del calendario llega a semanas anteriores</span>
         </h2>
-        <div className="flex flex-wrap gap-1 text-[10px]" role="group" aria-label="Que mostrar">
+        <div className="flex flex-wrap gap-1 text-[11px]" role="group" aria-label="Que mostrar">
           {(["todos", "lead", "cotizacion", "entrega"] as const).map((t) => (
             <button
               key={t}
@@ -178,7 +178,7 @@ export default function Agenda({
           aria-label="Calendario: desplace hacia arriba para ver semanas anteriores"
           tabIndex={0}
         >
-          <div className="grid grid-cols-[auto_repeat(7,minmax(0,1fr))] gap-1 text-[10px]">
+          <div className="grid grid-cols-[auto_repeat(7,minmax(0,1fr))] gap-1 text-[11px]">
             <span data-cabecera-dias className="sticky top-0 z-[2] bg-white" />
             {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((d) => (
               <span key={d} className="sticky top-0 z-[2] bg-white text-center text-gray-500 uppercase">
@@ -202,7 +202,7 @@ export default function Agenda({
             })}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[10px] text-gray-600">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-600">
           {(["atrasado", "hoy", "semana", "proxima"] as const).map((f) => (
             <button
               key={f}
@@ -283,7 +283,7 @@ export default function Agenda({
           {grupos.map((g) => (
             <li key={g.clave}>
               <h3
-                className={`sticky top-0 z-[1] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+                className={`sticky top-0 z-[1] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                   g.clave === "atrasado" ? "bg-red-50 text-red-800" : g.clave === hoy ? "bg-verde/10 text-verde" : "bg-crema text-dorado-osc"
                 }`}
               >
@@ -297,7 +297,7 @@ export default function Agenda({
                   return (
                     <li key={k} className={`flex flex-wrap items-start gap-x-2 gap-y-0.5 px-3 py-1.5 text-[11px] ${hecho ? "opacity-60" : ""}`}>
                       <BanderaDe idPais={x.id_pais} />
-                      <span className={`shrink-0 text-[9px] font-semibold border rounded px-1 ${TIPOS[x.tipo].clase}`}>
+                      <span className={`shrink-0 text-[11px] font-semibold border rounded px-1 ${TIPOS[x.tipo].clase}`}>
                         {TIPOS[x.tipo].texto}
                       </span>
                       <div className="min-w-0 flex-1 basis-60">
@@ -310,7 +310,7 @@ export default function Agenda({
                           {x.autor && <span className="text-gray-500"> · anotó {x.autor}</span>}
                           {verResponsable && x.responsable && <span className="text-gray-500"> · a cargo de {x.responsable}</span>}
                         </p>
-                        {x.comentario && <p className="text-[10px] text-gray-500 break-words">{x.comentario}</p>}
+                        {x.comentario && <p className="text-[11px] text-gray-500 break-words">{x.comentario}</p>}
                       </div>
                       <span className={`shrink-0 tabular-nums ${d < 0 ? "text-red-700 font-semibold" : "text-gray-600"}`}>
                         {d < 0 ? `vencio ${plazo(d)}` : `${diaCorto(x.fecha)} · ${plazo(d)}`}
@@ -367,7 +367,7 @@ function Semana({
     <>
       <span
         {...(actual ? { "data-semana-actual": "" } : {})}
-        className="self-center pr-1 text-[9px] uppercase text-gray-500 [writing-mode:vertical-rl] rotate-180 sm:[writing-mode:horizontal-tb] sm:rotate-0"
+        className="self-center pr-1 text-[11px] uppercase text-gray-500 [writing-mode:vertical-rl] rotate-180 sm:[writing-mode:horizontal-tb] sm:rotate-0"
       >
         {titulo}
       </span>
@@ -395,7 +395,7 @@ function Semana({
             }`}
           >
             <span className="min-w-0">
-              <span className={`block text-[10px] leading-none ${esHoy ? "font-bold text-verde" : pasado ? "text-gray-400" : "text-gray-600"}`}>
+              <span className={`block text-[11px] leading-none ${esHoy ? "font-bold text-verde" : pasado ? "text-gray-500" : "text-gray-600"}`}>
                 {esHoy ? "Hoy" : d.slice(8, 10).replace(/^0/, "")}
               </span>
               {delDia.length > 0 && (
@@ -411,7 +411,7 @@ function Semana({
                 .map((p) => (
                   <span
                     key={p.t}
-                    className="inline-flex items-center gap-0.5 text-[8px] leading-none tabular-nums text-gray-600"
+                    className="inline-flex items-center gap-0.5 text-[11px] leading-none tabular-nums text-gray-600"
                     title={`${p.n} ${TIPOS[p.t].texto}`}
                   >
                     {p.n}

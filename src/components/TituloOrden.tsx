@@ -68,7 +68,7 @@ export function BarraOrden({
   opciones: { campo: string; texto: string; inicial?: Dir }[];
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-1 text-[10px] text-gray-600">
+    <div className="flex flex-wrap items-center gap-1 text-[11px] text-gray-600">
       <span>Ordenar por</span>
       {opciones.map((o) => {
         const activa = actual.campo === o.campo;

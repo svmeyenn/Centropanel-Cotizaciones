@@ -7,7 +7,7 @@ import { LINEAS } from "@/lib/leads";
 import { crearLead, type DatosNuevoLead, type ResultadoAlta } from "@/app/leads/alta";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
-const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
+const ROTULO = "block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
 
 // En Chile se habla de comuna y region; en Peru, de distrito, provincia y departamento.
 const GEO = {

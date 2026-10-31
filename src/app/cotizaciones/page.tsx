@@ -184,7 +184,7 @@ export default async function Pagina({
 
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-[10px]">
+            <table className="w-full text-[11px]">
               <thead className="bg-verde text-white">
                 <tr>
                   <th className="text-left px-2 py-1.5 whitespace-nowrap">N cotizacion</th>
@@ -203,7 +203,7 @@ export default async function Pagina({
               <tbody>
                 {(cots ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={columnas} className="text-center text-gray-400 py-8">
+                    <td colSpan={columnas} className="text-center text-gray-500 py-8">
                       {hayFiltro
                         ? "Ninguna cotizacion coincide con el filtro."
                         : "Todavia no hay cotizaciones."}

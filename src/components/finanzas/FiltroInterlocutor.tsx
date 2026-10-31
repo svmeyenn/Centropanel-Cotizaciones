@@ -137,7 +137,7 @@ export default function FiltroInterlocutor({
       </div>
 
       {valorTexto && !abierto && (
-        <span className="block text-[10px] text-gray-500 mt-0.5">
+        <span className="block text-[11px] text-gray-500 mt-0.5">
           Todos los que coinciden con «{valorTexto}».
         </span>
       )}

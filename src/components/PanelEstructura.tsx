@@ -136,7 +136,7 @@ export default function PanelEstructura({
                     </div>
                     <ul className="divide-y divide-gray-100 text-xs">
                       {ccs.length === 0 && (
-                        <li className="px-3 py-3 text-gray-400">Sin centros de costo.</li>
+                        <li className="px-3 py-3 text-gray-500">Sin centros de costo.</li>
                       )}
                       {ccs.map((c) => (
                         <li
@@ -171,7 +171,7 @@ export default function PanelEstructura({
                 );
               })}
               {uns.length === 0 && (
-                <p className="text-xs text-gray-400 lg:col-span-3">Este mercado todavia no tiene unidades de negocio.</p>
+                <p className="text-xs text-gray-500 lg:col-span-3">Este mercado todavia no tiene unidades de negocio.</p>
               )}
             </div>
           </section>
@@ -198,7 +198,7 @@ export default function PanelEstructura({
               <tbody>
                 {sinClasificar.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-400 py-8">
+                    <td colSpan={5} className="text-center text-gray-500 py-8">
                       Todos los movimientos tienen proyecto o centro de costo.
                     </td>
                   </tr>

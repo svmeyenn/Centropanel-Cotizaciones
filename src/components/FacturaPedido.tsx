@@ -289,7 +289,7 @@ export default function FacturaPedido({
                     value={numero}
                     onChange={(e) => setNumero(e.target.value)}
                   />
-                  <span className="block text-[10px] text-gray-500 mt-0.5">
+                  <span className="block text-[11px] text-gray-500 mt-0.5">
                     {ultimos
                       ? ultimos[tipo]
                         ? `Ultimo folio de ${tipo === "Boleta" ? "boletas" : tipo === NOTA ? "notas de credito" : "facturas"}: ${ultimos[tipo]}`
@@ -523,7 +523,7 @@ function ArchivoFactura({
     );
   }
 
-  if (!puedeCrear) return <span className="text-gray-400">sin archivo</span>;
+  if (!puedeCrear) return <span className="text-gray-500">sin archivo</span>;
 
   return (
     <input

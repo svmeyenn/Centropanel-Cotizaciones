@@ -162,7 +162,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
             </span>
           )}
         </span>
-        <span className="text-gray-400 text-sm">{abierto ? "▲" : "▼"}</span>
+        <span className="text-gray-500 text-sm">{abierto ? "▲" : "▼"}</span>
       </button>
 
       {abierto && (
@@ -209,7 +209,7 @@ export default function EnvioCotizacion({ datos }: { datos: DatosEnvio }) {
               className={`text-sm font-semibold px-3 py-1.5 rounded ${
                 datos.emailCliente
                   ? "bg-verde text-white disabled:opacity-60"
-                  : "bg-gray-200 text-gray-400"
+                  : "bg-gray-200 text-gray-500"
               }`}
             >
               {enviando ? "Enviando..." : "Enviar por correo"}

@@ -419,7 +419,7 @@ export default async function Pagina({
             origen, que se cortan con "..." y se leen completos al dejar el
             cursor encima. */}
         <div className="bg-white border border-gray-200 rounded">
-          <table className="w-full table-fixed text-[10px]">
+          <table className="w-full table-fixed text-[11px]">
             <colgroup>
               {puedeAsignar && <col className="w-[3%]" />}
               <col className="w-[6%]" />
@@ -467,7 +467,7 @@ export default async function Pagina({
             <tbody>
               {contactos.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={12} className="px-3 py-8 text-center text-gray-500">
                     {totalMercado === 0
                       ? "Todavia no hay leads. Importe el archivo de leads."
                       : "Ningun contacto coincide con la busqueda."}
@@ -506,7 +506,7 @@ export default async function Pagina({
                       </span>
                     </td>
                     <td className="px-2 py-1 break-words">
-                      {c.propietario ?? <span className="text-gray-400">Sin propietario</span>}
+                      {c.propietario ?? <span className="text-gray-500">Sin propietario</span>}
                     </td>
                     <td className="px-2 py-1">
                       <span className="block truncate" title={c.comuna ?? ""}>

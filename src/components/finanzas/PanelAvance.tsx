@@ -93,7 +93,7 @@ export default function PanelAvance({
                     <div className="font-semibold">{o.nombre}</div>
                     {o.cliente && <div className="text-gray-500 font-normal">{o.cliente}</div>}
                   </th>
-                  <td className="px-3 py-1.5 text-right">{o.contrato ? num(o.contrato) : <span className="text-gray-400">sin pedido</span>}</td>
+                  <td className="px-3 py-1.5 text-right">{o.contrato ? num(o.contrato) : <span className="text-gray-500">sin pedido</span>}</td>
                   <td className="px-3 py-1.5 text-right">{o.ultimoPct == null ? "—" : `${o.ultimoPct}% · ${o.ultimaFecha}`}</td>
                   <td className="px-3 py-1.5 text-right">{o.ultimoPct == null ? "—" : num((o.contrato * o.ultimoPct) / 100)}</td>
                   {puedeEditar && (

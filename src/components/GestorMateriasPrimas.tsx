@@ -515,7 +515,7 @@ export default function GestorMateriasPrimas({
                   <td className="px-3 py-2 text-right font-semibold">
                     {pesos(m.costo)}
                     <div
-                      className="text-[10px] font-normal text-gray-500 max-w-[10rem] ml-auto truncate"
+                      className="text-[11px] font-normal text-gray-500 max-w-[10rem] ml-auto truncate"
                       title={
                         preferentes[m.id] != null
                           ? `Proveedor preferente: ${preferentes[m.id].proveedor}`
@@ -529,7 +529,7 @@ export default function GestorMateriasPrimas({
                     {m.activo ? (
                       <span className="text-green-700">Activo</span>
                     ) : (
-                      <span className="text-gray-400">Inactivo</span>
+                      <span className="text-gray-500">Inactivo</span>
                     )}
                   </td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">

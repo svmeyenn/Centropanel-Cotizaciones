@@ -251,7 +251,7 @@ export default async function Pagina({
               <tbody>
                 {visibles.length === 0 && (
                   <tr>
-                    <td colSpan={12} className="text-center text-gray-400 py-8">
+                    <td colSpan={12} className="text-center text-gray-500 py-8">
                       {filas.length === 0
                         ? "Todavia no hay pedidos."
                         : "Ningun pedido en ese estado."}

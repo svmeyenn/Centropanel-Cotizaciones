@@ -238,7 +238,7 @@ export default async function Pagina({
               <tbody>
                 {(pedidos ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={columnas} className="text-center text-gray-400 py-8">
+                    <td colSpan={columnas} className="text-center text-gray-500 py-8">
                       {hayFiltro
                         ? "Ningun pedido coincide con el filtro."
                         : "Todavia no hay pedidos. Se generan desde una cotizacion."}

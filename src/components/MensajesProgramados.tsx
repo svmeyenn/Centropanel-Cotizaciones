@@ -175,7 +175,7 @@ export default function MensajesProgramados({
       key={p.id}
       className={`flex flex-wrap items-start gap-x-2 gap-y-0.5 px-3 py-1.5 ${vencido ? "bg-amber-50 border-l-4 border-amber-500" : "border-l-4 border-transparent"}`}
     >
-      <span className={`shrink-0 text-[9px] font-semibold border rounded px-1 ${p.canal === "email" ? "text-verde border-verde" : "text-[#128C7E] border-[#128C7E]"}`}>
+      <span className={`shrink-0 text-[11px] font-semibold border rounded px-1 ${p.canal === "email" ? "text-verde border-verde" : "text-[#128C7E] border-[#128C7E]"}`}>
         {p.canal === "email" ? "Correo" : "WhatsApp"}
       </span>
       <div className="min-w-0 flex-1 basis-60">
@@ -200,7 +200,7 @@ export default function MensajesProgramados({
           </span>
         </p>
         {vencido && p.canal === "email" && (
-          <p className="text-[10px] text-amber-900">Outlook debio mandarlo a esa hora. Si no salio, estaba cerrado: revise la bandeja de salida.</p>
+          <p className="text-[11px] text-amber-900">Outlook debio mandarlo a esa hora. Si no salio, estaba cerrado: revise la bandeja de salida.</p>
         )}
         <p className="text-gray-500 line-clamp-2 break-words">{p.cuerpo}</p>
       </div>
@@ -244,7 +244,7 @@ export default function MensajesProgramados({
         <h2 className="text-[11px] font-semibold uppercase">
           {titulo} · {items.length}
         </h2>
-        <span className="text-[10px]">
+        <span className="text-[11px]">
           {vencidos.length > 0 ? `${vencidos.length} ya cumpli${vencidos.length === 1 ? "o" : "eron"} su hora` : "Ninguno ha cumplido su hora todavia"}
         </span>
       </div>
@@ -264,7 +264,7 @@ export default function MensajesProgramados({
       <div className="max-h-96 overflow-y-auto">
         {vencidos.length > 0 && (
           <>
-            <h3 className="sticky top-0 z-[1] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-900">
+            <h3 className="sticky top-0 z-[1] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-900">
               Ya cumplieron su hora · {vencidos.length}
             </h3>
             <ul className="divide-y divide-amber-100">{vencidos.map((p) => fila(p, true))}</ul>
@@ -272,7 +272,7 @@ export default function MensajesProgramados({
         )}
         {porLlegar.length > 0 && (
           <>
-            <h3 className="sticky top-0 z-[1] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide bg-crema text-dorado-osc">
+            <h3 className="sticky top-0 z-[1] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide bg-crema text-dorado-osc">
               Aun no llega su hora · {porLlegar.length}
             </h3>
             <ul className="divide-y divide-gray-100">{porLlegar.map((p) => fila(p, false))}</ul>

@@ -563,7 +563,7 @@ export default function GestorVendedores({
                   <td className="px-3 py-2 font-semibold">
                     {v.nombre}
                     {v.id === miId && (
-                      <span className="ml-2 text-[10px] bg-dorado text-white px-1.5 py-0.5 rounded">
+                      <span className="ml-2 text-[11px] bg-dorado text-white px-1.5 py-0.5 rounded">
                         usted
                       </span>
                     )}
@@ -572,10 +572,10 @@ export default function GestorVendedores({
                   <td className="px-3 py-2 text-gray-600">{v.email}</td>
                   <td className="px-3 py-2">
                     {perfiles.find((p) => p.id === v.id_perfil)?.nombre ?? (
-                      <span className="text-gray-400">{v.rol}</span>
+                      <span className="text-gray-500">{v.rol}</span>
                     )}
                     {esSuperAdmin(v) && (
-                      <span className="ml-2 text-[10px] bg-verde text-white px-1.5 py-0.5 rounded">
+                      <span className="ml-2 text-[11px] bg-verde text-white px-1.5 py-0.5 rounded">
                         socio
                       </span>
                     )}
@@ -601,7 +601,7 @@ export default function GestorVendedores({
                     {v.activo ? (
                       <span className="text-green-700">Activo</span>
                     ) : (
-                      <span className="text-gray-400">Inactivo</span>
+                      <span className="text-gray-500">Inactivo</span>
                     )}
                   </td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">

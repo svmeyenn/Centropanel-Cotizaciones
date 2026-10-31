@@ -34,7 +34,7 @@ function Banda({ banda, conPais }: { banda: BandaPais; conPais: boolean }) {
     <div className="bg-white border border-gray-200 rounded flex items-stretch flex-wrap">
       {conPais && (
         <div className="bg-crema border-r border-gray-200 px-2 flex items-center">
-          <span className="text-[10px] font-bold text-verde tracking-wide">
+          <span className="text-[11px] font-bold text-verde tracking-wide">
             {banda.codigo}
           </span>
         </div>
@@ -45,7 +45,7 @@ function Banda({ banda, conPais }: { banda: BandaPais; conPais: boolean }) {
           key={p.nombre}
           className="px-3 py-0.5 border-r border-gray-100 last:border-0 flex items-baseline gap-1.5"
         >
-          <span className="text-[10px] uppercase tracking-wide text-dorado-osc font-semibold whitespace-nowrap">
+          <span className="text-[11px] uppercase tracking-wide text-dorado-osc font-semibold whitespace-nowrap">
             {p.nombre}
           </span>
           <span className="text-xs font-semibold tabular-nums whitespace-nowrap">
@@ -56,7 +56,7 @@ function Banda({ banda, conPais }: { banda: BandaPais; conPais: boolean }) {
 
       {fechas.length > 0 && (
         <div className="px-3 py-0.5 ml-auto flex items-center">
-          <span className="text-[10px] text-gray-500 whitespace-nowrap">
+          <span className="text-[11px] text-gray-500 whitespace-nowrap">
             {fechas.length === 1 ? `al ${fechas[0]}` : `al ${fechas.join(" y ")}`}
           </span>
         </div>

@@ -114,7 +114,7 @@ export default function ColaAprobacion({ items }: { items: ItemCola[] }) {
                         </button>
                       </>
                     ) : (
-                      <span className="text-gray-400">Lo aprueba otra persona</span>
+                      <span className="text-gray-500">Lo aprueba otra persona</span>
                     )}
                   </td>
                 </tr>

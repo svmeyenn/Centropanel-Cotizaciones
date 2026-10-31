@@ -94,12 +94,12 @@ export default function TablaIngresos({
       <td className="px-3 py-2" title={etiquetaContraparte(m)}>
         <span className="block truncate">{etiquetaContraparte(m)}</span>
         {m.servicio_prestado ? (
-          <span className="block text-[10px] text-verde font-semibold">Servicio prestado</span>
+          <span className="block text-[11px] text-verde font-semibold">Servicio prestado</span>
         ) : (
-          <span className="block text-[10px] text-gray-400">Servicio por prestar</span>
+          <span className="block text-[11px] text-gray-500">Servicio por prestar</span>
         )}
         {m.fecha_pago_acordada && (
-          <span className="block text-[10px] text-gray-600">Pago acordado: {fechaCorta(m.fecha_pago_acordada)}</span>
+          <span className="block text-[11px] text-gray-600">Pago acordado: {fechaCorta(m.fecha_pago_acordada)}</span>
         )}
       </td>
       <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
@@ -242,7 +242,7 @@ export default function TablaIngresos({
                 <tr>
                   <td
                     colSpan={columnas}
-                    className="text-center text-gray-400 py-8"
+                    className="text-center text-gray-500 py-8"
                   >
                     {hayFiltro
                       ? "Ningun ingreso coincide con el filtro."

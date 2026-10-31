@@ -30,7 +30,7 @@ export default async function RegistrosEstado({
 
   return (
     <section className="bg-white border border-gray-200 rounded overflow-hidden">
-      <h2 className="bg-verde text-white text-[10px] font-semibold px-2.5 py-px flex justify-between items-center">
+      <h2 className="bg-verde text-white text-[11px] font-semibold px-2.5 py-px flex justify-between items-center">
         <span>{titulo}</span>
         <span className="font-normal">{filas.length}</span>
       </h2>

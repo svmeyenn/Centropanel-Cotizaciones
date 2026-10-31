@@ -32,7 +32,7 @@ interface Excepcion {
 
 // El nivel va siempre escrito: el color ayuda a leer la fila, no es lo unico que dice.
 const ESTILO_NIVEL: Record<Nivel, string> = {
-  ninguno: "text-gray-400",
+  ninguno: "text-gray-500",
   ver: "bg-gray-100 text-gray-700",
   operar: "bg-verde/10 text-verde",
   aprobar: "bg-dorado/25 text-dorado-osc",
@@ -190,7 +190,7 @@ export default function PanelPerfiles({
                             {gente(p.id).length}
                           </span>
                         ) : (
-                          <span className="text-gray-400">0</span>
+                          <span className="text-gray-500">0</span>
                         )}
                       </td>
                       <td className="px-2 py-2 text-right whitespace-nowrap">

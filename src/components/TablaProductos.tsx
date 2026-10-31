@@ -715,7 +715,7 @@ export default function TablaProductos({
                 <tr>
                   <td
                     colSpan={esAdmin ? 9 : 5}
-                    className="text-center text-gray-400 py-8"
+                    className="text-center text-gray-500 py-8"
                   >
                     Sin productos que coincidan.
                   </td>
@@ -768,7 +768,7 @@ export default function TablaProductos({
                               {plegado(`${g.familia}/${sg.subfamilia}`) ? "+" : "−"}
                             </button>
                             {sg.subfamilia}
-                            <span className="ml-2 font-normal text-gray-400">
+                            <span className="ml-2 font-normal text-gray-500">
                               {sg.lista.length}
                             </span>
                           </td>
@@ -798,7 +798,7 @@ export default function TablaProductos({
                             )}
                             {advertencias[p.id] && (
                               <span
-                                className="ml-2 text-[10px] bg-amber-100 text-amber-900 border border-amber-400 px-1.5 py-0.5 rounded"
+                                className="ml-2 text-[11px] bg-amber-100 text-amber-900 border border-amber-400 px-1.5 py-0.5 rounded"
                                 title={advertencias[p.id]}
                               >
                                 EPS no calza
@@ -806,7 +806,7 @@ export default function TablaProductos({
                             )}
                             {p.precio_manual && (
                               <span
-                                className="ml-2 text-[10px] bg-dorado text-white px-1.5 py-0.5 rounded"
+                                className="ml-2 text-[11px] bg-dorado text-white px-1.5 py-0.5 rounded"
                                 title="Precio fijado a mano: no se recalcula con el margen"
                               >
                                 precio manual
@@ -825,7 +825,7 @@ export default function TablaProductos({
                               {pesos(p.costo_unitario)}
                               {preferentes[p.id] != null && (
                                 <div
-                                  className="text-[10px] text-gray-500 max-w-[10rem] ml-auto truncate"
+                                  className="text-[11px] text-gray-500 max-w-[10rem] ml-auto truncate"
                                   title={`Proveedor preferente: ${preferentes[p.id].proveedor}`}
                                 >
                                   {preferentes[p.id].proveedor}
@@ -850,7 +850,7 @@ export default function TablaProductos({
                             {p.activo ? (
                               <span className="text-green-700">Activo</span>
                             ) : (
-                              <span className="text-gray-400">Inactivo</span>
+                              <span className="text-gray-500">Inactivo</span>
                             )}
                           </td>
                           {esAdmin && (

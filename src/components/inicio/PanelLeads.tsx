@@ -66,7 +66,7 @@ export default async function PanelLeads({
 
   return (
     <div className="space-y-2.5">
-      <p className="text-[10px] text-gray-500">
+      <p className="text-[11px] text-gray-500">
         Cartera de <b className="text-gray-700">{rango}</b>: el mes elegido y los dos anteriores. Los leads mas
         antiguos no se cuentan aqui; se trabajan en{" "}
         <Link href="/leads/depurar" className="underline text-verde">
@@ -116,12 +116,12 @@ export default async function PanelLeads({
             {CAMINO.map((e) => (
               <BarraEstado key={e} estado={e} nombre={etiquetaDe(cat.lead, e)} valor={d.embudo[e] ?? 0} total={k.total} max={maxCamino} vivo />
             ))}
-            <li className="pt-1 text-[10px] uppercase tracking-wide text-gray-500">Fuera del camino</li>
+            <li className="pt-1 text-[11px] uppercase tracking-wide text-gray-500">Fuera del camino</li>
             {FUERA.filter((e) => (d.embudo[e] ?? 0) > 0).map((e) => (
               <BarraEstado key={e} estado={e} nombre={etiquetaDe(cat.lead, e)} valor={d.embudo[e] ?? 0} total={k.total} max={maxCamino} />
             ))}
           </ul>
-          <p className="px-3 pb-2 text-[10px] text-gray-500">
+          <p className="px-3 pb-2 text-[11px] text-gray-500">
             Pulse un estado para ver esos leads. La lista los trae todos, tambien los que entraron antes.
           </p>
         </Caja>
@@ -136,7 +136,7 @@ export default async function PanelLeads({
                   <div key={s.semana} className="flex-1 flex flex-col items-center gap-1 h-full">
                     <div className="relative w-full flex-1">
                       <span
-                        className="absolute inset-x-0 text-center text-[9px] tabular-nums text-gray-700 leading-none"
+                        className="absolute inset-x-0 text-center text-[11px] tabular-nums text-gray-700 leading-none"
                         style={{ bottom: `calc(${alto}% + 2px)` }}
                       >
                         {s.total}
@@ -161,19 +161,19 @@ export default async function PanelLeads({
                         })}
                       </div>
                     </div>
-                    <span className="text-[9px] text-gray-500 whitespace-nowrap">{diaCorto(s.semana)}</span>
+                    <span className="text-[11px] text-gray-500 whitespace-nowrap">{diaCorto(s.semana)}</span>
                   </div>
                 );
               })}
             </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-gray-600">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-gray-600">
               {[...d.origenes_top, "Otros"].map((o) => (
                 <span key={o} className="inline-flex items-center gap-1">
                   <i className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: origenesColor.get(o) ?? COLOR_OTROS }} />
                   {o}
                 </span>
               ))}
-              <span className="text-gray-400">· cada barra es una semana, de lunes a domingo</span>
+              <span className="text-gray-500">· cada barra es una semana, de lunes a domingo</span>
             </div>
           </div>
         </Caja>
@@ -207,7 +207,7 @@ export default async function PanelLeads({
             <tbody>
               {equipo.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center text-gray-400 py-5">
+                  <td colSpan={9} className="text-center text-gray-500 py-5">
                     Sin leads en este mercado.
                   </td>
                 </tr>
@@ -234,7 +234,7 @@ export default async function PanelLeads({
             </tbody>
           </table>
         </div>
-        <p className="px-2.5 py-1.5 text-[10px] text-gray-500">
+        <p className="px-2.5 py-1.5 text-[11px] text-gray-500">
           Conversion: oportunidades y clientes sobre el total asignado. Sin seguimiento: contactados, calientes u
           oportunidades sin compromiso ni accion pendiente y sin contacto hace mas de 7 dias. Los compromisos vencidos se cuentan por su fecha, de toda
           la cartera de la persona.
@@ -248,10 +248,10 @@ export default async function PanelLeads({
         <Caja titulo={`Paneles y proyecto · ${rango}`}>
           <div className="p-3 space-y-2 text-[11px]">
             <div className="flex h-6 w-full overflow-hidden rounded" role="img" aria-label={`Paneles ${paneles}, proyecto ${proyecto}`}>
-              <div className="bg-verde text-white text-[10px] font-semibold flex items-center justify-center" style={{ width: `${pct(paneles, totalLinea)}%` }}>
+              <div className="bg-verde text-white text-[11px] font-semibold flex items-center justify-center" style={{ width: `${pct(paneles, totalLinea)}%` }}>
                 {pct(paneles, totalLinea) >= 12 ? `${pct(paneles, totalLinea)} %` : ""}
               </div>
-              <div className="bg-dorado text-negro text-[10px] font-semibold flex items-center justify-center" style={{ width: `${pct(proyecto, totalLinea)}%` }}>
+              <div className="bg-dorado text-negro text-[11px] font-semibold flex items-center justify-center" style={{ width: `${pct(proyecto, totalLinea)}%` }}>
                 {pct(proyecto, totalLinea) >= 12 ? `${pct(proyecto, totalLinea)} %` : ""}
               </div>
             </div>
@@ -268,7 +268,7 @@ export default async function PanelLeads({
 
         <Caja titulo={`Que origen convierte · leads de ${rango}`}>
           {d.origenes.length === 0 ? (
-            <p className="px-3 py-5 text-center text-xs text-gray-400">Sin leads en este periodo.</p>
+            <p className="px-3 py-5 text-center text-xs text-gray-500">Sin leads en este periodo.</p>
           ) : (
             <table className="w-full text-[11px]">
               <thead className="bg-gray-50 text-gray-600">
@@ -337,7 +337,7 @@ function Razones({
   return (
     <Caja titulo={`${titulo} · oportunidades cerradas en ${rango}`}>
       {filas.length === 0 ? (
-        <p className="px-3 py-5 text-center text-xs text-gray-400">
+        <p className="px-3 py-5 text-center text-xs text-gray-500">
           Sin oportunidades cerradas en {rango}. La razon viene de la planilla del CRM.
         </p>
       ) : (
@@ -420,7 +420,7 @@ function Kpi({
 }) {
   const cuerpo = (
     <>
-      <span className="block text-[10px] uppercase tracking-wide text-gray-500">{titulo}</span>
+      <span className="block text-[11px] uppercase tracking-wide text-gray-500">{titulo}</span>
       <span className="block text-lg font-bold leading-tight tabular-nums">
         {valor}
         {nota && (
@@ -429,7 +429,7 @@ function Kpi({
           </span>
         )}
       </span>
-      <span className={`block text-[10px] ${signo < 0 && !nota ? "text-red-700" : "text-gray-600"}`}>{pie}</span>
+      <span className={`block text-[11px] ${signo < 0 && !nota ? "text-red-700" : "text-gray-600"}`}>{pie}</span>
     </>
   );
   const clase = "block bg-white border border-gray-200 rounded px-2.5 py-2";

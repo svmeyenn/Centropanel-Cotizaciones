@@ -138,7 +138,7 @@ export default function PanelTopes({
               <tr>
                 <td
                   colSpan={puedeEditar ? 4 : 3}
-                  className="text-center text-gray-400 py-8"
+                  className="text-center text-gray-500 py-8"
                 >
                   Todavia no hay topes: cualquier gasto se rinde sin marca.
                 </td>

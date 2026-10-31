@@ -105,7 +105,7 @@ export default function Bitacora({
                               <td className="px-2 py-1 text-gray-500 line-through">
                                 {valorLegible(campo, par.antes)}
                               </td>
-                              <td className="px-2 py-1 text-gray-400 w-4">&rarr;</td>
+                              <td className="px-2 py-1 text-gray-500 w-4">&rarr;</td>
                               <td className="px-2 py-1">
                                 {valorLegible(campo, par.ahora)}
                               </td>

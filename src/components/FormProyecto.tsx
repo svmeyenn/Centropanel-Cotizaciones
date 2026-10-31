@@ -97,7 +97,7 @@ export default function FormProyecto({
             {f.id_cliente ? (
               <span className="text-verde text-[11px]">enlazado a su ficha</span>
             ) : f.cliente ? (
-              <span className="text-gray-400 text-[11px]">solo texto: elija de la lista para enlazar</span>
+              <span className="text-gray-500 text-[11px]">solo texto: elija de la lista para enlazar</span>
             ) : null}
           </span>
           <input

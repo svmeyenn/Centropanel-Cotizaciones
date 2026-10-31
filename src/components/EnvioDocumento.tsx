@@ -8,7 +8,7 @@ import { aBase64, estadoAyudante, outlookCorreo, whatsappAbrir, type EstadoAyuda
 import { useTurnoWhatsapp } from "@/lib/turnoWhatsapp";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
-const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
+const ROTULO = "block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
 
 // Envia al proveedor la solicitud de cotizacion o la orden de compra, con el PDF: por correo --sale de la casilla de
 // quien esta conectado, con el archivo adjunto-- o por WhatsApp --el ayudante abre el chat con el archivo listo; sin

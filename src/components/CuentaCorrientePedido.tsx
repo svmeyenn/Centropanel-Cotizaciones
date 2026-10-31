@@ -338,7 +338,7 @@ export default function CuentaCorrientePedido({
                 <tr>
                   <td
                     colSpan={esAdmin ? 7 : 5}
-                    className="text-center text-gray-400 py-6"
+                    className="text-center text-gray-500 py-6"
                   >
                     Sin pagos registrados.
                   </td>
@@ -393,10 +393,10 @@ export default function CuentaCorrientePedido({
                           {p.gasto != null ? (
                             <>
                               {importe(p.gasto, moneda)}
-                              <span className="block text-[10px] text-gray-500">sin {impuesto}: {importe(Math.round(p.gasto / (1 + tasaIva)), moneda)}</span>
+                              <span className="block text-[11px] text-gray-500">sin {impuesto}: {importe(Math.round(p.gasto / (1 + tasaIva)), moneda)}</span>
                             </>
                           ) : p.requiereGasto ? (
-                            <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold">Por definir</span>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[11px] font-semibold">Por definir</span>
                           ) : (
                             <span className="text-gray-300">—</span>
                           )}

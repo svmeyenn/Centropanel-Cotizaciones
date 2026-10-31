@@ -401,7 +401,7 @@ export default function HistorialLead({
       )}
 
       {entradas.length === 0 ? (
-        <p className="px-3 py-5 text-center text-[11px] text-gray-400">
+        <p className="px-3 py-5 text-center text-[11px] text-gray-500">
           Sin conversaciones todavia. Lo que se converse con este lead se anota aqui.
         </p>
       ) : (
@@ -471,7 +471,7 @@ export default function HistorialLead({
                 {e.proxima_accion && editando !== clave(e) && (
                   <div className="mt-1 flex flex-wrap items-center gap-2 bg-crema border border-gray-200 rounded px-2 py-1">
                     <span
-                      className={`border rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                      className={`border rounded px-1.5 py-0.5 text-[11px] font-semibold ${
                         TONO[e.estado_proxima ?? "Vigente"]
                       }`}
                     >

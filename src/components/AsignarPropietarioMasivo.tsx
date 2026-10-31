@@ -87,7 +87,7 @@ export default function AsignarPropietarioMasivo({
   return (
     <div className="bg-white border border-gray-200 rounded px-3 py-2 text-[11px] space-y-1.5">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <label className="font-semibold text-dorado-osc uppercase tracking-wide text-[10px]">
+        <label className="font-semibold text-dorado-osc uppercase tracking-wide text-[11px]">
           Cambiar
           <select
             aria-label="Que se cambia"

@@ -132,12 +132,12 @@ export default function MenuLateral({
             {/* El nombre va entero en una linea, al lado del logo. Con "SISTEMA
                 DE GESTION" --mas largo que el nombre anterior-- el cuerpo baja a
                 10px para que siga cabiendo sin partirse. */}
-            <span className="text-[10px] font-bold leading-tight text-verde whitespace-nowrap">
+            <span className="text-[11px] font-bold leading-tight text-verde whitespace-nowrap">
               SISTEMA DE GESTION
             </span>
           </Link>
           {/* Las dos caras del inicio, a un clic desde cualquier pantalla. */}
-          <div className="mt-1.5 flex gap-1.5 text-[10px] font-semibold">
+          <div className="mt-1.5 flex gap-1.5 text-[11px] font-semibold">
             <Link href="/?vista=gestion" className="flex-1 text-center rounded bg-verde text-white px-2 py-0.5 hover:opacity-90">
               Mi gestion
             </Link>
@@ -199,7 +199,7 @@ export default function MenuLateral({
                   }`}
                 >
                   <span className="flex-1">{g.titulo}</span>
-                  <span aria-hidden="true" className="text-[9px] text-white/50">
+                  <span aria-hidden="true" className="text-[11px] text-white/50">
                     &#9654;
                   </span>
                 </button>
@@ -218,7 +218,7 @@ export default function MenuLateral({
                     desplegado ? "lg:block" : "lg:hidden"
                   } block lg:fixed lg:top-[var(--pt)] lg:left-[var(--pl)] lg:max-h-[var(--pa)] lg:z-50 lg:w-60 lg:rounded lg:bg-verde lg:shadow-xl lg:border lg:border-white/15 lg:overflow-y-auto lg:overscroll-contain`}
                 >
-                  <div className="hidden lg:block px-3 pt-2 pb-1 text-[10px] text-white/60">
+                  <div className="hidden lg:block px-3 pt-2 pb-1 text-[11px] text-white/60">
                     {g.nota}
                   </div>
                   {g.opciones.map((o) => (
@@ -250,7 +250,7 @@ export default function MenuLateral({
               Cerrar sesion
             </button>
           </form>
-          <p className="text-[10px] text-white/60">
+          <p className="text-[11px] text-white/60">
             Version {version}
             {sandbox ? " · pruebas" : ""}
           </p>

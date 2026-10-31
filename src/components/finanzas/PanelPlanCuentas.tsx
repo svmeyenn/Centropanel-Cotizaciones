@@ -278,7 +278,7 @@ function PlanFila(props: {
           </th>
         </tr>
       )}
-      <tr className={`border-t border-gray-100 hover:bg-crema ${c.activa ? "" : "text-gray-400"}`}>
+      <tr className={`border-t border-gray-100 hover:bg-crema ${c.activa ? "" : "text-gray-500"}`}>
         <td className="px-3 py-1.5 font-semibold tabular-nums">{c.codigo}</td>
         {editando ? (
           <>

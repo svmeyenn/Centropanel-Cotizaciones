@@ -303,7 +303,7 @@ function Dato({
       <span className="w-32 shrink-0 text-gray-500">{rotulo}</span>
       <span
         className={`flex-1 truncate font-semibold ${
-          vacio ? "text-gray-400 font-normal" : "text-negro"
+          vacio ? "text-gray-500 font-normal" : "text-negro"
         }`}
         title={muestra}
       >

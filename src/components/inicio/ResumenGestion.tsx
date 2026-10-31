@@ -16,7 +16,7 @@ export default function ResumenGestion({
   return (
     <div className="grid gap-2 lg:grid-cols-[1fr_1.25fr]">
       <section aria-labelledby="res-agenda" className="bg-white border border-gray-200 rounded p-2">
-        <h2 id="res-agenda" className="text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-1.5">
+        <h2 id="res-agenda" className="text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-1.5">
           Comprometido
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
@@ -28,7 +28,7 @@ export default function ResumenGestion({
       </section>
 
       <section aria-labelledby="res-espera" className="bg-white border border-gray-200 rounded p-2">
-        <h2 id="res-espera" className="text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-1.5">
+        <h2 id="res-espera" className="text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-1.5">
           Esperando que alguien lo mueva
         </h2>
         <div className={`grid grid-cols-2 gap-1.5 ${g.sin_propietario != null ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
@@ -88,9 +88,9 @@ function Cifra({
       href={ancla ? `${href}-${ancla}` : href}
       className={`block rounded border px-2 py-1.5 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-verde ${TONOS[tono]}`}
     >
-      <span className="block text-[10px] uppercase tracking-wide opacity-80">{titulo}</span>
+      <span className="block text-[11px] uppercase tracking-wide opacity-80">{titulo}</span>
       <span className="block text-lg font-bold leading-tight tabular-nums">{n.toLocaleString("es-CL")}</span>
-      <span className="block text-[10px] text-gray-600">{pie}</span>
+      <span className="block text-[11px] text-gray-600">{pie}</span>
     </Link>
   );
 }

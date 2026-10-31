@@ -109,7 +109,7 @@ type Sol = {
 };
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
-const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
+const ROTULO = "block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
 const BTN = "border border-gray-300 bg-white text-gray-800 text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40";
 const BTN_VERDE = "bg-verde text-white text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40";
 const BTN_ROJO = "border border-red-300 bg-white text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40";
@@ -268,7 +268,7 @@ export default function FichaNecesidad({
             <tbody>
               {items.map((i) => (
                 <tr key={i.id} className="border-t border-gray-100">
-                  <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
+                  <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")}</td>
                   <td className="px-3 py-1.5">{i.unidad ?? ""}</td>
                   <td className="px-3 py-1.5 text-gray-600">{i.partida ?? ""}</td>
@@ -325,7 +325,7 @@ export default function FichaNecesidad({
                 <tr key={p.id} className="border-t border-gray-100">
                   <td className="px-3 py-1.5 font-semibold">{p.nombre}</td>
                   <td className="px-3 py-1.5">
-                    <span className={`px-1.5 rounded text-[10px] font-semibold ${p.estado === "Respondio" ? "bg-emerald-100 text-emerald-800" : p.estado === "Declino" ? "bg-gray-200 text-gray-600" : "bg-amber-100 text-amber-800"}`}>
+                    <span className={`px-1.5 rounded text-[11px] font-semibold ${p.estado === "Respondio" ? "bg-emerald-100 text-emerald-800" : p.estado === "Declino" ? "bg-gray-200 text-gray-600" : "bg-amber-100 text-amber-800"}`}>
                       {p.estado === "Respondio" ? "Respondio" : p.estado === "Declino" ? "Declino" : "Pendiente"}
                     </span>
                   </td>
@@ -346,7 +346,7 @@ export default function FichaNecesidad({
                         {p.archivo_nombre ?? "Ver PDF"}
                       </button>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-gray-500">—</span>
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-right whitespace-nowrap space-x-1.5">
@@ -429,7 +429,7 @@ export default function FichaNecesidad({
             {historial.map((s) => (
               <li key={s.id} className="text-gray-700">
                 <span className="font-semibold">{s.folio}</span>{" "}
-                <span className={`px-1.5 rounded text-[10px] font-semibold ${COLOR_NM[s.estado] ?? "bg-gray-100"}`}>{s.estado}</span>
+                <span className={`px-1.5 rounded text-[11px] font-semibold ${COLOR_NM[s.estado] ?? "bg-gray-100"}`}>{s.estado}</span>
                 {s.estado === "Abierta" && (
                   <span className="text-gray-600"> · se abrio en {solicitudes.filter((h) => h.id_padre === s.id).map((h) => h.folio).join(", ")}</span>
                 )}
@@ -521,8 +521,8 @@ function TarjetaSolicitud({
         <h2 className="text-[11px] font-semibold uppercase">
           {s.folio} · {items.length} item{items.length === 1 ? "" : "s"}
         </h2>
-        <span className={`px-1.5 rounded text-[10px] font-semibold ${COLOR_NM[s.estado] ?? "bg-gray-100"} text-gray-900`}>{s.estado}</span>
-        {s.folio_padre && <span className="text-[10px] text-white/80">viene de {s.folio_padre}</span>}
+        <span className={`px-1.5 rounded text-[11px] font-semibold ${COLOR_NM[s.estado] ?? "bg-gray-100"} text-gray-900`}>{s.estado}</span>
+        {s.folio_padre && <span className="text-[11px] text-white/80">viene de {s.folio_padre}</span>}
         {adj && adjudicada && <span className="text-[11px]">Adjudicada a {adjudicada.nombre}</span>}
         <span className="ml-auto flex flex-wrap gap-1.5">
           {comprador && s.estado === "Borrador" && (
@@ -604,7 +604,7 @@ function TarjetaSolicitud({
               return (
                 <tr key={i.id} className="border-t border-gray-100">
                   <td className="px-3 py-1.5">
-                    {i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}
+                    {i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}
                     {comprador && (s.estado === "Borrador" || enCotizacion) && (
                       <button
                         type="button"
@@ -623,7 +623,7 @@ function TarjetaSolicitud({
                     const esMejor = v != null && v === mejor && precios.filter((x) => x != null).length > 1;
                     return (
                       <td key={p.id} className={`px-3 py-1.5 text-right tabular-nums ${esMejor ? "bg-emerald-50 text-emerald-800 font-semibold" : ""}`}>
-                        {v != null ? dinero(v, moneda) : maestra.has(`${p.id}:${i.id}`) ? <span className="text-gray-400">sin precio</span> : excluidos.has(`${p.id}:${i.id}`) ? <span className="text-gray-400 italic" title="Se saco de su solicitud">excluido</span> : <span className="text-gray-300 italic" title="No lo tiene asignado en su maestra">no lo vende</span>}
+                        {v != null ? dinero(v, moneda) : maestra.has(`${p.id}:${i.id}`) ? <span className="text-gray-500">sin precio</span> : excluidos.has(`${p.id}:${i.id}`) ? <span className="text-gray-500 italic" title="Se saco de su solicitud">excluido</span> : <span className="text-gray-300 italic" title="No lo tiene asignado en su maestra">no lo vende</span>}
                       </td>
                     );
                   })}
@@ -643,7 +643,7 @@ function TarjetaSolicitud({
                 {proveedores.map((p, k) => (
                   <td key={p.id} className="px-3 py-1 text-right tabular-nums text-gray-700">
                     {desglose[k] ? f.v(desglose[k]!, p) : <span className="text-gray-300">—</span>}
-                    {f.rot && desglose[k] && Number(p.descuento_pct ?? 0) > 0 ? <span className="block text-[10px] text-gray-400">{f.rot(p)}</span> : null}
+                    {f.rot && desglose[k] && Number(p.descuento_pct ?? 0) > 0 ? <span className="block text-[11px] text-gray-500">{f.rot(p)}</span> : null}
                   </td>
                 ))}
               </tr>
@@ -654,7 +654,7 @@ function TarjetaSolicitud({
                 const t = totales[k];
                 return (
                   <td key={p.id} className={`px-3 py-1.5 text-right tabular-nums ${t != null && t === mejorTotal ? "text-emerald-800" : ""}`}>
-                    {t != null ? dinero(t, moneda) : <span className="text-gray-400 font-normal">incompleto</span>}
+                    {t != null ? dinero(t, moneda) : <span className="text-gray-500 font-normal">incompleto</span>}
                   </td>
                 );
               })}
@@ -804,10 +804,10 @@ function VentanaCotizacion({
                       />
                     </td>
                     <td className="px-2 py-1">
-                      {x.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{x.sku}</span>}
+                      {x.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{x.sku}</span>}
                       {x.descripcion}
-                      {x.es_preferente && <span className="ml-1.5 text-[10px] text-amber-700">preferente: recostea paneles y cotizaciones sin pedido</span>}
-                      {!x.misma_moneda && <span className="ml-1.5 text-[10px] text-gray-500">moneda distinta ({x.moneda}): no se actualiza aqui</span>}
+                      {x.es_preferente && <span className="ml-1.5 text-[11px] text-amber-700">preferente: recostea paneles y cotizaciones sin pedido</span>}
+                      {!x.misma_moneda && <span className="ml-1.5 text-[11px] text-gray-500">moneda distinta ({x.moneda}): no se actualiza aqui</span>}
                     </td>
                     <td className="px-2 py-1 text-right tabular-nums">{dinero(x.costo_actual, x.moneda)}</td>
                     <td className="px-2 py-1 text-right tabular-nums">{dinero(x.precio, x.moneda)}</td>
@@ -870,7 +870,7 @@ function VentanaCotizacion({
             <tbody>
               {items.map((i) => (
                 <tr key={i.id} className="border-t border-gray-100">
-                  <td className="px-3 py-1">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
+                  <td className="px-3 py-1">{i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                   <td className="px-3 py-1 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")}</td>
                   <td className="px-3 py-1">
                     <input
@@ -882,7 +882,7 @@ function VentanaCotizacion({
                       value={valores[i.id] ?? ""}
                       onChange={(e) => setValores({ ...valores, [i.id]: e.target.value })}
                     />
-                    <span className="block text-[10px] text-right text-gray-500 mt-0.5">
+                    <span className="block text-[11px] text-right text-gray-500 mt-0.5">
                       {asignado(i.id) ? `Maestra: ${dinero(maestra.get(`${prov.id}:${i.id}`) ?? 0, cab.moneda)}` : "No lo tiene en su maestra"}
                     </span>
                   </td>
@@ -917,7 +917,7 @@ function VentanaCotizacion({
           <div>
             <label htmlFor="cz-pdf" className={ROTULO}>Cotizacion del proveedor (PDF, hasta 4 MB)</label>
             <input id="cz-pdf" ref={archivo} type="file" accept="application/pdf,image/*" className="text-xs" />
-            {prov.archivo_nombre && <span className="block text-[10px] text-gray-500 mt-0.5">Ya hay un archivo: {prov.archivo_nombre}. Subir otro lo reemplaza.</span>}
+            {prov.archivo_nombre && <span className="block text-[11px] text-gray-500 mt-0.5">Ya hay un archivo: {prov.archivo_nombre}. Subir otro lo reemplaza.</span>}
           </div>
         </div>
         {error && <p className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2" role="alert">{error}</p>}
@@ -976,7 +976,7 @@ function VentanaApertura({
           <tbody>
             {items.map((i) => (
               <tr key={i.id} className="border-t border-gray-100">
-                <td className="px-3 py-1">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
+                <td className="px-3 py-1">{i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                 <td className="px-3 py-1 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")}</td>
                 <td className="px-3 py-1">
                   <select

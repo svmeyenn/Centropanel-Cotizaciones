@@ -51,18 +51,18 @@ const ROTULOS_GEO = {
 const NOMBRE_GENERO: Record<Genero, string> = { F: "Femenino", M: "Masculino" };
 
 const SUBTITULO =
-  "text-[9px] font-semibold text-verde uppercase tracking-wider border-b border-gray-200 mb-1 pb-px";
+  "text-[11px] font-semibold text-verde uppercase tracking-wider border-b border-gray-200 mb-1 pb-px";
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[11px] w-full bg-white";
-const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
+const ROTULO = "block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
 
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-[9px] font-semibold text-dorado-osc uppercase tracking-wide">
+      <dt className="text-[11px] font-semibold text-dorado-osc uppercase tracking-wide">
         {etiqueta}
       </dt>
       <dd className="text-[11px] leading-tight break-words">
-        {children || <span className="text-gray-400">—</span>}
+        {children || <span className="text-gray-500">—</span>}
       </dd>
     </div>
   );
@@ -178,7 +178,7 @@ export default function FichaLead({
 
   return (
     <section className="bg-white border border-gray-200 rounded overflow-hidden">
-      <h2 className="bg-verde text-white text-[10px] font-semibold px-2.5 py-px flex justify-between items-center">
+      <h2 className="bg-verde text-white text-[11px] font-semibold px-2.5 py-px flex justify-between items-center">
         <span>
           DATOS PERSONALES
           {lead.editado && (
@@ -189,7 +189,7 @@ export default function FichaLead({
           <button
             type="button"
             onClick={abrir}
-            className="bg-white text-verde font-semibold text-[10px] px-2 py-px rounded"
+            className="bg-white text-verde font-semibold text-[11px] px-2 py-px rounded"
           >
             Editar datos
           </button>
@@ -220,7 +220,7 @@ export default function FichaLead({
                       <li key={i}>
                         {t.phone}
                         {t.whatsapp && (
-                          <span className="ml-1 text-[9px] text-green-700 border border-green-300 rounded px-1">
+                          <span className="ml-1 text-[11px] text-green-700 border border-green-300 rounded px-1">
                             WhatsApp
                           </span>
                         )}
@@ -400,7 +400,7 @@ export default function FichaLead({
               </select>
             </label>
           </div>
-          <p className="text-[10px] text-gray-500">
+          <p className="text-[11px] text-gray-500">
             Lo que corrija aqui queda en este sistema y las importaciones no lo pisan; los
             campos que no toque se siguen actualizando con cada importacion. El estado y la linea se cambian aparte,
             con su confirmacion.

@@ -6,7 +6,7 @@ export default function PildoraLinea({ linea }: { linea: Linea | string | null |
   const esProyecto = linea === "casas";
   return (
     <span
-      className={`inline-block shrink-0 text-[9px] font-semibold leading-tight rounded px-1 border ${
+      className={`inline-block shrink-0 text-[11px] font-semibold leading-tight rounded px-1 border ${
         esProyecto ? "text-dorado-osc border-dorado-osc bg-crema" : "text-verde border-verde bg-white"
       }`}
       title={esProyecto ? "Lead de proyecto" : "Lead de paneles"}

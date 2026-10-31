@@ -246,7 +246,7 @@ export default async function PanelDesempeno({
                     <Barra valor={Number(s.facturado ?? 0)} tope={tope} clase="bg-[#2F5D8A]" />
                   </div>
                   <span
-                    className={`text-[10px] ${
+                    className={`text-[11px] ${
                       s.mes === d.mes ? "text-verde font-semibold" : "text-gray-500"
                     }`}
                   >
@@ -255,7 +255,7 @@ export default async function PanelDesempeno({
                 </div>
               ))}
             </div>
-            <div className="flex flex-wrap gap-3 mt-2 text-[10px] text-gray-600">
+            <div className="flex flex-wrap gap-3 mt-2 text-[11px] text-gray-600">
               <span className="flex items-center gap-1">
                 <i className="inline-block w-3 h-2 bg-dorado rounded-sm" /> Cotizado
               </span>
@@ -265,7 +265,7 @@ export default async function PanelDesempeno({
               <span className="flex items-center gap-1">
                 <i className="inline-block w-3 h-2 bg-[#2F5D8A] rounded-sm" /> Facturado
               </span>
-              <span className="text-gray-400">
+              <span className="text-gray-500">
                 mayor del periodo {pesos(tope)}
               </span>
             </div>
@@ -327,7 +327,7 @@ export default async function PanelDesempeno({
                   <div key={s.mes} className="flex-1 flex flex-col items-center gap-1 h-full">
                     <div className="relative w-full flex-1">
                       <span
-                        className="absolute inset-x-0 text-center text-[9px] leading-none tabular-nums text-gray-700"
+                        className="absolute inset-x-0 text-center text-[11px] leading-none tabular-nums text-gray-700"
                         style={{ bottom: `calc(${pct ?? 0}% + 2px)` }}
                       >
                         {pct == null ? "--" : `${pct} %`}
@@ -339,20 +339,20 @@ export default async function PanelDesempeno({
                       />
                     </div>
                     <span
-                      className={`text-[10px] ${
+                      className={`text-[11px] ${
                         s.mes === d.mes ? "text-verde font-semibold" : "text-gray-500"
                       }`}
                     >
                       {nombreMes(s.mes)}
                     </span>
-                    <span className="text-[9px] text-gray-400 leading-none">
+                    <span className="text-[11px] text-gray-500 leading-none">
                       {s.convertidas}/{s.cotizaciones}
                     </span>
                   </div>
                 );
               })}
             </div>
-            <p className="mt-2 text-[10px] text-gray-500">
+            <p className="mt-2 text-[11px] text-gray-500">
               Cotizaciones que terminaron en pedido, sobre las emitidas en ese mes. La escala va de
               0 a 100 %.
             </p>
@@ -384,7 +384,7 @@ export default async function PanelDesempeno({
                 </Link>
               );
             })}
-            <p className="text-[10px] text-gray-500">
+            <p className="text-[11px] text-gray-500">
               Lo que todavia se puede ganar, al dia de hoy. Pulse un estado para ver esas
               cotizaciones.
             </p>
@@ -417,7 +417,7 @@ export default async function PanelDesempeno({
               <tbody>
                 {ranking.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-400 py-5">
+                    <td colSpan={5} className="text-center text-gray-500 py-5">
                       Sin movimiento en el mes.
                     </td>
                   </tr>
@@ -427,7 +427,7 @@ export default async function PanelDesempeno({
                     <td className="px-2.5 py-1.5 font-semibold text-verde">{r.nombre}</td>
                     <td className="px-2.5 py-1.5 text-right">
                       {pesos(r.cotizado)}
-                      <span className="text-gray-400"> · {r.cotizaciones} cot.</span>
+                      <span className="text-gray-500"> · {r.cotizaciones} cot.</span>
                     </td>
                     <td className="px-2.5 py-1.5 text-right text-gray-600">
                       <span className="flex items-center justify-end gap-1.5">
@@ -437,7 +437,7 @@ export default async function PanelDesempeno({
                     </td>
                     <td className="px-2.5 py-1.5 text-right font-semibold">
                       {pesos(r.vendido)}
-                      <span className="font-normal text-gray-400"> · {r.pedidos}</span>
+                      <span className="font-normal text-gray-500"> · {r.pedidos}</span>
                     </td>
                     <td className="px-2.5 py-1.5 text-right text-gray-600">
                       {r.conversion == null ? "--" : `${porcentaje(r.conversion)} %`}
@@ -455,14 +455,14 @@ export default async function PanelDesempeno({
           </div>
           <ul className="p-2.5 space-y-1.5 text-[11px]">
             {clientes.length === 0 && (
-              <li className="text-gray-400 text-center py-3">Sin cotizaciones en el periodo.</li>
+              <li className="text-gray-500 text-center py-3">Sin cotizaciones en el periodo.</li>
             )}
             {clientes.map((c) => (
               <li key={c.nombre}>
                 <span className="flex justify-between gap-3">
                   <span className="text-gray-700 truncate" title={c.nombre}>
                     {c.nombre}
-                    <span className="text-gray-400"> · {c.cotizaciones} cot.</span>
+                    <span className="text-gray-500"> · {c.cotizaciones} cot.</span>
                   </span>
                   <span className="shrink-0">
                     <b>{pesos(c.monto)}</b>
@@ -502,7 +502,7 @@ function Barra({ valor, tope, clase }: { valor: number; tope: number; clase: str
   return (
     <div className="relative flex-1 h-full" title={pesos(valor)}>
       <span
-        className="absolute inset-x-0 text-center text-[8px] sm:text-[9px] leading-none tabular-nums text-gray-700 whitespace-nowrap"
+        className="absolute inset-x-0 text-center text-[11px] sm:text-[11px] leading-none tabular-nums text-gray-700 whitespace-nowrap"
         style={{ bottom: `calc(${alto}% + 2px)` }}
       >
         {pesosCorto(valor)}
@@ -536,7 +536,7 @@ function Tarjeta({
       }`}
     >
       <div
-        className={`text-[10px] font-semibold uppercase tracking-wide ${
+        className={`text-[11px] font-semibold uppercase tracking-wide ${
           destacado ? "text-white/80" : "text-dorado-osc"
         }`}
       >
@@ -544,12 +544,12 @@ function Tarjeta({
       </div>
       <div className="text-base font-bold leading-tight mt-0.5">{valor}</div>
       {pie && (
-        <div className={`text-[10px] leading-tight mt-0.5 ${destacado ? "text-white/80" : "text-gray-500"}`}>
+        <div className={`text-[11px] leading-tight mt-0.5 ${destacado ? "text-white/80" : "text-gray-500"}`}>
           {pie}
         </div>
       )}
       {nota && (
-        <div className={`text-[10px] leading-tight mt-0.5 ${destacado ? "text-white/90" : color}`}>
+        <div className={`text-[11px] leading-tight mt-0.5 ${destacado ? "text-white/90" : color}`}>
           {nota}
         </div>
       )}
@@ -570,11 +570,11 @@ function Dato({
 }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-dorado-osc">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-dorado-osc">
         {titulo}
       </div>
       <div className={`text-sm font-bold ${alerta ? "text-amber-700" : ""}`}>{valor}</div>
-      {pie && <div className="text-[10px] leading-tight text-gray-500">{pie}</div>}
+      {pie && <div className="text-[11px] leading-tight text-gray-500">{pie}</div>}
     </div>
   );
 }

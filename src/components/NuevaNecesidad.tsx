@@ -6,7 +6,7 @@ import { buscarItemsCompra, crearNecesidad, type ItemBuscado } from "@/app/neces
 import VentanaNuevaMateria from "@/components/VentanaNuevaMateria";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
-const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
+const ROTULO = "block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
 
 type Linea = { clave: string; item: ItemBuscado; cantidad: string; partida: number | ""; };
 
@@ -190,7 +190,7 @@ export default function NuevaNecesidad({
               {encontrados.map((it) => (
                 <li key={`${it.tipo}-${it.id}`}>
                   <button type="button" onClick={() => agregar(it)} className="w-full text-left px-2 py-1.5 hover:bg-crema flex items-center gap-2">
-                    <span className={`shrink-0 text-[9px] font-semibold border rounded px-1 ${it.tipo === "producto" ? "text-dorado-osc border-dorado-osc" : "text-verde border-verde"}`}>
+                    <span className={`shrink-0 text-[11px] font-semibold border rounded px-1 ${it.tipo === "producto" ? "text-dorado-osc border-dorado-osc" : "text-verde border-verde"}`}>
                       {it.tipo === "producto" ? "Producto" : "Materia prima"}
                     </span>
                     <span className="flex-1">{it.descripcion}</span>
@@ -237,9 +237,9 @@ export default function NuevaNecesidad({
               {lineas.map((l, i) => (
                 <tr key={l.clave} className="border-t border-gray-100">
                   <td className="px-2 py-1.5">
-                    {l.item.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{l.item.sku}</span>}
+                    {l.item.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{l.item.sku}</span>}
                     {l.item.descripcion}
-                    <span className="ml-1.5 text-[10px] text-gray-500">{l.item.tipo === "producto" ? "producto" : "materia prima"}{l.item.unidad ? ` · ${l.item.unidad}` : ""}</span>
+                    <span className="ml-1.5 text-[11px] text-gray-500">{l.item.tipo === "producto" ? "producto" : "materia prima"}{l.item.unidad ? ` · ${l.item.unidad}` : ""}</span>
                   </td>
                   <td className="px-2 py-1.5">
                     <input

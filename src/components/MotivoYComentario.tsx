@@ -51,7 +51,7 @@ export default function MotivoYComentario({
     <div className="space-y-1">
       {motivos.length > 0 && (
         <div>
-          <label htmlFor={`${id}-motivo`} className="block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide">
+          <label htmlFor={`${id}-motivo`} className="block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide">
             Motivo{obligatorio ? " (obligatorio)" : ""}
           </label>
           <select
@@ -75,7 +75,7 @@ export default function MotivoYComentario({
         </div>
       )}
       <div>
-        <label htmlFor={`${id}-comentario`} className="block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide">
+        <label htmlFor={`${id}-comentario`} className="block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide">
           Comentario (opcional)
         </label>
         <textarea

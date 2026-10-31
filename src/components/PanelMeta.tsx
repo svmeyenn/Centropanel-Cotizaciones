@@ -155,7 +155,7 @@ function TarjetaMeta({ f }: { f: FilaMeta }) {
         </span>
         <span className="text-gray-500">{cuando(f.fecha_meta)}</span>
         {[f.origen_meta, f.canal, f.formulario, f.etapa].filter(Boolean).map((x, i) => (
-          <span key={i} className="text-[10px] border border-gray-300 rounded px-1 text-gray-600 bg-white">
+          <span key={i} className="text-[11px] border border-gray-300 rounded px-1 text-gray-600 bg-white">
             {x}
           </span>
         ))}
@@ -181,7 +181,7 @@ function TarjetaMeta({ f }: { f: FilaMeta }) {
 
       {f.id_lead ? (
         <table className="w-full">
-          <thead className="text-dorado-osc text-[10px] uppercase">
+          <thead className="text-dorado-osc text-[11px] uppercase">
             <tr>
               <th className="text-left px-3 py-0.5 w-32">Campo</th>
               <th className="text-left px-3 py-0.5">En el lead</th>
@@ -194,7 +194,7 @@ function TarjetaMeta({ f }: { f: FilaMeta }) {
             {campos.map((c) => (
               <tr key={c.campo} className="border-t border-gray-100">
                 <td className="px-3 py-0.5 font-semibold">{c.etiqueta}</td>
-                <td className="px-3 py-0.5 break-all">{c.lead || <span className="text-gray-400">—</span>}</td>
+                <td className="px-3 py-0.5 break-all">{c.lead || <span className="text-gray-500">—</span>}</td>
                 <td className="px-3 py-0.5 break-all">{c.meta}</td>
                 <td className={`px-3 py-0.5 font-semibold ${ESTADO_TONO[c.estado]}`}>{ESTADO_TEXTO[c.estado]}</td>
                 <td className="px-3 py-0.5 text-right whitespace-nowrap">
@@ -235,8 +235,8 @@ function TarjetaMeta({ f }: { f: FilaMeta }) {
             ["WhatsApp", f.whatsapp],
           ].map(([e, v]) => (
             <div key={e as string}>
-              <dt className="text-[9px] font-semibold text-dorado-osc uppercase">{e}</dt>
-              <dd>{v || <span className="text-gray-400">—</span>}</dd>
+              <dt className="text-[11px] font-semibold text-dorado-osc uppercase">{e}</dt>
+              <dd>{v || <span className="text-gray-500">—</span>}</dd>
             </div>
           ))}
         </dl>
@@ -354,7 +354,7 @@ export default function PanelMeta({ filas }: { filas: FilaMeta[] }) {
       </section>
 
       {filas.length === 0 ? (
-        <p className="bg-white border border-gray-200 rounded p-6 text-center text-gray-400">
+        <p className="bg-white border border-gray-200 rounded p-6 text-center text-gray-500">
           Todavia no se ha subido ningun archivo de Meta.
         </p>
       ) : (
@@ -417,7 +417,7 @@ export default function PanelMeta({ filas }: { filas: FilaMeta[] }) {
           )}
 
           {lista.length === 0 ? (
-            <p className="bg-white border border-gray-200 rounded p-6 text-center text-gray-400">
+            <p className="bg-white border border-gray-200 rounded p-6 text-center text-gray-500">
               No hay leads en este grupo.
             </p>
           ) : (

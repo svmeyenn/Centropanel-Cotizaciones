@@ -91,7 +91,7 @@ export default async function Pagina({
                           {p.nombre}
                         </Link>
                         {p.tipo === "centro_costo" && (
-                          <span className="ml-2 text-[10px] text-gray-500">centro de costo</span>
+                          <span className="ml-2 text-[11px] text-gray-500">centro de costo</span>
                         )}
                       </td>
                       <td className="px-3 py-2">{p.cliente ?? ""}</td>

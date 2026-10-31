@@ -86,7 +86,7 @@ export default function PanelAnticipos({
               <tr>
                 <td
                   colSpan={editable ? 5 : 4}
-                  className="text-center text-gray-400 py-6"
+                  className="text-center text-gray-500 py-6"
                 >
                   Sin anticipos: lo rendido se paga completo.
                 </td>

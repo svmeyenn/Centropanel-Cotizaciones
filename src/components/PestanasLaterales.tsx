@@ -25,7 +25,7 @@ export default function PestanasLaterales({
         aria-label={titulo}
         className="print:hidden shrink-0 lg:w-48 lg:sticky lg:top-0 lg:self-start lg:h-screen lg:overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200 bg-crema px-2 py-3"
       >
-        <h2 className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wide text-dorado-osc">{titulo}</h2>
+        <h2 className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-dorado-osc">{titulo}</h2>
         <ul className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible">
           {opciones.map((o) => (
             <li key={o.href} className="shrink-0">

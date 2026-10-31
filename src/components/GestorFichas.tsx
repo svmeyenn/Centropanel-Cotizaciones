@@ -310,7 +310,7 @@ export default function GestorFichas({
             <tbody>
               {filtradas.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-400 py-8">
+                  <td colSpan={7} className="text-center text-gray-500 py-8">
                     Sin fichas que coincidan.
                   </td>
                 </tr>
@@ -337,7 +337,7 @@ export default function GestorFichas({
                       {f.tipos.map((t) => (
                         <span
                           key={t}
-                          className="bg-crema border border-gray-300 rounded px-1.5 py-0.5 text-[10px]"
+                          className="bg-crema border border-gray-300 rounded px-1.5 py-0.5 text-[11px]"
                         >
                           {ETIQUETA_TIPO[t]}
                         </span>
@@ -351,7 +351,7 @@ export default function GestorFichas({
                     {f.activo ? (
                       <span className="text-green-700">Vigente</span>
                     ) : (
-                      <span className="text-gray-400">Inactiva</span>
+                      <span className="text-gray-500">Inactiva</span>
                     )}
                   </td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">

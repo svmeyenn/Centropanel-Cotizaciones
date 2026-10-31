@@ -176,7 +176,7 @@ export default function GestorFamilias({
           <tbody>
             {visibles.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center text-gray-400 py-8">
+                <td colSpan={4} className="text-center text-gray-500 py-8">
                   Todavia no hay familias en este mercado.
                 </td>
               </tr>

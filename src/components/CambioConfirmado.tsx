@@ -77,7 +77,7 @@ export default function CambioConfirmado({
 
   return (
     <div>
-      <div className="text-[9px] font-semibold text-dorado-osc uppercase tracking-wide">
+      <div className="text-[11px] font-semibold text-dorado-osc uppercase tracking-wide">
         {etiqueta}
       </div>
       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -91,13 +91,13 @@ export default function CambioConfirmado({
               setElegido(claveActual);
               setAbierto(true);
             }}
-            className="text-verde underline text-[10px]"
+            className="text-verde underline text-[11px]"
           >
             Cambiar
           </button>
         )}
       </div>
-      {nota && !abierto && <div className="text-[10px] text-gray-500 mt-0.5">{nota}</div>}
+      {nota && !abierto && <div className="text-[11px] text-gray-500 mt-0.5">{nota}</div>}
 
       {abierto && (
         <div className="mt-1 space-y-1.5 rounded border border-gray-200 bg-crema px-2 py-1.5">
@@ -123,7 +123,7 @@ export default function CambioConfirmado({
               {aviso(textoDe(claveActual), textoDe(elegido))}
             </p>
           ) : (
-            <p className="text-[10px] text-gray-500">Elija el nuevo valor.</p>
+            <p className="text-[11px] text-gray-500">Elija el nuevo valor.</p>
           )}
           {cambia && tipoMotivo && elegido !== "auto" && (
             <MotivoYComentario

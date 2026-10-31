@@ -244,7 +244,7 @@ export default async function Pagina({
                             {f.numPedido}
                           </Link>
                         ) : (
-                          <span className="text-gray-400">--</span>
+                          <span className="text-gray-500">--</span>
                         )}
                       </td>
                       <td className="px-3 py-2 text-right">{importe(f.neto, f.moneda)}</td>

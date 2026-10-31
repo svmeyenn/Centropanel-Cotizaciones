@@ -110,7 +110,7 @@ export default function ProveedoresDelItem({
                     {p.activo ? (
                       <span className="text-green-700">Activo</span>
                     ) : (
-                      <span className="text-gray-400">Inactivo</span>
+                      <span className="text-gray-500">Inactivo</span>
                     )}
                   </td>
                 </tr>

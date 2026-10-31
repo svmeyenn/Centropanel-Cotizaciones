@@ -11,7 +11,7 @@ export interface PersonaFila {
 }
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
-const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
+const ROTULO = "block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
 
 export default function GestorPropietarios({ personas }: { personas: PersonaFila[] }) {
   const router = useRouter();

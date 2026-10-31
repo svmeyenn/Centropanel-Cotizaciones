@@ -24,8 +24,8 @@ export interface Valorizacion {
 type Fila = { clave: number; descripcion: string; uf: string; clp: string; usd: string; pen: string };
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-[11px] w-full bg-white";
-const ROTULO = "block text-[10px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
-const TITULO = "bg-verde text-white text-[10px] font-semibold px-3 py-0.5 flex justify-between";
+const ROTULO = "block text-[11px] font-semibold text-dorado-osc uppercase tracking-wide mb-0.5";
+const TITULO = "bg-verde text-white text-[11px] font-semibold px-3 py-0.5 flex justify-between";
 
 const texto = (n: number | null | undefined) => (n == null ? "" : String(n));
 
@@ -82,7 +82,7 @@ function Numero({
           onChange={(e) => onChange(e.target.value)}
           onWheel={(e) => e.currentTarget.blur()}
         />
-        {sufijo && <span className="text-[10px] text-gray-500 whitespace-nowrap">{sufijo}</span>}
+        {sufijo && <span className="text-[11px] text-gray-500 whitespace-nowrap">{sufijo}</span>}
       </div>
     </div>
   );
@@ -172,7 +172,7 @@ export default function ProyectoCasa({
             <div>
               <div className={ROTULO}>{esPeru ? "Dolares por m²" : "UF por m²"}</div>
               <div className="text-[11px] py-1">
-                {porM2 != null ? dinero(porM2, esPeru ? "USD" : "UF") : <span className="text-gray-400">—</span>}
+                {porM2 != null ? dinero(porM2, esPeru ? "USD" : "UF") : <span className="text-gray-500">—</span>}
               </div>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function ProyectoCasa({
               <p className="text-[11px] text-gray-500">Todavia no hay valorizaciones.{puedeEditar ? " Agregue la primera." : ""}</p>
             ) : (
               <>
-                <div className="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_2rem] gap-2 text-[10px] font-semibold text-dorado-osc uppercase tracking-wide">
+                <div className="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_2rem] gap-2 text-[11px] font-semibold text-dorado-osc uppercase tracking-wide">
                   <span>Que es</span>
                   {columnas.map((c) => (
                     <span key={c.k}>{c.rotulo}</span>
@@ -269,10 +269,10 @@ export default function ProyectoCasa({
               )}
             </div>
           ) : (
-            <p className="text-[10px] text-gray-500">Su perfil solo puede consultar el proyecto.</p>
+            <p className="text-[11px] text-gray-500">Su perfil solo puede consultar el proyecto.</p>
           )}
           {!esPeru && (
-            <p className="text-[10px] text-gray-500">
+            <p className="text-[11px] text-gray-500">
               Anote los dos valores: la UF cambia cada dia, y el valor en pesos es el de la fecha en que se cotizo.
             </p>
           )}

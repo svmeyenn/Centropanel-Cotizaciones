@@ -24,7 +24,7 @@ export default function BarraNavegacion({
   }
 
   return (
-    <div className="flex flex-wrap gap-2 items-center">
+    <div className="barra-nav flex flex-wrap gap-2 items-center">
       <button
         onClick={atras}
         className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"

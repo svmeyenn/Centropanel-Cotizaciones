@@ -47,7 +47,7 @@ function FilaMotivo({
     <li className="flex flex-wrap items-center gap-1.5 py-1">
       <input
         aria-label={`Nombre del motivo ${m.etiqueta}`}
-        className={`border border-gray-300 rounded px-2 py-0.5 text-xs w-64 ${m.activo ? "" : "text-gray-400 line-through"}`}
+        className={`border border-gray-300 rounded px-2 py-0.5 text-xs w-64 ${m.activo ? "" : "text-gray-500 line-through"}`}
         value={nombre}
         maxLength={60}
         onChange={(e) => setNombre(e.target.value)}
@@ -96,7 +96,7 @@ function TarjetaEstado({
   return (
     <section className="bg-white border border-gray-200 rounded">
       <h3 className="bg-crema border-b border-gray-200 px-3 py-1.5 text-xs font-semibold flex flex-wrap items-center gap-x-4 gap-y-1">
-        <span className={e.activo ? "" : "text-gray-400"}>
+        <span className={e.activo ? "" : "text-gray-500"}>
           {e.etiqueta}
           {!e.activo && " (no se ofrece)"}
         </span>

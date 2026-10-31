@@ -130,7 +130,7 @@ function legible(campo: string, v: string | null, estados: Estado[]) {
 const ZONAS = { CL: "America/Santiago", PE: "America/Lima" } as const;
 
 // Letra chica para toda la ficha: es una pantalla de consulta con mucho dato.
-const TITULO = "bg-verde text-white text-[10px] font-semibold px-3 py-0.5 flex justify-between";
+const TITULO = "bg-verde text-white text-[11px] font-semibold px-3 py-0.5 flex justify-between";
 
 export default async function Pagina({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -390,7 +390,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
               </div>
             )}
             {cotizaciones.length === 0 ? (
-              <p className="px-3 py-4 text-center text-[11px] text-gray-400">
+              <p className="px-3 py-4 text-center text-[11px] text-gray-500">
                 Este lead no tiene cotizaciones vinculadas. Use &quot;Crear cotizacion&quot; para
                 hacerle una, o ponga el folio en el nombre de su oportunidad (por
                 ejemplo &quot;Maria Perez - COT00118&quot;).
@@ -488,7 +488,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
                       <td className="px-3 py-0.5">
                         {o.etapa ?? (o.id_etapa ? (ETAPAS[o.id_etapa] ?? "") : "")}
                         {o.proceso && (
-                          <span className="block text-[9px] text-gray-500">{o.proceso}</span>
+                          <span className="block text-[11px] text-gray-500">{o.proceso}</span>
                         )}
                       </td>
                       <td className="px-3 py-0.5">
@@ -565,7 +565,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
                 ))}
               </ol>
             )}
-            <p className="px-3 py-1.5 text-[10px] text-gray-500 border-t border-gray-100">
+            <p className="px-3 py-1.5 text-[11px] text-gray-500 border-t border-gray-100">
               Lo registrado antes de pasar al sistema. Los textos largos llegan recortados y los
               mensajes de WhatsApp no se importan.
             </p>
@@ -575,7 +575,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         {/* Quien cambio que en esta ficha */}
         {cambios.length > 0 && (
           <details className="bg-white border border-gray-200 rounded overflow-hidden">
-            <summary className="bg-verde text-white text-[10px] font-semibold px-3 py-0.5 cursor-pointer flex justify-between">
+            <summary className="bg-verde text-white text-[11px] font-semibold px-3 py-0.5 cursor-pointer flex justify-between">
               <span>CAMBIOS EN ESTA FICHA</span>
               <span className="font-normal">{cambios.length}</span>
             </summary>

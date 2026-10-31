@@ -763,7 +763,7 @@ export default function EditorCotizacion(p: Props) {
             <tbody>
               {d.items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-400 py-6">
+                  <td colSpan={7} className="text-center text-gray-500 py-6">
                     Sin items todavia.
                   </td>
                 </tr>
@@ -860,7 +860,7 @@ export default function EditorCotizacion(p: Props) {
             <div key={f.rotulo} className="flex items-center justify-end gap-2">
               <span className="text-gray-700 mr-auto">
                 {f.rotulo}
-                <span className="block text-[11px] text-gray-400">
+                <span className="block text-[11px] text-gray-500">
                   sobre {f.sobre}: {importe(f.base, moneda)}
                 </span>
               </span>
@@ -1077,7 +1077,7 @@ function DatosDelCliente({
       {rut ? (
         <span> {"·"} {etiqueta} {rut}</span>
       ) : (
-        <span className="text-gray-400"> {"·"} sin {etiqueta}</span>
+        <span className="text-gray-500"> {"·"} sin {etiqueta}</span>
       )}
       {cliente.contacto ? <span> {"·"} {cliente.contacto}</span> : null}
       {cliente.telefono ? <span> {"·"} {cliente.telefono}</span> : null}

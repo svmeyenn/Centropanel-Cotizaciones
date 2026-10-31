@@ -192,7 +192,7 @@ function Fila({
             aria-label={`Nombre del estado ${e.codigo}`}
             className={`${CAMPO} w-full min-w-[9rem]`}
           />
-          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-gray-500">
+          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
             <code className="font-mono">{e.codigo}</code>
             {e.es_sistema && (
               <span className="border border-gray-300 rounded px-1" title="Viene con el sistema: se renombra y se reordena, pero no cambia lo que significa">
@@ -224,7 +224,7 @@ function Fila({
                 {MARCAS[tipo]
                   .filter((m) => e.marcas.includes(m.marca))
                   .map((m) => (
-                    <span key={m.marca} title={m.ayuda} className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700">
+                    <span key={m.marca} title={m.ayuda} className="text-[11px] border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700">
                       {m.texto}
                     </span>
                   ))}
@@ -259,7 +259,7 @@ function Fila({
             <span>{activo ? "Si" : "No, no se ofrece"}</span>
           </label>
           {porDesactivar && (
-            <p className="mt-1 text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-1" role="note">
+            <p className="mt-1 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-1" role="note">
               Dejara de ofrecerse al elegir un estado.{" "}
               {uso > 0
                 ? `Los ${uso.toLocaleString("es-CL")} ${unidad} que ya lo tienen lo conservan y siguen contando igual en los tableros.`
@@ -268,7 +268,7 @@ function Fila({
             </p>
           )}
           {!e.activo && !porDesactivar && (
-            <p className="mt-1 text-[10px] text-gray-500">Los registros que lo tienen lo conservan.</p>
+            <p className="mt-1 text-[11px] text-gray-500">Los registros que lo tienen lo conservan.</p>
           )}
         </td>
 
@@ -282,7 +282,7 @@ function Fila({
             Guardar
           </button>
           {e.protegido ? (
-            <span className="ml-1 inline-block text-[10px] text-gray-500 align-middle" title={e.motivo ?? undefined}>
+            <span className="ml-1 inline-block text-[11px] text-gray-500 align-middle" title={e.motivo ?? undefined}>
               no se elimina
             </span>
           ) : (

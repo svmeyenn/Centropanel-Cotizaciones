@@ -327,7 +327,7 @@ export default function EditorPedido({
                   {etiquetaId} {clienteRut}
                 </span>
               ) : (
-                <span className="text-gray-400">sin {etiquetaId}</span>
+                <span className="text-gray-500">sin {etiquetaId}</span>
               )}
               {clienteContacto ? <span> {"\u00b7"} {clienteContacto}</span> : null}
               {clienteTelefono ? (
@@ -605,7 +605,7 @@ export default function EditorPedido({
 
           {margenReal && (
             <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-dorado-osc">Margen real, con los costos ya ingresados (sin {impuesto})</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-dorado-osc">Margen real, con los costos ya ingresados (sin {impuesto})</div>
               <Fila label="Venta neta" valor={importe(margenReal.neto_vendido, moneda)} />
               {margenReal.costos.map((c) => (
                 <Fila key={c.categoria} label={`− ${c.categoria} (${c.n})`} valor={importe(c.neto, moneda)} />
@@ -699,7 +699,7 @@ export default function EditorPedido({
               <tbody>
                 {necesidades.length === 0 && (
                   <tr>
-                    <td colSpan={2} className="text-center text-gray-400 py-6">
+                    <td colSpan={2} className="text-center text-gray-500 py-6">
                       Este pedido no requiere compras.
                     </td>
                   </tr>

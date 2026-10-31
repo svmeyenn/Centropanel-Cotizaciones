@@ -84,7 +84,7 @@ export default async function Pagina({
                       <tr>
                         <td
                           colSpan={5}
-                          className="text-center text-gray-400 py-8"
+                          className="text-center text-gray-500 py-8"
                         >
                           Nadie tiene saldo pendiente.
                         </td>

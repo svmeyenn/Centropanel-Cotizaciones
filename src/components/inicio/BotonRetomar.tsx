@@ -18,12 +18,12 @@ export default function BotonRetomar({ id, idLead, idCot }: { id: number; idLead
             if (!r.ok) setError(r.mensaje ?? "No se pudo retomar.");
           })
         }
-        className="text-[10px] text-verde underline disabled:opacity-60"
+        className="text-[11px] text-verde underline disabled:opacity-60"
       >
         {pendiente ? "Retomando…" : "Retomar"}
       </button>
       {error && (
-        <span className="text-[10px] text-red-700" role="alert">
+        <span className="text-[11px] text-red-700" role="alert">
           {error}
         </span>
       )}

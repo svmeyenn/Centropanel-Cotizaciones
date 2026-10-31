@@ -213,3 +213,40 @@ table.datos tbody tr:nth-child(even) {
     min-height: 44px;
   }
 }
+
+/* Foco de teclado visible en toda la aplicacion. Antes solo lo tenian los campos de finanzas y
+   configuracion: quien navegaba con Tab no veia donde estaba. El verde oscuro contrasta con la
+   crema y con los botones verdes (el aro queda separado por el desfase). */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid #1D4E4A;
+  outline-offset: 2px;
+}
+
+/* Quien pide menos movimiento no ve pulsos ni giros. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Botones de la barra superior de cada pantalla: 44px al tocar. */
+@media (pointer: coarse) {
+  .barra-nav a,
+  .barra-nav button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

@@ -171,7 +171,7 @@ export default function GestorParametrosMaterias({
                   <tbody>
                     {lista.length === 0 && (
                       <tr>
-                        <td colSpan={3} className="text-gray-400 py-3 text-center">
+                        <td colSpan={3} className="text-gray-500 py-3 text-center">
                           Sin valores.
                         </td>
                       </tr>

@@ -138,7 +138,7 @@ export default function PanelRendiciones({
             <tbody>
               {rendiciones.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center text-gray-400 py-8">
+                  <td colSpan={8} className="text-center text-gray-500 py-8">
                     No hay rendiciones que mostrar.
                   </td>
                 </tr>

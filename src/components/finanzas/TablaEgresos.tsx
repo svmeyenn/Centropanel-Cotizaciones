@@ -126,7 +126,7 @@ export default function TablaEgresos({
               pedido el {fechaDeRegistro(m.fecha_registro)}
             </span>
             <span
-              className={`inline-block mt-0.5 px-1.5 rounded text-[10px] font-semibold ${
+              className={`inline-block mt-0.5 px-1.5 rounded text-[11px] font-semibold ${
                 m.aprobacion === "Aprobado"
                   ? "bg-emerald-100 text-emerald-800"
                   : m.aprobacion === "Rechazado"
@@ -143,7 +143,7 @@ export default function TablaEgresos({
             </span>
             {reversos[m.id_mov] && (
               <span
-                className="block mt-0.5 text-[10px] font-semibold text-red-700"
+                className="block mt-0.5 text-[11px] font-semibold text-red-700"
                 title={`Pago reversado: ${reversos[m.id_mov]}`}
               >
                 Pago reversado
@@ -159,14 +159,14 @@ export default function TablaEgresos({
         {m.comentario && <span className="block text-[11px] text-gray-600 line-clamp-2 break-words">{m.comentario}</span>}
       </td>
       <td className="px-3 py-2 tabular-nums" title={m.documento ?? ""}>
-        <span className="block truncate">{m.documento ?? <span className="text-gray-400">—</span>}</span>
+        <span className="block truncate">{m.documento ?? <span className="text-gray-500">—</span>}</span>
         {m.servicio_prestado ? (
-          <span className="block text-[10px] text-verde font-semibold">Servicio prestado</span>
+          <span className="block text-[11px] text-verde font-semibold">Servicio prestado</span>
         ) : (
-          <span className="block text-[10px] text-gray-500">Servicio por prestar</span>
+          <span className="block text-[11px] text-gray-500">Servicio por prestar</span>
         )}
         {m.fecha_pago_acordada && (
-          <span className="block text-[10px] text-gray-600">Pago acordado: {fechaCorta(m.fecha_pago_acordada)}</span>
+          <span className="block text-[11px] text-gray-600">Pago acordado: {fechaCorta(m.fecha_pago_acordada)}</span>
         )}
       </td>
       <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-semibold text-negro">
@@ -195,7 +195,7 @@ export default function TablaEgresos({
             Ver
           </a>
         ) : (
-          <span className="text-gray-400">—</span>
+          <span className="text-gray-500">—</span>
         )}
       </td>
       {conAcciones && (
@@ -347,7 +347,7 @@ export default function TablaEgresos({
                 <tr>
                   <td
                     colSpan={columnas}
-                    className="text-center text-gray-400 py-8"
+                    className="text-center text-gray-500 py-8"
                   >
                     {hayFiltro
                       ? "Ningun egreso coincide con el filtro."

@@ -105,7 +105,7 @@ export default async function SinSeguimiento({
         unidad="seguimientos"
       />
       <div className="px-3 pt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className="text-[10px] text-gray-500">
+        <p className="text-[11px] text-gray-500">
           Leads vivos y cotizaciones en juego que nadie tiene comprometidos. Un lead y su cotizacion cuentan una sola
           vez.
         </p>
@@ -165,18 +165,18 @@ function Fila({ f, verResponsable, cat }: { f: FilaSeguimiento; verResponsable: 
   return (
     <li className="px-3 py-1.5 text-[11px] flex items-start gap-1.5">
       <BanderaDe idPais={f.id_pais} />
-      <span className={`shrink-0 text-[9px] font-semibold border rounded px-1 mt-0.5 ${t.clase}`}>{t.texto}</span>
+      <span className={`shrink-0 text-[11px] font-semibold border rounded px-1 mt-0.5 ${t.clase}`}>{t.texto}</span>
       {f.tipo === "lead" && <PildoraLinea linea={f.linea} />}
       <div className="min-w-0 flex-1">
         <Link href={href} className="font-semibold text-verde underline break-words">
           {f.nombre}
         </Link>
-        <p className="text-[10px] text-gray-500">
+        <p className="text-[11px] text-gray-500">
           {f.tipo === "lead" ? etiquetaDe(cat.lead, f.estado) : etiquetaDe(cat.cotizacion, f.estado)}
           {verResponsable && <span className="text-gray-600"> · {f.responsable}</span>}
         </p>
         {f.cot && f.tipo === "lead" && (
-          <p className="text-[10px] mt-0.5">
+          <p className="text-[11px] mt-0.5">
             <Link href={`/cotizaciones/${f.cot.id}`} className="text-dorado-osc underline font-semibold">
               {f.cot.folio ?? f.cot.id}
             </Link>
@@ -188,13 +188,13 @@ function Fila({ f, verResponsable, cat }: { f: FilaSeguimiento; verResponsable: 
           </p>
         )}
         {f.cot && f.tipo === "cotizacion" && (
-          <p className="text-[10px] text-gray-600 mt-0.5">
+          <p className="text-[11px] text-gray-600 mt-0.5">
             <span className="text-dorado-osc font-semibold">{f.cot.folio ?? f.cot.id}</span> ·{" "}
             {importe(f.cot.total, f.cot.moneda)}
           </p>
         )}
       </div>
-      <span className={`shrink-0 text-[10px] text-right ${alerta ? "text-red-700 font-semibold" : "text-gray-600"}`}>
+      <span className={`shrink-0 text-[11px] text-right ${alerta ? "text-red-700 font-semibold" : "text-gray-600"}`}>
         {referencia}
       </span>
     </li>

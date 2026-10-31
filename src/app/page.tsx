@@ -92,7 +92,7 @@ export default async function Home({
 
         {/* Version vigente: sube con cada entrega a produccion (VERSIONES.md).
             En pruebas se aclara que hay cambios que aun no estan en ella. */}
-        <p className="text-[10px] text-gray-500">
+        <p className="text-[11px] text-gray-500">
           Sesion: {v.nombre} ({v.rol}) · Version {VERSION}
           {ES_SANDBOX ? " · con cambios en prueba aun no publicados" : ""}
         </p>

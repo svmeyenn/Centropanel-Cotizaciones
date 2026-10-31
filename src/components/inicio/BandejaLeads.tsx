@@ -125,7 +125,7 @@ function Lista({
       </div>
       {filtro}
       <div className="px-3 pt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className="text-[10px] text-gray-500">{explicacion}</p>
+        <p className="text-[11px] text-gray-500">{explicacion}</p>
         {barra}
       </div>
       {filas.length === 0 ? (
@@ -143,12 +143,12 @@ function Lista({
                   <Link href={`/leads/${l.id_clientify}`} className="font-semibold text-verde underline break-words">
                     {l.nombre_completo || "(sin nombre)"}
                   </Link>
-                  <p className="text-[10px] text-gray-500 truncate" title={det}>
+                  <p className="text-[11px] text-gray-500 truncate" title={det}>
                     {det}
                     {verPropietario && <span className="text-gray-600"> · {l.propietario ?? "sin propietario"}</span>}
                   </p>
                 </div>
-                <span className={`shrink-0 text-[10px] ${x.alerta ? "text-red-700 font-semibold" : "text-gray-600"}`}>{x.texto}</span>
+                <span className={`shrink-0 text-[11px] ${x.alerta ? "text-red-700 font-semibold" : "text-gray-600"}`}>{x.texto}</span>
               </li>
             );
           })}

@@ -17,7 +17,7 @@ export interface ArchivoLead {
   vendedor: string | null;
 }
 
-const TITULO = "bg-verde text-white text-[10px] font-semibold px-3 py-0.5 flex justify-between";
+const TITULO = "bg-verde text-white text-[11px] font-semibold px-3 py-0.5 flex justify-between";
 const BOTON_CLARO =
   "border border-gray-300 text-gray-700 text-[11px] font-semibold px-2 py-0.5 rounded bg-white disabled:opacity-50";
 
@@ -153,7 +153,7 @@ export default function ArchivosLead({
               aria-label="Elegir archivos del lead"
               onChange={(e) => subir(Array.from(e.target.files ?? []))}
             />
-            <p className="mt-1 text-[10px] text-gray-500">Hasta 25 MB por archivo.</p>
+            <p className="mt-1 text-[11px] text-gray-500">Hasta 25 MB por archivo.</p>
           </div>
           {subidas.length > 0 && (
             <ul className="mt-2 space-y-0.5 text-[11px]" aria-live="polite">
@@ -180,7 +180,7 @@ export default function ArchivosLead({
       )}
 
       {archivos.length === 0 ? (
-        <p className="px-3 py-4 text-center text-[11px] text-gray-400">{vacio}</p>
+        <p className="px-3 py-4 text-center text-[11px] text-gray-500">{vacio}</p>
       ) : (
         <div className="p-3 overflow-x-auto">
           <table className="w-full text-[11px]">

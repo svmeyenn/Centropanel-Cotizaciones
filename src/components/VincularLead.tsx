@@ -71,7 +71,7 @@ export function VincularLeadACotizacion({ idCot, estadosLead }: { idCot: number;
               <div className="min-w-0 flex-1">
                 <span className="font-semibold">{l.nombre}</span>{" "}
                 <span className="text-gray-500">{etiquetaDe(estadosLead, l.estado)}</span>
-                <p className="text-[10px] text-gray-600 break-words">
+                <p className="text-[11px] text-gray-600 break-words">
                   {[l.empresa, lista(l.emails), lista(l.telefonos), l.propietario].filter(Boolean).join(" · ")}
                 </p>
               </div>
@@ -192,10 +192,10 @@ export function VincularCotizacionALead({ idLead, estadosCotizacion }: { idLead:
               <div className="min-w-0 flex-1">
                 <span className="font-semibold">{c.folio ?? c.id}</span>{" "}
                 <span className="text-gray-500">{etiquetaDe(estadosCotizacion, c.estado)}</span>
-                <p className="text-[10px] text-gray-600 break-words">
+                <p className="text-[11px] text-gray-600 break-words">
                   {[c.cliente, c.fecha?.slice(0, 10), c.total != null ? dinero(c.total, c.moneda ?? "CLP") : null, c.vendedor].filter(Boolean).join(" · ")}
                 </p>
-                {c.vinculada_a_otro && <p className="text-[10px] text-amber-800">Esta vinculada a mano a otro lead: al vincularla aqui pasa a este.</p>}
+                {c.vinculada_a_otro && <p className="text-[11px] text-amber-800">Esta vinculada a mano a otro lead: al vincularla aqui pasa a este.</p>}
               </div>
               {c.ya_vinculada ? (
                 <span className="text-green-700">Ya vinculada</span>

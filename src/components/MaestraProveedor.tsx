@@ -311,7 +311,7 @@ export default function MaestraProveedor({
           </p>
           <div className="max-h-80 overflow-y-auto border border-gray-200 rounded">
             {gruposLote.length === 0 && (
-              <div className="text-center text-gray-400 text-xs py-6">
+              <div className="text-center text-gray-500 text-xs py-6">
                 No queda nada por asignar con ese filtro.
               </div>
             )}
@@ -400,7 +400,7 @@ export default function MaestraProveedor({
             <tbody>
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-400 py-8">
+                  <td colSpan={7} className="text-center text-gray-500 py-8">
                     Maestra vacia: este proveedor no recibira solicitudes.
                   </td>
                 </tr>
@@ -427,7 +427,7 @@ export default function MaestraProveedor({
                       <td className="px-3 py-2">
                         {it.descripcion}
                         {it.otros.length > 0 && (
-                          <div className="text-[10px] text-gray-500 mt-0.5">
+                          <div className="text-[11px] text-gray-500 mt-0.5">
                             Otros proveedores:{" "}
                             {it.otros
                               .map(
@@ -492,7 +492,7 @@ export default function MaestraProveedor({
                         {it.activo ? (
                           <span className="text-green-700">Activo</span>
                         ) : (
-                          <span className="text-gray-400">
+                          <span className="text-gray-500">
                             {it.costo > 0 ? "Inactivo" : "Inactivo (sin costo)"}
                           </span>
                         )}

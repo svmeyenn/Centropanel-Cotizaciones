@@ -119,10 +119,10 @@ export default function ExcluirItemsProveedor({ idNm, idPart, proveedor, folio, 
                             }}
                           />
                         </td>
-                        <td className="px-2 py-1">{i.sku && <span className="font-mono text-[10px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
+                        <td className="px-2 py-1">{i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
                         <td className="px-2 py-1 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")} {i.unidad ?? ""}</td>
                         <td className="px-2 py-1 text-gray-600">
-                          {i.cotizado ? "ya cotizado" : incluidos.has(i.id) ? (i.asignado ? "va en la solicitud" : <span className="text-amber-700">va sin precio: no esta en su maestra</span>) : i.asignado ? <span className="text-red-700">no va en la solicitud</span> : <span className="italic text-gray-400">no lo tiene en su maestra</span>}
+                          {i.cotizado ? "ya cotizado" : incluidos.has(i.id) ? (i.asignado ? "va en la solicitud" : <span className="text-amber-700">va sin precio: no esta en su maestra</span>) : i.asignado ? <span className="text-red-700">no va en la solicitud</span> : <span className="italic text-gray-500">no lo tiene en su maestra</span>}
                           {!i.asignado && !i.cotizado && (
                             <button type="button" className="ml-2 text-verde underline disabled:opacity-40" disabled={pendiente} onClick={() => agregarMaestra(i.id)}>
                               Agregar a su maestra

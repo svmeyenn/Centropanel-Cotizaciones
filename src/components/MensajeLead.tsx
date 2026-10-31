@@ -457,13 +457,13 @@ export default function MensajeLead({
       ) : (
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="bg-verde text-white px-3 py-1 flex items-center justify-between">
-            <h2 className="text-[10px] font-semibold uppercase">Escribirle al contacto</h2>
+            <h2 className="text-[11px] font-semibold uppercase">Escribirle al contacto</h2>
             <button type="button" onClick={() => setAbierto(false)} className="text-[11px] underline">
               Cerrar
             </button>
           </div>
           <div className="p-3 space-y-2">
-            <p className="text-[10px] text-gray-600">
+            <p className="text-[11px] text-gray-600">
               Mensajes de la linea <strong>{lineaTexto}</strong>. El mensaje no se envia solo: queda a la vista para que lo revise y lo envie usted. Se adjunta el PDF de las
               cotizaciones que elija, no un enlace.
             </p>
@@ -625,7 +625,7 @@ export default function MensajeLead({
                   className={`${CAMPO} !w-auto`}
                 />
               )}
-              <span className="text-[10px] text-gray-600">
+              <span className="text-[11px] text-gray-600">
                 {canal === "email"
                   ? "Queda en la bandeja de salida de Outlook y sale a esa hora (Outlook debe estar abierto)."
                   : "Queda en Mi gestion: a esa hora se abre el chat del contacto con un clic."}
@@ -633,7 +633,7 @@ export default function MensajeLead({
             </div>
 
             {canal === "email" && !conAyudante && ayudante !== undefined && (
-              <p className="text-[10px] text-amber-700">
+              <p className="text-[11px] text-amber-700">
                 {ayudante === null ? "Para dejarlo en la bandeja de salida de Outlook, o abrirlo en Outlook sin bajar un archivo, instale el ayudante: " : "El ayudante esta instalado pero falta emparejarlo: "}
                 <a href="/ayudante" className="underline font-semibold" target="_blank" rel="noreferrer">
                   {ayudante === null ? "como instalarlo" : "emparejar"}
@@ -715,7 +715,7 @@ export default function MensajeLead({
                     Abrir WhatsApp
                   </button>
                   {claves.length > 0 && (
-                    <p className="basis-full text-[10px] text-gray-600">
+                    <p className="basis-full text-[11px] text-gray-600">
                       {puedeCompartir
                         ? "\"Compartir con los archivos\" manda el texto y los archivos juntos: en la hoja que se abre elija WhatsApp y el chat del contacto. \"Abrir WhatsApp\" abre el chat del contacto con el texto y baja los archivos para adjuntarlos a mano."
                         : "Este navegador no puede mandar archivos a WhatsApp de una vez: se bajan a la carpeta de descargas para adjuntarlos en el chat. Desde el telefono si se pueden compartir juntos."}

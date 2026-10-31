@@ -479,7 +479,7 @@ export default function PanelMantenedores({
                 (pestana === "Categorias" && categoriasFiltradas.length === 0) ||
                 (pestana === "Interlocutores" && interFiltrados.length === 0)) && (
                 <tr>
-                  <td colSpan={9} className="text-center text-gray-400 py-8">
+                  <td colSpan={9} className="text-center text-gray-500 py-8">
                     {busca
                       ? "Nada coincide con la busqueda."
                       : "Todavia no hay nada en esta lista."}
