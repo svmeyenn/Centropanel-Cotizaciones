@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.013-20261031**
+Version vigente: **v008.014-20261031**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.013-20261031**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.013 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.014 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.014-20261031 | — | 31-10-2026 | Modulo de Recursos humanos: personal a contrato u honorarios, contratos, imputacion a centros de costo, anticipos y descuentos, liquidaciones y boletas de honorarios (Chile y Peru), planilla previsional y parametros legales editables con vigencia. Acceso solo Super administradores y area RRHH. Migracion de base de datos incluida | por asignar |
 | v008.013-20261031 | — | 31-10-2026 | Peso y dimensiones pasan a la ficha de cada producto y de cada materia prima (columna Peso, filtro "Sin peso para el flete" y peso que usa el flete); se retira la pantalla aparte "Peso y dimensiones". Sin cambios de base de datos | 81f54c2 |
 | v008.012-20261031 | — | 31-10-2026 | Transportes: administrador de transportistas (datos, vehiculos, tarifas), despacho propio / retiro / transportista en pedidos y OC, carga del viaje desde catalogos (peso y dimensiones en productos y materias primas), cotizacion de flete con varios transportistas y reporte de fletes. Base: 5 tablas, columnas en pedidos, ordenes de compra, productos y materias primas, 7 funciones | f29b65f |
 | v008.011-20261031 | — | 31-10-2026 | Perfiles y permisos: crear perfiles nuevos (en blanco o como copia de otro), editar nombre, alcance y rol base, y eliminar los que no tienen personas. Base: funciones perfil_crear, perfil_actualizar y perfil_eliminar | c2b8175 |
