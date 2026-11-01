@@ -27,7 +27,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
 
   const { data: o } = await supabase
     .from("ordenes_compra")
-    .select("*, proyectos(id_proyecto, nombre, cliente, direccion), entidades(razon_social, nombre_referencia, email, telefono, contacto), solicitudes(num_solicitud)")
+    .select("*, proyectos(id_proyecto, nombre, cliente, direccion), entidades!ordenes_compra_id_proveedor_fkey(razon_social, nombre_referencia, email, telefono, contacto), solicitudes(num_solicitud)")
     .eq("id", id)
     .single();
   if (!o) notFound();

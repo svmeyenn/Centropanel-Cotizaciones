@@ -109,7 +109,7 @@ export async function leerOrdenDoc(idOc: number): Promise<OrdenParaEnviar | null
   const supabase = await createClient();
   const { data: o } = await supabase
     .from("ordenes_compra")
-    .select("*, proyectos(nombre, cliente, direccion), entidades(razon_social, nombre_referencia, rut, contacto, email, telefono, direccion)")
+    .select("*, proyectos(nombre, cliente, direccion), entidades!ordenes_compra_id_proveedor_fkey(razon_social, nombre_referencia, rut, contacto, email, telefono, direccion)")
     .eq("id", idOc)
     .single();
   if (!o) return null;

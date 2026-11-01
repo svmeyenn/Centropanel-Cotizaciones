@@ -194,7 +194,7 @@ export async function solicitarPagoOC(
   const supabase = await createClient();
   const { data: oc } = await supabase
     .from("ordenes_compra")
-    .select("id_pais, id_proyecto, id_proveedor, num_oc, entidades(razon_social)")
+    .select("id_pais, id_proyecto, id_proveedor, num_oc, entidades!ordenes_compra_id_proveedor_fkey(razon_social)")
     .eq("id", idOc)
     .single();
   if (!oc) return { error: "La orden no existe." };

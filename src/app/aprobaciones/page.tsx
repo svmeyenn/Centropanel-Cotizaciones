@@ -23,7 +23,7 @@ export default async function Pagina() {
     conPais(
       supabase
         .from("ordenes_compra")
-        .select("id, num_oc, id_pais, id_proyecto, id_solicitante, fecha, total, entidades(razon_social), proyectos(nombre)")
+        .select("id, num_oc, id_pais, id_proyecto, id_solicitante, fecha, total, entidades!ordenes_compra_id_proveedor_fkey(razon_social), proyectos(nombre)")
         .eq("estado", "Pendiente aprobacion"),
       idPaisActivo
     ),

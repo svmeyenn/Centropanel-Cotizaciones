@@ -50,7 +50,7 @@ export default async function Pagina({
         .order("id"),
       supabase
         .from("ordenes_compra")
-        .select("id, num_oc, estado, fecha, total, id_partida, entidades(razon_social)")
+        .select("id, num_oc, estado, fecha, total, id_partida, entidades!ordenes_compra_id_proveedor_fkey(razon_social)")
         .eq("id_proyecto", id)
         .order("id", { ascending: false }),
       supabase.from("v_proyecto_resumen").select("*").eq("id_proyecto", id).single(),

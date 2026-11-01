@@ -21,7 +21,7 @@ export default async function Pagina({
 
   let q = supabase
     .from("ordenes_compra")
-    .select("id, num_oc, id_pais, estado, fecha, total, id_proyecto, proyectos(nombre), entidades(razon_social)");
+    .select("id, num_oc, id_pais, estado, fecha, total, id_proyecto, proyectos(nombre), entidades!ordenes_compra_id_proveedor_fkey(razon_social)");
   if (estado) q = q.eq("estado", estado);
   const { data } = await conPais(q, idPaisActivo).order("id", { ascending: false });
 
