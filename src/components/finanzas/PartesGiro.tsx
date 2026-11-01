@@ -11,7 +11,7 @@ import {
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 
-type Parte = {
+export type Parte = {
   monto: string;
   id_proyecto: string;
   id_categoria: string;
@@ -29,14 +29,20 @@ export default function PartesGiro({
   etiquetaTotal,
   categoriaObligatoria,
   comentarioObligatorio,
+  primera,
+  objetivo,
 }: {
   proyectos: Proyecto[];
   categorias: Categoria[];
   etiquetaTotal: string;
   categoriaObligatoria: boolean;
   comentarioObligatorio: boolean;
+  // Al dividir un movimiento que ya existe: lo que trae la primera parte y el
+  // total que las partes deben sumar.
+  primera?: Parte;
+  objetivo?: number;
 }) {
-  const [partes, setPartes] = useState<Parte[]>([vacia(), vacia()]);
+  const [partes, setPartes] = useState<Parte[]>([primera ?? vacia(), vacia()]);
 
   const total = partes.reduce((t, p) => {
     const n = leerMontoLibre(p.monto);
@@ -130,6 +136,13 @@ export default function PartesGiro({
         </button>
         <span className="text-xs">
           {etiquetaTotal}: <strong>{pesos(total)}</strong>
+          {objetivo != null && (
+            <span className={Math.round(total) === Math.round(objetivo) ? "text-verde" : "text-red-700"}>
+              {" "}
+              (debe sumar {pesos(objetivo)}
+              {Math.round(total) === Math.round(objetivo) ? ": cuadra" : `, faltan ${pesos(objetivo - total)}`})
+            </span>
+          )}
         </span>
       </div>
     </div>

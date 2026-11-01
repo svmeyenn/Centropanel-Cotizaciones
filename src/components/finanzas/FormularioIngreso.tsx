@@ -19,6 +19,7 @@ import {
 } from "@/lib/finanzas/tipos";
 import SelectorInterlocutor from "./SelectorInterlocutor";
 import PartesGiro from "./PartesGiro";
+import DialogoDividir from "./DialogoDividir";
 
 const hoy = () => hoyISO();
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
@@ -49,6 +50,7 @@ export default function FormularioIngreso({
   );
   // Un abono del banco que cubre varios proyectos o conceptos.
   const [dividir, setDividir] = useState(false);
+  const [dividiendo, setDividiendo] = useState(false);
   const sinFecha = fecha === "";
   const recibido = !sinFecha && estadoPago === "Pagado";
 
@@ -311,6 +313,16 @@ export default function FormularioIngreso({
               Eliminar
             </button>
           )}
+          {movimiento && !movimiento.es_anticipo && (
+            <button
+              type="button"
+              className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
+              onClick={() => setDividiendo(true)}
+              disabled={pendiente}
+            >
+              Dividir en partes
+            </button>
+          )}
           <button
             type="button"
             className="border border-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded bg-white"
@@ -330,6 +342,18 @@ export default function FormularioIngreso({
       </form>
 
       {movimiento && <Bitacora tabla="movimientos" id={movimiento.id_mov} />}
+
+      {dividiendo && movimiento && (
+        <DialogoDividir
+          movimiento={movimiento}
+          proyectos={proyectosDisponibles}
+          categorias={propias}
+          alCerrar={(m) => {
+            setDividiendo(false);
+            if (m) alCerrar(m);
+          }}
+        />
+      )}
 
       {confirmandoBorrado && movimiento && (
         <Ventana
