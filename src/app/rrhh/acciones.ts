@@ -461,6 +461,18 @@ export async function aprobarLiquidacion(id: number) {
   });
 }
 
+export async function reversarAprobacionLiquidacion(id: number, motivo: string) {
+  return conPermiso("administrar", async () => {
+    if (motivo.trim().length < 5) return { error: "Escriba el motivo (al menos 5 caracteres)." };
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("rrhh_reversar_aprobacion", { p_id: id, p_motivo: motivo.trim() });
+    if (error) return { error: error.message };
+    revalidatePath(`/rrhh/liquidaciones/${id}`);
+    revalidatePath("/rrhh/liquidaciones");
+    return { ok: true };
+  });
+}
+
 export async function pagarLiquidacion(id: number, fecha: string, medio: string, cuenta: number | null) {
   return conPermiso("aprobar", async () => {
     if (!fecha) return { error: "Indique la fecha de pago." };

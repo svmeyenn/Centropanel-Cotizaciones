@@ -7,6 +7,7 @@ import { pesosConCentimos as pesos } from "@/lib/formato";
 import Ventana from "@/components/Ventana";
 import {
   aprobarRendicion,
+  reversarAprobacionRendicion,
   borrarRendicion,
   devolverABorrador,
   enviarRendicion,
@@ -51,6 +52,7 @@ export default function DetalleRendicion({
   proyectos,
   cuentas,
   puedePagar,
+  esAdmin,
   enlaces,
   lecturaDisponible,
 }: {
@@ -62,6 +64,7 @@ export default function DetalleRendicion({
   proyectos: Proyecto[];
   cuentas: Cuenta[];
   puedePagar: boolean;
+  esAdmin: boolean;
   enlaces: Record<number, string>;
   lecturaDisponible: boolean;
 }) {
@@ -309,6 +312,23 @@ export default function DetalleRendicion({
                 }
               >
                 Reabrir para completar
+              </button>
+            )}
+
+          {esAdmin &&
+            ["Aprobada", "Incompleta", "Pagada"].includes(rendicion.estado) && (
+              <button
+                className={`${BOTON_CLARO} text-red-700`}
+                disabled={enCurso}
+                onClick={() => {
+                  const motivo = prompt("Motivo para reversar la aprobacion:");
+                  if (motivo)
+                    correr(() =>
+                      reversarAprobacionRendicion(rendicion.id_rendicion, motivo)
+                    );
+                }}
+              >
+                Reversar aprobacion
               </button>
             )}
 

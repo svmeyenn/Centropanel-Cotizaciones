@@ -526,8 +526,13 @@ export default function PanelConciliacion({
                       <td className="px-3 py-2 whitespace-nowrap">
                         {fechaCorta(l.fecha)}
                       </td>
-                      <td className="px-3 py-2 truncate" title={l.descripcion ?? ""}>
+                      <td className="px-3 py-2 break-words">
                         {l.descripcion}
+                        {l.comentario && (
+                          <span className="block text-[11px] text-gray-700 italic">
+                            {l.comentario}
+                          </span>
+                        )}
                         {l.documento && (
                           <span className="block text-[11px] text-gray-500">
                             {l.documento}

@@ -151,6 +151,9 @@ export async function enviarAprobacion(id: number) {
 export async function aprobarOC(id: number) {
   return llamar("oc_aprobar", { p_oc: id }, id);
 }
+export async function reversarAprobacionOC(id: number, motivo: string) {
+  return llamar("oc_reversar_aprobacion", { p_oc: id, p_motivo: motivo }, id);
+}
 export async function rechazarOC(id: number, motivo: string) {
   return llamar("oc_rechazar", { p_oc: id, p_motivo: motivo }, id);
 }

@@ -74,6 +74,7 @@ export default async function Pagina({
           proyectos={proyectos}
           cuentas={cuentas}
           puedePagar={v.fin_pagar_gastos}
+          esAdmin={v.rol === "Administrador"}
           enlaces={enlaces}
           lecturaDisponible={LECTURA_CONFIGURADA}
         />

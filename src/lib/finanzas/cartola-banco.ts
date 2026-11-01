@@ -42,6 +42,8 @@ export type InspeccionCartola = {
 export type FilaBanco = {
   fecha: string;
   descripcion: string | null;
+  // Lo que el banco o el cliente escribio aparte de la glosa, si el archivo lo trae.
+  comentario: string | null;
   documento: string | null;
   cargo: number;
   abono: number;
@@ -63,6 +65,15 @@ const SINONIMOS = {
     "concepto",
     "movimiento",
     "operacion",
+  ],
+  comentario: [
+    "comentario",
+    "comentarios",
+    "observacion",
+    "observaciones",
+    "nota",
+    "notas",
+    "mensaje",
   ],
   documento: [
     "documento",
@@ -366,6 +377,8 @@ export async function leerArchivoCartola(
   const iDescripcion = formato
     ? uno(formato.col_descripcion)
     : columna(encabezado, SINONIMOS.descripcion);
+  // El comentario no se configura: si el archivo trae la columna, se lee.
+  const iComentario = columna(encabezado, SINONIMOS.comentario);
   const iDocumento = formato
     ? uno(formato.col_documento)
     : columna(encabezado, SINONIMOS.documento);
@@ -403,6 +416,10 @@ export async function leerArchivoCartola(
       iDescripcion === null
         ? null
         : (fila[iDescripcion] ?? "").toString().trim() || null;
+    const comentario =
+      iComentario === null
+        ? null
+        : (fila[iComentario] ?? "").toString().trim() || null;
     const documento =
       iDocumento === null ? null : (fila[iDocumento] ?? "").toString().trim() || null;
 
@@ -416,6 +433,7 @@ export async function leerArchivoCartola(
     filas.push({
       fecha,
       descripcion: descripcion?.slice(0, 200) ?? null,
+      comentario: comentario?.slice(0, 500) ?? null,
       documento: documento?.slice(0, 50) ?? null,
       cargo,
       abono,

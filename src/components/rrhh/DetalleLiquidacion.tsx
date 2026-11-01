@@ -9,6 +9,7 @@ import { COLOR_ESTADO_LIQ, MEDIOS_PAGO, folioLiquidacion, nombrePeriodo } from "
 import {
   anularLiquidacion,
   aprobarLiquidacion,
+  reversarAprobacionLiquidacion,
   guardarDatosLiquidacion,
   pagarLiquidacion,
   recalcularLiquidacion,
@@ -123,6 +124,17 @@ export default function DetalleLiquidacion({
         )}
         {puedeAprobar && borrador && (
           <Boton disabled={pendiente || !liq.calculada} onClick={() => ejecutar(() => aprobarLiquidacion(liq.id))}>Aprobar</Boton>
+        )}
+        {puedeAdministrar && liq.estado === "Aprobada" && (
+          <Boton
+            disabled={pendiente}
+            onClick={() => {
+              const m = prompt("Motivo para reversar la aprobacion:");
+              if (m) ejecutar(() => reversarAprobacionLiquidacion(liq.id, m));
+            }}
+          >
+            Reversar aprobacion
+          </Boton>
         )}
         {puedeAprobar && liq.estado === "Aprobada" && <Boton onClick={() => { setError(null); setVentana("pagar"); }}>Registrar pago</Boton>}
         {((borrador && puedeOperar) || (puedeAdministrar && (liq.estado === "Aprobada" || liq.estado === "Pagada"))) && (

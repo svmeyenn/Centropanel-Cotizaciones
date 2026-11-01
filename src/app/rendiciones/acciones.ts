@@ -259,6 +259,27 @@ export async function aprobarRendicion(
   return { ok: true, mensaje: "Aprobada. El reintegro quedo en Egresos, pendiente de pago." };
 }
 
+// Deshacer la aprobacion: la rendicion vuelve a Enviada y, si su reintegro sigue
+// sin pagar, ese egreso se elimina. Solo el Administrador; la base lo vuelve a exigir.
+export async function reversarAprobacionRendicion(
+  idRendicion: number,
+  motivo: string
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador")
+    return { ok: false, mensaje: "Solo un Administrador puede reversar una aprobacion." };
+  if (motivo.trim().length < 5)
+    return { ok: false, mensaje: "Escriba el motivo (al menos 5 caracteres)." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("rendicion_reversar_aprobacion", {
+    p_id: idRendicion,
+    p_motivo: motivo.trim(),
+  });
+  if (error) return { ok: false, mensaje: error.message };
+  refrescar(idRendicion);
+  return { ok: true, mensaje: (data as string) ?? "Aprobacion reversada." };
+}
+
 export async function rechazarRendicion(
   _p: Resultado | null,
   d: FormData

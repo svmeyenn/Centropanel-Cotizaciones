@@ -562,6 +562,7 @@ export type LineaBanco = {
   id_cuenta: number;
   fecha: string;
   descripcion: string | null;
+  comentario: string | null;
   documento: string | null;
   cargo: number;
   abono: number;

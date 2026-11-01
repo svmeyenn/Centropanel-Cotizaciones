@@ -16,6 +16,7 @@ import {
   marcarEnviadaOC,
   rechazarOC,
   recibirOC,
+  reversarAprobacionOC,
   solicitarPagoOC,
 } from "@/app/compras/acciones";
 import { dinero, fecha as fmtFecha, unidades as fmtUnid } from "@/lib/formato";
@@ -177,6 +178,18 @@ export default function EditorOC({
               Rechazar
             </button>
           </>
+        )}
+        {oc.estado === "Aprobada" && esAdmin && (
+          <button
+            className={botonGris}
+            disabled={pendiente}
+            onClick={() => {
+              const motivo = prompt("Motivo para reversar la aprobacion:");
+              if (motivo) ejecutar(() => reversarAprobacionOC(oc.id, motivo));
+            }}
+          >
+            Reversar aprobacion
+          </button>
         )}
         {oc.estado === "Aprobada" && puedeCrear && (
           <button className={boton} disabled={pendiente} onClick={() => ejecutar(() => marcarEnviadaOC(oc.id))}>
