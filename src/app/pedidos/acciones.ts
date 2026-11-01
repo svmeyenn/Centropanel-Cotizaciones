@@ -534,7 +534,8 @@ export async function duplicarPedido(id: number) {
 // lleva por delante. La base lo niega si hay pagos o documentos tributarios
 // --eso se anula a mano, uno por uno-- y se lleva consigo las lineas y las
 // solicitudes a proveedores. La cotizacion queda Aceptada y sin pedido, lista
-// para volver a generarlo.
+// para volver a generarlo. El proyecto que el pedido creo por su cuenta se
+// marca borrado, y sus ingresos y egresos se conservan.
 export async function eliminarPedido(id: number) {
   const v = await requerirVendedor();
   if (!tienePerfilAdmin(v)) {
@@ -565,6 +566,7 @@ export async function eliminarPedido(id: number) {
 
   revalidatePath("/pedidos");
   revalidatePath("/cotizaciones");
+  revalidatePath("/proyectos");
   return { ok: true, num: r.num ?? "" };
 }
 

@@ -68,8 +68,10 @@ export default function BorrarPedido({
                   proveedores
                 </>
               )}
-              . No se puede deshacer. Si el pedido tiene pagos o documentos
-              tributarios, primero hay que anularlos.
+              . Si el pedido generó su propio proyecto, ese proyecto también se
+              elimina; sus ingresos y egresos se conservan. No se puede
+              deshacer. Si el pedido tiene pagos o documentos tributarios,
+              primero hay que anularlos.
             </p>
             <label className="text-xs block">
               <span className="block text-dorado-osc font-semibold mb-1">
