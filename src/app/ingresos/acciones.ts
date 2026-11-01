@@ -58,6 +58,48 @@ async function resolverInterlocutor(
   return { ok: true, id: data.id_interlocutor, nombre: data.nombre_referencia };
 }
 
+
+type ParteLeida = {
+  monto: number;
+  id_proyecto: number | null;
+  id_categoria: number | null;
+  comentario: string | null;
+};
+
+// Un abono abierto en varias partes viaja como JSON en el campo `partes`.
+function leerPartes(datos: FormData): ParteLeida[] | { error: string } | null {
+  const crudo = textoONulo(datos.get("partes"));
+  if (!crudo) return null;
+  let lista: unknown;
+  try {
+    lista = JSON.parse(crudo);
+  } catch {
+    return { error: "No se pudieron leer las partes del abono." };
+  }
+  if (!Array.isArray(lista) || lista.length < 2)
+    return { error: "Un abono dividido necesita al menos dos partes." };
+  if (lista.length > 30) return { error: "Maximo 30 partes por abono." };
+  const partes: ParteLeida[] = [];
+  for (const [i, x] of lista.entries()) {
+    const o = (x ?? {}) as Record<string, unknown>;
+    const monto = leerMontoLibre(String(o.monto ?? ""));
+    if (!Number.isFinite(monto) || monto <= 0)
+      return { error: `El monto de la parte ${i + 1} no es valido.` };
+    const num = (v: unknown) => {
+      const n = Number(v);
+      return v === "" || v == null || !Number.isFinite(n) ? null : n;
+    };
+    const comentario = String(o.comentario ?? "").trim();
+    partes.push({
+      monto,
+      id_proyecto: num(o.id_proyecto),
+      id_categoria: num(o.id_categoria),
+      comentario: comentario === "" ? null : comentario,
+    });
+  }
+  return partes;
+}
+
 // Solo ingresos: los egresos pasan por su propia pantalla, con la solicitud,
 // el pago y el respaldo obligatorio.
 export async function guardarIngreso(
@@ -71,7 +113,11 @@ export async function guardarIngreso(
   const supabase = await createClient();
   const { idPaisActivo, idPaisTrabajo } = await contextoMercado(v);
 
-  const m = leerMonto(datos.get("monto"));
+  const leidas = leerPartes(datos);
+  if (leidas && "error" in leidas) return { ok: false, mensaje: leidas.error };
+  const partes = leidas as ParteLeida[] | null;
+
+  const m = partes ? partes.reduce((t, p) => t + p.monto, 0) : leerMonto(datos.get("monto"));
   if (!Number.isFinite(m) || m <= 0)
     return { ok: false, mensaje: "El monto no es valido." };
 
@@ -107,22 +153,27 @@ export async function guardarIngreso(
     fecha_pago: estado === "Pagado" ? (fechaPagoEnviada ?? fecha) : null,
   };
 
+  const grupoNuevo = crypto.randomUUID();
   const id = numeroONulo(datos.get("id_mov"));
 
+  // Las partes solo se abren al crear; editar toca una parte a la vez.
   const { error } = id
     ? await supabase.from("movimientos").update(fila).eq("id_mov", id)
-    : await supabase.from("movimientos").insert({
-        ...fila,
-        id_pais: idPaisActivo ?? idPaisTrabajo,
-        id_vendedor: v.id,
-      });
+    : await supabase.from("movimientos").insert(
+        (partes ? partes.map((p) => ({ ...fila, ...p })) : [{ ...fila }]).map((f) => ({
+          ...f,
+          id_pais: idPaisActivo ?? idPaisTrabajo,
+          id_vendedor: v.id,
+          id_grupo: partes ? grupoNuevo : null,
+        }))
+      );
 
   if (error) return { ok: false, mensaje: error.message };
 
   refrescarFinanzas();
   return {
     ok: true,
-    mensaje: id ? "Ingreso actualizado." : "Ingreso registrado.",
+    mensaje: id ? "Ingreso actualizado." : partes ? `Abono registrado en ${partes.length} partes.` : "Ingreso registrado.",
   };
 }
 
@@ -160,15 +211,25 @@ export async function confirmarIngreso(
   const fecha = textoONulo(datos.get("fecha"));
   if (!idMov || !fecha) return { ok: false, mensaje: "Falta la fecha." };
 
+  // Un abono en partes se confirma entero: el banco lo recibio de una vez.
+  const { data: ref } = await supabase
+    .from("movimientos")
+    .select("id_grupo")
+    .eq("id_mov", idMov)
+    .maybeSingle();
+  const idGrupo = (ref?.id_grupo as string | null) ?? null;
+
   // Las reglas de la base deciden si procede; aqui solo se acota a que sea un
   // ingreso, para que esta accion no sirva de atajo para pagar un egreso sin
   // sus comprobaciones.
-  const { error, data: filas } = await supabase
+  const base = supabase
     .from("movimientos")
     .update({ estado_pago: "Pagado", fecha, fecha_pago: fecha })
-    .eq("id_mov", idMov)
-    .eq("tipo", "Ingreso")
-    .select("id_mov");
+    .eq("tipo", "Ingreso");
+  const { error, data: filas } = await (idGrupo
+    ? base.eq("id_grupo", idGrupo)
+    : base.eq("id_mov", idMov)
+  ).select("id_mov");
 
   if (error) return { ok: false, mensaje: error.message };
   if (!filas || filas.length === 0)

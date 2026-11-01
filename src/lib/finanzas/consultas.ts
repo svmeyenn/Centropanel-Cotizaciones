@@ -420,7 +420,31 @@ export async function cargarConciliacion(
   const usados = new Set(
     (enlazados.data ?? []).map((e: { id_mov: number }) => e.id_mov)
   );
-  const movs = (movimientos.data ?? []) as Movimiento[];
+  const sueltos = (movimientos.data ?? []) as Movimiento[];
+
+  // Un giro abierto en partes es, para el banco, un solo cargo: se junta en una
+  // fila con la suma y el numero de la primera parte, que es la que lleva el
+  // cuadre.
+  const porGrupo = new Map<string, Movimiento>();
+  const movs: Movimiento[] = [];
+  for (const m of sueltos) {
+    if (!m.id_grupo) {
+      movs.push(m);
+      continue;
+    }
+    const lider = porGrupo.get(m.id_grupo);
+    if (!lider) {
+      const nuevo = { ...m, partes: 1 };
+      porGrupo.set(m.id_grupo, nuevo);
+      movs.push(nuevo);
+    } else {
+      lider.monto = Number(lider.monto) + Number(m.monto);
+      lider.partes = (lider.partes ?? 1) + 1;
+      if (m.id_mov < lider.id_mov) lider.id_mov = m.id_mov;
+      if (m.sin_banco) lider.sin_banco = true;
+      lider.comentario = [lider.comentario, m.comentario].filter(Boolean).join(" + ");
+    }
+  }
 
   // Solo se esperan en el banco los del rango pedido y los que no estan ya
   // cuadrados.

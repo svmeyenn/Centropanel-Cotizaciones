@@ -24,6 +24,7 @@ import {
 } from "@/lib/finanzas/tipos";
 import SelectorInterlocutor from "./SelectorInterlocutor";
 import ListaAdjuntos from "./ListaAdjuntos";
+import PartesGiro from "./PartesGiro";
 
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 const ROTULO = "block text-xs font-semibold text-dorado-osc mb-0.5";
@@ -57,6 +58,8 @@ export default function FormularioEgreso({
   );
 
   const [pesoAdjuntos, setPesoAdjuntos] = useState(0);
+  // Un solo giro del banco que paga varias facturas, conceptos o proyectos.
+  const [dividir, setDividir] = useState(false);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
   const [borrando, setBorrando] = useState(false);
   const [errorBorrado, setErrorBorrado] = useState("");
@@ -122,6 +125,7 @@ export default function FormularioEgreso({
           </div>
         )}
 
+        {!dividir && (
         <div>
           <label className={ROTULO}>Monto *</label>
           <input
@@ -133,6 +137,7 @@ export default function FormularioEgreso({
             required
           />
         </div>
+        )}
 
         <div>
           <label className={ROTULO}>Cuenta *</label>
@@ -159,6 +164,27 @@ export default function FormularioEgreso({
           />
         </div>
 
+        {!movimiento && (
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 text-xs">
+              <input type="checkbox" checked={dividir} onChange={(e) => setDividir(e.target.checked)} />
+              <span>
+                <strong>Dividir este giro en varias partes</strong> (varias facturas, conceptos o proyectos en un solo giro)
+              </span>
+            </label>
+          </div>
+        )}
+
+        {dividir ? (
+          <PartesGiro
+            proyectos={proyectosDisponibles}
+            categorias={propias}
+            etiquetaTotal="Total del giro"
+            categoriaObligatoria
+            comentarioObligatorio
+          />
+        ) : (
+          <>
         <div>
           <label className={ROTULO}>Proyecto / Cliente</label>
           <select
@@ -191,6 +217,9 @@ export default function FormularioEgreso({
             ))}
           </select>
         </div>
+
+          </>
+        )}
 
         <div className="sm:col-span-2">
           <label className={ROTULO}>N cotizacion o factura</label>
@@ -245,6 +274,7 @@ export default function FormularioEgreso({
           </label>
         </div>
 
+        {!dividir && (
         <div className="sm:col-span-2">
           <label className={ROTULO}>Comentario *</label>
           <textarea
@@ -255,6 +285,7 @@ export default function FormularioEgreso({
             required
           />
         </div>
+        )}
 
         {movimiento && (
           <div className="sm:col-span-2">

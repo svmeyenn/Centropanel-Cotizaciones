@@ -95,9 +95,11 @@ export default function TablaEgresos({
     const i = interlocutores.find(
       (x) => x.id_interlocutor === m.id_interlocutor
     );
-    return i
+    const nombre = i
       ? etiquetaInterlocutor(i.razon_social, i.nombre_referencia)
       : soloDestino(m.origen_destino);
+    // Una parte de un giro abierto en varias: se nota en la lista.
+    return m.id_grupo ? `${nombre} (parte de giro)` : nombre;
   };
 
   // Editar y borrar quedan reservados a quien paga: quien solo solicita puede

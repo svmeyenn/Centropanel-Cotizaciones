@@ -196,6 +196,10 @@ export type Movimiento = {
   // Todo egreso lo aprueba el responsable del proyecto antes de pagarse.
   aprobacion: "Pendiente" | "Aprobado" | "Rechazado" | null;
   motivo_rechazo: string | null;
+  // Giro o abono del banco abierto en varias partes: todas comparten el grupo.
+  id_grupo?: string | null;
+  // Solo en la conciliacion: cuantas partes se juntaron en esta fila.
+  partes?: number;
 };
 
 // Una linea de la cartola: el movimiento visto desde la cuenta, con el saldo

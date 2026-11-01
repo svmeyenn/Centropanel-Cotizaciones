@@ -76,6 +76,49 @@ function faltantesParaPagar(m: Exigibles): string[] {
   return faltan;
 }
 
+
+type ParteLeida = {
+  monto: number;
+  id_proyecto: number | null;
+  id_categoria: number | null;
+  comentario: string | null;
+};
+
+// Un giro abierto en varias partes viaja como JSON en el campo `partes`. Null
+// si el formulario no es de un giro dividido.
+function leerPartes(datos: FormData): ParteLeida[] | { error: string } | null {
+  const crudo = textoONulo(datos.get("partes"));
+  if (!crudo) return null;
+  let lista: unknown;
+  try {
+    lista = JSON.parse(crudo);
+  } catch {
+    return { error: "No se pudieron leer las partes del giro." };
+  }
+  if (!Array.isArray(lista) || lista.length < 2)
+    return { error: "Un giro dividido necesita al menos dos partes." };
+  if (lista.length > 30) return { error: "Maximo 30 partes por giro." };
+  const partes: ParteLeida[] = [];
+  for (const [i, x] of lista.entries()) {
+    const o = (x ?? {}) as Record<string, unknown>;
+    const monto = leerMontoLibre(String(o.monto ?? ""));
+    if (!Number.isFinite(monto) || monto <= 0)
+      return { error: `El monto de la parte ${i + 1} no es valido.` };
+    const num = (v: unknown) => {
+      const n = Number(v);
+      return v === "" || v == null || !Number.isFinite(n) ? null : n;
+    };
+    const comentario = String(o.comentario ?? "").trim();
+    partes.push({
+      monto,
+      id_proyecto: num(o.id_proyecto),
+      id_categoria: num(o.id_categoria),
+      comentario: comentario === "" ? null : comentario,
+    });
+  }
+  return partes;
+}
+
 async function resolverInterlocutor(
   supabase: Awaited<ReturnType<typeof createClient>>,
   id: number | null
@@ -168,7 +211,11 @@ export async function crearSolicitudEgreso(
   const supabase = await createClient();
   const { idPaisActivo, idPaisTrabajo } = await contextoMercado(v);
 
-  const m = leerMonto(datos.get("monto"));
+  const leidas = leerPartes(datos);
+  if (leidas && "error" in leidas) return { ok: false, mensaje: leidas.error };
+  const partes = leidas as ParteLeida[] | null;
+
+  const m = partes ? partes.reduce((t, p) => t + p.monto, 0) : leerMonto(datos.get("monto"));
   if (!Number.isFinite(m) || m <= 0)
     return { ok: false, mensaje: "El monto no es valido." };
 
@@ -189,31 +236,46 @@ export async function crearSolicitudEgreso(
   if (!inter.ok) return { ok: false, mensaje: inter.mensaje };
 
   const comunes = camposComunes(datos, inter);
-  const faltan = faltantesParaPagar({ ...comunes, monto: m });
-  if (faltan.length > 0)
-    return { ok: false, mensaje: `Faltan datos obligatorios: ${faltan.join(", ")}.` };
+  const filasNuevas = partes
+    ? partes.map((p) => ({ ...comunes, ...p }))
+    : [{ ...comunes, monto: m }];
+  for (const [i, f] of filasNuevas.entries()) {
+    const faltan = faltantesParaPagar(f);
+    if (faltan.length > 0)
+      return {
+        ok: false,
+        mensaje: `Faltan datos obligatorios${partes ? ` en la parte ${i + 1}` : ""}: ${faltan.join(", ")}.`,
+      };
+  }
 
-  const { data: fila, error } = await supabase
+  // Todas las partes de un giro comparten el grupo: asi se pagan y se cuadran
+  // con el banco como un solo movimiento.
+  const idGrupo = partes ? crypto.randomUUID() : null;
+
+  const { data: filasCreadas, error } = await supabase
     .from("movimientos")
-    .insert({
-      tipo: "Egreso",
-      fecha: null,
-      estado_pago: "Pendiente",
-      id_pais: idPaisActivo ?? idPaisTrabajo,
-      id_vendedor: v.id,
-      monto: m,
-      ...comunes,
-    })
+    .insert(
+      filasNuevas.map((f) => ({
+        tipo: "Egreso",
+        fecha: null,
+        estado_pago: "Pendiente",
+        id_pais: idPaisActivo ?? idPaisTrabajo,
+        id_vendedor: v.id,
+        id_grupo: idGrupo,
+        ...f,
+      }))
+    )
     .select("id_mov")
-    .single();
+    .order("id_mov");
 
+  const fila = filasCreadas?.[0];
   if (error || !fila)
     return { ok: false, mensaje: error?.message ?? "No se pudo crear la solicitud." };
 
   const resultado = await subirRespaldos(supabase, fila.id_mov, archivos, v.id);
   if (!resultado.ok) {
     // Sin respaldo la solicitud no vale: se deshace.
-    await supabase.from("movimientos").delete().eq("id_mov", fila.id_mov);
+    await supabase.from("movimientos").delete().in("id_mov", (filasCreadas ?? []).map((f) => f.id_mov));
     return resultado;
   }
 
@@ -229,7 +291,12 @@ export async function crearSolicitudEgreso(
   }
 
   refrescarFinanzas();
-  return { ok: true, mensaje: "Solicitud registrada, queda pendiente de pago." };
+  return {
+    ok: true,
+    mensaje: partes
+      ? `Giro registrado en ${partes.length} partes, queda pendiente de pago.`
+      : "Solicitud registrada, queda pendiente de pago.",
+  };
 }
 
 export async function editarSolicitudEgreso(
@@ -336,37 +403,55 @@ export async function guardarPago(
 
   const { data: antes } = await supabase
     .from("movimientos")
-    .select("estado_pago, monto, id_cuenta, id_interlocutor, id_categoria, comentario")
+    .select("estado_pago, monto, id_cuenta, id_interlocutor, id_categoria, comentario, id_grupo")
     .eq("id_mov", idMov)
     .maybeSingle();
 
   const estabaPendiente = antes?.estado_pago === "Pendiente";
 
+  // Un giro en partes se paga entero: lo que el banco ve es un solo cargo.
+  const idGrupo = (antes?.id_grupo as string | null) ?? null;
+
   // Solo se exige al pagar de verdad. Corregir la fecha de un egreso antiguo,
   // cargado antes de esta regla, no se bloquea: eso solo dejaria el historial
   // sin poder arreglarse.
   if (estabaPendiente && antes) {
-    const faltan = faltantesParaPagar(antes);
-    if (faltan.length > 0)
-      return {
-        ok: false,
-        mensaje: `No se puede pagar: faltan ${faltan.join(", ")}. Edite la solicitud y completelos.`,
-      };
+    const aRevisar = idGrupo
+      ? ((
+          await supabase
+            .from("movimientos")
+            .select("monto, id_cuenta, id_interlocutor, id_categoria, comentario")
+            .eq("id_grupo", idGrupo)
+        ).data ?? [])
+      : [antes];
+    for (const parte of aRevisar) {
+      const faltan = faltantesParaPagar(parte);
+      if (faltan.length > 0)
+        return {
+          ok: false,
+          mensaje: `No se puede pagar: faltan ${faltan.join(", ")}. Edite la solicitud y completelos.`,
+        };
+    }
   }
 
-  const { error, data: filas } = await supabase
+  const base = supabase
     .from("movimientos")
     .update({ estado_pago: "Pagado", fecha, fecha_pago: fecha })
-    .eq("id_mov", idMov)
-    .eq("tipo", "Egreso")
-    .select("id_mov");
+    .eq("tipo", "Egreso");
+  const { error, data: filas } = await (idGrupo
+    ? base.eq("id_grupo", idGrupo)
+    : base.eq("id_mov", idMov)
+  ).select("id_mov");
 
   if (error) return { ok: false, mensaje: error.message };
   if (!filas || filas.length === 0)
     return { ok: false, mensaje: "No puede pagar este egreso." };
 
   refrescarFinanzas();
-  return { ok: true, mensaje: "Pago registrado." };
+  return {
+    ok: true,
+    mensaje: filas.length > 1 ? `Pago registrado en las ${filas.length} partes del giro.` : "Pago registrado.",
+  };
 }
 
 // Reversar un egreso pagado: vuelve a Pendiente y sale de la cartola. Solo el
@@ -387,15 +472,40 @@ export async function reversarEgreso(
     return { ok: false, mensaje: "Escriba el motivo de la reversa (al menos 5 caracteres)." };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("egreso_reversar", {
-    p_id_mov: idMov,
-    p_motivo: motivo,
-  });
-  if (error) return { ok: false, mensaje: error.message };
+
+  // Un giro en partes se reversa entero. Primero la que lleva el cuadre con el
+  // banco (la de menor numero): si esa se rechaza, no se toca ninguna.
+  const { data: ref } = await supabase
+    .from("movimientos")
+    .select("id_grupo")
+    .eq("id_mov", idMov)
+    .maybeSingle();
+  const idGrupo = (ref?.id_grupo as string | null) ?? null;
+  const ids = idGrupo
+    ? (
+        (
+          await supabase
+            .from("movimientos")
+            .select("id_mov")
+            .eq("id_grupo", idGrupo)
+            .order("id_mov")
+        ).data ?? []
+      ).map((f: { id_mov: number }) => f.id_mov)
+    : [idMov];
+
+  let data: unknown = null;
+  for (const id of ids) {
+    const r = await supabase.rpc("egreso_reversar", { p_id_mov: id, p_motivo: motivo });
+    if (r.error) return { ok: false, mensaje: r.error.message };
+    data = r.data;
+  }
 
   refrescarFinanzas();
   revalidatePath("/compras");
-  return { ok: true, mensaje: (data as string) ?? "Pago reversado." };
+  return {
+    ok: true,
+    mensaje: ids.length > 1 ? `Pago reversado en las ${ids.length} partes del giro.` : ((data as string) ?? "Pago reversado."),
+  };
 }
 
 // Deshacer la aprobacion de un egreso que aun no se paga: vuelve a "Por aprobar".

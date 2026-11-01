@@ -707,7 +707,7 @@ export default function PanelConciliacion({
                     <td className="px-3 py-2 whitespace-nowrap">
                       {m.fecha ? fechaCorta(m.fecha) : ""}
                     </td>
-                    <td className="px-3 py-2 truncate">{m.origen_destino}</td>
+                    <td className="px-3 py-2 truncate">{m.origen_destino}{m.partes && m.partes > 1 ? <span className="ml-1 text-[10px] text-dorado-osc">({m.partes} partes)</span> : null}</td>
                     <td className="px-3 py-2 text-gray-600">{m.tipo}</td>
                     <td className="px-3 py-2 text-right tabular-nums">
                       {pesos(m.monto)}
@@ -771,7 +771,7 @@ export default function PanelConciliacion({
                     <td className="px-3 py-2 whitespace-nowrap">
                       {m.fecha ? fechaCorta(m.fecha) : ""}
                     </td>
-                    <td className="px-3 py-2 truncate">{m.origen_destino}</td>
+                    <td className="px-3 py-2 truncate">{m.origen_destino}{m.partes && m.partes > 1 ? <span className="ml-1 text-[10px] text-dorado-osc">({m.partes} partes)</span> : null}</td>
                     <td className="px-3 py-2 text-right tabular-nums">
                       {pesos(m.monto)}
                     </td>

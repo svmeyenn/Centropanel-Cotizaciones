@@ -182,9 +182,21 @@ export async function enlazarLinea(
   // banco, al peso.
   const [{ data: linea }, { data: mov }] = await Promise.all([
     supabase.from("cartola_banco").select("cargo, abono").eq("id_linea", idLinea).maybeSingle(),
-    supabase.from("movimientos").select("monto, tipo").eq("id_mov", idMov).maybeSingle(),
+    supabase.from("movimientos").select("monto, tipo, id_grupo").eq("id_mov", idMov).maybeSingle(),
   ]);
   if (!linea || !mov) return { ok: false, mensaje: "No puede conciliar esta linea." };
+  // Un giro en partes se cuadra por la suma de todas sus partes.
+  if (mov.id_grupo) {
+    const { data: hermanas } = await supabase
+      .from("movimientos")
+      .select("id_mov, monto")
+      .eq("id_grupo", mov.id_grupo)
+      .order("id_mov");
+    if (hermanas?.length) {
+      mov.monto = hermanas.reduce((t: number, h: { monto: number }) => t + Number(h.monto), 0);
+      idMov = hermanas[0].id_mov;
+    }
+  }
   const montoBanco = Number(linea.cargo) + Number(linea.abono);
   const tipoBanco = Number(linea.cargo) > 0 ? "Egreso" : "Ingreso";
   if (mov.tipo !== tipoBanco || Number(mov.monto) !== montoBanco)

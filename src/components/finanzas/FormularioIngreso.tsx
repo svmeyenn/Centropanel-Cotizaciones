@@ -18,6 +18,7 @@ import {
   type Proyecto,
 } from "@/lib/finanzas/tipos";
 import SelectorInterlocutor from "./SelectorInterlocutor";
+import PartesGiro from "./PartesGiro";
 
 const hoy = () => hoyISO();
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
@@ -46,6 +47,8 @@ export default function FormularioIngreso({
   const [estadoPago, setEstadoPago] = useState(
     movimiento?.estado_pago ?? "Pendiente"
   );
+  // Un abono del banco que cubre varios proyectos o conceptos.
+  const [dividir, setDividir] = useState(false);
   const sinFecha = fecha === "";
   const recibido = !sinFecha && estadoPago === "Pagado";
 
@@ -121,6 +124,7 @@ export default function FormularioIngreso({
           />
         </div>
 
+        {!dividir && (
         <div>
           <label className={ROTULO}>Monto</label>
           <input
@@ -132,6 +136,7 @@ export default function FormularioIngreso({
             required
           />
         </div>
+        )}
 
         <div className="sm:col-span-2">
           <SelectorInterlocutor
@@ -157,6 +162,27 @@ export default function FormularioIngreso({
           </select>
         </div>
 
+        {!movimiento && (
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 text-xs">
+              <input type="checkbox" checked={dividir} onChange={(e) => setDividir(e.target.checked)} />
+              <span>
+                <strong>Dividir este abono en varias partes</strong> (un solo pago que cubre varios proyectos o conceptos)
+              </span>
+            </label>
+          </div>
+        )}
+
+        {dividir ? (
+          <PartesGiro
+            proyectos={proyectosDisponibles}
+            categorias={propias}
+            etiquetaTotal="Total del abono"
+            categoriaObligatoria={false}
+            comentarioObligatorio={false}
+          />
+        ) : (
+          <>
         <div>
           <label className={ROTULO}>Proyecto / Cliente</label>
           <select
@@ -188,6 +214,8 @@ export default function FormularioIngreso({
             ))}
           </select>
         </div>
+          </>
+        )}
 
         <div>
           <label className={ROTULO}>Estado</label>
@@ -248,6 +276,7 @@ export default function FormularioIngreso({
           </label>
         </div>
 
+        {!dividir && (
         <div className="sm:col-span-2">
           <label className={ROTULO}>Comentario</label>
           <textarea
@@ -257,6 +286,7 @@ export default function FormularioIngreso({
             defaultValue={movimiento?.comentario ?? ""}
           />
         </div>
+        )}
 
         {estado && !estado.ok && (
           <p className="sm:col-span-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2">
