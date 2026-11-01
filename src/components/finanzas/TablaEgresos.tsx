@@ -65,6 +65,7 @@ export default function TablaEgresos({
   const [creando, setCreando] = useState(false);
   const [pagando, setPagando] = useState<Movimiento | null>(null);
   const [reversando, setReversando] = useState<Movimiento | null>(null);
+  const [reversandoAprob, setReversandoAprob] = useState<Movimiento | null>(null);
   const [copiando, setCopiando] = useState<Movimiento | null>(null);
   const [aviso, setAviso] = useState("");
   const [colapsados, setColapsados] = useState<Set<string>>(new Set());
@@ -243,6 +244,17 @@ export default function TablaEgresos({
                   Reversar
                 </button>
               )}
+              {puedeReversar &&
+                m.estado_pago === "Pendiente" &&
+                m.aprobacion === "Aprobado" && (
+                  <button
+                    className="text-red-700 underline underline-offset-2 hover:text-red-900"
+                    onClick={() => setReversandoAprob(m)}
+                    title="Deshacer la aprobacion: vuelve a Por aprobar"
+                  >
+                    Reversar aprob.
+                  </button>
+                )}
             </div>
           </div>
         </td>
@@ -426,6 +438,18 @@ export default function TablaEgresos({
           movimiento={reversando}
           alCerrar={(mensaje) => {
             setReversando(null);
+            if (mensaje) setAviso(mensaje);
+            router.refresh();
+          }}
+        />
+      )}
+
+      {reversandoAprob && (
+        <DialogoReversar
+          movimiento={reversandoAprob}
+          aprobacion
+          alCerrar={(mensaje) => {
+            setReversandoAprob(null);
             if (mensaje) setAviso(mensaje);
             router.refresh();
           }}

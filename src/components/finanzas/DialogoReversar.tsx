@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect } from "react";
 import Ventana from "@/components/Ventana";
-import { reversarEgreso, type Resultado } from "@/app/egresos/acciones";
+import { reversarAprobacionEgreso, reversarEgreso, type Resultado } from "@/app/egresos/acciones";
 import { pesosConCentimos as pesos } from "@/lib/formato";
 import { fechaCorta, type Movimiento } from "@/lib/finanzas/tipos";
 
@@ -11,13 +11,16 @@ import { fechaCorta, type Movimiento } from "@/lib/finanzas/tipos";
 // anotado quien lo reverso y por que.
 export default function DialogoReversar({
   movimiento,
+  aprobacion = false,
   alCerrar,
 }: {
   movimiento: Movimiento;
+  // true: deshace la aprobacion de un egreso sin pagar, no un pago.
+  aprobacion?: boolean;
   alCerrar: (mensaje?: string) => void;
 }) {
   const [estado, enviar, pendiente] = useActionState<Resultado | null, FormData>(
-    reversarEgreso,
+    aprobacion ? reversarAprobacionEgreso : reversarEgreso,
     null
   );
 
@@ -27,7 +30,7 @@ export default function DialogoReversar({
 
   return (
     <Ventana
-      titulo="Reversar el pago"
+      titulo={aprobacion ? "Reversar la aprobacion" : "Reversar el pago"}
       subtitulo="Solo un Administrador puede hacerlo"
       onCerrar={() => alCerrar()}
       ancho="max-w-sm"
@@ -38,18 +41,18 @@ export default function DialogoReversar({
         <p className="text-xs text-gray-700">
           {movimiento.origen_destino} —{" "}
           <strong className="text-negro">{pesos(movimiento.monto)}</strong>
-          {movimiento.fecha && <> · pagado el {fechaCorta(movimiento.fecha)}</>}
+          {!aprobacion && movimiento.fecha && <> · pagado el {fechaCorta(movimiento.fecha)}</>}
         </p>
 
         <p className="text-xs text-gray-600">
-          El egreso vuelve a Pendiente y sale de la cartola, y el saldo de la cuenta se corrige.
-          Queda aprobado para pagarlo de nuevo. No se puede reversar si ya esta conciliado con el
-          banco.
+          {aprobacion
+            ? "El egreso vuelve a Por aprobar y no se puede pagar hasta que se apruebe de nuevo."
+            : "El egreso vuelve a Pendiente y sale de la cartola, y el saldo de la cuenta se corrige. Queda aprobado para pagarlo de nuevo. No se puede reversar si ya esta conciliado con el banco."}
         </p>
 
         <div>
           <label htmlFor="motivo-reversa" className="block text-xs font-semibold text-dorado-osc mb-0.5">
-            Motivo de la reversa
+            {aprobacion ? "Motivo" : "Motivo de la reversa"}
           </label>
           <textarea
             id="motivo-reversa"
@@ -84,7 +87,7 @@ export default function DialogoReversar({
             className="bg-red-700 text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-50"
             disabled={pendiente}
           >
-            {pendiente ? "Reversando..." : "Reversar pago"}
+            {pendiente ? "Reversando..." : aprobacion ? "Reversar aprobacion" : "Reversar pago"}
           </button>
         </div>
       </form>

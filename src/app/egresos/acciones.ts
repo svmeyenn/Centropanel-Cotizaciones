@@ -398,6 +398,35 @@ export async function reversarEgreso(
   return { ok: true, mensaje: (data as string) ?? "Pago reversado." };
 }
 
+// Deshacer la aprobacion de un egreso que aun no se paga: vuelve a "Por aprobar".
+// Mismo permiso que reversar un pago (Administrador); la base ademas exige que siga
+// sin pagar y deja anotado quien la deshizo y por que.
+export async function reversarAprobacionEgreso(
+  _previo: Resultado | null,
+  datos: FormData
+): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (v.rol !== "Administrador" || !puedeVerRuta(v, "/egresos"))
+    return { ok: false, mensaje: "Solo un Administrador puede reversar una aprobacion." };
+
+  const idMov = numeroONulo(datos.get("id_mov"));
+  const motivo = (textoONulo(datos.get("motivo")) ?? "").trim();
+  if (!idMov) return { ok: false, mensaje: "Falta identificar el egreso." };
+  if (motivo.length < 5)
+    return { ok: false, mensaje: "Escriba el motivo (al menos 5 caracteres)." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("egreso_reversar_aprobacion", {
+    p_mov: idMov,
+    p_motivo: motivo,
+  });
+  if (error) return { ok: false, mensaje: error.message };
+
+  refrescarFinanzas();
+  revalidatePath("/aprobaciones");
+  return { ok: true, mensaje: (data as string) ?? "Aprobacion reversada." };
+}
+
 export async function listarAdjuntos(
   idMov: number
 ): Promise<
