@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.017-20261101**
+Version vigente: **v008.018-20261101**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.017-20261101**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.017 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.018 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.018-20261101 | — | 01-11-2026 | Reversar la aprobacion de egresos, ordenes de compra, rendiciones y liquidaciones de RRHH (con motivo y registro); Conciliacion: la cartola muestra la glosa completa y el comentario del banco en lo que falta en el sistema. Migracion de base de datos incluida | PENDIENTE |
 | v008.017-20261101 | — | 01-11-2026 | Proveedores: actualizar todos los costos juntos (reajuste por porcentaje o lista de precios Excel/CSV) e historial de costos con la fecha desde la que rige cada uno. Migracion de base de datos incluida | 9e31f8c |
 | v008.016-20261101 | — | 01-11-2026 | Eliminar un pedido tambien elimina (marca como borrado) el proyecto que el pedido creo por su cuenta; sus ingresos y egresos se conservan. Migracion de base de datos incluida | ceef359 |
 | v008.015-20261031 | — | 31-10-2026 | RRHH: al pagar una liquidacion se crea su egreso pagado (categoria Remuneraciones) en la cuenta elegida, y anularla lo deshace; Conciliacion: quitar, deshacer cuadres y marcar como no pasan por el banco en lotes de dos o mas filas. Migracion de base de datos incluida | 0afff6d |
