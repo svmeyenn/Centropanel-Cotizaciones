@@ -261,6 +261,151 @@ export async function borrarLinea(idLinea: number): Promise<Resultado> {
 }
 
 // ---------------------------------------------------------------------------
+// Acciones en lote: lo mismo que arriba, sobre dos o mas filas a la vez
+// ---------------------------------------------------------------------------
+//
+// Cada una hace lo que su version de una fila, con las mismas reglas: lo que no
+// se puede tocar se salta y se cuenta, en vez de frenar el resto.
+
+const MAXIMO_LOTE = 500;
+
+function idsValidos(ids: number[]): number[] | null {
+  const limpios = Array.from(new Set(ids.filter((n) => Number.isInteger(n) && n > 0)));
+  return limpios.length >= 2 && limpios.length <= MAXIMO_LOTE ? limpios : null;
+}
+
+const SIN_LOTE: Resultado = {
+  ok: false,
+  mensaje: `Marque entre 2 y ${MAXIMO_LOTE} filas para actuar en lote.`,
+};
+
+const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+
+export async function borrarLineas(idLineas: number[]): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos) return { ok: false, mensaje: "Sin permiso para conciliar." };
+  const ids = idsValidos(idLineas);
+  if (!ids) return SIN_LOTE;
+
+  const supabase = await createClient();
+  const { error, data } = await supabase
+    .from("cartola_banco")
+    .delete()
+    .in("id_linea", ids)
+    .is("id_mov", null)
+    .select("id_linea");
+
+  if (error) return { ok: false, mensaje: error.message };
+  const n = data?.length ?? 0;
+  if (n === 0)
+    return { ok: false, mensaje: "No se elimino ninguna: pueden estar cuadradas, o no tiene permiso." };
+
+  revalidatePath("/conciliacion");
+  const saltadas = ids.length - n;
+  return {
+    ok: true,
+    mensaje:
+      `${plural(n, "linea eliminada", "lineas eliminadas")}.` +
+      (saltadas > 0 ? ` ${plural(saltadas, "no se toco", "no se tocaron")}: ya estaban cuadradas.` : ""),
+  };
+}
+
+export async function desenlazarLineas(idLineas: number[]): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos) return { ok: false, mensaje: "Sin permiso para conciliar." };
+  const ids = idsValidos(idLineas);
+  if (!ids) return SIN_LOTE;
+
+  const supabase = await createClient();
+  const { error, data } = await supabase
+    .from("cartola_banco")
+    .update({ id_mov: null, conciliado_en: null, id_conciliador: null })
+    .in("id_linea", ids)
+    .not("id_mov", "is", null)
+    .select("id_linea");
+
+  if (error) return { ok: false, mensaje: error.message };
+  const n = data?.length ?? 0;
+  if (n === 0) return { ok: false, mensaje: "No se deshizo ningun cuadre." };
+
+  revalidatePath("/conciliacion");
+  return { ok: true, mensaje: `${plural(n, "cuadre deshecho", "cuadres deshechos")}.` };
+}
+
+export async function volverAPendienteLote(idMovs: number[]): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos) return { ok: false, mensaje: "Solo quien paga puede revertir un pago." };
+  const ids = idsValidos(idMovs);
+  if (!ids) return SIN_LOTE;
+
+  const supabase = await createClient();
+
+  // Los que estan cuadrados con una linea no se tocan: primero se deshace el cuadre.
+  const { data: enlazados } = await supabase
+    .from("cartola_banco")
+    .select("id_mov")
+    .in("id_mov", ids);
+  const bloqueados = new Set((enlazados ?? []).map((x: { id_mov: number }) => x.id_mov));
+  const libres = ids.filter((i) => !bloqueados.has(i));
+  if (libres.length === 0)
+    return { ok: false, mensaje: "Todos estan cuadrados con una linea del banco: deshaga el cuadre primero." };
+
+  const { error, data } = await supabase
+    .from("movimientos")
+    .update({ estado_pago: "Pendiente", fecha: null, fecha_pago: null })
+    .in("id_mov", libres)
+    .select("id_mov");
+
+  if (error) return { ok: false, mensaje: error.message };
+  const n = data?.length ?? 0;
+  if (n === 0) return { ok: false, mensaje: "No pudo revertir ninguno." };
+
+  revalidatePath("/conciliacion");
+  revalidatePath("/egresos");
+  revalidatePath("/ingresos");
+  revalidatePath("/cartola");
+  const saltados = ids.length - n;
+  return {
+    ok: true,
+    mensaje:
+      `${plural(n, "movimiento volvio", "movimientos volvieron")} a pendiente.` +
+      (saltados > 0 ? ` ${plural(saltados, "no se toco", "no se tocaron")}: cuadrados con el banco o sin permiso.` : ""),
+  };
+}
+
+export async function marcarSinBancoLote(idMovs: number[], motivo: string): Promise<Resultado> {
+  const v = await requerirVendedor();
+  if (!v.fin_pagar_gastos)
+    return { ok: false, mensaje: "Solo quien paga puede marcar movimientos." };
+  if (!motivo.trim())
+    return { ok: false, mensaje: "Explique por que estos movimientos no pasan por el banco." };
+  const ids = idsValidos(idMovs);
+  if (!ids) return SIN_LOTE;
+
+  const supabase = await createClient();
+  const { error, data } = await supabase
+    .from("movimientos")
+    .update({
+      sin_banco: true,
+      sin_banco_motivo: motivo.trim(),
+      sin_banco_por: v.id,
+      sin_banco_en: new Date().toISOString(),
+    })
+    .in("id_mov", ids)
+    .select("id_mov");
+
+  if (error) return { ok: false, mensaje: error.message };
+  const n = data?.length ?? 0;
+  if (n === 0) return { ok: false, mensaje: "No pudo marcar ninguno." };
+
+  revalidatePath("/conciliacion");
+  return {
+    ok: true,
+    mensaje: `${plural(n, "movimiento marcado", "movimientos marcados")}: no se buscan mas en la cartola. Queda anotado el motivo.`,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // El formato de la cartola de cada cuenta
 // ---------------------------------------------------------------------------
 //

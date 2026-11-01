@@ -21,12 +21,13 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   const { data: l } = await supabase.from("rrhh_liquidaciones").select("*").eq("id", id).maybeSingle();
   if (!l) notFound();
 
-  const [{ data: p }, { data: lineas }, { data: imp }, { data: centros }, { data: proyectos }] = await Promise.all([
+  const [{ data: p }, { data: lineas }, { data: imp }, { data: centros }, { data: proyectos }, { data: cuentas }] = await Promise.all([
     supabase.from("rrhh_personal").select("id, cargo, clase, banco, tipo_cuenta, numero_cuenta, entidades(razon_social, rut)").eq("id", l.id_personal).single(),
     supabase.from("rrhh_liquidacion_lineas").select("*").eq("id_liquidacion", id).order("orden"),
     supabase.from("rrhh_liquidacion_imputacion").select("id_centro_costo, id_proyecto, porcentaje, monto").eq("id_liquidacion", id),
     supabase.from("centros_costo").select("id, codigo, nombre"),
     supabase.from("proyectos").select("id_proyecto, nombre").eq("id_pais", l.id_pais),
+    supabase.from("cuentas").select("id_cuenta, alias, banco, numero_cuenta").eq("id_pais", l.id_pais).eq("activa", true).order("alias"),
   ]);
   const ent = (Array.isArray(p?.entidades) ? p?.entidades[0] : p?.entidades) as { razon_social: string; rut: string | null } | null;
   const nCentro = new Map((centros ?? []).map((c) => [Number(c.id), `${c.codigo} · ${c.nombre}`]));
@@ -94,6 +95,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           puedeOperar={nivelRRHH(v, "operar")}
           puedeAprobar={nivelRRHH(v, "aprobar")}
           puedeAdministrar={nivelRRHH(v, "administrar")}
+          cuentas={(cuentas ?? []).map((c) => ({ id: Number(c.id_cuenta), nombre: [c.alias ?? c.banco, c.numero_cuenta].filter(Boolean).join(" · ") }))}
         />
       </div>
     </div>

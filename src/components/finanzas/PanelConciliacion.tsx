@@ -6,13 +6,17 @@ import { pesosConCentimos as pesos } from "@/lib/formato";
 import Ventana from "@/components/Ventana";
 import {
   borrarLinea,
+  borrarLineas,
   cuadrarAutomatico,
   desenlazarLinea,
+  desenlazarLineas,
   devolverMarcaDeBanco,
   enlazarLinea,
   importarCartola,
   marcarSinBanco,
+  marcarSinBancoLote,
   volverAPendiente,
+  volverAPendienteLote,
   type Resultado,
 } from "@/app/conciliacion/acciones";
 import {
@@ -87,6 +91,11 @@ export default function PanelConciliacion({
   const [pasando, setPasando] = useState<LineaBanco | null>(null);
   const [marcando, setMarcando] = useState<Movimiento | null>(null);
   const [motivo, setMotivo] = useState("");
+  // Filas marcadas para actuar en lote (dos o mas), una lista por tabla.
+  const [selBanco, setSelBanco] = useState<number[]>([]);
+  const [selSistema, setSelSistema] = useState<number[]>([]);
+  const [selCuadradas, setSelCuadradas] = useState<number[]>([]);
+  const [marcandoLote, setMarcandoLote] = useState(false);
 
   const [estadoImportar, importar, importando] = useActionState<
     Resultado | null,
@@ -108,6 +117,18 @@ export default function PanelConciliacion({
     });
   }
 
+  // Igual que `correr`, y si salio bien suelta la seleccion de esa tabla.
+  function correrLote(accion: () => Promise<Resultado>, soltar: () => void) {
+    comenzar(async () => {
+      const r = await accion();
+      setAviso({ ok: r.ok, texto: r.mensaje ?? "" });
+      if (r.ok) {
+        soltar();
+        router.refresh();
+      }
+    });
+  }
+
   function filtrar(campo: "cuenta" | "desde" | "hasta", valor: string) {
     const p = new URLSearchParams({ cuenta: String(idCuenta), desde, hasta });
     p.set(campo, valor);
@@ -117,6 +138,14 @@ export default function PanelConciliacion({
   const porId = new Map(movimientos.map((m) => [m.id_mov, m]));
   const pendientes = lineas.filter((l) => l.id_mov === null);
   const cuadradas = lineas.filter((l) => l.id_mov !== null);
+
+  // Lo marcado que sigue en pantalla: al refrescar, lo que ya no esta se descarta.
+  const marcadasBanco = selBanco.filter((id) => pendientes.some((l) => l.id_linea === id));
+  const marcadosSistema = selSistema.filter((id) => sinLinea.some((m) => m.id_mov === id));
+  const marcadasCuadradas = selCuadradas.filter((id) => cuadradas.some((l) => l.id_linea === id));
+  const alternar = (poner: (f: (p: number[]) => number[]) => void, id: number) =>
+    poner((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const columnaMarca = puedeConciliar ? 1 : 0;
 
   const totalBanco = pendientes.reduce(
     (t, l) => t + Number(l.cargo) + Number(l.abono),
@@ -335,6 +364,46 @@ export default function PanelConciliacion({
         </Ventana>
       )}
 
+      {marcandoLote && (
+        <Ventana
+          titulo="No pasan por el banco"
+          subtitulo={`${marcadosSistema.length} movimientos`}
+          onCerrar={() => setMarcandoLote(false)}
+          ancho="max-w-lg"
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-gray-700">
+              Quedan fuera del cuadre de esta cuenta, pero siguen contando en la
+              cartola y en el resumen por proyecto. El motivo se anota en todos.
+            </p>
+            <label className={ROTULO}>Motivo *</label>
+            <input
+              className={CAMPO}
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Pagados en efectivo, con caja chica..."
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button className={BOTON_CLARO} onClick={() => setMarcandoLote(false)} disabled={enCurso}>
+                Cancelar
+              </button>
+              <button
+                className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded disabled:opacity-50"
+                disabled={enCurso || motivo.trim() === ""}
+                onClick={() => {
+                  const ids = marcadosSistema;
+                  setMarcandoLote(false);
+                  correrLote(() => marcarSinBancoLote(ids, motivo), () => setSelSistema([]));
+                }}
+              >
+                Marcar {marcadosSistema.length}
+              </button>
+            </div>
+          </div>
+        </Ventana>
+      )}
+
       {configurando && (
         <FormatoCartola
           idCuenta={idCuenta}
@@ -388,11 +457,37 @@ export default function PanelConciliacion({
           {pendientes.length > 0 ? `, ${pesos(totalBanco)}` : ""})
         </h2>
 
+        {puedeConciliar && marcadasBanco.length >= 2 && (
+          <BarraLote n={marcadasBanco.length} alSoltar={() => setSelBanco([])}>
+            <button
+              className={`${BOTON_CLARO} text-red-700`}
+              disabled={enCurso}
+              title="Las lineas se cargaron por error"
+              onClick={() => {
+                if (!window.confirm(`Eliminar ${marcadasBanco.length} lineas de la cartola? Se cargaron por error y no tienen movimiento.`)) return;
+                correrLote(() => borrarLineas(marcadasBanco), () => setSelBanco([]));
+              }}
+            >
+              Quitar {marcadasBanco.length} lineas
+            </button>
+          </BarraLote>
+        )}
+
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed text-xs">
               <thead className="bg-verde text-white">
                 <tr>
+                  {puedeConciliar && (
+                    <th className="px-3 py-2 w-[4%]">
+                      <input
+                        type="checkbox"
+                        aria-label="Marcar todas las lineas"
+                        checked={pendientes.length > 0 && marcadasBanco.length === pendientes.length}
+                        onChange={(e) => setSelBanco(e.target.checked ? pendientes.map((l) => l.id_linea) : [])}
+                      />
+                    </th>
+                  )}
                   <th className="text-left px-3 py-2 w-[10%]">Fecha</th>
                   <th className="text-left px-3 py-2 w-[28%]">Descripcion</th>
                   <th className="text-right px-3 py-2 w-[12%]">Cargo</th>
@@ -405,7 +500,7 @@ export default function PanelConciliacion({
               <tbody>
                 {pendientes.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-500 py-8">
+                    <td colSpan={5 + columnaMarca} className="text-center text-gray-500 py-8">
                       Nada pendiente: todo lo del banco tiene su movimiento.
                     </td>
                   </tr>
@@ -418,6 +513,16 @@ export default function PanelConciliacion({
                       key={l.id_linea}
                       className="border-t border-gray-100 hover:bg-crema"
                     >
+                      {puedeConciliar && (
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            aria-label={`Marcar la linea del ${fechaCorta(l.fecha)}`}
+                            checked={selBanco.includes(l.id_linea)}
+                            onChange={() => alternar(setSelBanco, l.id_linea)}
+                          />
+                        </td>
+                      )}
                       <td className="px-3 py-2 whitespace-nowrap">
                         {fechaCorta(l.fecha)}
                       </td>
@@ -517,11 +622,48 @@ export default function PanelConciliacion({
           {sinLinea.length > 0 ? `, ${pesos(totalSistema)}` : ""})
         </h2>
 
+        {puedeConciliar && marcadosSistema.length >= 2 && (
+          <BarraLote n={marcadosSistema.length} alSoltar={() => setSelSistema([])}>
+            <button
+              className={BOTON_CLARO}
+              disabled={enCurso}
+              title="Se pagaron por fuera del banco: efectivo, caja chica, otra tarjeta"
+              onClick={() => {
+                setMotivo("");
+                setMarcandoLote(true);
+              }}
+            >
+              No pasan por el banco
+            </button>
+            <button
+              className={`${BOTON_CLARO} text-red-700`}
+              disabled={enCurso}
+              title="El pago no ocurrio: vuelven a quedar pendientes"
+              onClick={() => {
+                if (!window.confirm(`Devolver ${marcadosSistema.length} movimientos a pendiente? El pago no ocurrio.`)) return;
+                correrLote(() => volverAPendienteLote(marcadosSistema), () => setSelSistema([]));
+              }}
+            >
+              No se pagaron
+            </button>
+          </BarraLote>
+        )}
+
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed text-xs">
               <thead className="bg-verde text-white">
                 <tr>
+                  {puedeConciliar && (
+                    <th className="px-3 py-2 w-[4%]">
+                      <input
+                        type="checkbox"
+                        aria-label="Marcar todos los movimientos"
+                        checked={sinLinea.length > 0 && marcadosSistema.length === sinLinea.length}
+                        onChange={(e) => setSelSistema(e.target.checked ? sinLinea.map((m) => m.id_mov) : [])}
+                      />
+                    </th>
+                  )}
                   <th className="text-left px-3 py-2 w-[12%]">Fecha</th>
                   <th className="text-left px-3 py-2 w-[38%]">Origen / Destino</th>
                   <th className="text-left px-3 py-2 w-[14%]">Tipo</th>
@@ -534,7 +676,7 @@ export default function PanelConciliacion({
                 {sinLinea.length === 0 && (
                   <tr>
                     <td
-                      colSpan={puedeConciliar ? 6 : 5}
+                      colSpan={puedeConciliar ? 7 : 5}
                       className="text-center text-gray-500 py-8"
                     >
                       Todo lo registrado aparece en la cartola del banco.
@@ -547,6 +689,16 @@ export default function PanelConciliacion({
                     key={m.id_mov}
                     className="border-t border-gray-100 hover:bg-crema"
                   >
+                    {puedeConciliar && (
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          aria-label={`Marcar ${m.origen_destino ?? "el movimiento"}`}
+                          checked={selSistema.includes(m.id_mov)}
+                          onChange={() => alternar(setSelSistema, m.id_mov)}
+                        />
+                      </td>
+                    )}
                     <td className="px-3 py-2 whitespace-nowrap">
                       {m.fecha ? fechaCorta(m.fecha) : ""}
                     </td>
@@ -656,11 +808,36 @@ export default function PanelConciliacion({
             Ya cuadrado ({cuadradas.length})
           </h2>
 
+          {puedeConciliar && marcadasCuadradas.length >= 2 && (
+            <BarraLote n={marcadasCuadradas.length} alSoltar={() => setSelCuadradas([])}>
+              <button
+                className={BOTON_CLARO}
+                disabled={enCurso}
+                onClick={() => {
+                  if (!window.confirm(`Deshacer ${marcadasCuadradas.length} cuadres? Las lineas y los movimientos vuelven a quedar sueltos.`)) return;
+                  correrLote(() => desenlazarLineas(marcadasCuadradas), () => setSelCuadradas([]));
+                }}
+              >
+                Deshacer {marcadasCuadradas.length} cuadres
+              </button>
+            </BarraLote>
+          )}
+
           <div className="bg-white border border-gray-200 rounded overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full table-fixed text-xs">
                 <thead className="bg-verde text-white">
                   <tr>
+                    {puedeConciliar && (
+                      <th className="px-3 py-2 w-[4%]">
+                        <input
+                          type="checkbox"
+                          aria-label="Marcar todos los cuadres"
+                          checked={marcadasCuadradas.length === cuadradas.length}
+                          onChange={(e) => setSelCuadradas(e.target.checked ? cuadradas.map((l) => l.id_linea) : [])}
+                        />
+                      </th>
+                    )}
                     <th className="text-left px-3 py-2 w-[12%]">Fecha</th>
                     <th className="text-left px-3 py-2 w-[30%]">
                       Linea del banco
@@ -678,6 +855,16 @@ export default function PanelConciliacion({
                         key={l.id_linea}
                         className="border-t border-gray-100 hover:bg-crema"
                       >
+                        {puedeConciliar && (
+                          <td className="px-3 py-2">
+                            <input
+                              type="checkbox"
+                              aria-label={`Marcar el cuadre del ${fechaCorta(l.fecha)}`}
+                              checked={selCuadradas.includes(l.id_linea)}
+                              onChange={() => alternar(setSelCuadradas, l.id_linea)}
+                            />
+                          </td>
+                        )}
                         <td className="px-3 py-2 whitespace-nowrap">
                           {fechaCorta(l.fecha)}
                         </td>
@@ -758,6 +945,31 @@ function Cifra({
         {valor}
       </div>
       <div className="text-[11px] text-gray-500">{nota}</div>
+    </div>
+  );
+}
+
+// La barra que aparece al marcar dos o mas filas: lo que se haga vale para
+// todas las marcadas.
+function BarraLote({
+  n,
+  alSoltar,
+  children,
+}: {
+  n: number;
+  alSoltar: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-2 bg-crema border border-gray-300 rounded px-3 py-1.5 text-xs"
+    >
+      <span className="font-semibold text-gray-800">{n} marcadas</span>
+      {children}
+      <button className="text-gray-600 underline ml-auto" onClick={alSoltar}>
+        Soltar seleccion
+      </button>
     </div>
   );
 }

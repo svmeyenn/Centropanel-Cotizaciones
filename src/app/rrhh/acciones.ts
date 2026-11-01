@@ -461,15 +461,17 @@ export async function aprobarLiquidacion(id: number) {
   });
 }
 
-export async function pagarLiquidacion(id: number, fecha: string, medio: string) {
+export async function pagarLiquidacion(id: number, fecha: string, medio: string, cuenta: number | null) {
   return conPermiso("aprobar", async () => {
     if (!fecha) return { error: "Indique la fecha de pago." };
     if (!(MEDIOS_PAGO as readonly string[]).includes(medio)) return { error: "Elija el medio de pago." };
     const supabase = await createClient();
-    const { error } = await supabase.rpc("rrhh_pagar_liquidacion", { p_id: id, p_fecha: fecha, p_medio: medio, p_mov: null });
+    const { error } = await supabase.rpc("rrhh_pagar_liquidacion", { p_id: id, p_fecha: fecha, p_medio: medio, p_cuenta: cuenta });
     if (error) return { error: error.message };
     revalidatePath(`/rrhh/liquidaciones/${id}`);
     revalidatePath("/rrhh/liquidaciones");
+    revalidatePath("/egresos");
+    revalidatePath("/conciliacion");
     return { ok: true };
   });
 }
@@ -482,6 +484,8 @@ export async function anularLiquidacion(id: number, motivo: string) {
     if (error) return { error: error.message };
     revalidatePath(`/rrhh/liquidaciones/${id}`);
     revalidatePath("/rrhh/liquidaciones");
+    revalidatePath("/egresos");
+    revalidatePath("/conciliacion");
     return { ok: true };
   });
 }

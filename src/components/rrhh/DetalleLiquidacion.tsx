@@ -65,6 +65,7 @@ export default function DetalleLiquidacion({
   puedeOperar,
   puedeAprobar,
   puedeAdministrar,
+  cuentas,
 }: {
   liq: Liq;
   persona: { nombre: string; rut: string; cargo: string; cuenta: string };
@@ -73,6 +74,7 @@ export default function DetalleLiquidacion({
   puedeOperar: boolean;
   puedeAprobar: boolean;
   puedeAdministrar: boolean;
+  cuentas: { id: number; nombre: string }[];
 }) {
   const router = useRouter();
   const [pendiente, empezar] = useTransition();
@@ -85,7 +87,7 @@ export default function DetalleLiquidacion({
     boleta_bruto: liq.boleta_bruto != null ? String(liq.boleta_bruto) : "",
     nota: liq.nota,
   });
-  const [pago, setPago] = useState({ fecha: hoyISO(), medio: "Transferencia" });
+  const [pago, setPago] = useState({ fecha: hoyISO(), medio: "Transferencia", cuenta: cuentas.length === 1 ? String(cuentas[0].id) : "" });
   const [motivo, setMotivo] = useState("");
 
   const honorarios = liq.tipo === "Honorarios";
@@ -240,10 +242,14 @@ export default function DetalleLiquidacion({
             <div className="grid grid-cols-2 gap-3">
               <Campo label="Fecha de pago *" type="date" value={pago.fecha} onChange={(v) => setPago({ ...pago, fecha: v })} />
               <Selector label="Medio de pago *" value={pago.medio} onChange={(v) => setPago({ ...pago, medio: v })} opciones={MEDIOS_PAGO} />
+              <div className="col-span-2">
+                <Selector label="Cuenta desde la que se paga *" value={pago.cuenta} onChange={(v) => setPago({ ...pago, cuenta: v })} opciones={cuentas.map((c) => ({ v: c.id, t: c.nombre }))} vacia="Elija la cuenta" />
+              </div>
             </div>
+            <p className="text-xs text-gray-500">Al registrar el pago se crea el egreso (categoria Remuneraciones) ya pagado, listo para conciliar con la cartola.{imputaciones.length > 1 ? " Como el costo se reparte en varios centros, el egreso va sin centro de costo y el reparto queda en su comentario." : ""}</p>
             {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>}
             <div className="flex gap-2">
-              <Boton disabled={pendiente} onClick={() => ejecutar(() => pagarLiquidacion(liq.id, pago.fecha, pago.medio))}>Registrar pago</Boton>
+              <Boton disabled={pendiente} onClick={() => ejecutar(() => pagarLiquidacion(liq.id, pago.fecha, pago.medio, pago.cuenta ? Number(pago.cuenta) : null))}>Registrar pago</Boton>
               <Boton onClick={() => setVentana(null)}>Cancelar</Boton>
             </div>
           </div>
@@ -254,7 +260,7 @@ export default function DetalleLiquidacion({
         <Ventana titulo="Anular liquidacion" subtitulo={folioLiquidacion(liq.tipo, liq.id)} onCerrar={() => setVentana(null)} ancho="max-w-md">
           <div className="space-y-3">
             <Campo label="Motivo *" value={motivo} onChange={setMotivo} />
-            {liq.estado !== "Borrador" && <p className="text-xs text-gray-500">Las cuotas de anticipo descontadas vuelven a quedar pendientes.</p>}
+            {liq.estado !== "Borrador" && <p className="text-xs text-gray-500">Las cuotas de anticipo descontadas vuelven a quedar pendientes.{liq.estado === "Pagada" ? " Se elimina tambien su egreso, salvo que ya este cuadrado con el banco." : ""}</p>}
             {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>}
             <div className="flex gap-2">
               <Boton disabled={pendiente} onClick={() => ejecutar(() => anularLiquidacion(liq.id, motivo))}>Anular</Boton>
