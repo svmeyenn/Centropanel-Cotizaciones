@@ -107,7 +107,7 @@ const SINONIMOS = {
 
 // Sin tildes, sin signos y en minusculas: asi "N° Documento" y "Nro.
 // documento" caen en el mismo casillero.
-const normalizar = (v: unknown) =>
+export const normalizar = (v: unknown) =>
   (v ?? "")
     .toString()
     .normalize("NFD")
@@ -188,7 +188,7 @@ function partir(linea: string, sep: string) {
   return celdas;
 }
 
-async function celdas(archivo: File): Promise<unknown[][]> {
+export async function celdas(archivo: File): Promise<unknown[][]> {
   const nombre = archivo.name.toLowerCase();
 
   if (nombre.endsWith(".csv") || nombre.endsWith(".txt")) {

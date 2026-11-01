@@ -147,6 +147,12 @@ export default async function Pagina({
           >
             Todos los proveedores
           </Link>
+          <Link
+            href={`/proveedores/${id}/costos`}
+            className="bg-dorado-osc text-white text-xs font-semibold px-2.5 py-1 rounded"
+          >
+            Actualizar costos
+          </Link>
         </BarraNavegacion>
 
         <div className="bg-white border border-gray-200 rounded p-4 text-sm grid md:grid-cols-4 gap-3">

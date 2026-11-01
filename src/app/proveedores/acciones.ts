@@ -5,6 +5,7 @@ import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { revalidatePath } from "next/cache";
 import { faltantesProveedor, nuevasFaltas } from "@/lib/validacion";
 import { etiquetaIdDe } from "@/lib/paises";
+import { leerListaPrecios } from "@/lib/lista-precios";
 
 async function soloAdmin() {
   const v = await requerirVendedor();
@@ -320,4 +321,131 @@ export async function agregarItemsProveedor(
 
   revalidatePath(`/proveedores/${idProveedor}`);
   return { ok: true, agregados: filas.length };
+}
+
+// ---------------------------------------------------------------------------
+// Costos del proveedor, todos juntos
+// ---------------------------------------------------------------------------
+
+export type CambioCosto = { id: number; costo: number; moneda: string | null };
+
+// Lee una lista de precios (.xlsx o .csv) y la empareja con la maestra del proveedor por el
+// SKU de Centropanel o por el codigo del proveedor. No guarda nada: devuelve lo que calzo para
+// que se revise en pantalla antes de guardar.
+export async function leerArchivoPrecios(idProveedor: number, d: FormData) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  const archivo = d.get("archivo");
+  if (!(archivo instanceof File) || archivo.size === 0) return { error: "Falta el archivo de precios." };
+
+  const leido = await leerListaPrecios(archivo);
+  if (!leido.ok) return { error: leido.mensaje };
+
+  const supabase = await createClient();
+  const { data: items } = await supabase
+    .from("proveedor_items")
+    .select("id, codigo, materias_primas(sku), productos(sku)")
+    .eq("id_proveedor", idProveedor);
+
+  const porSku = new Map<string, number>();
+  const porCodigo = new Map<string, number>();
+  for (const it of items ?? []) {
+    const mp = Array.isArray(it.materias_primas) ? it.materias_primas[0] : it.materias_primas;
+    const pr = Array.isArray(it.productos) ? it.productos[0] : it.productos;
+    const sku = ((mp as { sku?: string | null } | null)?.sku ?? (pr as { sku?: string | null } | null)?.sku ?? "").toString().trim().toUpperCase();
+    if (sku) porSku.set(sku, Number(it.id));
+    const cod = (it.codigo ?? "").toString().trim().toUpperCase();
+    if (cod) porCodigo.set(cod, Number(it.id));
+  }
+
+  const coincidencias = new Map<number, number>();
+  const sinCoincidencia: string[] = [];
+  for (const f of leido.filas) {
+    const id = (f.sku && porSku.get(f.sku)) || (f.codigo && porCodigo.get(f.codigo)) || null;
+    if (id) coincidencias.set(id, f.costo);
+    else sinCoincidencia.push(`${f.sku ?? f.codigo} (fila ${f.fila})`);
+  }
+
+  return {
+    ok: true,
+    coincidencias: Array.from(coincidencias, ([id, costo]) => ({ id, costo })),
+    sinCoincidencia: sinCoincidencia.slice(0, 40),
+    totalSinCoincidencia: sinCoincidencia.length,
+    totalFilas: leido.filas.length,
+  };
+}
+
+// Guarda de una vez todos los costos cambiados. Si uno falla no se guarda ninguno. Si entre
+// ellos hay preferentes, la base recostea los paneles y las cotizaciones sin pedido una sola vez.
+export async function actualizarCostosProveedor(
+  idProveedor: number,
+  cambios: CambioCosto[],
+  vigenteDesde: string,
+  origen: "Manual" | "Reajuste" | "Archivo",
+  nota: string
+) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  if (!cambios.length) return { error: "No hay cambios que guardar." };
+  if (cambios.some((c) => !Number.isFinite(c.costo) || c.costo < 0)) return { error: "Hay un costo que no es valido." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(vigenteDesde)) return { error: "Indique desde cuando rige el costo." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("proveedor_costos_actualizar", {
+    p_proveedor: idProveedor,
+    p_cambios: cambios,
+    p_vigente_desde: vigenteDesde,
+    p_origen: origen,
+    p_nota: nota.trim() || null,
+  });
+  if (error) return { error: error.message };
+  revalidarCostos(idProveedor);
+  const r = (data ?? {}) as { actualizados?: number; sin_cambio?: number; preferentes?: number; paneles?: number; cotizaciones?: number };
+  return {
+    ok: true,
+    actualizados: Number(r.actualizados ?? 0),
+    preferentes: Number(r.preferentes ?? 0),
+    paneles: Number(r.paneles ?? 0),
+    cotizaciones: Number(r.cotizaciones ?? 0),
+  };
+}
+
+export type FilaHistorial = {
+  id: number;
+  costo: number;
+  moneda: string | null;
+  vigente_desde: string | null;
+  origen: string;
+  nota: string | null;
+  registrado_en: string;
+  quien: string | null;
+};
+
+// Los costos que tuvo un item de la maestra, del mas nuevo al mas viejo.
+export async function historialCostos(idItem: number): Promise<{ error: string } | { ok: true; filas: FilaHistorial[] }> {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("proveedor_costo_historial")
+    .select("id, costo, moneda, vigente_desde, origen, nota, registrado_en, vendedores(nombre)")
+    .eq("id_item", idItem)
+    .order("id", { ascending: false });
+  if (error) return { error: error.message };
+  return {
+    ok: true,
+    filas: (data ?? []).map((h) => {
+      const v = Array.isArray(h.vendedores) ? h.vendedores[0] : h.vendedores;
+      return {
+        id: Number(h.id),
+        costo: Number(h.costo),
+        moneda: (h.moneda as string | null) ?? null,
+        vigente_desde: (h.vigente_desde as string | null) ?? null,
+        origen: h.origen as string,
+        nota: (h.nota as string | null) ?? null,
+        registrado_en: h.registrado_en as string,
+        quien: (v as { nombre?: string } | null)?.nombre ?? null,
+      };
+    }),
+  };
 }
