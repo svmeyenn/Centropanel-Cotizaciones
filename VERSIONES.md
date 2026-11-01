@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.015-20261031**
+Version vigente: **v008.016-20261101**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.015-20261031**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.015 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.016 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.016-20261101 | — | 01-11-2026 | Eliminar un pedido tambien elimina (marca como borrado) el proyecto que el pedido creo por su cuenta; sus ingresos y egresos se conservan. Migracion de base de datos incluida | por asignar |
 | v008.015-20261031 | — | 31-10-2026 | RRHH: al pagar una liquidacion se crea su egreso pagado (categoria Remuneraciones) en la cuenta elegida, y anularla lo deshace; Conciliacion: quitar, deshacer cuadres y marcar como no pasan por el banco en lotes de dos o mas filas. Migracion de base de datos incluida | 0afff6d |
 | v008.014-20261031 | — | 31-10-2026 | Modulo de Recursos humanos: personal a contrato u honorarios, contratos, imputacion a centros de costo, anticipos y descuentos, liquidaciones y boletas de honorarios (Chile y Peru), planilla previsional y parametros legales editables con vigencia. Acceso solo Super administradores y area RRHH. Migracion de base de datos incluida | ab89e5e |
 | v008.013-20261031 | — | 31-10-2026 | Peso y dimensiones pasan a la ficha de cada producto y de cada materia prima (columna Peso, filtro "Sin peso para el flete" y peso que usa el flete); se retira la pantalla aparte "Peso y dimensiones". Sin cambios de base de datos | 81f54c2 |
