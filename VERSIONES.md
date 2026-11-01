@@ -27,7 +27,7 @@ Version vigente: **v008.017-20261101**
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
-| v008.017-20261101 | — | 01-11-2026 | Proveedores: actualizar todos los costos juntos (reajuste por porcentaje o lista de precios Excel/CSV) e historial de costos con la fecha desde la que rige cada uno. Migracion de base de datos incluida | por asignar |
+| v008.017-20261101 | — | 01-11-2026 | Proveedores: actualizar todos los costos juntos (reajuste por porcentaje o lista de precios Excel/CSV) e historial de costos con la fecha desde la que rige cada uno. Migracion de base de datos incluida | 9e31f8c |
 | v008.016-20261101 | — | 01-11-2026 | Eliminar un pedido tambien elimina (marca como borrado) el proyecto que el pedido creo por su cuenta; sus ingresos y egresos se conservan. Migracion de base de datos incluida | ceef359 |
 | v008.015-20261031 | — | 31-10-2026 | RRHH: al pagar una liquidacion se crea su egreso pagado (categoria Remuneraciones) en la cuenta elegida, y anularla lo deshace; Conciliacion: quitar, deshacer cuadres y marcar como no pasan por el banco en lotes de dos o mas filas. Migracion de base de datos incluida | 0afff6d |
 | v008.014-20261031 | — | 31-10-2026 | Modulo de Recursos humanos: personal a contrato u honorarios, contratos, imputacion a centros de costo, anticipos y descuentos, liquidaciones y boletas de honorarios (Chile y Peru), planilla previsional y parametros legales editables con vigencia. Acceso solo Super administradores y area RRHH. Migracion de base de datos incluida | ab89e5e |
