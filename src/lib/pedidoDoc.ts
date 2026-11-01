@@ -16,7 +16,7 @@ export async function leerPedidoDoc(id: number): Promise<{
     supabase
       .from("pedidos")
       .select(
-        "*, clientes:entidades(razon_social, rut, contacto, email, telefono), vendedores(nombre, cargo, email, telefono), formas_pago(descripcion), medios_pago(nombre)"
+        "*, clientes:entidades!pedidos_entidad_fk(razon_social, rut, contacto, email, telefono), vendedores(nombre, cargo, email, telefono), formas_pago(descripcion), medios_pago(nombre)"
       )
       .eq("id", id)
       .single(),

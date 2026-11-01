@@ -69,7 +69,7 @@ export default async function Pagina({
     supabase
       .from("pedidos")
       .select(
-        "id, num_pedido, fecha, estado, id_pais, id_cotizacion, cotizaciones(num_cotizacion), clientes:entidades(razon_social, rut, contacto, comuna), vendedores(nombre)"
+        "id, num_pedido, fecha, estado, id_pais, id_cotizacion, cotizaciones(num_cotizacion), clientes:entidades!pedidos_entidad_fk(razon_social, rut, contacto, comuna), vendedores(nombre)"
       ),
     idPaisActivo
   ).order("id", { ascending: false });
