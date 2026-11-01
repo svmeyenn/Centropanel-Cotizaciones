@@ -9,6 +9,7 @@ import {
   etiquetaInterlocutor,
   etiquetaProyecto,
   fechaCorta,
+  consolidar,
   type Categoria,
   type Cuenta,
   type Interlocutor,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/finanzas/tipos";
 import FormularioIngreso from "./FormularioIngreso";
 import DialogoConfirmarIngreso from "./DialogoConfirmarIngreso";
+import DialogoDividir from "./DialogoDividir";
 
 // El texto que agrega el banco a cada transferencia no aporta nada aqui: el
 // nombre de la contraparte ya se lee solo.
@@ -46,6 +48,19 @@ export default function TablaIngresos({
   const [confirmando, setConfirmando] = useState<Movimiento | null>(null);
   const [aviso, setAviso] = useState("");
   const [colapsados, setColapsados] = useState<Set<string>>(new Set());
+  // Un abono abierto en partes se ve como uno solo; las partes se despliegan.
+  const [abiertos, setAbiertos] = useState<Set<number>>(new Set());
+  const [repartiendo, setRepartiendo] = useState<Movimiento | null>(null);
+  const movs = consolidar(movimientos);
+
+  function desplegar(id: number) {
+    setAbiertos((prev) => {
+      const nuevo = new Set(prev);
+      if (nuevo.has(id)) nuevo.delete(id);
+      else nuevo.add(id);
+      return nuevo;
+    });
+  }
 
   function alternar(mes: string) {
     setColapsados((prev) => {
@@ -80,14 +95,14 @@ export default function TablaIngresos({
     return m.id_grupo ? `${nombre} (parte de abono)` : nombre;
   };
 
-  const total = movimientos.reduce((t, m) => t + Number(m.monto), 0);
-  const proyectados = movimientos.filter((m) => m.estado_pago === "Pendiente");
-  const recibidos = movimientos.filter((m) => m.estado_pago === "Pagado");
+  const total = movs.reduce((t, m) => t + Number(m.monto), 0);
+  const proyectados = movs.filter((m) => m.estado_pago === "Pendiente");
+  const recibidos = movs.filter((m) => m.estado_pago === "Pagado");
   const totalProyectado = proyectados.reduce((t, m) => t + Number(m.monto), 0);
   const grupos = agruparPorMes(recibidos);
   const columnas = 7 + (puedeEditar ? 1 : 0);
 
-  const fila = (m: Movimiento) => (
+  const filaBase = (m: Movimiento) => (
     <tr key={m.id_mov} className="group border-t border-gray-100 hover:bg-crema">
       <td className="px-3 py-2 whitespace-nowrap">
         <BanderaDe idPais={m.id_pais} />
@@ -95,6 +110,15 @@ export default function TablaIngresos({
       </td>
       <td className="px-3 py-2" title={etiquetaContraparte(m)}>
         <span className="block truncate">{etiquetaContraparte(m)}</span>
+        {m.detalle && (
+          <button
+            type="button"
+            className="text-[11px] font-semibold text-dorado-osc underline underline-offset-2"
+            onClick={() => desplegar(m.id_mov)}
+          >
+            {abiertos.has(m.id_mov) ? "▾" : "▸"} Abono en {m.detalle.length} partes
+          </button>
+        )}
         {m.servicio_prestado ? (
           <span className="block text-[11px] text-verde font-semibold">Servicio prestado</span>
         ) : (
@@ -114,10 +138,10 @@ export default function TablaIngresos({
         className="px-3 py-2 hidden md:table-cell text-gray-600 truncate"
         title={nombreProyecto(m.id_proyecto)}
       >
-        {nombreProyecto(m.id_proyecto)}
+        {nombreProyecto(m.id_proyecto) || (m.detalle ? "Varios proyectos" : "")}
       </td>
       <td className="px-3 py-2 hidden lg:table-cell text-gray-600 truncate">
-        {nombreCategoria(m.id_categoria)}
+        {nombreCategoria(m.id_categoria) || (m.detalle ? "Varias" : "")}
       </td>
       <td
         className="px-3 py-2 hidden xl:table-cell text-gray-600 truncate"
@@ -140,14 +164,41 @@ export default function TablaIngresos({
             )}
             <button
               className="border border-gray-300 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded bg-white"
-              onClick={() => setEditando(m)}
+              onClick={() => (m.detalle ? setRepartiendo(m) : setEditando(m))}
             >
-              Editar
+              {m.detalle ? "Repartir" : "Editar"}
             </button>
           </div>
         </td>
       )}
     </tr>
+  );
+
+  const filaParte = (p: Movimiento) => (
+    <tr key={`parte-${p.id_mov}`} className="border-t border-gray-100 bg-crema/60 text-[11px] align-top">
+      <td />
+      <td className="px-3 py-1.5 pl-6 text-gray-700 break-words">↳ {p.comentario || "Sin concepto"}</td>
+      <td className="px-3 py-1.5 text-right tabular-nums whitespace-nowrap">{pesos(p.monto)}</td>
+      <td colSpan={columnas - 3} className="px-3 py-1.5 text-gray-700">
+        {nombreProyecto(p.id_proyecto) || "Sin proyecto"}
+        {nombreCategoria(p.id_categoria) && <span className="text-gray-500"> · {nombreCategoria(p.id_categoria)}</span>}
+        {puedeEditar && (
+          <button
+            className="ml-3 text-gray-700 underline underline-offset-2 hover:text-dorado-osc font-semibold"
+            onClick={() => setEditando(p)}
+          >
+            Editar parte
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+
+  const fila = (m: Movimiento) => (
+    <Fragment key={m.id_mov}>
+      {filaBase(m)}
+      {m.detalle && abiertos.has(m.id_mov) && m.detalle.map(filaParte)}
+    </Fragment>
   );
 
   const cabeceraGrupo = (
@@ -184,7 +235,7 @@ export default function TablaIngresos({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-4 text-xs text-gray-600">
           <span>
-            <strong className="text-negro">{movimientos.length}</strong>{" "}
+            <strong className="text-negro">{movs.length}</strong>{" "}
             movimientos
           </span>
           <span>
@@ -291,6 +342,19 @@ export default function TablaIngresos({
           alCerrar={(mensaje) => {
             setCreando(false);
             setEditando(null);
+            if (mensaje) setAviso(mensaje);
+            router.refresh();
+          }}
+        />
+      )}
+
+      {repartiendo && (
+        <DialogoDividir
+          movimiento={repartiendo}
+          proyectos={proyectos.filter((p) => (p.activo && !p.borrado) || repartiendo.detalle?.some((x) => x.id_proyecto === p.id_proyecto))}
+          categorias={categorias.filter((c) => c.tipo === "Ingreso" && (!c.borrado || repartiendo.detalle?.some((x) => x.id_categoria === c.id_categoria)))}
+          alCerrar={(mensaje) => {
+            setRepartiendo(null);
             if (mensaje) setAviso(mensaje);
             router.refresh();
           }}

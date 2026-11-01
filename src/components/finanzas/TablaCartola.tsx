@@ -132,6 +132,9 @@ export default function TablaCartola({
                           </td>
                           <td className="px-3 py-2">
                             {f.origen_destino}
+                            {f.partes && f.partes > 1 && (
+                              <span className="ml-1 text-[10px] text-dorado-osc">({f.partes} partes)</span>
+                            )}
                             {f.comentario && (
                               <span className="block text-[11px] text-gray-500 truncate max-w-xs">
                                 {f.comentario}

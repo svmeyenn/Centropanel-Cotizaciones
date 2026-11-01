@@ -31,13 +31,16 @@ export default function DialogoDividir({
 
   return (
     <Ventana
-      titulo={esEgreso ? "Dividir el giro en partes" : "Dividir el abono en partes"}
+      titulo={movimiento.detalle ? (esEgreso ? "Repartir el giro" : "Repartir el abono") : esEgreso ? "Dividir el giro en partes" : "Dividir el abono en partes"}
       subtitulo={`Total ${pesos(movimiento.monto)}: las partes deben sumar lo mismo`}
       onCerrar={() => alCerrar()}
       ancho="max-w-2xl"
     >
       <form action={enviar} className="grid gap-3">
         <input type="hidden" name="id_mov" value={movimiento.id_mov} />
+        {movimiento.detalle && movimiento.id_grupo && (
+          <input type="hidden" name="id_grupo" value={movimiento.id_grupo} />
+        )}
         <PartesGiro
           proyectos={proyectos}
           categorias={categorias}
@@ -45,12 +48,13 @@ export default function DialogoDividir({
           categoriaObligatoria={esEgreso}
           comentarioObligatorio={esEgreso}
           objetivo={Number(movimiento.monto)}
-          primera={{
-            monto: String(movimiento.monto),
-            id_proyecto: movimiento.id_proyecto ? String(movimiento.id_proyecto) : "",
-            id_categoria: movimiento.id_categoria ? String(movimiento.id_categoria) : "",
-            comentario: movimiento.comentario ?? "",
-          }}
+          primeras={(movimiento.detalle ?? [movimiento]).map((x) => ({
+            id_mov: movimiento.detalle ? x.id_mov : undefined,
+            monto: String(x.monto),
+            id_proyecto: x.id_proyecto ? String(x.id_proyecto) : "",
+            id_categoria: x.id_categoria ? String(x.id_categoria) : "",
+            comentario: x.comentario ?? "",
+          }))}
         />
         {esEgreso && movimiento.estado_pago === "Pendiente" && (
           <p className="text-[11px] text-gray-600">

@@ -12,6 +12,8 @@ import {
 const CAMPO = "border border-gray-300 rounded px-2 py-1 text-xs w-full bg-white";
 
 export type Parte = {
+  // Solo al repartir un giro que ya existe: la parte que se conserva.
+  id_mov?: number;
   monto: string;
   id_proyecto: string;
   id_categoria: string;
@@ -29,7 +31,7 @@ export default function PartesGiro({
   etiquetaTotal,
   categoriaObligatoria,
   comentarioObligatorio,
-  primera,
+  primeras,
   objetivo,
 }: {
   proyectos: Proyecto[];
@@ -39,10 +41,10 @@ export default function PartesGiro({
   comentarioObligatorio: boolean;
   // Al dividir un movimiento que ya existe: lo que trae la primera parte y el
   // total que las partes deben sumar.
-  primera?: Parte;
+  primeras?: Parte[];
   objetivo?: number;
 }) {
-  const [partes, setPartes] = useState<Parte[]>([primera ?? vacia(), vacia()]);
+  const [partes, setPartes] = useState<Parte[]>(primeras && primeras.length >= 2 ? primeras : [...(primeras ?? [vacia()]), vacia()]);
 
   const total = partes.reduce((t, p) => {
     const n = leerMontoLibre(p.monto);
@@ -113,7 +115,7 @@ export default function PartesGiro({
               placeholder={comentarioObligatorio ? "Concepto de esta parte *" : "Concepto de esta parte"}
               required={comentarioObligatorio}
             />
-            {partes.length > 2 && (
+            {partes.length > 2 && i > 0 && (
               <button
                 type="button"
                 className="text-xs text-red-700 border border-red-300 rounded px-2 py-1 bg-white whitespace-nowrap"

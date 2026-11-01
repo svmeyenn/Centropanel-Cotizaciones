@@ -200,7 +200,56 @@ export type Movimiento = {
   id_grupo?: string | null;
   // Solo en la conciliacion: cuantas partes se juntaron en esta fila.
   partes?: number;
+  // Solo en las listas: las partes de un giro o abono abierto en varias, cuando
+  // la fila es la suma de todas.
+  detalle?: Movimiento[];
 };
+
+// Un giro o abono abierto en varias partes se ve como un solo movimiento, con la
+// suma: es lo que paso por el banco. Las partes quedan en `detalle`, cada una
+// con su proyecto y categoria, que es lo que leen los reportes. Proyecto y
+// categoria solo se muestran si todas las partes coinciden.
+export function consolidar(movs: Movimiento[]): Movimiento[] {
+  const porGrupo = new Map<string, Movimiento[]>();
+  for (const m of movs) {
+    if (!m.id_grupo) continue;
+    const l = porGrupo.get(m.id_grupo) ?? [];
+    l.push(m);
+    porGrupo.set(m.id_grupo, l);
+  }
+  const vistos = new Set<string>();
+  const salida: Movimiento[] = [];
+  for (const m of movs) {
+    const partes = m.id_grupo ? porGrupo.get(m.id_grupo)! : null;
+    if (!m.id_grupo || !partes || partes.length < 2) {
+      salida.push(m);
+      continue;
+    }
+    if (vistos.has(m.id_grupo)) continue;
+    vistos.add(m.id_grupo);
+    const orden = [...partes].sort((a, b) => a.id_mov - b.id_mov);
+    const lider = orden[0];
+    const iguales = <K extends keyof Movimiento>(k: K) =>
+      orden.every((x) => x[k] === lider[k]) ? lider[k] : null;
+    const aprobacion = orden.some((x) => x.aprobacion === "Rechazado")
+      ? "Rechazado"
+      : orden.every((x) => x.aprobacion === "Aprobado")
+        ? "Aprobado"
+        : lider.aprobacion === null
+          ? null
+          : "Pendiente";
+    salida.push({
+      ...lider,
+      monto: orden.reduce((t, x) => t + Number(x.monto), 0),
+      id_proyecto: iguales("id_proyecto") as number | null,
+      id_categoria: iguales("id_categoria") as number | null,
+      comentario: null,
+      aprobacion,
+      detalle: orden,
+    });
+  }
+  return salida;
+}
 
 // Una linea de la cartola: el movimiento visto desde la cuenta, con el saldo
 // que deja. No se arma en el navegador ni se lee de una vista: lo calcula la
@@ -224,6 +273,8 @@ export type FilaCartola = {
   abono: number;
   cargo: number;
   saldo: number;
+  // Cuantas partes de un giro o abono se juntaron en esta fila.
+  partes?: number;
 };
 
 // Lo que entro y salio en un proyecto. Igual que la cartola, lo suma la base

@@ -526,15 +526,40 @@ export async function reversarAprobacionEgreso(
     return { ok: false, mensaje: "Escriba el motivo (al menos 5 caracteres)." };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("egreso_reversar_aprobacion", {
-    p_mov: idMov,
-    p_motivo: motivo,
-  });
-  if (error) return { ok: false, mensaje: error.message };
+
+  // En un giro en partes se reversa la aprobacion de todas.
+  const { data: ref } = await supabase
+    .from("movimientos")
+    .select("id_grupo")
+    .eq("id_mov", idMov)
+    .maybeSingle();
+  const idGrupo = (ref?.id_grupo as string | null) ?? null;
+  const ids = idGrupo
+    ? (
+        (
+          await supabase
+            .from("movimientos")
+            .select("id_mov")
+            .eq("id_grupo", idGrupo)
+            .eq("aprobacion", "Aprobado")
+            .order("id_mov")
+        ).data ?? []
+      ).map((f: { id_mov: number }) => f.id_mov)
+    : [idMov];
+
+  let data: unknown = null;
+  for (const id of ids) {
+    const r = await supabase.rpc("egreso_reversar_aprobacion", { p_mov: id, p_motivo: motivo });
+    if (r.error) return { ok: false, mensaje: r.error.message };
+    data = r.data;
+  }
 
   refrescarFinanzas();
   revalidatePath("/aprobaciones");
-  return { ok: true, mensaje: (data as string) ?? "Aprobacion reversada." };
+  return {
+    ok: true,
+    mensaje: ids.length > 1 ? `Aprobacion reversada en las ${ids.length} partes del giro.` : ((data as string) ?? "Aprobacion reversada."),
+  };
 }
 
 export async function listarAdjuntos(

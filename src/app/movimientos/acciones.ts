@@ -57,6 +57,7 @@ export async function dividirMovimiento(
     if (esEgreso && (!id_categoria || !comentario))
       return { ok: false, mensaje: `Falta la categoria o el concepto de la parte ${i + 1}.` };
     partes.push({
+      id_mov: num(o.id_mov),
       monto,
       id_proyecto: num(o.id_proyecto),
       id_categoria,
@@ -64,10 +65,11 @@ export async function dividirMovimiento(
     });
   }
 
-  const { data, error } = await supabase.rpc("movimiento_dividir", {
-    p_mov: idMov,
-    p_partes: partes,
-  });
+  // Si el movimiento ya es un giro en partes, se reparte el giro completo.
+  const idGrupo = String(datos.get("id_grupo") ?? "");
+  const { data, error } = idGrupo
+    ? await supabase.rpc("movimiento_repartir", { p_grupo: idGrupo, p_partes: partes })
+    : await supabase.rpc("movimiento_dividir", { p_mov: idMov, p_partes: partes });
   if (error) return { ok: false, mensaje: error.message };
 
   revalidatePath("/egresos");

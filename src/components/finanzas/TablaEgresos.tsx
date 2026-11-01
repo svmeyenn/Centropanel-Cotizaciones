@@ -10,6 +10,7 @@ import {
   etiquetaProyecto,
   fechaCorta,
   fechaDeRegistro,
+  consolidar,
   type Categoria,
   type Cuenta,
   type CuentaInterlocutor,
@@ -21,6 +22,7 @@ import DatosTransferencia from "./DatosTransferencia";
 import FormularioEgreso from "./FormularioEgreso";
 import DialogoPagar from "./DialogoPagar";
 import DialogoReversar from "./DialogoReversar";
+import DialogoDividir from "./DialogoDividir";
 
 // El texto que agrega el banco a cada transferencia no aporta nada aqui: el
 // nombre de la contraparte ya se lee solo.
@@ -69,6 +71,19 @@ export default function TablaEgresos({
   const [copiando, setCopiando] = useState<Movimiento | null>(null);
   const [aviso, setAviso] = useState("");
   const [colapsados, setColapsados] = useState<Set<string>>(new Set());
+  // Un giro abierto en partes se ve como uno solo; las partes se despliegan.
+  const [abiertos, setAbiertos] = useState<Set<number>>(new Set());
+  const [repartiendo, setRepartiendo] = useState<Movimiento | null>(null);
+  const movs = consolidar(movimientos);
+
+  function desplegar(id: number) {
+    setAbiertos((prev) => {
+      const nuevo = new Set(prev);
+      if (nuevo.has(id)) nuevo.delete(id);
+      else nuevo.add(id);
+      return nuevo;
+    });
+  }
 
   function alternar(mes: string) {
     setColapsados((prev) => {
@@ -106,15 +121,15 @@ export default function TablaEgresos({
   // crear la solicitud, pero no tocarla despues.
   const puedeEditar = puedePagar;
 
-  const total = movimientos.reduce((t, m) => t + Number(m.monto), 0);
-  const pendientes = movimientos.filter((m) => m.estado_pago === "Pendiente");
-  const pagados = movimientos.filter((m) => m.estado_pago === "Pagado");
+  const total = movs.reduce((t, m) => t + Number(m.monto), 0);
+  const pendientes = movs.filter((m) => m.estado_pago === "Pendiente");
+  const pagados = movs.filter((m) => m.estado_pago === "Pagado");
   const totalPendiente = pendientes.reduce((t, m) => t + Number(m.monto), 0);
   const grupos = agruparPorMes(pagados);
   const conAcciones = puedeEditar || puedePagar || puedeReversar;
   const columnas = 7 + (conAcciones ? 1 : 0);
 
-  const fila = (m: Movimiento) => (
+  const filaBase = (m: Movimiento) => (
     <tr key={m.id_mov} className="group border-t border-gray-100 align-top hover:bg-crema">
       <td className="px-3 py-2 whitespace-nowrap">
         <BanderaDe idPais={m.id_pais} />
@@ -159,6 +174,15 @@ export default function TablaEgresos({
           lee mejor pegado a quien se le paga que en una columna aparte. */}
       <td className="px-3 py-2" title={m.comentario ? `${etiquetaContraparte(m)}: ${m.comentario}` : etiquetaContraparte(m)}>
         <span className="block font-semibold text-negro line-clamp-2 break-words">{etiquetaContraparte(m)}</span>
+        {m.detalle && (
+          <button
+            type="button"
+            className="text-[11px] font-semibold text-dorado-osc underline underline-offset-2"
+            onClick={() => desplegar(m.id_mov)}
+          >
+            {abiertos.has(m.id_mov) ? "▾" : "▸"} Giro en {m.detalle.length} partes
+          </button>
+        )}
         {m.comentario && <span className="block text-[11px] text-gray-600 line-clamp-2 break-words">{m.comentario}</span>}
       </td>
       <td className="px-3 py-2 tabular-nums" title={m.documento ?? ""}>
@@ -177,7 +201,9 @@ export default function TablaEgresos({
       </td>
       <td className="px-3 py-2" title={nombreProyecto(m.id_proyecto)}>
         <span className="block text-gray-700 line-clamp-2 break-words">
-          {nombreProyecto(m.id_proyecto) || <span className="text-gray-500">Sin proyecto</span>}
+          {nombreProyecto(m.id_proyecto) || (
+            <span className="text-gray-500">{m.detalle ? "Varios proyectos" : "Sin proyecto"}</span>
+          )}
         </span>
         <span className="block text-[11px] text-gray-600 truncate">{nombreCategoria(m.id_categoria)}</span>
       </td>
@@ -232,9 +258,9 @@ export default function TablaEgresos({
               {puedeEditar && (
                 <button
                   className="text-gray-700 underline underline-offset-2 hover:text-dorado-osc"
-                  onClick={() => setEditando(m)}
+                  onClick={() => (m.detalle ? setRepartiendo(m) : setEditando(m))}
                 >
-                  Editar
+                  {m.detalle ? "Repartir" : "Editar"}
                 </button>
               )}
               {puedeReversar && m.estado_pago === "Pagado" && (
@@ -262,6 +288,39 @@ export default function TablaEgresos({
         </td>
       )}
     </tr>
+  );
+
+  const filaParte = (p: Movimiento) => (
+    <tr key={`parte-${p.id_mov}`} className="border-t border-gray-100 bg-crema/60 text-[11px] align-top">
+      <td />
+      <td className="px-3 py-1.5 pl-6 text-gray-700 break-words">
+        ↳ {p.comentario || "Sin concepto"}
+        {p.aprobacion && p.estado_pago === "Pendiente" && (
+          <span className="ml-1 text-gray-500">({p.aprobacion === "Aprobado" ? "aprobada" : p.aprobacion === "Rechazado" ? "rechazada" : "por aprobar"})</span>
+        )}
+      </td>
+      <td />
+      <td className="px-3 py-1.5 text-right tabular-nums whitespace-nowrap">{pesos(p.monto)}</td>
+      <td colSpan={columnas - 4} className="px-3 py-1.5 text-gray-700">
+        {nombreProyecto(p.id_proyecto) || "Sin proyecto"}
+        <span className="text-gray-500"> · {nombreCategoria(p.id_categoria)}</span>
+        {puedeEditar && (
+          <button
+            className="ml-3 text-gray-700 underline underline-offset-2 hover:text-dorado-osc font-semibold"
+            onClick={() => setEditando(p)}
+          >
+            Editar parte
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+
+  const fila = (m: Movimiento) => (
+    <Fragment key={m.id_mov}>
+      {filaBase(m)}
+      {m.detalle && abiertos.has(m.id_mov) && m.detalle.map(filaParte)}
+    </Fragment>
   );
 
   const cabeceraGrupo = (
@@ -298,7 +357,7 @@ export default function TablaEgresos({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-4 text-xs text-gray-600">
           <span>
-            <strong className="text-negro">{movimientos.length}</strong>{" "}
+            <strong className="text-negro">{movs.length}</strong>{" "}
             movimientos
           </span>
           <span>
@@ -357,7 +416,7 @@ export default function TablaEgresos({
               </tr>
             </thead>
             <tbody>
-              {movimientos.length === 0 && (
+              {movs.length === 0 && (
                 <tr>
                   <td
                     colSpan={columnas}
@@ -409,6 +468,19 @@ export default function TablaEgresos({
           alCerrar={(mensaje) => {
             setCreando(false);
             setEditando(null);
+            if (mensaje) setAviso(mensaje);
+            router.refresh();
+          }}
+        />
+      )}
+
+      {repartiendo && (
+        <DialogoDividir
+          movimiento={repartiendo}
+          proyectos={proyectos.filter((p) => p.activo && !p.borrado || repartiendo.detalle?.some((x) => x.id_proyecto === p.id_proyecto))}
+          categorias={categorias.filter((c) => c.tipo === "Egreso" && (!c.borrado || repartiendo.detalle?.some((x) => x.id_categoria === c.id_categoria)))}
+          alCerrar={(mensaje) => {
+            setRepartiendo(null);
             if (mensaje) setAviso(mensaje);
             router.refresh();
           }}

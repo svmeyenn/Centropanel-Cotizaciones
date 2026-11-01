@@ -149,7 +149,41 @@ export async function cargarCartola(filtro: Filtro, idPais: number | null) {
   // La funcion no devuelve el pais; se lo da la cuenta de cada fila.
   const { data: ctas } = await supabase.from("cuentas").select("id_cuenta, id_pais");
   const paisCuenta = new Map((ctas ?? []).map((c) => [c.id_cuenta as number, c.id_pais as number]));
-  return filas.map((f) => ({ ...f, id_pais: f.id_cuenta != null ? paisCuenta.get(f.id_cuenta) : undefined }));
+  const conPais = filas.map((f) => ({ ...f, id_pais: f.id_cuenta != null ? paisCuenta.get(f.id_cuenta) : undefined }));
+
+  // Un giro o abono abierto en partes es, para la cartola, un solo cargo o abono:
+  // se junta en la primera aparicion (la mas reciente, que ya trae el saldo final).
+  const { data: grupos } = await supabase.from("movimientos").select("id_mov, id_grupo").not("id_grupo", "is", null);
+  const grupoDe = new Map((grupos ?? []).map((g) => [g.id_mov as number, g.id_grupo as string]));
+  if (grupoDe.size === 0) return conPais;
+
+  const vistos = new Map<string, (typeof conPais)[number]>();
+  const salida: typeof conPais = [];
+  for (const f of conPais) {
+    const g = grupoDe.get(f.id_mov);
+    if (!g) {
+      salida.push(f);
+      continue;
+    }
+    const primera = vistos.get(g);
+    if (!primera) {
+      const nueva = { ...f, partes: 1 };
+      vistos.set(g, nueva);
+      salida.push(nueva);
+    } else {
+      primera.cargo = Number(primera.cargo) + Number(f.cargo);
+      primera.abono = Number(primera.abono) + Number(f.abono);
+      primera.partes = (primera.partes ?? 1) + 1;
+      if (f.id_proyecto !== primera.id_proyecto) {
+        primera.id_proyecto = null;
+        primera.proyecto = "Varios proyectos";
+        primera.cliente = null;
+      }
+      if (f.categoria !== primera.categoria) primera.categoria = "Varias";
+      primera.comentario = [primera.comentario, f.comentario].filter(Boolean).join(" + ") || null;
+    }
+  }
+  return salida;
 }
 
 // Lo que entro y salio en cada proyecto, en el periodo que se pida. La suma la
