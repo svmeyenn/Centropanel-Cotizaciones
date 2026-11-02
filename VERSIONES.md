@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.022-20261101**
+Version vigente: **v008.023-20261102**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.022-20261101**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.022 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.023 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.023-20261102 | — | 02-11-2026 | Al cambiar el proyecto de un pedido se mueven en cascada sus necesidades, ordenes de compra, egresos (compra, transporte y otros gastos) y lineas contables. Cada pedido admite otros gastos (instalacion, comisiones, viaticos) que entran al margen real hasta tener la factura. La solicitud de pago de una OC queda bloqueada tras pedirla y se reabre con un boton. Cambios de base: tabla pedido_gastos y funciones, pedido_margen_real y pedido_cambiar_proyecto. |
 | v008.022-20261101 | — | 01-11-2026 | Los giros y abonos abiertos en partes se ven consolidados (listas de egresos e ingresos, cartola) con el detalle desplegable; "Repartir" cambia las partes de un giro existente sin alterar el total. Cambio de base: funcion movimiento_repartir. |
 | v008.021-20261101 | — | 01-11-2026 | Giros y abonos en varias partes: se pueden abrir al crearlos o dividir uno existente (cada parte con su monto, proyecto, categoria y concepto). Se pagan, confirman y reversan juntas, y se cuadran con el banco por la suma. Cambios de base: columna id_grupo, cuadre automatico por grupo y funcion movimiento_dividir. |
 | v008.020-20261101 | — | 01-11-2026 | Corrige compras, aprobaciones, detalle y PDF de la orden de compra, OC del proyecto y documentos de compra: la consulta indica ahora la relacion con el proveedor, porque desde Transportistas la OC tiene dos llaves a entidades. Sin cambios de base de datos. |
