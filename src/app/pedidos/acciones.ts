@@ -595,6 +595,32 @@ export async function quitarCostoTransporte(id: number, idPedido: number) {
   return { ok: true };
 }
 
+// Otros gastos de un pedido que no son compras ni transporte --instalacion, comisiones, viaticos--, con IVA incluido y antes
+// de tener la factura. Entran al margen real de inmediato; al cargar la factura y aprobarse el egreso, el egreso los reemplaza.
+export async function registrarOtroGasto(idPedido: number, concepto: string, monto: number, comentario: string) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) return { error: "Solo un administrador o supervisor registra otros gastos del pedido." };
+  if (!concepto.trim()) return { error: "Indique el concepto del gasto." };
+  if (!Number.isFinite(monto) || monto <= 0) return { error: "El monto no es valido." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("gasto_pedido_registrar", { p_pedido: idPedido, p_concepto: concepto, p_monto: monto, p_comentario: comentario });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function quitarOtroGasto(id: number, idPedido: number) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) return { error: "Solo un administrador o supervisor quita otros gastos del pedido." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("gasto_pedido_quitar", { p_id: id });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
 // El gasto financiero de un pago --lo que cobro el procesador, con IVA incluido--. Lo define solo un administrador o
 // supervisor, cuando llega la liquidacion; vacio, queda por definir.
 export async function definirGastoFinanciero(idPago: number, idPedido: number, monto: number | null) {

@@ -12,6 +12,7 @@ import type { FichaCliente } from "@/components/VentanaCliente";
 import Link from "next/link";
 import ProyectoDelPedido from "@/components/ProyectoDelPedido";
 import BotonFacturaTransporte from "@/components/BotonFacturaTransporte";
+import OtrosGastosPedido from "@/components/OtrosGastosPedido";
 import DespachoPedido from "@/components/transportes/DespachoPedido";
 import { cargarTransportes } from "@/lib/transportes";
 import { cargarCarga } from "@/lib/carga";
@@ -202,6 +203,13 @@ export default async function Pagina({
     const m = uno<{ aprobacion: string | null; estado_pago: string }>(t.movimientos);
     return { id: Number(t.id), monto: Number(t.monto), comentario: (t.comentario as string | null) ?? "", idMov: t.id_mov != null ? Number(t.id_mov) : null, aprobacion: m?.aprobacion ?? null, estadoPago: m?.estado_pago ?? null };
   });
+  const { data: gastosDb } = tienePerfilAdmin(v)
+    ? await supabase.from("pedido_gastos").select("id, concepto, monto, comentario, id_mov, movimientos(aprobacion, estado_pago)").eq("id_pedido", id).order("id")
+    : { data: null };
+  const otrosGastos = (gastosDb ?? []).map((t) => {
+    const m = uno<{ aprobacion: string | null; estado_pago: string }>(t.movimientos);
+    return { id: Number(t.id), concepto: t.concepto as string, monto: Number(t.monto), comentario: (t.comentario as string | null) ?? "", idMov: t.id_mov != null ? Number(t.id_mov) : null, aprobacion: m?.aprobacion ?? null, estadoPago: m?.estado_pago ?? null };
+  });
   const necesidadesPedido = (nmsDb ?? []).map((n) => ({ id: Number(n.id), folio: n.folio as string, estado: n.estado as string }));
 
   const filas: LineaVista[] = (lineas ?? []).map((l) => ({
@@ -335,6 +343,18 @@ export default async function Pagina({
               idCategoria={maestrosFlete?.categorias.find((c) => c.nombre === "Transporte y fletes" && c.tipo === "Egreso" && !c.borrado)?.id_categoria ?? null}
               moneda={(ped.moneda as string | null) ?? monedaDelPais(Number(ped.id_pais))}
               costos={costosTransporte}
+              formulario={maestrosFlete ? { cuentas: maestrosFlete.cuentas, proyectos: maestrosFlete.proyectos, categorias: maestrosFlete.categorias, interlocutores: maestrosFlete.interlocutores } : null}
+            />
+          ) : null
+        }
+        otrosGastos={
+          tienePerfilAdmin(v) ? (
+            <OtrosGastosPedido
+              idPedido={id}
+              numPedido={ped.num_pedido as string}
+              idProyecto={ped.id_proyecto != null ? Number(ped.id_proyecto) : null}
+              moneda={(ped.moneda as string | null) ?? monedaDelPais(Number(ped.id_pais))}
+              gastos={otrosGastos}
               formulario={maestrosFlete ? { cuentas: maestrosFlete.cuentas, proyectos: maestrosFlete.proyectos, categorias: maestrosFlete.categorias, interlocutores: maestrosFlete.interlocutores } : null}
             />
           ) : null

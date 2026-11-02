@@ -279,6 +279,17 @@ export async function crearSolicitudEgreso(
     return resultado;
   }
 
+  // La factura de otro gasto del pedido ya registrado: el egreso lo reemplaza en el margen.
+  const idGastoPedido = numeroONulo(datos.get("id_gasto_pedido"));
+  if (idGastoPedido) {
+    const { error: errorGasto } = await supabase.rpc("gasto_pedido_vincular", { p_id: idGastoPedido, p_mov: fila.id_mov });
+    if (errorGasto) {
+      refrescarFinanzas();
+      return { ok: true, mensaje: `Solicitud registrada, pero no se pudo enlazar al gasto del pedido: ${errorGasto.message}` };
+    }
+    revalidatePath("/pedidos");
+  }
+
   // La factura de un costo de transporte ya registrado: el egreso pasa a ser su respaldo y reemplaza al costo provisorio.
   const idTransporte = numeroONulo(datos.get("id_transporte"));
   if (idTransporte) {

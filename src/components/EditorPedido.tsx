@@ -43,6 +43,8 @@ export interface MargenReal {
   adhesivo_teorico?: number;
   // Costo de transporte registrado a mano, sin factura aprobada todavia.
   transporte_sin_factura?: { bruto: number; neto: number; n: number };
+  // Otros gastos del pedido registrados a mano, sin factura aprobada todavia.
+  otros_sin_factura?: { bruto: number; neto: number; n: number };
   egresos: number;
   gastos_financieros: { bruto: number; neto: number; pagos_definidos: number; por_definir: number; monto_por_definir: number };
   costo_total: number;
@@ -105,6 +107,7 @@ export default function EditorPedido({
   verMargen,
   margenReal,
   facturaTransporte,
+  otrosGastos,
   gastoPorMedio,
   lineasSinCosto = 0,
   fichaCliente = null,
@@ -151,6 +154,8 @@ export default function EditorPedido({
   margenReal?: MargenReal | null;
   // Boton para cargar la factura del transportista, para quien puede hacerlo.
   facturaTransporte?: ReactNode;
+  // Otros gastos asociados al pedido (instalacion, comisiones, viaticos...).
+  otrosGastos?: ReactNode;
   // Medios de pago que llevan gasto financiero, con su tasa (%): el gasto se define al registrar el pago.
   gastoPorMedio?: Record<string, number>;
   // Lineas sin costo conocido: el margen las cuenta como costo cero.
@@ -612,6 +617,7 @@ export default function EditorPedido({
               ))}
               {(margenReal.adhesivo_teorico ?? 0) > 0 && <Fila label="− Adhesivo (costo teorico)" valor={importe(margenReal.adhesivo_teorico ?? 0, moneda)} />}
               {(margenReal.transporte_sin_factura?.n ?? 0) > 0 && <Fila label="− Transporte (valor estimado, sin factura aprobada)" valor={importe(margenReal.transporte_sin_factura?.neto ?? 0, moneda)} />}
+              {(margenReal.otros_sin_factura?.n ?? 0) > 0 && <Fila label="− Otros gastos (valor estimado, sin factura aprobada)" valor={importe(margenReal.otros_sin_factura?.neto ?? 0, moneda)} />}
               <Fila
                 label={`− Gastos financieros${margenReal.gastos_financieros.por_definir > 0 ? ` (${margenReal.gastos_financieros.por_definir} pago${margenReal.gastos_financieros.por_definir > 1 ? "s" : ""} por definir)` : ""}`}
                 valor={importe(margenReal.gastos_financieros.neto, moneda)}
@@ -630,6 +636,7 @@ export default function EditorPedido({
                 </p>
               )}
               {facturaTransporte}
+              {otrosGastos}
             </div>
           )}
 
