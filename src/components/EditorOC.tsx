@@ -117,6 +117,8 @@ export default function EditorOC({
   const [guia, setGuia] = useState("");
   const [fac, setFac] = useState({ numero: "", fecha: "", monto: String(oc.total) });
   const solicitado = pagos.reduce((a, p) => a + p.monto, 0);
+  // Con un pago ya solicitado, pedir otro exige habilitarlo a proposito.
+  const [pagoHabilitado, setPagoHabilitado] = useState(false);
   const [pago, setPago] = useState({
     monto: String(Math.max(0, (oc.factura_monto ?? oc.total) - solicitado)),
     cuenta: "",
@@ -508,6 +510,17 @@ export default function EditorOC({
               {p.documento ? ` · ${p.documento}` : ""}
             </div>
           ))}
+          {pagos.length > 0 && !pagoHabilitado ? (
+            <div className="flex flex-wrap items-center gap-3 bg-crema border border-gray-200 rounded px-3 py-2">
+              <span className="text-xs text-gray-700">
+                Ya hay un pago solicitado para esta orden. Para pedir otro, habilite la solicitud.
+              </span>
+              <button className={boton} disabled={pendiente} onClick={() => setPagoHabilitado(true)}>
+                Habilitar nueva solicitud de pago
+              </button>
+            </div>
+          ) : (
+            <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
             <label className="text-xs">
               <span className="block font-semibold mb-1">Monto</span>
@@ -543,19 +556,24 @@ export default function EditorOC({
               className={boton}
               disabled={pendiente}
               onClick={() =>
-                ejecutar(() =>
-                  solicitarPagoOC(oc.id, {
+                ejecutar(async () => {
+                  const r = await solicitarPagoOC(oc.id, {
                     monto: num(pago.monto),
                     id_cuenta: Number(pago.cuenta),
                     id_categoria: Number(pago.categoria),
                     documento: pago.documento,
-                  })
-                )
+                    habilitado: pagoHabilitado,
+                  });
+                  if (!("error" in r && r.error)) setPagoHabilitado(false);
+                  return r;
+                })
               }
             >
               Solicitar pago
             </button>
           </div>
+            </>
+          )}
           <div className="text-[11px] text-gray-500">
             La solicitud queda pendiente en Egresos; sale cuando quien tiene permiso de pago la paga.
           </div>

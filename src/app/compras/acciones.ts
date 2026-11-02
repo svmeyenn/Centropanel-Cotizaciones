@@ -186,7 +186,7 @@ export async function borrarOC(id: number) {
 // deja ligarlo a una orden ya autorizada.
 export async function solicitarPagoOC(
   idOc: number,
-  d: { monto: number; id_cuenta: number; id_categoria: number; documento: string }
+  d: { monto: number; id_cuenta: number; id_categoria: number; documento: string; habilitado?: boolean }
 ) {
   const v = await requerirVendedor();
   if (!(d.monto > 0)) return { error: "Indique el monto." };
@@ -199,6 +199,18 @@ export async function solicitarPagoOC(
     .single();
   if (!oc) return { error: "La orden no existe." };
   const prov = (Array.isArray(oc.entidades) ? oc.entidades[0] : oc.entidades) as { razon_social: string } | null;
+
+  // Un pago ya solicitado cierra la solicitud: pedir otro exige habilitarlo a
+  // proposito, para no duplicar el pago por un doble clic o una pantalla vieja.
+  if (!d.habilitado) {
+    const { count } = await supabase
+      .from("movimientos")
+      .select("id_mov", { count: "exact", head: true })
+      .eq("id_oc", idOc);
+    if (count)
+      return { error: "Esta orden ya tiene un pago solicitado. Habilite una nueva solicitud para pedir otro." };
+  }
+
   const { error } = await supabase.from("movimientos").insert({
     id_pais: oc.id_pais,
     tipo: "Egreso",
