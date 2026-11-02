@@ -21,6 +21,7 @@ export default function ProyectoDelPedido({
   const router = useRouter();
   const [elegido, setElegido] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
   function asociar(id: number | null) {
@@ -28,7 +29,11 @@ export default function ProyectoDelPedido({
     empezar(async () => {
       const r = await asociarPedidoAProyecto(idPedido, id);
       if (r?.error) setError(r.error);
-      else router.refresh();
+      else {
+        setAviso("movido" in r && r.movido ? r.movido : null);
+        setElegido("");
+        router.refresh();
+      }
     });
   }
 
@@ -76,6 +81,7 @@ export default function ProyectoDelPedido({
           )}
         </>
       )}
+      {aviso && <span className="text-green-800">{aviso}</span>}
       {error && <span className="text-red-700 font-semibold">{error}</span>}
     </div>
   );

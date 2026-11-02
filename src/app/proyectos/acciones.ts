@@ -201,11 +201,22 @@ export async function asociarPedidoAProyecto(idPedido: number, idProyecto: numbe
     if (error) return { error: error.message };
     destino = nuevo.id_proyecto as number;
   }
-  const { error } = await supabase.from("pedidos").update({ id_proyecto: destino }).eq("id", idPedido);
+  // Un solo paso en la base: mueve el pedido y lo que cuelga de el (necesidades, ordenes de compra,
+  // egresos de compra, transporte y otros gastos, y las lineas contables), o no mueve nada.
+  const { data, error } = await supabase.rpc("pedido_cambiar_proyecto", { p_pedido: idPedido, p_proyecto: destino });
   if (error) return { error: error.message };
-  revalidatePath(`/pedidos/${idPedido}`);
-  revalidatePath("/proyectos");
-  return { ok: true, id: destino };
+  const m = (data ?? {}) as Record<string, number | boolean>;
+  const partes = [
+    [m.necesidades, "necesidad(es) de material"],
+    [m.ordenes_compra, "orden(es) de compra"],
+    [m.movimientos, "egreso(s)"],
+    [m.lineas_contables, "linea(s) contable(s)"],
+  ]
+    .filter(([n]) => Number(n) > 0)
+    .map(([n, t]) => `${n} ${t}`);
+  for (const ruta of [`/pedidos/${idPedido}`, "/pedidos", "/proyectos", "/necesidades", "/compras", "/egresos", "/ingresos", "/cartola", "/finanzas", "/"])
+    revalidatePath(ruta);
+  return { ok: true, id: destino, movido: partes.length ? `Tambien se movieron: ${partes.join(", ")}.` : null };
 }
 
 // --- quien aprueba los gastos del proyecto -----------------------------------
