@@ -119,6 +119,42 @@ export async function guardarLineaOC(
   return { ok: true };
 }
 
+// Agrega a la orden una materia prima o producto de la maestra; si el proveedor no lo tiene asignado, lo deja
+// en su maestra (costo cero, inactivo). Sin costo, usa el que el proveedor ya tiene.
+export async function agregarItemOC(
+  idOc: number,
+  item: { tipo: "materia_prima" | "producto"; id: number },
+  d: { unidades: number; costo_unitario: number | null }
+) {
+  await requerirVendedor();
+  if (!(d.unidades > 0)) return { error: "Las unidades deben ser mayores que cero." };
+  if (d.costo_unitario != null && !(d.costo_unitario >= 0)) return { error: "El costo no puede ser negativo." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("oc_agregar_item", {
+    p_oc: idOc,
+    p_mp: item.tipo === "materia_prima" ? item.id : null,
+    p_prod: item.tipo === "producto" ? item.id : null,
+    p_unidades: d.unidades,
+    p_costo: d.costo_unitario,
+  });
+  if (error) return { error: error.message };
+  refrescar(idOc);
+  revalidatePath("/proveedores");
+  return { ok: true };
+}
+
+// Costo que el proveedor de la orden ya tiene para el item (0 si no tiene).
+export async function costoItemOC(idOc: number, item: { tipo: "materia_prima" | "producto"; id: number }): Promise<number> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("oc_costo_item", {
+    p_oc: idOc,
+    p_mp: item.tipo === "materia_prima" ? item.id : null,
+    p_prod: item.tipo === "producto" ? item.id : null,
+  });
+  return Number(data ?? 0);
+}
+
 // Deja las lineas elegidas en la maestra del proveedor de la orden, con costo cero.
 export async function asignarMaestraOC(idOc: number, lineas: number[]) {
   await requerirVendedor();

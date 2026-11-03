@@ -169,6 +169,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         <EditorOC
           oc={{
             id,
+            id_pais: Number(o.id_pais),
             num_oc: o.num_oc,
             estado: o.estado,
             fecha_entrega: o.fecha_entrega,

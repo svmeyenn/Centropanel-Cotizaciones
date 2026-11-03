@@ -15,11 +15,13 @@ export default function VentanaNuevaMateria({
   nombreInicial,
   alCrear,
   alCerrar,
+  destino = "esta necesidad",
 }: {
   idPais: number;
   nombreInicial: string;
   alCrear: (item: ItemBuscado) => void;
   alCerrar: () => void;
+  destino?: string;
 }) {
   const [listas, setListas] = useState<ListasMateria | null>(null);
   const [nombre, setNombre] = useState(nombreInicial);
@@ -66,7 +68,7 @@ export default function VentanaNuevaMateria({
   }
 
   return (
-    <Ventana titulo="Nueva materia prima" subtitulo="Queda en la maestra y se agrega a esta necesidad" onCerrar={alCerrar} ancho="max-w-lg">
+    <Ventana titulo="Nueva materia prima" subtitulo={`Queda en la maestra y se agrega a ${destino}`} onCerrar={alCerrar} ancho="max-w-lg">
       <form
         className="space-y-3 text-xs"
         onSubmit={(e) => {

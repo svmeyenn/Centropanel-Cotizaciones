@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import VentanaNuevaMateria from "@/components/VentanaNuevaMateria";
+import { buscarItemsCompra, type ItemBuscado } from "@/app/necesidades/acciones";
 import {
+  agregarItemOC,
+  costoItemOC,
   anularOC,
   asignarMaestraOC,
   aprobarOC,
@@ -24,6 +28,7 @@ import { porcentajeImpuesto, rotuloDescuento } from "@/lib/factura";
 
 export interface OcDatos {
   id: number;
+  id_pais: number;
   num_oc: string;
   estado: string;
   fecha_entrega: string | null;
@@ -115,6 +120,39 @@ export default function EditorOC({
     notas: oc.notas ?? "",
   });
   const [nl, setNl] = useState({ id: 0, descripcion: "", unidades: "1", costo: "" });
+  // Item de la maestra elegido para la linea nueva; sin item, la linea es de texto libre.
+  const [sel, setSel] = useState<ItemBuscado | null>(null);
+  const [busca, setBusca] = useState("");
+  const [encontrados, setEncontrados] = useState<ItemBuscado[]>([]);
+  const [creando, setCreando] = useState(false);
+  useEffect(() => {
+    if (sel || busca.trim().length < 2) {
+      setEncontrados([]);
+      return;
+    }
+    let vigente = true;
+    const t = setTimeout(() => {
+      buscarItemsCompra(busca, oc.id_pais).then((r) => vigente && setEncontrados(r));
+    }, 250);
+    return () => {
+      vigente = false;
+      clearTimeout(t);
+    };
+  }, [busca, sel, oc.id_pais]);
+  function elegir(it: ItemBuscado) {
+    setSel(it);
+    setBusca("");
+    setEncontrados([]);
+    setNl((n) => ({ ...n, descripcion: it.descripcion, costo: "" }));
+    costoItemOC(oc.id, { tipo: it.tipo, id: it.id }).then((c) => {
+      if (c > 0) setNl((n) => (n.descripcion === it.descripcion ? { ...n, costo: String(c) } : n));
+    });
+  }
+  function limpiarLinea() {
+    setSel(null);
+    setBusca("");
+    setNl({ id: 0, descripcion: "", unidades: "1", costo: "" });
+  }
   const [rec, setRec] = useState<Record<number, string>>({});
   const [guia, setGuia] = useState("");
   const [fac, setFac] = useState({ numero: "", fecha: "", monto: String(oc.total) });
@@ -419,10 +457,57 @@ export default function EditorOC({
         </div>
         {borrador && (
           <div className="border-t border-gray-200 p-3 grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
-            <label className="text-xs md:col-span-2">
-              <span className="block font-semibold mb-1">{nl.id ? "Editar linea" : "Nueva linea"}</span>
-              <input className={input} value={nl.descripcion} onChange={(e) => setNl({ ...nl, descripcion: e.target.value })} />
-            </label>
+            <div className="text-xs md:col-span-2 relative">
+              <label htmlFor="oc-linea-desc" className="block font-semibold mb-1">{nl.id ? "Editar linea" : "Nueva linea"}</label>
+              {nl.id ? (
+                <input id="oc-linea-desc" className={input} value={nl.descripcion} onChange={(e) => setNl({ ...nl, descripcion: e.target.value })} />
+              ) : sel ? (
+                <div className="flex items-center gap-2 border border-gray-300 rounded px-2 py-1 bg-gray-50">
+                  <span className="flex-1 truncate">
+                    {sel.sku && <span className="text-gray-500 mr-1">{sel.sku}</span>}
+                    {sel.descripcion}
+                  </span>
+                  <button type="button" className="text-gray-500 hover:text-red-700" onClick={limpiarLinea} aria-label="Quitar item elegido">
+                    &times;
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    id="oc-linea-desc"
+                    className={input}
+                    value={busca || nl.descripcion}
+                    placeholder="Buscar materia prima o producto por nombre o SKU, o escribir texto libre"
+                    autoComplete="off"
+                    onChange={(e) => {
+                      setBusca(e.target.value);
+                      setNl({ ...nl, descripcion: e.target.value });
+                    }}
+                  />
+                  {busca.trim().length >= 2 && (
+                    <ul className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white border border-gray-300 rounded shadow-lg">
+                      {encontrados.map((it) => (
+                        <li key={`${it.tipo}-${it.id}`}>
+                          <button type="button" className="w-full text-left px-2 py-1.5 hover:bg-crema" onClick={() => elegir(it)}>
+                            {it.sku && <span className="text-gray-500 mr-1">{it.sku}</span>}
+                            {it.descripcion}
+                            {it.unidad && <span className="text-gray-500"> · {it.unidad}</span>}
+                            {it.tipo === "producto" && <span className="text-gray-500"> · producto</span>}
+                          </button>
+                        </li>
+                      ))}
+                      {puedeCrear && (
+                        <li>
+                          <button type="button" className="w-full text-left px-2 py-1.5 text-dorado-osc font-semibold hover:bg-crema border-t border-gray-200" onClick={() => setCreando(true)}>
+                            No esta? Crear la materia prima &laquo;{busca.trim()}&raquo;
+                          </button>
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
             <label className="text-xs">
               <span className="block font-semibold mb-1">Unidades</span>
               <input className={input} inputMode="decimal" value={nl.unidades} onChange={(e) => setNl({ ...nl, unidades: e.target.value })} />
@@ -436,8 +521,11 @@ export default function EditorOC({
               disabled={pendiente}
               onClick={() =>
                 ejecutar(
-                  () => guardarLineaOC(oc.id, nl.id || null, { descripcion: nl.descripcion, unidades: num(nl.unidades), costo_unitario: num(nl.costo) }),
-                  () => setNl({ id: 0, descripcion: "", unidades: "1", costo: "" })
+                  () =>
+                    sel && !nl.id
+                      ? agregarItemOC(oc.id, { tipo: sel.tipo, id: sel.id }, { unidades: num(nl.unidades), costo_unitario: nl.costo.trim() === "" ? null : num(nl.costo) })
+                      : guardarLineaOC(oc.id, nl.id || null, { descripcion: nl.descripcion, unidades: num(nl.unidades), costo_unitario: num(nl.costo) }),
+                  limpiarLinea
                 )
               }
             >
@@ -584,6 +672,18 @@ export default function EditorOC({
             La solicitud queda pendiente en Egresos; sale cuando quien tiene permiso de pago la paga.
           </div>
         </div>
+      )}
+      {creando && (
+        <VentanaNuevaMateria
+          idPais={oc.id_pais}
+          nombreInicial={busca.trim()}
+          destino="esta orden"
+          alCrear={(it) => {
+            setCreando(false);
+            elegir(it);
+          }}
+          alCerrar={() => setCreando(false)}
+        />
       )}
     </div>
   );
