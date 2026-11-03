@@ -6,6 +6,7 @@ import DetalleLiquidacion from "@/components/rrhh/DetalleLiquidacion";
 import { folioLiquidacion, nivelRRHH } from "@/lib/rrhh";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
+import { etiquetaProyecto } from "@/lib/finanzas/tipos";
 
 export const metadata = { title: "Liquidacion" };
 export const dynamic = "force-dynamic";
@@ -26,12 +27,12 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     supabase.from("rrhh_liquidacion_lineas").select("*").eq("id_liquidacion", id).order("orden"),
     supabase.from("rrhh_liquidacion_imputacion").select("id_centro_costo, id_proyecto, porcentaje, monto").eq("id_liquidacion", id),
     supabase.from("centros_costo").select("id, codigo, nombre"),
-    supabase.from("proyectos").select("id_proyecto, nombre").eq("id_pais", l.id_pais),
+    supabase.from("proyectos").select("id_proyecto, nombre, cliente, num_pedido").eq("id_pais", l.id_pais),
     supabase.from("cuentas").select("id_cuenta, alias, banco, numero_cuenta").eq("id_pais", l.id_pais).eq("activa", true).order("alias"),
   ]);
   const ent = (Array.isArray(p?.entidades) ? p?.entidades[0] : p?.entidades) as { razon_social: string; rut: string | null } | null;
   const nCentro = new Map((centros ?? []).map((c) => [Number(c.id), `${c.codigo} · ${c.nombre}`]));
-  const nProy = new Map((proyectos ?? []).map((c) => [Number(c.id_proyecto), c.nombre as string]));
+  const nProy = new Map((proyectos ?? []).map((c) => [Number(c.id_proyecto), etiquetaProyecto(c as { nombre: string; num_pedido?: string | null; cliente?: string | null })]));
 
   return (
     <div className="min-h-screen">

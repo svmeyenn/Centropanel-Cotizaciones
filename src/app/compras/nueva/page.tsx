@@ -4,6 +4,7 @@ import NuevaOC from "@/components/NuevaOC";
 import { requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/relaciones";
+import { etiquetaProyecto } from "@/lib/finanzas/tipos";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function Pagina({
     await Promise.all([
       supabase
         .from("proyectos")
-        .select("id_proyecto, nombre, id_pais")
+        .select("id_proyecto, nombre, cliente, num_pedido, id_pais")
         .eq("borrado", false)
         .eq("activo", true)
         .order("nombre"),
@@ -49,7 +50,7 @@ export default async function Pagina({
           proyectoInicial={proyecto ? Number(proyecto) : null}
           proyectos={(proyectos ?? []).map((p) => ({
             id: Number(p.id_proyecto),
-            nombre: p.nombre as string,
+            nombre: etiquetaProyecto(p as { nombre: string; num_pedido?: string | null; cliente?: string | null }),
             id_pais: Number(p.id_pais),
           }))}
           partidas={(partidas ?? []).map((p) => ({

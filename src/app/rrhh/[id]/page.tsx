@@ -7,6 +7,7 @@ import { nivelRRHH } from "@/lib/rrhh";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import type { Pais } from "@/types/database";
+import { etiquetaProyecto } from "@/lib/finanzas/tipos";
 
 export const metadata = { title: "Ficha de personal" };
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     supabase.from("rrhh_contratos").select("*").eq("id_personal", id).order("fecha_inicio", { ascending: false }),
     supabase.from("rrhh_imputaciones").select("id_centro_costo, id_proyecto, porcentaje").eq("id_personal", id).order("id"),
     supabase.from("centros_costo").select("id, codigo, nombre, unidades_negocio!inner(id_pais)").eq("unidades_negocio.id_pais", idPais).eq("activo", true).order("codigo"),
-    supabase.from("proyectos").select("id_proyecto, nombre").eq("id_pais", idPais).eq("activo", true).eq("borrado", false).order("nombre"),
+    supabase.from("proyectos").select("id_proyecto, nombre, cliente, num_pedido").eq("id_pais", idPais).eq("activo", true).eq("borrado", false).order("nombre"),
     supabase.from("rrhh_items_recurrentes").select("*").eq("id_personal", id).order("id"),
     supabase.from("rrhh_conceptos").select("id, codigo, nombre, tipo, imponible, sistema").eq("activo", true).in("tipo", ["Haber", "Descuento"]).order("orden"),
     supabase.from("rrhh_novedades").select("*").eq("id_personal", id).gte("periodo", desde12.toISOString().slice(0, 7) + "-01").order("periodo", { ascending: false }),
@@ -89,7 +90,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           contratos={(contratos.data ?? []) as never[]}
           imputaciones={(imputaciones.data ?? []).map((i) => ({ id_centro_costo: Number(i.id_centro_costo), id_proyecto: i.id_proyecto != null ? Number(i.id_proyecto) : null, porcentaje: Number(i.porcentaje) }))}
           centros={(centros.data ?? []).map((c) => ({ id: Number(c.id), texto: `${c.codigo} · ${c.nombre}` }))}
-          proyectos={(proyectos.data ?? []).map((x) => ({ id: Number(x.id_proyecto), texto: x.nombre as string }))}
+          proyectos={(proyectos.data ?? []).map((x) => ({ id: Number(x.id_proyecto), texto: etiquetaProyecto(x as { nombre: string; num_pedido?: string | null; cliente?: string | null }) }))}
           recurrentes={(recurrentes.data ?? []) as never[]}
           conceptos={(conceptos.data ?? []) as never[]}
           novedades={(novedades.data ?? []) as never[]}
