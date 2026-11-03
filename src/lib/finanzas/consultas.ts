@@ -78,7 +78,10 @@ export async function cargarMaestros(idPais: number | null) {
 
   return {
     cuentas: (cuentas.data ?? []) as Cuenta[],
-    proyectos: (proyectos.data ?? []) as Proyecto[],
+    proyectos: ((proyectos.data ?? []) as Proyecto[]).map((p) => ({
+      ...p,
+      pais_codigo: idPais === null && paises.size > 1 ? (paises.get(p.id_pais) ?? null) : null,
+    })),
     categorias: conEtiqueta,
     interlocutores: (interlocutores.data ?? []) as Interlocutor[],
   };

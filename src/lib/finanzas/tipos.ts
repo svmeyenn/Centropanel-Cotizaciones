@@ -38,6 +38,8 @@ export type Proyecto = {
   // El centro de costo del que cuelga la obra: de ahi salen la unidad de
   // negocio y el mercado de todo lo que se le imputa.
   id_centro_costo?: number | null;
+  // Con los dos mercados a la vista, de cual es: "Otros" existe en Chile y en Peru.
+  pais_codigo?: string | null;
 };
 
 // Como se nombra un proyecto en pantalla: la obra, su cliente y su pedido, en
@@ -107,6 +109,16 @@ function formasDelNombre(cliente: string): string[] {
 }
 
 export const etiquetaProyecto = (p: {
+  nombre: string;
+  num_pedido?: string | null;
+  cliente?: string | null;
+  pais_codigo?: string | null;
+}): string => {
+  const base = etiquetaBase(p);
+  return p.pais_codigo ? `${base} (${p.pais_codigo})` : base;
+};
+
+const etiquetaBase = (p: {
   nombre: string;
   num_pedido?: string | null;
   cliente?: string | null;
