@@ -44,7 +44,8 @@ export async function actualizarProducto(id: number, d: DatosProducto) {
     .select("costo_unitario, tipo, id_pais")
     .eq("id", id)
     .single();
-  const esPanel = actual?.tipo === "Panel SIP";
+  // El costo de un panel sale de su composicion y el de una reventa, de su materia prima.
+  const esPanel = actual?.tipo === "Panel SIP" || actual?.tipo === "Reventa";
   let costo = esPanel ? Number(actual?.costo_unitario ?? 0) : d.costo_unitario;
 
   // Con proveedor preferente el costo es el del item de ese proveedor: cambiarlo aqui
@@ -222,6 +223,67 @@ export async function crearProductoServicio(d: DatosProductoNuevo) {
   revalidatePath("/productos");
   revalidatePath("/cotizaciones");
   return { ok: true, producto: data };
+}
+
+// Alta de un producto de reventa: una materia prima que tambien se vende tal cual. Su costo sigue siempre al de
+// la materia prima (y con el, el precio, salvo que se fije a mano). Precio vacio = el del margen objetivo.
+export async function crearProductoReventa(d: { id_materia_prima: number; familia: string; subfamilia: string; precio_venta: number | null }) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) {
+    return { error: "Solo el administrador puede editar el catalogo." };
+  }
+  if (!d.id_materia_prima) return { error: "Elija la materia prima." };
+  if (d.precio_venta != null && d.precio_venta < 0) return { error: "El precio no puede ser negativo." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reventa_crear", {
+    p_materia: d.id_materia_prima,
+    p_familia: d.familia,
+    p_subfamilia: d.subfamilia,
+    p_precio: d.precio_venta,
+  });
+  if (error)
+    return { error: error.code === "23505" ? "Ya existe otro producto con esa descripcion." : error.message };
+  revalidatePath("/productos");
+  revalidatePath("/cotizaciones");
+  return { ok: true, id: Number(data) };
+}
+
+export interface MateriaReventa {
+  id: number;
+  nombre: string;
+  sku: string | null;
+  costo: number;
+  unidad: string | null;
+  yaEsProducto: boolean;
+}
+
+// Busca materias primas del mercado para revenderlas, con su costo y si ya tienen producto.
+export async function buscarMateriasReventa(q: string, idPais: number | null): Promise<MateriaReventa[]> {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v) || idPais == null || q.trim().length < 2) return [];
+  const supabase = await createClient();
+  const t = q.trim().replace(/[%,()]/g, " ");
+  const { data } = await supabase
+    .from("materias_primas")
+    .select("id, nombre, sku, costo, unidad")
+    .eq("id_pais", idPais)
+    .eq("activo", true)
+    .or(`nombre.ilike.%${t}%,sku.ilike.%${t}%`)
+    .order("nombre")
+    .limit(20);
+  const ids = (data ?? []).map((m) => Number(m.id));
+  const { data: usados } = ids.length
+    ? await supabase.from("productos").select("id_materia_prima").in("id_materia_prima", ids)
+    : { data: [] as { id_materia_prima: number | null }[] };
+  const enUso = new Set((usados ?? []).map((u) => Number(u.id_materia_prima)));
+  return (data ?? []).map((m) => ({
+    id: Number(m.id),
+    nombre: m.nombre as string,
+    sku: m.sku as string | null,
+    costo: Number(m.costo ?? 0),
+    unidad: m.unidad as string | null,
+    yaEsProducto: enUso.has(Number(m.id)),
+  }));
 }
 
 // Cambiar la composicion de un panel ya creado. Todo lo hace actualizar_panel()

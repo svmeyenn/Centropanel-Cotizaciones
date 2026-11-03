@@ -232,6 +232,7 @@ export default function TablaProductos({
 
   const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
   const esPanel = enEdicion?.tipo === "Panel SIP";
+  const esReventa = enEdicion?.tipo === "Reventa";
   const margenForm =
     form && form.precio_venta > 0
       ? (form.precio_venta - form.costo_unitario) / form.precio_venta
@@ -514,7 +515,7 @@ export default function TablaProductos({
                 type="text"
                 inputMode="numeric"
                 className={`${input} disabled:bg-gray-100`}
-                disabled={esPanel}
+                disabled={esPanel || esReventa}
                 value={
                   enFoco === "costo" ? tecleado : pesos(form.costo_unitario)
                 }
@@ -534,14 +535,19 @@ export default function TablaProductos({
                   Sale de las materias primas del panel.
                 </span>
               )}
-              {!esPanel && preferentes[enEdicion?.id ?? -1] != null && (
+              {esReventa && (
+                <span className="text-xs text-gray-500">
+                  Sigue al costo de la materia prima que se revende: cambia cuando cambia ese costo.
+                </span>
+              )}
+              {!esPanel && !esReventa && preferentes[enEdicion?.id ?? -1] != null && (
                 <span className="text-xs text-gray-500">
                   Es el costo del proveedor preferente: {preferentes[enEdicion?.id ?? -1].proveedor}.
                   Si lo cambia aqui, se actualiza el costo de ese proveedor para este producto.
                 </span>
               )}
             </label>
-            {!esPanel && enEdicion && esAdmin && (
+            {!esPanel && !esReventa && enEdicion && esAdmin && (
               <div className="md:col-span-4">
                 <ProveedoresDelItem
                   proveedores={proveedoresDe[enEdicion.id] ?? []}

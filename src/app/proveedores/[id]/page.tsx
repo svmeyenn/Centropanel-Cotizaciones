@@ -41,12 +41,14 @@ export default async function Pagina({
         .order("tipo")
         .order("nombre"),
       // Los paneles no se compran: se fabrican con las materias primas de
-      // arriba. A un proveedor solo se le pide lo que efectivamente vende.
+      // arriba; un producto de reventa se compra como la materia prima que lo
+      // origina. A un proveedor solo se le pide lo que efectivamente vende.
       supabase
         .from("productos")
         .select("id, descripcion, familia, sku")
         .eq("activo", true)
         .neq("tipo", "Panel SIP")
+        .neq("tipo", "Reventa")
         .neq("familia", "Servicios")
         .order("familia")
         .order("descripcion"),

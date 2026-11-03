@@ -131,7 +131,7 @@ export interface MateriaPrima {
 export interface Producto {
   id: number;
   descripcion: string;
-  tipo: "Panel SIP" | "Servicio";
+  tipo: "Panel SIP" | "Servicio" | "Reventa";
   id_eps: number | null;
   id_placa_a: number | null;
   id_placa_b: number | null;
