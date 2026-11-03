@@ -73,6 +73,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             {o.modalidad_entrega !== "Retiro" && o.telefono_entrega && <div>Telefono: {o.telefono_entrega}</div>}
             {o.modalidad_entrega !== "Retiro" && o.email_entrega && <div>Correo: {o.email_entrega}</div>}
             {o.condiciones_pago && <div>Pago: {o.condiciones_pago}</div>}
+            {Number(o.anticipo_pct) > 0 && <div>Pago anticipado: {Number(o.anticipo_pct)}% al confirmar la orden</div>}
           </div>
         </div>
         <table className="w-full mt-6 text-xs border-collapse">

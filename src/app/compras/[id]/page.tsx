@@ -178,6 +178,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             telefono_entrega: o.telefono_entrega,
             email_entrega: o.email_entrega,
             condiciones_pago: o.condiciones_pago,
+            anticipo_pct: Number(o.anticipo_pct ?? 0),
             notas: o.notas,
             total: Number(o.total),
             id_partida: o.id_partida != null ? Number(o.id_partida) : null,

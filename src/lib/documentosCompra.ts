@@ -131,7 +131,7 @@ export async function leerOrdenDoc(idOc: number): Promise<OrdenParaEnviar | null
       direccionDestino: o.modalidad_entrega === "Retiro" ? null : o.direccion_entrega || proy?.direccion || null,
       modalidad: (o.modalidad_entrega as "Despacho" | "Retiro") ?? "Despacho",
       contactoDestino: { nombre: o.contacto_entrega, telefono: o.telefono_entrega, email: o.email_entrega },
-      condicionesPago: o.condiciones_pago,
+      condicionesPago: [o.condiciones_pago, Number(o.anticipo_pct) > 0 ? `Pago anticipado del ${Number(o.anticipo_pct)}% al confirmar la orden` : null].filter(Boolean).join(". ") || null,
       notas: o.notas,
       total: Number(o.total),
       subtotal: Number(o.subtotal),

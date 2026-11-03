@@ -27,6 +27,33 @@ export default async function Pagina({
 
   const porAprobar = (data ?? []).filter((o) => o.estado === "Pendiente aprobacion").length;
 
+  // Anticipos ya pagados a proveedores cuya factura aun no llega: el riesgo de pagar por adelantado.
+  const { data: anticiposDb } = await conPais(
+    supabase
+      .from("movimientos")
+      .select("id_mov, id_pais, monto, fecha_pago, id_oc, ordenes_compra(num_oc, factura_fecha, estado), entidades:id_interlocutor(razon_social)")
+      .eq("anticipo_oc", true)
+      .eq("estado_pago", "Pagado"),
+    idPaisActivo
+  ).order("fecha_pago");
+  const hoy = Date.now();
+  const anticipos = (anticiposDb ?? [])
+    .map((m) => {
+      const oc = uno<{ num_oc: string; factura_fecha: string | null; estado: string }>(m.ordenes_compra);
+      return {
+        id: Number(m.id_mov),
+        idOc: Number(m.id_oc),
+        numOc: oc?.num_oc ?? "",
+        facturada: oc?.factura_fecha != null,
+        proveedor: uno<{ razon_social: string }>(m.entidades)?.razon_social ?? "",
+        monto: Number(m.monto),
+        pais: Number(m.id_pais),
+        fechaPago: m.fecha_pago as string | null,
+        dias: m.fecha_pago ? Math.floor((hoy - new Date(`${m.fecha_pago}T00:00:00`).getTime()) / 86400000) : 0,
+      };
+    })
+    .filter((a) => !a.facturada);
+
   return (
     <div className="min-h-screen">
       <Cabecera proceso={{ tipo: "compras", etapa: "oc" }} titulo="Ordenes de compra" subtitulo="Compras a proveedores por proyecto, con aprobacion" />
@@ -57,6 +84,21 @@ export default async function Pagina({
             <Link href="/compras?estado=Pendiente%20aprobacion" className="underline font-semibold">
               Ver
             </Link>
+          </div>
+        )}
+        {!estado && anticipos.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs space-y-1">
+            <div className="font-semibold text-amber-900">
+              {anticipos.length} anticipo{anticipos.length > 1 ? "s" : ""} pagado{anticipos.length > 1 ? "s" : ""} a proveedores sin factura
+            </div>
+            <ul className="space-y-0.5">
+              {anticipos.map((a) => (
+                <li key={a.id}>
+                  <Link href={`/compras/${a.idOc}`} className="text-verde font-semibold hover:underline">{a.numOc}</Link>{" "}
+                  {a.proveedor}: {dinero(a.monto, monedaDelPais(a.pais))}, pagado el {fecha(a.fechaPago)} ({a.dias} dias)
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         <div className="bg-white border border-gray-200 rounded overflow-hidden">

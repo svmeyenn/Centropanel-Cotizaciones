@@ -62,6 +62,8 @@ export async function guardarCabeceraOC(
     email_entrega: string;
     modalidad_entrega: "Despacho" | "Retiro";
     condiciones_pago: string;
+    // Porcentaje de la orden que se paga por adelantado al aprobarla.
+    anticipo_pct: number;
     notas: string;
     descuento_tipo: "pct" | "monto";
     descuento_valor: number;
@@ -80,6 +82,7 @@ export async function guardarCabeceraOC(
       email_entrega: d.email_entrega.trim() || null,
       modalidad_entrega: d.modalidad_entrega,
       condiciones_pago: d.condiciones_pago.trim() || null,
+      anticipo_pct: Math.min(100, Math.max(0, Number(d.anticipo_pct) || 0)),
       descuento_tipo: d.descuento_tipo,
       descuento_valor: Math.max(0, Number(d.descuento_valor) || 0),
       notas: d.notas.trim() || null,

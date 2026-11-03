@@ -265,6 +265,8 @@ export async function registrarPago(idPedido: number, d: DatosPago) {
 
   revalidatePath(`/pedidos/${idPedido}`);
   revalidatePath("/pedidos");
+  // El cobro nace tambien como ingreso por confirmar.
+  revalidatePath("/ingresos");
   return { ok: true };
 }
 
@@ -279,6 +281,7 @@ export async function anularPago(id: number, idPedido: number) {
   const { error } = await supabase.from("pagos_pedido").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/ingresos");
   return { ok: true };
 }
 

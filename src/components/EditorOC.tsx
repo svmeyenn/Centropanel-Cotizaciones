@@ -33,6 +33,7 @@ export interface OcDatos {
   telefono_entrega: string | null;
   email_entrega: string | null;
   condiciones_pago: string | null;
+  anticipo_pct: number;
   notas: string | null;
   total: number;
   id_partida: number | null;
@@ -110,6 +111,7 @@ export default function EditorOC({
     descuento_tipo: oc.descuento_tipo,
     descuento_valor: oc.descuento_valor ? String(oc.descuento_valor) : "",
     condiciones_pago: oc.condiciones_pago ?? "",
+    anticipo_pct: oc.anticipo_pct ? String(oc.anticipo_pct) : "",
     notas: oc.notas ?? "",
   });
   const [nl, setNl] = useState({ id: 0, descripcion: "", unidades: "1", costo: "" });
@@ -283,6 +285,10 @@ export default function EditorOC({
           <span className="block font-semibold mb-1">Condiciones de pago</span>
           <input className={input} disabled={!(editando && borrador)} value={cab.condiciones_pago} onChange={(e) => setCab({ ...cab, condiciones_pago: e.target.value })} />
         </label>
+        <label className="text-xs">
+          <span className="block font-semibold mb-1">Pago anticipado (%)</span>
+          <input className={input} inputMode="decimal" disabled={!(editando && borrador)} value={cab.anticipo_pct} onChange={(e) => setCab({ ...cab, anticipo_pct: e.target.value })} placeholder="0" title="Al aprobar la orden, este porcentaje sale a pagar sin esperar la factura ni la recepcion" />
+        </label>
         <label className="text-xs md:col-span-4">
           <span className="block font-semibold mb-1">Notas para el proveedor</span>
           <textarea className={input} rows={2} disabled={!(editando && editaCab)} value={cab.notas} onChange={(e) => setCab({ ...cab, notas: e.target.value })} />
@@ -304,7 +310,7 @@ export default function EditorOC({
               disabled={pendiente}
               onClick={() =>
                 ejecutar(() =>
-                  guardarCabeceraOC(oc.id, { ...cab, id_partida: cab.id_partida ? Number(cab.id_partida) : null, descuento_valor: num(cab.descuento_valor) }),
+                  guardarCabeceraOC(oc.id, { ...cab, id_partida: cab.id_partida ? Number(cab.id_partida) : null, descuento_valor: num(cab.descuento_valor), anticipo_pct: num(cab.anticipo_pct) }),
                   () => setEditando(false)
                 )
               }
