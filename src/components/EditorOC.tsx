@@ -495,7 +495,7 @@ export default function EditorOC({
                     <ul className="absolute z-30 left-0 right-0 bottom-full mb-1 max-h-60 overflow-auto bg-white border border-gray-300 rounded shadow-lg">
                       {encontrados.map((it) => (
                         <li key={`${it.tipo}-${it.id}`}>
-                          <button type="button" className="w-full text-left px-2 py-1.5 hover:bg-crema" onClick={() => elegir(it, it.costo)}>
+                          <button type="button" className="w-full text-left px-2 py-1.5 hover:bg-crema" onClick={() => elegir(it, it.costo > 0 ? it.costo : it.costo_ref)}>
                             {it.sku && <span className="text-gray-500 mr-1">{it.sku}</span>}
                             {it.descripcion}
                             {it.unidad && <span className="text-gray-500"> · {it.unidad}</span>}
@@ -503,7 +503,9 @@ export default function EditorOC({
                             {it.en_maestra ? (
                               <span className="ml-1 text-verde font-semibold">· {it.costo > 0 ? dinero(it.costo, m) : "en su maestra, sin costo"}</span>
                             ) : (
-                              <span className="ml-1 text-amber-700">· no esta en la maestra del proveedor</span>
+                              <span className="ml-1 text-amber-700">
+                                · {it.costo_ref > 0 ? `costo maestra ${dinero(it.costo_ref, m)}, ` : ""}no esta en la maestra del proveedor
+                              </span>
                             )}
                           </button>
                         </li>

@@ -145,7 +145,7 @@ export async function agregarItemOC(
   return { ok: true };
 }
 
-export type ItemOC = ItemBuscado & { costo: number; en_maestra: boolean };
+export type ItemOC = ItemBuscado & { costo: number; en_maestra: boolean; costo_ref: number };
 
 // Busca en la maestra del mercado de la orden; trae primero lo que el proveedor ya tiene, con su costo.
 export async function buscarItemsOC(idOc: number, q: string): Promise<ItemOC[]> {
@@ -153,10 +153,10 @@ export async function buscarItemsOC(idOc: number, q: string): Promise<ItemOC[]> 
   if (q.trim().length < 2) return [];
   const supabase = await createClient();
   const { data } = await supabase.rpc("oc_buscar_items", { p_oc: idOc, p_q: q, p_limite: 25 });
-  return ((data ?? []) as ItemOC[]).map((x) => ({ ...x, id: Number(x.id), costo: Number(x.costo ?? 0) }));
+  return ((data ?? []) as ItemOC[]).map((x) => ({ ...x, id: Number(x.id), costo: Number(x.costo ?? 0), costo_ref: Number(x.costo_ref ?? 0) }));
 }
 
-// Costo que el proveedor de la orden ya tiene para el item (0 si no tiene).
+// Costo para la linea: el del proveedor de la orden y, si no lo tiene, el de la maestra del item (0 si no hay).
 export async function costoItemOC(idOc: number, item: { tipo: "materia_prima" | "producto"; id: number }): Promise<{ costo: number; error?: string }> {
   await requerirVendedor();
   const supabase = await createClient();
