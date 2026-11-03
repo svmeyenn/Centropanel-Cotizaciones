@@ -370,6 +370,7 @@ export default function EditorOC({
           <table className="w-full text-xs">
             <thead className="bg-verde text-white">
               <tr>
+                <th className="text-left px-3 py-2">SKU</th>
                 <th className="text-left px-3 py-2">Descripcion</th>
                 <th className="text-right px-3 py-2">Unidades</th>
                 <th className="text-right px-3 py-2">Costo unit.</th>
@@ -382,8 +383,9 @@ export default function EditorOC({
             <tbody>
               {lineas.map((l) => (
                 <tr key={l.id} className="border-t border-gray-100">
+                  <td className="px-3 py-2 font-mono text-[11px] text-gray-600 whitespace-nowrap">{l.sku ?? ""}</td>
                   <td className="px-3 py-2">
-                    {l.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{l.sku}</span>}{l.descripcion}
+                    {l.descripcion}
                     {l.sinMaestra && (
                       <span className="block text-[11px] text-amber-700">
                         No esta en la maestra del proveedor.
@@ -433,7 +435,7 @@ export default function EditorOC({
               ))}
               {lineas.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-gray-500">
+                  <td colSpan={8} className="px-3 py-6 text-center text-gray-500">
                     Sin lineas.
                   </td>
                 </tr>
@@ -447,13 +449,13 @@ export default function EditorOC({
                 { r: `${oc.impuesto} ${porcentajeImpuesto(oc.iva_pct)}`, v: dinero(oc.iva_monto, m) },
               ].map((f, i) => (
                 <tr key={f.r} className={i === 0 ? "border-t border-gray-200" : ""}>
-                  <td colSpan={3} className="px-3 py-1 text-right">{f.r}</td>
+                  <td colSpan={4} className="px-3 py-1 text-right">{f.r}</td>
                   <td className="px-3 py-1 text-right tabular-nums">{f.v}</td>
                   <td colSpan={1 + (recibible ? 1 : 0) + (borrador ? 1 : 0)} />
                 </tr>
               ))}
               <tr className="border-t-2 border-gray-300 font-bold">
-                <td colSpan={3} className="px-3 py-2 text-right">TOTAL A PAGAR</td>
+                <td colSpan={4} className="px-3 py-2 text-right">TOTAL A PAGAR</td>
                 <td className="px-3 py-2 text-right tabular-nums">{dinero(oc.total, m)}</td>
                 <td colSpan={1 + (recibible ? 1 : 0) + (borrador ? 1 : 0)} />
               </tr>
