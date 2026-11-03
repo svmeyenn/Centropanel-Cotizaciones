@@ -144,8 +144,9 @@ export default function EditorOC({
     setBusca("");
     setEncontrados([]);
     setNl((n) => ({ ...n, descripcion: it.descripcion, costo: "" }));
-    costoItemOC(oc.id, { tipo: it.tipo, id: it.id }).then((c) => {
-      if (c > 0) setNl((n) => (n.descripcion === it.descripcion ? { ...n, costo: String(c) } : n));
+    costoItemOC(oc.id, { tipo: it.tipo, id: it.id }).then(({ costo, error }) => {
+      if (error) return setError(`No se pudo traer el costo del proveedor: ${error}`);
+      if (costo > 0) setNl((n) => (n.descripcion === it.descripcion ? { ...n, costo: String(costo) } : n));
     });
   }
   function limpiarLinea() {

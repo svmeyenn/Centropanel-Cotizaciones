@@ -144,15 +144,16 @@ export async function agregarItemOC(
 }
 
 // Costo que el proveedor de la orden ya tiene para el item (0 si no tiene).
-export async function costoItemOC(idOc: number, item: { tipo: "materia_prima" | "producto"; id: number }): Promise<number> {
+export async function costoItemOC(idOc: number, item: { tipo: "materia_prima" | "producto"; id: number }): Promise<{ costo: number; error?: string }> {
   await requerirVendedor();
   const supabase = await createClient();
-  const { data } = await supabase.rpc("oc_costo_item", {
+  const { data, error } = await supabase.rpc("oc_costo_item", {
     p_oc: idOc,
     p_mp: item.tipo === "materia_prima" ? item.id : null,
     p_prod: item.tipo === "producto" ? item.id : null,
   });
-  return Number(data ?? 0);
+  if (error) return { costo: 0, error: error.message };
+  return { costo: Number(data ?? 0) };
 }
 
 // Deja las lineas elegidas en la maestra del proveedor de la orden, con costo cero.
