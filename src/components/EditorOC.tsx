@@ -457,7 +457,7 @@ export default function EditorOC({
         </div>
         {borrador && (
           <div className="border-t border-gray-200 p-3 grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
-            <div className="text-xs md:col-span-2 relative">
+            <div className="text-xs md:col-span-2">
               <label htmlFor="oc-linea-desc" className="block font-semibold mb-1">{nl.id ? "Editar linea" : "Nueva linea"}</label>
               {nl.id ? (
                 <input id="oc-linea-desc" className={input} value={nl.descripcion} onChange={(e) => setNl({ ...nl, descripcion: e.target.value })} />
@@ -485,7 +485,7 @@ export default function EditorOC({
                     }}
                   />
                   {busca.trim().length >= 2 && (
-                    <ul className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white border border-gray-300 rounded shadow-lg">
+                    <ul className="mt-1 max-h-60 overflow-auto bg-white border border-gray-300 rounded shadow-lg">
                       {encontrados.map((it) => (
                         <li key={`${it.tipo}-${it.id}`}>
                           <button type="button" className="w-full text-left px-2 py-1.5 hover:bg-crema" onClick={() => elegir(it)}>
