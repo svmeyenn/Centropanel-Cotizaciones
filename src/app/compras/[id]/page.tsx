@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import EditorOC from "@/components/EditorOC";
+import AdjuntosOC from "@/components/AdjuntosOC";
 import EnvioDocumento from "@/components/EnvioDocumento";
 import BotonReversar from "@/components/BotonReversar";
 import RetiroOC from "@/components/transportes/RetiroOC";
@@ -40,6 +41,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
     ? { folio: scDb.folio as string, idNm: Number(scDb.id_necesidad), folioNm: uno<{ folio: string }>(scDb.necesidades_material)?.folio ?? "" }
     : null;
 
+  const { data: adjuntosOc } = await supabase.from("oc_adjuntos").select("id, nombre, tamano, subido_en").eq("id_oc", id).order("subido_en");
   const [{ data: lineas }, { data: recs }, { data: pagos }, { data: partidas }, { data: cuentas }, { data: cats }, { data: aprueba }, { data: quienes }] =
     await Promise.all([
       supabase.from("oc_detalle").select("*").eq("id_oc", id).order("orden").order("id"),
@@ -226,6 +228,11 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
           puedeAprobar={Boolean(aprueba)}
           puedeCrear={v.puede_crear}
           esAdmin={tienePerfilAdmin(v)}
+        />
+        <AdjuntosOC
+          idOc={id}
+          adjuntos={(adjuntosOc ?? []).map((a) => ({ id: Number(a.id), nombre: a.nombre as string, tamano: a.tamano as number | null, subido_en: a.subido_en as string }))}
+          puedeEditar={v.puede_crear}
         />
       </div>
     </div>

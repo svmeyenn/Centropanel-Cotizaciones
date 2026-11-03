@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
+import { BUCKET_OC, nombreSeguro } from "@/lib/finanzas/almacen";
 import type { ItemBuscado } from "@/app/necesidades/acciones";
 
 function refrescar(id?: number) {
@@ -303,5 +304,44 @@ export async function actualizarCabeceraOC(
   });
   if (error) return { error: error.message };
   refrescar(id);
+  return { ok: true };
+}
+
+// Archivos de una orden (cotizacion del proveedor, guia, orden firmada...). El navegador sube el archivo directo
+// al deposito privado --sin pasar por el limite de la peticion-- y aca solo se registra y se entrega un enlace
+// firmado de diez minutos.
+export async function registrarAdjuntoOC(idOc: number, a: { ruta: string; nombre: string; tipo_mime: string; tamano: number }): Promise<{ ok?: boolean; error?: string }> {
+  const v = await requerirVendedor();
+  if (!a.ruta.startsWith(`ordenes/${idOc}/`)) return { error: "Ruta de archivo no valida." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("oc_adjuntos")
+    .insert({ id_oc: idOc, nombre: a.nombre, ruta: a.ruta, tipo_mime: a.tipo_mime || null, tamano: a.tamano, id_vendedor: v.id });
+  if (error) {
+    await supabase.storage.from(BUCKET_OC).remove([a.ruta]);
+    return { error: error.message };
+  }
+  refrescar(idOc);
+  return { ok: true };
+}
+
+export async function urlAdjuntoOC(idOc: number, idAdjunto: number): Promise<{ url?: string; error?: string }> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data } = await supabase.from("oc_adjuntos").select("ruta").eq("id", idAdjunto).eq("id_oc", idOc).maybeSingle();
+  if (!data) return { error: "No existe ese archivo." };
+  const { data: f, error } = await supabase.storage.from(BUCKET_OC).createSignedUrl(data.ruta as string, 60 * 10);
+  if (error || !f) return { error: error?.message ?? "No se pudo abrir el archivo." };
+  return { url: f.signedUrl };
+}
+
+export async function quitarAdjuntoOC(idOc: number, idAdjunto: number): Promise<{ ok?: boolean; error?: string }> {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("oc_adjuntos").delete().eq("id", idAdjunto).eq("id_oc", idOc).select("ruta");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "No puede quitar este archivo." };
+  await supabase.storage.from(BUCKET_OC).remove([data[0].ruta as string]);
+  refrescar(idOc);
   return { ok: true };
 }

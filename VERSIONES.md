@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.031-20261103**
+Version vigente: **v008.032-20261103**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.031-20261103**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.031 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.032 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.032-20261103 | — | 03-11-2026 | Se pueden adjuntar archivos a la orden de compra (cotizacion del proveedor, orden firmada, guia): hasta 25 MB cada uno, deposito privado, enlace de descarga de diez minutos. Ver los archivos exige poder ver la orden y subirlos o quitarlos, poder crear ordenes. Estructura: tabla oc_adjuntos, deposito oc-adjuntos y funciones oc_puede_ver_adjunto / oc_puede_escribir_adjunto. |
 | v008.031-20261103 | — | 03-11-2026 | La busqueda de items en la orden de compra pone primero lo que el proveedor ya tiene en su maestra, con su costo, y marca lo que no tiene; al elegirlo el costo se completa solo. Las lineas de la orden muestran el SKU en su propia columna. Estructura: funcion oc_buscar_items. |
 | v008.030-20261103 | — | 03-11-2026 | Al elegir un item en la linea de la orden de compra, si no se puede traer el costo que el proveedor ya tiene se muestra el motivo en vez de dejar el costo vacio. Datos: se recargo el cache de esquema de la API. Sin cambios de estructura. |
 | v008.029-20261103 | — | 03-11-2026 | La lista de materias primas de la linea de orden de compra se abre hacia arriba del campo y la tarjeta de lineas ya no la recorta. Sin cambios de estructura. |

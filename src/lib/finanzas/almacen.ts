@@ -5,6 +5,7 @@ import { ES_SANDBOX } from "@/lib/supabase/esquema";
 // deposito significaria que borrar el respaldo de una prueba borrase el archivo
 // real del movimiento que lleva ese mismo numero.
 export const BUCKET_ADJUNTOS = ES_SANDBOX ? "adjuntos-sandbox" : "adjuntos";
+export const BUCKET_OC = ES_SANDBOX ? "oc-adjuntos-sandbox" : "oc-adjuntos";
 export const BUCKET_BOLETAS = ES_SANDBOX ? "boletas-sandbox" : "boletas";
 
 // Un nombre de archivo que no pueda romper la ruta ni salirse de su carpeta.
