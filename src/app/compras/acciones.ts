@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
+import type { ItemBuscado } from "@/app/necesidades/acciones";
 
 function refrescar(id?: number) {
   revalidatePath("/compras");
@@ -141,6 +142,17 @@ export async function agregarItemOC(
   refrescar(idOc);
   revalidatePath("/proveedores");
   return { ok: true };
+}
+
+export type ItemOC = ItemBuscado & { costo: number; en_maestra: boolean };
+
+// Busca en la maestra del mercado de la orden; trae primero lo que el proveedor ya tiene, con su costo.
+export async function buscarItemsOC(idOc: number, q: string): Promise<ItemOC[]> {
+  await requerirVendedor();
+  if (q.trim().length < 2) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("oc_buscar_items", { p_oc: idOc, p_q: q, p_limite: 25 });
+  return ((data ?? []) as ItemOC[]).map((x) => ({ ...x, id: Number(x.id), costo: Number(x.costo ?? 0) }));
 }
 
 // Costo que el proveedor de la orden ya tiene para el item (0 si no tiene).

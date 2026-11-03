@@ -3,10 +3,12 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import VentanaNuevaMateria from "@/components/VentanaNuevaMateria";
-import { buscarItemsCompra, type ItemBuscado } from "@/app/necesidades/acciones";
+import type { ItemBuscado } from "@/app/necesidades/acciones";
 import {
   agregarItemOC,
+  buscarItemsOC,
   costoItemOC,
+  type ItemOC,
   anularOC,
   asignarMaestraOC,
   aprobarOC,
@@ -123,7 +125,7 @@ export default function EditorOC({
   // Item de la maestra elegido para la linea nueva; sin item, la linea es de texto libre.
   const [sel, setSel] = useState<ItemBuscado | null>(null);
   const [busca, setBusca] = useState("");
-  const [encontrados, setEncontrados] = useState<ItemBuscado[]>([]);
+  const [encontrados, setEncontrados] = useState<ItemOC[]>([]);
   const [creando, setCreando] = useState(false);
   useEffect(() => {
     if (sel || busca.trim().length < 2) {
@@ -132,22 +134,24 @@ export default function EditorOC({
     }
     let vigente = true;
     const t = setTimeout(() => {
-      buscarItemsCompra(busca, oc.id_pais).then((r) => vigente && setEncontrados(r));
+      buscarItemsOC(oc.id, busca).then((r) => vigente && setEncontrados(r));
     }, 250);
     return () => {
       vigente = false;
       clearTimeout(t);
     };
-  }, [busca, sel, oc.id_pais]);
-  function elegir(it: ItemBuscado) {
+  }, [busca, sel, oc.id]);
+  function elegir(it: ItemBuscado, costo = 0) {
     setSel(it);
     setBusca("");
     setEncontrados([]);
-    setNl((n) => ({ ...n, descripcion: it.descripcion, costo: "" }));
-    costoItemOC(oc.id, { tipo: it.tipo, id: it.id }).then(({ costo, error }) => {
-      if (error) return setError(`No se pudo traer el costo del proveedor: ${error}`);
-      if (costo > 0) setNl((n) => (n.descripcion === it.descripcion ? { ...n, costo: String(costo) } : n));
-    });
+    setNl((n) => ({ ...n, descripcion: it.descripcion, costo: costo > 0 ? String(costo) : "" }));
+    // Recien creado: aun no hay costo que mostrar; si el proveedor ya lo tiene, se completa solo.
+    if (costo === 0)
+      costoItemOC(oc.id, { tipo: it.tipo, id: it.id }).then(({ costo: c, error }) => {
+        if (error) return setError(`No se pudo traer el costo del proveedor: ${error}`);
+        if (c > 0) setNl((n) => (n.descripcion === it.descripcion ? { ...n, costo: String(c) } : n));
+      });
   }
   function limpiarLinea() {
     setSel(null);
@@ -489,11 +493,16 @@ export default function EditorOC({
                     <ul className="absolute z-30 left-0 right-0 bottom-full mb-1 max-h-60 overflow-auto bg-white border border-gray-300 rounded shadow-lg">
                       {encontrados.map((it) => (
                         <li key={`${it.tipo}-${it.id}`}>
-                          <button type="button" className="w-full text-left px-2 py-1.5 hover:bg-crema" onClick={() => elegir(it)}>
+                          <button type="button" className="w-full text-left px-2 py-1.5 hover:bg-crema" onClick={() => elegir(it, it.costo)}>
                             {it.sku && <span className="text-gray-500 mr-1">{it.sku}</span>}
                             {it.descripcion}
                             {it.unidad && <span className="text-gray-500"> · {it.unidad}</span>}
                             {it.tipo === "producto" && <span className="text-gray-500"> · producto</span>}
+                            {it.en_maestra ? (
+                              <span className="ml-1 text-verde font-semibold">· {it.costo > 0 ? dinero(it.costo, m) : "en su maestra, sin costo"}</span>
+                            ) : (
+                              <span className="ml-1 text-amber-700">· no esta en la maestra del proveedor</span>
+                            )}
                           </button>
                         </li>
                       ))}
