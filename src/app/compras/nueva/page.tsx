@@ -1,7 +1,7 @@
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import NuevaOC from "@/components/NuevaOC";
-import { requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/relaciones";
 import { etiquetaProyecto } from "@/lib/finanzas/tipos";
@@ -13,25 +13,31 @@ export default async function Pagina({
 }: {
   searchParams: Promise<{ proyecto?: string }>;
 }) {
-  await requerirVendedor();
+  const v = await requerirVendedor();
+  // Con un solo mercado a la vista, todo lo que se ofrece es de ese mercado.
+  const { idPaisActivo } = await contextoMercado(v);
   const { proyecto } = await searchParams;
   const supabase = await createClient();
 
   const [{ data: proyectos }, { data: partidas }, { data: provs }, { data: sols }, { data: usadas }] =
     await Promise.all([
-      supabase
-        .from("proyectos")
-        .select("id_proyecto, nombre, cliente, num_pedido, id_pais")
-        .eq("borrado", false)
-        .eq("activo", true)
-        .order("nombre"),
+      conPais(
+        supabase
+          .from("proyectos")
+          .select("id_proyecto, nombre, cliente, num_pedido, id_pais")
+          .eq("borrado", false)
+          .eq("activo", true),
+        idPaisActivo
+      ).order("nombre"),
       supabase.from("proyecto_partidas").select("id, id_proyecto, nombre").order("orden").order("id"),
-      supabase
-        .from("entidades")
-        .select("id_entidad, razon_social, id_pais, entidad_tipos!inner(tipo)")
-        .eq("entidad_tipos.tipo", "proveedor")
-        .eq("activo", true)
-        .order("razon_social"),
+      conPais(
+        supabase
+          .from("entidades")
+          .select("id_entidad, razon_social, id_pais, entidad_tipos!inner(tipo)")
+          .eq("entidad_tipos.tipo", "proveedor")
+          .eq("activo", true),
+        idPaisActivo
+      ).order("razon_social"),
       supabase
         .from("solicitudes")
         .select("id, num_solicitud, entidades(razon_social), pedidos(id_pais)")
@@ -53,7 +59,9 @@ export default async function Pagina({
             nombre: etiquetaProyecto(p as { nombre: string; num_pedido?: string | null; cliente?: string | null }),
             id_pais: Number(p.id_pais),
           }))}
-          partidas={(partidas ?? []).map((p) => ({
+          partidas={(partidas ?? [])
+            .filter((p) => (proyectos ?? []).some((x) => Number(x.id_proyecto) === Number(p.id_proyecto)))
+            .map((p) => ({
             id: Number(p.id),
             id_proyecto: Number(p.id_proyecto),
             nombre: p.nombre as string,
@@ -65,6 +73,7 @@ export default async function Pagina({
           }))}
           solicitudes={(sols ?? [])
             .filter((s) => !ocupadas.has(Number(s.id)))
+            .filter((s) => idPaisActivo == null || Number(uno<{ id_pais: number }>(s.pedidos)?.id_pais ?? 0) === idPaisActivo)
             .map((s) => ({
               id: Number(s.id),
               num: s.num_solicitud as string,

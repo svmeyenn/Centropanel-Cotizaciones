@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import NuevaNecesidad from "@/components/NuevaNecesidad";
-import { requerirVendedor } from "@/lib/sesion";
+import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { etiquetaProyecto } from "@/lib/finanzas/tipos";
 
@@ -14,11 +14,13 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
   if (!(["Administrador", "Supervisor", "Comprador"].includes(v.rol) || v.puede_crear)) redirect("/necesidades");
   const { proyecto } = await searchParams;
   const supabase = await createClient();
+  // Con un solo mercado a la vista, solo se ofrecen obras y pedidos de ese mercado.
+  const { idPaisActivo } = await contextoMercado(v);
 
   const [{ data: proyectos }, { data: partidas }, { data: pedidos }] = await Promise.all([
-    supabase.from("proyectos").select("id_proyecto, nombre, cliente, num_pedido, id_pais, direccion").eq("borrado", false).eq("activo", true).order("nombre"),
+    conPais(supabase.from("proyectos").select("id_proyecto, nombre, cliente, num_pedido, id_pais, direccion").eq("borrado", false).eq("activo", true), idPaisActivo).order("nombre"),
     supabase.from("proyecto_partidas").select("id, id_proyecto, nombre").order("orden").order("id"),
-    supabase.from("pedidos").select("id, num_pedido, id_pais, id_proyecto").order("id", { ascending: false }).limit(300),
+    conPais(supabase.from("pedidos").select("id, num_pedido, id_pais, id_proyecto"), idPaisActivo).order("id", { ascending: false }).limit(300),
   ]);
 
   // La bodega de Centro Panel de cada mercado: a donde se despacha todo pedido de materia prima.
