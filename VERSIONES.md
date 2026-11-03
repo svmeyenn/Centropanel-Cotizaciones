@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.028-20261103**
+Version vigente: **v008.029-20261103**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.028-20261103**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.028 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.029 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.029-20261103 | — | 03-11-2026 | La lista de materias primas de la linea de orden de compra se abre hacia arriba del campo y la tarjeta de lineas ya no la recorta. Sin cambios de estructura. |
 | v008.028-20261103 | — | 03-11-2026 | La lista de materias primas al agregar una linea de la orden de compra se veia recortada por la tarjeta; ahora se muestra completa. Sin cambios de estructura. |
 | v008.027-20261103 | — | 03-11-2026 | Las lineas de una orden de compra se eligen de la maestra de materias primas y productos (busqueda por nombre o SKU, del mercado de la orden) o se crea la materia prima desde la misma orden. El item queda asignado en la maestra del proveedor. Estructura: funciones oc_agregar_item y oc_costo_item. |
 | v008.026-20261103 | — | 03-11-2026 | Nueva orden de compra y nueva necesidad de material ofrecen solo proyectos, proveedores, pedidos y solicitudes del mercado activo. Con los dos mercados a la vista, los proyectos de igual nombre llevan (CL) o (PE). Datos: se restauro el maestro Paneles de Chile, se asigno como proyecto de aprobacion y se creo el maestro Paneles de Peru. Sin cambios de estructura. |
