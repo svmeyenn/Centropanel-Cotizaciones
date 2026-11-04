@@ -3,7 +3,7 @@ import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, requerirVendedor } from "@/lib/sesion";
-import { cargarBalance, fecha, fmt, type FilaBalance } from "@/lib/finanzas/contabilidad";
+import { asegurarContabilidad, cargarBalance, fecha, fmt, type FilaBalance } from "@/lib/finanzas/contabilidad";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +65,7 @@ export default async function Pagina({
 
   const ctx = await contextoMercado(v);
   const paises = ctx.activo ? [ctx.activo] : ctx.accesibles;
+  await asegurarContabilidad();
   const bloques = await Promise.all(
     paises.map(async (p) => ({ pais: p, bal: await cargarBalance(al, p.id) }))
   );

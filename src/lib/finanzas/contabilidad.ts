@@ -73,3 +73,10 @@ export async function cargarBalance(al: string, idPais: number) {
     resultado: Number(res.data ?? 0),
   };
 }
+
+// Los asientos automaticos salen de los documentos (facturas, ordenes, pagos, liquidaciones...). Antes de mostrar un
+// reporte se rehace lo que haya quedado atrasado; si nada cambio desde la ultima vez no hace nada.
+export async function asegurarContabilidad() {
+  const supabase = await createClient();
+  await supabase.rpc("contabilizar_pendiente");
+}

@@ -7,6 +7,7 @@ import {
   NOMBRE_UNIDAD,
   UNIDADES,
   cargarEstadoResultados,
+  asegurarContabilidad,
   cargarPlan,
   fecha,
   fmt,
@@ -61,6 +62,7 @@ export default async function Pagina({
 
   const ctx = await contextoMercado(v);
   const paises = ctx.activo ? [ctx.activo] : ctx.accesibles;
+  await asegurarContabilidad();
   const plan = await cargarPlan();
   const bloques = await Promise.all(
     paises.map(async (p) => ({ pais: p, er: await cargarEstadoResultados(desde, hasta, p.id) }))

@@ -4,7 +4,7 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import PanelDiario from "@/components/finanzas/PanelDiario";
 import { puedeVerRuta } from "@/lib/menu";
 import { contextoMercado, paisAdministrado, requerirVendedor } from "@/lib/sesion";
-import { cargarPlan } from "@/lib/finanzas/contabilidad";
+import { asegurarContabilidad, cargarPlan } from "@/lib/finanzas/contabilidad";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +27,7 @@ export default async function Pagina({
   const pais = paisAdministrado(ctx, sp.pais);
   if (!pais) redirect("/");
 
+  await asegurarContabilidad();
   const supabase = await createClient();
   const [plan, asientos, centros] = await Promise.all([
     cargarPlan(),
