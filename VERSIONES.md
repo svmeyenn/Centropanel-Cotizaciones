@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.034-20261103**
+Version vigente: **v008.035-20261104**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.034-20261103**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.034 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.035 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.035-20261104 | — | 04-11-2026 | Contabilidad conectada de punta a punta. (1) Automatica: los reportes (libro diario, estado de resultados, balance) rehacen los asientos solos cuando cambia un documento y una vez al dia; el boton queda de respaldo. (2) Inventario: la recepcion de materiales entra a Inventarios (1.1.04) contra acreedores (2.1.01); la factura del proveedor reparte entre inventario y gasto segun las lineas de la orden y cruza lo ya recibido; el pago de una orden con materiales rebaja acreedores; las compras de Materias primas sin orden van a inventario. El costo de venta (5.1.01) sale del inventario al facturar paneles y reventa (o al reconocer el avance en obras), y las notas de credito lo revierten. (3) Remuneraciones: el gasto se devenga al cerrar el mes de la liquidacion aprobada contra Obligaciones laborales (2.1.04); los pagos de remuneraciones la rebajan antes de llegar a gasto. (4) Categorias Gastos financieros (6.2.02) e Ingresos financieros (6.2.01). Estructura: tabla contab_estado y disparadores tg_contab_sucio, funciones contabilizar_pendiente, fin_contabilizar_core, _pedido_neto y _pedido_costo_bienes; nuevos origenes de asiento. |
 | v008.034-20261103 | — | 03-11-2026 | Productos de reventa: una materia prima que tambien se vende como producto. Se crea desde Nuevo producto > Reventa de materia prima; su costo sigue siempre al de la materia prima y su precio al costo con el margen objetivo, salvo que sea manual. Una materia prima admite un solo producto de reventa. Estructura: columna productos.id_materia_prima, tipo Reventa, funciones reventa_crear y recalcular_reventas, trigger tg_reventa_sigue_costo; recosteo_general y costos_fijar las consideran. |
 | v008.033-20261103 | — | 03-11-2026 | Al elegir un item en la linea de la orden de compra, el costo unitario se completa siempre: el del proveedor y, si este no lo tiene en su maestra, el costo de la maestra de materias primas o productos (se indica en la lista). Editable antes de agregar. Estructura: oc_buscar_items devuelve costo_ref; oc_costo_item y oc_agregar_item usan el costo de la maestra como respaldo. |
 | v008.032-20261103 | — | 03-11-2026 | Se pueden adjuntar archivos a la orden de compra (cotizacion del proveedor, orden firmada, guia): hasta 25 MB cada uno, deposito privado, enlace de descarga de diez minutos. Ver los archivos exige poder ver la orden y subirlos o quitarlos, poder crear ordenes. Estructura: tabla oc_adjuntos, deposito oc-adjuntos y funciones oc_puede_ver_adjunto / oc_puede_escribir_adjunto. |
