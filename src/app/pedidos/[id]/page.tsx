@@ -60,7 +60,7 @@ export default async function Pagina({
         .single(),
       supabase
         .from("pedido_detalle")
-        .select("id, sku, descripcion, unidades, valor_unitario, id_producto")
+        .select("id, sku, descripcion, unidades, valor_unitario, precio_lista, descuento_pct, id_producto")
         .eq("id_pedido", id)
         .order("orden"),
       supabase.rpc("necesidades_pedido", { p_pedido: id }),
@@ -237,6 +237,8 @@ export default async function Pagina({
     descripcion: l.descripcion as string,
     unidades: Number(l.unidades),
     valor_unitario: Number(l.valor_unitario),
+    precio_lista: l.precio_lista != null ? Number(l.precio_lista) : null,
+    descuento_pct: Number(l.descuento_pct ?? 0),
   }));
 
   const necesidades: NecesidadVista[] = (

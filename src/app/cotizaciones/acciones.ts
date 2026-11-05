@@ -16,8 +16,12 @@ export interface ItemBorrador {
   sku?: string | null;
   descripcion: string;
   unidades: number;
+  // Precio neto de la linea, ya con su descuento: es lo que suman los totales.
   valor_unitario: number;
   costo_unitario: number;
+  // Descuento de la linea: el precio antes del descuento y el %. Sin descuento, precio_lista va vacio.
+  precio_lista?: number | null;
+  descuento_pct?: number;
 }
 
 export interface DatosCotizacion {
@@ -143,6 +147,8 @@ export async function crearCotizacion(d: DatosCotizacion) {
     unidades: it.unidades,
     valor_unitario: it.valor_unitario,
     costo_unitario: it.costo_unitario,
+    precio_lista: it.descuento_pct ? (it.precio_lista ?? it.valor_unitario) : null,
+    descuento_pct: it.descuento_pct ?? 0,
   }));
 
   const { error: e2 } = await supabase.from("cotizacion_detalle").insert(detalle);
@@ -212,6 +218,8 @@ export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
     unidades: it.unidades,
     valor_unitario: it.valor_unitario,
     costo_unitario: it.costo_unitario,
+    precio_lista: it.descuento_pct ? (it.precio_lista ?? it.valor_unitario) : null,
+    descuento_pct: it.descuento_pct ?? 0,
   }));
   const { error: e2 } = await supabase.from("cotizacion_detalle").insert(detalle);
   if (e2) return { error: e2.message };

@@ -28,7 +28,10 @@ export interface ItemDoc {
   sku?: string | null;
   descripcion: string | null;
   unidades: number;
+  // Precio neto de la linea; si tiene descuento, precio_lista y descuento_pct lo explican.
   valor_unitario: number;
+  precio_lista?: number | null;
+  descuento_pct?: number;
 }
 
 // Estado de pago de un pedido: lo que se debe, lo abonado y lo que falta.
@@ -170,6 +173,11 @@ export default function DocumentoCotizacion({
               </td>
               <td className="px-2 py-1 text-right whitespace-nowrap">
                 {importe(it.valor_unitario, d.moneda)}
+                {Number(it.descuento_pct ?? 0) > 0 && it.precio_lista != null && (
+                  <span className="block text-[10px] text-gray-500">
+                    lista {importe(it.precio_lista, d.moneda)} · desc. {porcentaje(Number(it.descuento_pct))} %
+                  </span>
+                )}
               </td>
               <td className="px-2 py-1 text-right whitespace-nowrap">
                 {importe(Number(it.unidades) * Number(it.valor_unitario), d.moneda)}

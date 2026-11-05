@@ -342,6 +342,23 @@ export default function EditorCotizacion(p: Props) {
       }));
   }
 
+  // Descuento de una linea en %: el precio de lista queda guardado y el valor unitario pasa a ser el neto, que es lo
+  // que suman los totales. En 0 la linea vuelve a su precio de lista.
+  function cambiarDescuentoLinea(i: number, texto: string) {
+    const n = Number(texto.replace(",", "."));
+    const pct = Number.isFinite(n) ? Math.min(Math.max(n, 0), 100) : 0;
+    setD((x) => ({
+      ...x,
+      items: x.items.map((it, j) => {
+        if (j !== i) return it;
+        const lista = it.precio_lista ?? it.valor_unitario;
+        return pct > 0
+          ? { ...it, precio_lista: lista, descuento_pct: pct, valor_unitario: redondea(lista * (1 - pct / 100), moneda) }
+          : { ...it, precio_lista: null, descuento_pct: 0, valor_unitario: lista };
+      }),
+    }));
+  }
+
   function guardar() {
     setError(null);
     setAviso(null);
@@ -755,15 +772,22 @@ export default function EditorCotizacion(p: Props) {
                 <th className="text-left px-3 py-1 w-24">Codigo</th>
                 <th className="text-left px-3 py-1">Descripcion</th>
                 <th className="text-right px-3 py-1 w-24">Unid.</th>
+                <th className="text-right px-3 py-1 w-28">P. lista</th>
+                <th className="text-right px-3 py-1 w-20">Desc. %</th>
                 <th className="text-right px-3 py-1 w-32">V. unit. neto</th>
                 <th className="text-right px-3 py-1 w-32">Subtotal</th>
+                {p.verMargen && (
+                  <th className="text-right px-3 py-1 w-36" title="Subtotal de la linea menos su costo, antes de los descuentos generales">
+                    Margen linea
+                  </th>
+                )}
                 {!soloLectura && <th className="w-16" />}
               </tr>
             </thead>
             <tbody>
               {d.items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-500 py-6">
+                  <td colSpan={11} className="text-center text-gray-500 py-6">
                     Sin items todavia.
                   </td>
                 </tr>
@@ -794,10 +818,43 @@ export default function EditorCotizacion(p: Props) {
                       />
                     )}
                   </td>
+                  <td className="px-3 py-1 text-right text-gray-600">{importe(it.precio_lista ?? it.valor_unitario, moneda)}</td>
+                  <td className="px-3 py-1 text-right">
+                    {soloLectura ? (
+                      it.descuento_pct ? `${porcentaje(it.descuento_pct)} %` : <span className="text-gray-400">—</span>
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="any"
+                        aria-label={`Descuento % de la linea ${i + 1}`}
+                        className="border border-gray-300 rounded px-1.5 py-0.5 w-16 text-right text-xs bg-white"
+                        value={it.descuento_pct || ""}
+                        placeholder="0"
+                        onChange={(e) => cambiarDescuentoLinea(i, e.target.value)}
+                      />
+                    )}
+                  </td>
                   <td className="px-3 py-1 text-right">{importe(it.valor_unitario, moneda)}</td>
                   <td className="px-3 py-1 text-right font-semibold">
                     {importe(it.unidades * it.valor_unitario, moneda)}
                   </td>
+                  {p.verMargen && (
+                    <td className="px-3 py-1 text-right">
+                      {(() => {
+                        const costo = costoDe(it);
+                        if (!costo) return <span className="text-amber-700">sin costo</span>;
+                        const m = it.unidades * (it.valor_unitario - costo);
+                        const pct = it.valor_unitario > 0 ? ((it.valor_unitario - costo) / it.valor_unitario) * 100 : 0;
+                        return (
+                          <span className={m < 0 ? "text-red-700" : "text-dorado-osc"}>
+                            {importe(m, moneda)} · {porcentaje(pct)} %
+                          </span>
+                        );
+                      })()}
+                    </td>
+                  )}
                   {!soloLectura && (
                     <td className="px-2 text-right">
                       <button

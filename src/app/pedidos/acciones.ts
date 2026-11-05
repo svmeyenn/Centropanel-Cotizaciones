@@ -99,7 +99,10 @@ export async function actualizarPedido(id: number, d: DatosPedido) {
 export interface LineaPedido {
   id: number;
   unidades: number;
+  // Precio neto, ya con el descuento de la linea.
   valor_unitario: number;
+  precio_lista?: number | null;
+  descuento_pct?: number;
 }
 
 // Las lineas del pedido si se editan: el pedido es el documento vivo, a
@@ -116,7 +119,12 @@ export async function actualizarLineasPedido(
   for (const l of lineas) {
     const { error } = await supabase
       .from("pedido_detalle")
-      .update({ unidades: l.unidades, valor_unitario: l.valor_unitario })
+      .update({
+        unidades: l.unidades,
+        valor_unitario: l.valor_unitario,
+        precio_lista: l.descuento_pct ? (l.precio_lista ?? l.valor_unitario) : null,
+        descuento_pct: l.descuento_pct ?? 0,
+      })
       .eq("id", l.id);
     if (error) return { error: error.message };
   }

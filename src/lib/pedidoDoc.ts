@@ -62,6 +62,8 @@ export async function leerPedidoDoc(id: number): Promise<{
       descripcion: it.descripcion,
       unidades: Number(it.unidades),
       valor_unitario: Number(it.valor_unitario),
+      precio_lista: it.precio_lista != null ? Number(it.precio_lista) : null,
+      descuento_pct: Number(it.descuento_pct ?? 0),
     })),
     subtotal: Number(cta?.subtotal ?? 0),
     descuento: Number(cta?.descuento_monto ?? 0),

@@ -175,7 +175,13 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
             <Text style={[s.celda, s.cSku, { color: GRIS }]}>{it.sku ?? ""}</Text>
             <Text style={[s.celda, s.cDesc]}>{it.descripcion}</Text>
             <Text style={[s.celda, s.cUnid]}>{fmtUnid(it.unidades)}</Text>
-            <Text style={[s.celda, s.cUnit]}>{importe(it.valor_unitario, d.moneda)}</Text>
+            <Text style={[s.celda, s.cUnit]}>
+              {importe(it.valor_unitario, d.moneda)}
+              {Number(it.descuento_pct ?? 0) > 0 && it.precio_lista != null
+                ? `
+lista ${importe(it.precio_lista, d.moneda)} · desc. ${porcentaje(Number(it.descuento_pct))} %`
+                : ""}
+            </Text>
             <Text style={[s.celda, s.cSub]}>
               {importe(Number(it.unidades) * Number(it.valor_unitario), d.moneda)}
             </Text>

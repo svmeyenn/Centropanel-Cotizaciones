@@ -37,16 +37,30 @@ import {
 // las facturas de los transportistas, y los gastos financieros de sus pagos--, todo sin IVA.
 export interface MargenReal {
   neto_vendido: number;
-  costos: { categoria: string; bruto: number; neto: number; n: number }[];
+  // Cada categoria trae sus egresos, para abrirla en pantalla.
+  costos: {
+    categoria: string;
+    bruto: number;
+    neto: number;
+    n: number;
+    detalle?: { id: number; fecha: string | null; proveedor: string | null; documento: string | null; glosa: string | null; neto: number }[];
+  }[];
   costos_neto: number;
   // El adhesivo no se compra por pedido: su costo teorico es el real.
   adhesivo_teorico?: number;
   // Costo de transporte registrado a mano, sin factura aprobada todavia.
-  transporte_sin_factura?: { bruto: number; neto: number; n: number };
+  transporte_sin_factura?: { bruto: number; neto: number; n: number; detalle?: { glosa: string | null; neto: number }[] };
   // Otros gastos del pedido registrados a mano, sin factura aprobada todavia.
-  otros_sin_factura?: { bruto: number; neto: number; n: number };
+  otros_sin_factura?: { bruto: number; neto: number; n: number; detalle?: { glosa: string | null; neto: number }[] };
   egresos: number;
-  gastos_financieros: { bruto: number; neto: number; pagos_definidos: number; por_definir: number; monto_por_definir: number };
+  gastos_financieros: {
+    bruto: number;
+    neto: number;
+    pagos_definidos: number;
+    por_definir: number;
+    monto_por_definir: number;
+    detalle?: { fecha: string | null; medio: string | null; neto: number }[];
+  };
   costo_total: number;
   margen: number;
   margen_pct: number | null;
@@ -60,7 +74,10 @@ export interface LineaVista {
   sku?: string | null;
   descripcion: string;
   unidades: number;
+  // Precio neto de la linea, ya con su descuento.
   valor_unitario: number;
+  precio_lista?: number | null;
+  descuento_pct?: number;
 }
 
 export interface NecesidadVista {
@@ -231,6 +248,24 @@ export default function EditorPedido({
       : null;
   const margen = totalNeto - costoPedido;
   const margenPct = totalNeto > 0 ? (margen / totalNeto) * 100 : 0;
+  // Apertura de los costos del margen teorico y del real (cada grupo se abre y se cierra por separado).
+  const [abiertoTeorico, setAbiertoTeorico] = useState(false);
+  const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
+  const alternar = (k: string) => setAbiertos((x) => ({ ...x, [k]: !x[k] }));
+
+  // Precio de lista y descuento de una linea: el valor unitario es el neto que resulta, y es lo que suma el pedido.
+  function cambiarPrecioLinea(idLinea: number, cambio: { lista?: number; pct?: number }) {
+    setLs((x) =>
+      x.map((y) => {
+        if (y.id !== idLinea) return y;
+        const lista = cambio.lista ?? y.precio_lista ?? y.valor_unitario;
+        const pct = Math.min(Math.max(cambio.pct ?? y.descuento_pct ?? 0, 0), 100);
+        return pct > 0
+          ? { ...y, precio_lista: lista, descuento_pct: pct, valor_unitario: redondea(lista * (1 - pct / 100), moneda) }
+          : { ...y, precio_lista: null, descuento_pct: 0, valor_unitario: lista };
+      })
+    );
+  }
   // Un solo alto y un solo tamano de letra para todos los campos de la
   // cabecera, editables o no: antes los de solo lectura eran bloques grises
   // con letra grande y los editables cajas chicas, y la fila quedaba despareja.
@@ -251,6 +286,8 @@ export default function EditorPedido({
           id: l.id,
           unidades: l.unidades,
           valor_unitario: l.valor_unitario,
+          precio_lista: l.precio_lista ?? null,
+          descuento_pct: l.descuento_pct ?? 0,
         }))
       );
       if (r2?.error) {
@@ -486,8 +523,15 @@ export default function EditorPedido({
                 <th className="text-left px-3 py-2 w-24">SKU</th>
                 <th className="text-left px-3 py-2">Descripcion</th>
                 <th className="text-right px-3 py-2 w-24">Unid.</th>
-                <th className="text-right px-3 py-2 w-32">V. unitario</th>
+                <th className="text-right px-3 py-2 w-32">P. lista</th>
+                <th className="text-right px-3 py-2 w-20">Desc. %</th>
+                <th className="text-right px-3 py-2 w-32">V. unit. neto</th>
                 <th className="text-right px-3 py-2 w-32">Subtotal</th>
+                {verMargen && (
+                  <th className="text-right px-3 py-2 w-36" title="Subtotal de la linea menos su costo, antes de los descuentos generales">
+                    Margen linea
+                  </th>
+                )}
                 {!soloLectura && <th className="w-16" />}
               </tr>
             </thead>
@@ -521,32 +565,56 @@ export default function EditorPedido({
                   </td>
                   <td className="px-3 py-2 text-right">
                     {soloLectura ? (
-                      importe(l.valor_unitario, moneda)
+                      <span className="text-gray-600">{importe(l.precio_lista ?? l.valor_unitario, moneda)}</span>
                     ) : (
                       <input
                         type="text"
                         inputMode="numeric"
+                        aria-label={`Precio de lista de la linea ${i + 1}`}
                         className="border border-gray-300 rounded px-2 py-1 text-right w-28"
-                        value={importe(l.valor_unitario, moneda)}
+                        value={importe(l.precio_lista ?? l.valor_unitario, moneda)}
                         onChange={(e) =>
-                          setLs((x) =>
-                            x.map((y) =>
-                              y.id === l.id
-                                ? {
-                                    ...y,
-                                    valor_unitario:
-                                      Number(e.target.value.replace(/\D/g, "")) || 0,
-                                  }
-                                : y
-                            )
-                          )
+                          cambiarPrecioLinea(l.id, { lista: Number(e.target.value.replace(/\D/g, "")) || 0 })
                         }
                       />
                     )}
                   </td>
+                  <td className="px-3 py-2 text-right">
+                    {soloLectura ? (
+                      l.descuento_pct ? `${porcentaje(l.descuento_pct)} %` : <span className="text-gray-400">—</span>
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="any"
+                        aria-label={`Descuento % de la linea ${i + 1}`}
+                        className="border border-gray-300 rounded px-2 py-1 text-right w-16"
+                        value={l.descuento_pct || ""}
+                        placeholder="0"
+                        onChange={(e) => cambiarPrecioLinea(l.id, { pct: Number(e.target.value.replace(",", ".")) || 0 })}
+                      />
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right">{importe(l.valor_unitario, moneda)}</td>
                   <td className="px-3 py-2 text-right font-semibold">
                     {importe(l.unidades * l.valor_unitario, moneda)}
                   </td>
+                  {verMargen && (
+                    <td className="px-3 py-2 text-right">
+                      {(() => {
+                        const costo = Number(costoPorLinea?.[l.id] ?? 0);
+                        if (!costo) return <span className="text-amber-700">sin costo</span>;
+                        const m = l.unidades * (l.valor_unitario - costo);
+                        const pct = l.valor_unitario > 0 ? ((l.valor_unitario - costo) / l.valor_unitario) * 100 : 0;
+                        return (
+                          <span className={m < 0 ? "text-red-700" : "text-dorado-osc"}>
+                            {importe(m, moneda)} · {porcentaje(pct)} %
+                          </span>
+                        );
+                      })()}
+                    </td>
+                  )}
                   {!soloLectura && (
                     <td className="px-2 text-right">
                       <button
@@ -592,7 +660,30 @@ export default function EditorPedido({
 
           {verMargen && (
             <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
-              <Fila label="Costo de lo pedido" valor={importe(costoPedido, moneda)} />
+              <FilaAbrible
+                label="Costo de lo pedido"
+                valor={importe(costoPedido, moneda)}
+                abierto={abiertoTeorico}
+                onAlternar={() => setAbiertoTeorico((x) => !x)}
+              >
+                {ls.map((l) => {
+                  const cu = Number(costoPorLinea?.[l.id] ?? 0);
+                  return (
+                    <FilaDetalle
+                      key={l.id}
+                      izq={
+                        <>
+                          {l.descripcion}{" "}
+                          <span className="text-gray-500">
+                            ({fmtUnid(l.unidades)} × {cu ? importe(cu, moneda) : "sin costo"})
+                          </span>
+                        </>
+                      }
+                      der={importe(l.unidades * cu, moneda)}
+                    />
+                  );
+                })}
+              </FilaAbrible>
               <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
                 <span>
                   MARGEN TEORICO {porcentaje(margenPct)} %
@@ -613,15 +704,70 @@ export default function EditorPedido({
               <div className="text-[11px] font-semibold uppercase tracking-wide text-dorado-osc">Margen real, con los costos ya ingresados (sin {impuesto})</div>
               <Fila label="Venta neta" valor={importe(margenReal.neto_vendido, moneda)} />
               {margenReal.costos.map((c) => (
-                <Fila key={c.categoria} label={`− ${c.categoria} (${c.n})`} valor={importe(c.neto, moneda)} />
+                <FilaAbrible
+                  key={c.categoria}
+                  label={`− ${c.categoria} (${c.n})`}
+                  valor={importe(c.neto, moneda)}
+                  abierto={!!abiertos[`c:${c.categoria}`]}
+                  onAlternar={() => alternar(`c:${c.categoria}`)}
+                >
+                  {(c.detalle ?? []).map((m) => (
+                    <FilaDetalle
+                      key={m.id}
+                      izq={
+                        <>
+                          {m.fecha ? fmtFecha(m.fecha) : "sin fecha"} · {m.proveedor ?? "sin proveedor"}
+                          {m.documento ? ` · doc ${m.documento}` : ""}
+                          {m.glosa ? <span className="text-gray-500"> · {m.glosa}</span> : null}
+                        </>
+                      }
+                      der={importe(m.neto, moneda)}
+                    />
+                  ))}
+                </FilaAbrible>
               ))}
               {(margenReal.adhesivo_teorico ?? 0) > 0 && <Fila label="− Adhesivo (costo teorico)" valor={importe(margenReal.adhesivo_teorico ?? 0, moneda)} />}
-              {(margenReal.transporte_sin_factura?.n ?? 0) > 0 && <Fila label="− Transporte (valor estimado, sin factura aprobada)" valor={importe(margenReal.transporte_sin_factura?.neto ?? 0, moneda)} />}
-              {(margenReal.otros_sin_factura?.n ?? 0) > 0 && <Fila label="− Otros gastos (valor estimado, sin factura aprobada)" valor={importe(margenReal.otros_sin_factura?.neto ?? 0, moneda)} />}
-              <Fila
-                label={`− Gastos financieros${margenReal.gastos_financieros.por_definir > 0 ? ` (${margenReal.gastos_financieros.por_definir} pago${margenReal.gastos_financieros.por_definir > 1 ? "s" : ""} por definir)` : ""}`}
-                valor={importe(margenReal.gastos_financieros.neto, moneda)}
-              />
+              {(margenReal.transporte_sin_factura?.n ?? 0) > 0 && (
+                <FilaAbrible
+                  label="− Transporte (valor estimado, sin factura aprobada)"
+                  valor={importe(margenReal.transporte_sin_factura?.neto ?? 0, moneda)}
+                  abierto={!!abiertos.transporte}
+                  onAlternar={() => alternar("transporte")}
+                >
+                  {(margenReal.transporte_sin_factura?.detalle ?? []).map((t, k) => (
+                    <FilaDetalle key={k} izq={t.glosa || "sin comentario"} der={importe(t.neto, moneda)} />
+                  ))}
+                </FilaAbrible>
+              )}
+              {(margenReal.otros_sin_factura?.n ?? 0) > 0 && (
+                <FilaAbrible
+                  label="− Otros gastos (valor estimado, sin factura aprobada)"
+                  valor={importe(margenReal.otros_sin_factura?.neto ?? 0, moneda)}
+                  abierto={!!abiertos.otros}
+                  onAlternar={() => alternar("otros")}
+                >
+                  {(margenReal.otros_sin_factura?.detalle ?? []).map((t, k) => (
+                    <FilaDetalle key={k} izq={t.glosa || "sin comentario"} der={importe(t.neto, moneda)} />
+                  ))}
+                </FilaAbrible>
+              )}
+              {(margenReal.gastos_financieros.detalle ?? []).length > 0 ? (
+                <FilaAbrible
+                  label={`− Gastos financieros${margenReal.gastos_financieros.por_definir > 0 ? ` (${margenReal.gastos_financieros.por_definir} pago${margenReal.gastos_financieros.por_definir > 1 ? "s" : ""} por definir)` : ""}`}
+                  valor={importe(margenReal.gastos_financieros.neto, moneda)}
+                  abierto={!!abiertos.financieros}
+                  onAlternar={() => alternar("financieros")}
+                >
+                  {(margenReal.gastos_financieros.detalle ?? []).map((g, k) => (
+                    <FilaDetalle key={k} izq={`${g.fecha ? fmtFecha(g.fecha) : "sin fecha"} · ${g.medio ?? ""}`} der={importe(g.neto, moneda)} />
+                  ))}
+                </FilaAbrible>
+              ) : (
+                <Fila
+                  label={`− Gastos financieros${margenReal.gastos_financieros.por_definir > 0 ? ` (${margenReal.gastos_financieros.por_definir} pago${margenReal.gastos_financieros.por_definir > 1 ? "s" : ""} por definir)` : ""}`}
+                  valor={importe(margenReal.gastos_financieros.neto, moneda)}
+                />
+              )}
               <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
                 <span>MARGEN REAL {margenReal.margen_pct != null ? `${porcentaje(margenReal.margen_pct)} %` : ""}</span>
                 <span>{importe(margenReal.margen, moneda)}</span>
@@ -992,6 +1138,49 @@ function Dato({
       >
         {valor}
       </div>
+    </div>
+  );
+}
+
+// Fila de un costo que se abre para ver de que esta hecho. El triangulo y el subrayado punteado indican que se puede
+// abrir; la apertura queda debajo, sangrada y en letra menor.
+function FilaAbrible({
+  label,
+  valor,
+  abierto,
+  onAlternar,
+  children,
+}: {
+  label: string;
+  valor: string;
+  abierto: boolean;
+  onAlternar: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onAlternar}
+        aria-expanded={abierto}
+        className="w-full flex justify-between text-left hover:bg-gray-50 rounded"
+      >
+        <span className="text-gray-700">
+          <span className="inline-block w-3 text-gray-500">{abierto ? "▾" : "▸"}</span>
+          <span className="underline decoration-dotted decoration-gray-400 underline-offset-2">{label}</span>
+        </span>
+        <span>{valor}</span>
+      </button>
+      {abierto && <div className="ml-3 mt-0.5 mb-1 border-l border-gray-200 pl-2 space-y-0.5 text-[11px] text-gray-600">{children}</div>}
+    </div>
+  );
+}
+
+function FilaDetalle({ izq, der }: { izq: ReactNode; der: string }) {
+  return (
+    <div className="flex justify-between gap-3">
+      <span className="min-w-0">{izq}</span>
+      <span className="whitespace-nowrap">{der}</span>
     </div>
   );
 }

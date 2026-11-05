@@ -66,6 +66,8 @@ export async function leerCotizacionDoc(id: number): Promise<{
       descripcion: it.descripcion,
       unidades: Number(it.unidades),
       valor_unitario: Number(it.valor_unitario),
+      precio_lista: it.precio_lista != null ? Number(it.precio_lista) : null,
+      descuento_pct: Number(it.descuento_pct ?? 0),
     })),
     subtotal: Number(tot?.subtotal ?? 0),
     descuento: Number(tot?.descuento_monto ?? 0),
