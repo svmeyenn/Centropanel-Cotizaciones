@@ -98,6 +98,25 @@ export default async function Pagina({
 
   if (!ped) notFound();
 
+  // El proyecto del pedido se muestra aunque este inactivo: desactivar un proyecto no desvincula sus pedidos,
+  // y la lista de arriba solo trae los activos (los que se pueden elegir).
+  let proyectoActual: { id: number; nombre: string } | null = null;
+  if (ped.id_proyecto != null) {
+    const enLista = (proyectosAct ?? []).find((x) => Number(x.id_proyecto) === Number(ped.id_proyecto));
+    if (enLista) proyectoActual = { id: Number(ped.id_proyecto), nombre: rotuloProyecto(enLista) };
+    else {
+      const { data: py } = await supabase
+        .from("proyectos")
+        .select("id_proyecto, nombre, cliente, activo, borrado, pedidos(num_pedido)")
+        .eq("id_proyecto", ped.id_proyecto)
+        .maybeSingle();
+      if (py) {
+        const marca = py.borrado ? " (eliminado)" : !py.activo ? " (inactivo)" : "";
+        proyectoActual = { id: Number(py.id_proyecto), nombre: rotuloProyecto(py) + marca };
+      }
+    }
+  }
+
   const idsSol = (sols ?? []).map((s) => Number(s.id));
   const { data: detSol } = idsSol.length
     ? await supabase
@@ -253,14 +272,7 @@ export default async function Pagina({
         </BarraNavegacion>
         <ProyectoDelPedido
           idPedido={id}
-          actual={
-            (proyectosAct ?? []).find((x) => Number(x.id_proyecto) === Number(ped.id_proyecto))
-              ? {
-                  id: Number(ped.id_proyecto),
-                  nombre: rotuloProyecto((proyectosAct ?? []).find((x) => Number(x.id_proyecto) === Number(ped.id_proyecto))!),
-                }
-              : null
-          }
+          actual={proyectoActual}
           proyectos={(proyectosAct ?? []).map((x) => ({ id: Number(x.id_proyecto), nombre: rotuloProyecto(x) }))}
           puedeEditar={tienePerfilAdmin(v)}
         />
