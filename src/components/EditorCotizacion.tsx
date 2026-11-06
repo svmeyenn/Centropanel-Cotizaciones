@@ -32,6 +32,7 @@ import {
   ROTULO_DESCUENTO_3,
 } from "@/lib/descuentos";
 import SelectorEstado from "@/components/SelectorEstado";
+import { IconoAsa, moverEn, useArrastrarFilas } from "@/components/ArrastrarFilas";
 
 // Producto tal como lo ve el vendedor: sin costo_unitario, porque el catalogo
 // llega por v_catalogo_venta (el RLS impide a un Vendedor ver costos).
@@ -318,6 +319,12 @@ export default function EditorCotizacion(p: Props) {
     setCantidad("1");
     setValorUnit("");
   }
+
+  // Cambia el orden de las lineas; al grabar, el orden de la pantalla es el que queda.
+  const arrastre = useArrastrarFilas((desde, hasta) => {
+    setUnidEditando(null);
+    setD((x) => ({ ...x, items: moverEn(x.items, desde, hasta) }));
+  }, d.items.length);
 
   function quitarItem(i: number) {
     setUnidEditando(null);
@@ -768,6 +775,7 @@ export default function EditorCotizacion(p: Props) {
           <table className="w-full text-xs">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
+                {!soloLectura && <th className="w-6" aria-label="Orden" />}
                 <th className="text-left px-3 py-1 w-10">N</th>
                 <th className="text-left px-3 py-1 w-24">Codigo</th>
                 <th className="text-left px-3 py-1">Descripcion</th>
@@ -787,13 +795,27 @@ export default function EditorCotizacion(p: Props) {
             <tbody>
               {d.items.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="text-center text-gray-500 py-6">
+                  <td colSpan={12} className="text-center text-gray-500 py-6">
                     Sin items todavia.
                   </td>
                 </tr>
               )}
-              {d.items.map((it, i) => (
-                <tr key={i} className="border-t border-gray-100">
+              {d.items.map((it, i) => {
+                const f = arrastre.fila(i);
+                return (
+                <tr
+                  key={i}
+                  className={`border-t border-gray-100 ${soloLectura ? "" : f.className}`}
+                  onDragOver={soloLectura ? undefined : f.onDragOver}
+                  onDrop={soloLectura ? undefined : f.onDrop}
+                >
+                  {!soloLectura && (
+                    <td className="pl-2 py-1">
+                      <span {...arrastre.asa(i)}>
+                        <IconoAsa />
+                      </span>
+                    </td>
+                  )}
                   <td className="px-3 py-1 text-gray-500">{i + 1}</td>
                   <td className="px-3 py-1 text-gray-500 font-mono text-[11px]">
                     {skuDe(it)}
@@ -866,7 +888,8 @@ export default function EditorCotizacion(p: Props) {
                     </td>
                   )}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

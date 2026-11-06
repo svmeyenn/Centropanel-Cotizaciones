@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
+import { IconoAsa, moverEn, useArrastrarFilas } from "@/components/ArrastrarFilas";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fecha as fmtFecha, porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia } from "@/lib/formato";
@@ -253,6 +254,9 @@ export default function EditorPedido({
   const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
   const alternar = (k: string) => setAbiertos((x) => ({ ...x, [k]: !x[k] }));
 
+  // Cambia el orden de las lineas; al grabar, el orden de la pantalla queda en el pedido.
+  const arrastre = useArrastrarFilas((desde, hasta) => setLs((x) => moverEn(x, desde, hasta)), ls.length);
+
   // Precio de lista y descuento de una linea: el valor unitario es el neto que resulta, y es lo que suma el pedido.
   function cambiarPrecioLinea(idLinea: number, cambio: { lista?: number; pct?: number }) {
     setLs((x) =>
@@ -282,8 +286,9 @@ export default function EditorPedido({
       }
       const r2 = await actualizarLineasPedido(
         id,
-        ls.map((l) => ({
+        ls.map((l, i) => ({
           id: l.id,
+          orden: i + 1,
           unidades: l.unidades,
           valor_unitario: l.valor_unitario,
           precio_lista: l.precio_lista ?? null,
@@ -519,6 +524,7 @@ export default function EditorPedido({
           <table className="w-full text-xs">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
+                {!soloLectura && <th className="w-6" aria-label="Orden" />}
                 <th className="text-left px-3 py-2 w-10">N</th>
                 <th className="text-left px-3 py-2 w-24">SKU</th>
                 <th className="text-left px-3 py-2">Descripcion</th>
@@ -536,8 +542,22 @@ export default function EditorPedido({
               </tr>
             </thead>
             <tbody>
-              {ls.map((l, i) => (
-                <tr key={l.id} className="border-t border-gray-100">
+              {ls.map((l, i) => {
+                const f = arrastre.fila(i);
+                return (
+                <tr
+                  key={l.id}
+                  className={`border-t border-gray-100 ${soloLectura ? "" : f.className}`}
+                  onDragOver={soloLectura ? undefined : f.onDragOver}
+                  onDrop={soloLectura ? undefined : f.onDrop}
+                >
+                  {!soloLectura && (
+                    <td className="pl-2 py-2">
+                      <span {...arrastre.asa(i)}>
+                        <IconoAsa />
+                      </span>
+                    </td>
+                  )}
                   <td className="px-3 py-2 text-gray-500">{i + 1}</td>
                   <td className="px-3 py-2 text-gray-500 font-mono text-[11px]">
                     {l.sku ?? ""}
@@ -632,7 +652,8 @@ export default function EditorPedido({
                     </td>
                   )}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

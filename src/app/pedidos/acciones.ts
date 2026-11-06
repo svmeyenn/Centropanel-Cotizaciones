@@ -98,6 +98,8 @@ export async function actualizarPedido(id: number, d: DatosPedido) {
 
 export interface LineaPedido {
   id: number;
+  // Posicion de la linea en el pedido (1, 2, 3...), tal como quedo en pantalla.
+  orden?: number;
   unidades: number;
   // Precio neto, ya con el descuento de la linea.
   valor_unitario: number;
@@ -120,6 +122,7 @@ export async function actualizarLineasPedido(
     const { error } = await supabase
       .from("pedido_detalle")
       .update({
+        ...(l.orden != null ? { orden: l.orden } : {}),
         unidades: l.unidades,
         valor_unitario: l.valor_unitario,
         precio_lista: l.descuento_pct ? (l.precio_lista ?? l.valor_unitario) : null,
