@@ -525,17 +525,17 @@ export default function EditorPedido({
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 {!soloLectura && <th className="w-6" aria-label="Orden" />}
-                <th className="text-left px-3 py-2 w-10">N</th>
-                <th className="text-left px-3 py-2 w-24">SKU</th>
-                <th className="text-left px-3 py-2">Descripcion</th>
-                <th className="text-right px-3 py-2 w-24">Unid.</th>
-                <th className="text-right px-3 py-2 w-32">P. lista</th>
-                <th className="text-right px-3 py-2 w-20">Desc. %</th>
-                <th className="text-right px-3 py-2 w-32">V. unit. neto</th>
-                <th className="text-right px-3 py-2 w-32">Subtotal</th>
+                <th className="text-left px-2 py-2 w-8">N</th>
+                <th className="text-left px-2 py-2 w-20 whitespace-nowrap">SKU</th>
+                <th className="text-left px-2 py-2">Descripcion</th>
+                <th className="text-right px-2 py-2 w-20 whitespace-nowrap">Unid.</th>
+                <th className="text-right px-2 py-2 w-28 whitespace-nowrap">P. lista</th>
+                <th className="text-right px-2 py-2 w-16 whitespace-nowrap">Desc. %</th>
+                <th className="text-right px-2 py-2 w-28 whitespace-nowrap">V. unit. neto</th>
+                <th className="text-right px-2 py-2 w-28 whitespace-nowrap">Subtotal</th>
                 {verMargen && (
-                  <th className="text-right px-3 py-2 w-36" title="Subtotal de la linea menos su costo, antes de los descuentos generales">
-                    Margen linea
+                  <th className="text-right px-2 py-2 whitespace-nowrap" title="Subtotal de la linea menos su costo, antes de los descuentos generales">
+                    Margen
                   </th>
                 )}
                 {!soloLectura && <th className="w-16" />}
@@ -558,18 +558,18 @@ export default function EditorPedido({
                       </span>
                     </td>
                   )}
-                  <td className="px-3 py-2 text-gray-500">{i + 1}</td>
-                  <td className="px-3 py-2 text-gray-500 font-mono text-[11px]">
+                  <td className="px-2 py-2 text-gray-500">{i + 1}</td>
+                  <td className="px-2 py-2 text-gray-500 font-mono text-[11px] whitespace-nowrap">
                     {l.sku ?? ""}
                   </td>
-                  <td className="px-3 py-2">{l.descripcion}</td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-2 py-2">{l.descripcion}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-right">
                     {soloLectura ? (
                       fmtUnid(l.unidades)
                     ) : (
                       <input
                         type="number"
-                        className="border border-gray-300 rounded px-2 py-1 text-right w-20"
+                        className="border border-gray-300 rounded px-2 py-1 text-right w-16"
                         value={l.unidades}
                         onChange={(e) =>
                           setLs((x) =>
@@ -583,7 +583,7 @@ export default function EditorPedido({
                       />
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-2 py-2 whitespace-nowrap text-right">
                     {soloLectura ? (
                       <span className="text-gray-600">{importe(l.precio_lista ?? l.valor_unitario, moneda)}</span>
                     ) : (
@@ -591,7 +591,7 @@ export default function EditorPedido({
                         type="text"
                         inputMode="numeric"
                         aria-label={`Precio de lista de la linea ${i + 1}`}
-                        className="border border-gray-300 rounded px-2 py-1 text-right w-28"
+                        className="border border-gray-300 rounded px-2 py-1 text-right w-24"
                         value={importe(l.precio_lista ?? l.valor_unitario, moneda)}
                         onChange={(e) =>
                           cambiarPrecioLinea(l.id, { lista: Number(e.target.value.replace(/\D/g, "")) || 0 })
@@ -599,7 +599,7 @@ export default function EditorPedido({
                       />
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-2 py-2 whitespace-nowrap text-right">
                     {soloLectura ? (
                       l.descuento_pct ? `${porcentaje(l.descuento_pct)} %` : <span className="text-gray-400">—</span>
                     ) : (
@@ -609,19 +609,19 @@ export default function EditorPedido({
                         max="100"
                         step="any"
                         aria-label={`Descuento % de la linea ${i + 1}`}
-                        className="border border-gray-300 rounded px-2 py-1 text-right w-16"
+                        className="border border-gray-300 rounded px-2 py-1 text-right w-14"
                         value={l.descuento_pct || ""}
                         placeholder="0"
                         onChange={(e) => cambiarPrecioLinea(l.id, { pct: Number(e.target.value.replace(",", ".")) || 0 })}
                       />
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right">{importe(l.valor_unitario, moneda)}</td>
-                  <td className="px-3 py-2 text-right font-semibold">
+                  <td className="px-2 py-2 whitespace-nowrap text-right">{importe(l.valor_unitario, moneda)}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-right font-semibold">
                     {importe(l.unidades * l.valor_unitario, moneda)}
                   </td>
                   {verMargen && (
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-2 py-2 whitespace-nowrap text-right">
                       {(() => {
                         const costo = Number(costoPorLinea?.[l.id] ?? 0);
                         if (!costo) return <span className="text-amber-700">sin costo</span>;

@@ -776,17 +776,17 @@ export default function EditorCotizacion(p: Props) {
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 {!soloLectura && <th className="w-6" aria-label="Orden" />}
-                <th className="text-left px-3 py-1 w-10">N</th>
-                <th className="text-left px-3 py-1 w-24">Codigo</th>
-                <th className="text-left px-3 py-1">Descripcion</th>
-                <th className="text-right px-3 py-1 w-24">Unid.</th>
-                <th className="text-right px-3 py-1 w-28">P. lista</th>
-                <th className="text-right px-3 py-1 w-20">Desc. %</th>
-                <th className="text-right px-3 py-1 w-32">V. unit. neto</th>
-                <th className="text-right px-3 py-1 w-32">Subtotal</th>
+                <th className="text-left px-2 py-1 w-8">N</th>
+                <th className="text-left px-2 py-1 w-20 whitespace-nowrap">Codigo</th>
+                <th className="text-left px-2 py-1">Descripcion</th>
+                <th className="text-right px-2 py-1 w-20 whitespace-nowrap">Unid.</th>
+                <th className="text-right px-2 py-1 w-28 whitespace-nowrap">P. lista</th>
+                <th className="text-right px-2 py-1 w-16 whitespace-nowrap">Desc. %</th>
+                <th className="text-right px-2 py-1 w-28 whitespace-nowrap">V. unit. neto</th>
+                <th className="text-right px-2 py-1 w-28 whitespace-nowrap">Subtotal</th>
                 {p.verMargen && (
-                  <th className="text-right px-3 py-1 w-36" title="Subtotal de la linea menos su costo, antes de los descuentos generales">
-                    Margen linea
+                  <th className="text-right px-2 py-1 whitespace-nowrap" title="Subtotal de la linea menos su costo, antes de los descuentos generales">
+                    Margen
                   </th>
                 )}
                 {!soloLectura && <th className="w-16" />}
@@ -816,12 +816,12 @@ export default function EditorCotizacion(p: Props) {
                       </span>
                     </td>
                   )}
-                  <td className="px-3 py-1 text-gray-500">{i + 1}</td>
-                  <td className="px-3 py-1 text-gray-500 font-mono text-[11px]">
+                  <td className="px-2 py-1 text-gray-500">{i + 1}</td>
+                  <td className="px-2 py-1 text-gray-500 font-mono text-[11px] whitespace-nowrap">
                     {skuDe(it)}
                   </td>
-                  <td className="px-3 py-1">{it.descripcion}</td>
-                  <td className="px-3 py-1 text-right">
+                  <td className="px-2 py-1">{it.descripcion}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-right">
                     {soloLectura ? (
                       fmtUnid(it.unidades)
                     ) : (
@@ -829,7 +829,7 @@ export default function EditorCotizacion(p: Props) {
                         type="number"
                         min="0"
                         step="any"
-                        className="border border-gray-300 rounded px-1.5 py-0.5 w-20 text-right text-xs bg-white"
+                        className="border border-gray-300 rounded px-1.5 py-0.5 w-16 text-right text-xs bg-white"
                         value={
                           unidEditando?.i === i
                             ? unidEditando.texto
@@ -840,8 +840,8 @@ export default function EditorCotizacion(p: Props) {
                       />
                     )}
                   </td>
-                  <td className="px-3 py-1 text-right text-gray-600">{importe(it.precio_lista ?? it.valor_unitario, moneda)}</td>
-                  <td className="px-3 py-1 text-right">
+                  <td className="px-2 py-1 whitespace-nowrap text-right text-gray-600">{importe(it.precio_lista ?? it.valor_unitario, moneda)}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-right">
                     {soloLectura ? (
                       it.descuento_pct ? `${porcentaje(it.descuento_pct)} %` : <span className="text-gray-400">—</span>
                     ) : (
@@ -851,19 +851,19 @@ export default function EditorCotizacion(p: Props) {
                         max="100"
                         step="any"
                         aria-label={`Descuento % de la linea ${i + 1}`}
-                        className="border border-gray-300 rounded px-1.5 py-0.5 w-16 text-right text-xs bg-white"
+                        className="border border-gray-300 rounded px-1.5 py-0.5 w-14 text-right text-xs bg-white"
                         value={it.descuento_pct || ""}
                         placeholder="0"
                         onChange={(e) => cambiarDescuentoLinea(i, e.target.value)}
                       />
                     )}
                   </td>
-                  <td className="px-3 py-1 text-right">{importe(it.valor_unitario, moneda)}</td>
-                  <td className="px-3 py-1 text-right font-semibold">
+                  <td className="px-2 py-1 whitespace-nowrap text-right">{importe(it.valor_unitario, moneda)}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-right font-semibold">
                     {importe(it.unidades * it.valor_unitario, moneda)}
                   </td>
                   {p.verMargen && (
-                    <td className="px-3 py-1 text-right">
+                    <td className="px-2 py-1 whitespace-nowrap text-right">
                       {(() => {
                         const costo = costoDe(it);
                         if (!costo) return <span className="text-amber-700">sin costo</span>;
