@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.036-20261105**
+Version vigente: **v008.037-20261106**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.036-20261105**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.036 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.037 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.037-20261106 | — | 06-11-2026 | Cotizaciones y pedidos: (1) descuento por linea: columnas P. lista, Desc. % y V. unit. neto; el neto es lo que suman totales, cuenta del pedido y contabilidad; el pedido hereda el descuento de la cotizacion y el PDF y el enlace del cliente muestran lista y %. (2) Margen por linea (monto y %) en pantalla, solo para quien ve margen; nunca en PDF ni enlace. (3) Las lineas se reordenan arrastrandolas por su asa (o con las flechas). (4) Pedido: el costo del margen teorico se abre por linea y cada costo del margen real se abre en sus egresos. Estructura: columnas precio_lista y descuento_pct en cotizacion_detalle y pedido_detalle, trigger tg_linea_descuento; generar_pedido, duplicar_cotizacion, cotizacion_publica y pedido_margen_real actualizadas. |
 | v008.036-20261105 | — | 05-11-2026 | El pedido muestra su proyecto aunque este inactivo o eliminado, marcado asi; antes aparecia "sin proyecto" aunque seguia vinculado. Desactivar un proyecto no desvincula sus pedidos. |
 | v008.035-20261104 | — | 04-11-2026 | Contabilidad conectada de punta a punta. (1) Automatica: los reportes (libro diario, estado de resultados, balance) rehacen los asientos solos cuando cambia un documento y una vez al dia; el boton queda de respaldo. (2) Inventario: la recepcion de materiales entra a Inventarios (1.1.04) contra acreedores (2.1.01); la factura del proveedor reparte entre inventario y gasto segun las lineas de la orden y cruza lo ya recibido; el pago de una orden con materiales rebaja acreedores; las compras de Materias primas sin orden van a inventario. El costo de venta (5.1.01) sale del inventario al facturar paneles y reventa (o al reconocer el avance en obras), y las notas de credito lo revierten. (3) Remuneraciones: el gasto se devenga al cerrar el mes de la liquidacion aprobada contra Obligaciones laborales (2.1.04); los pagos de remuneraciones la rebajan antes de llegar a gasto. (4) Categorias Gastos financieros (6.2.02) e Ingresos financieros (6.2.01). Estructura: tabla contab_estado y disparadores tg_contab_sucio, funciones contabilizar_pendiente, fin_contabilizar_core, _pedido_neto y _pedido_costo_bienes; nuevos origenes de asiento. |
 | v008.034-20261103 | — | 03-11-2026 | Productos de reventa: una materia prima que tambien se vende como producto. Se crea desde Nuevo producto > Reventa de materia prima; su costo sigue siempre al de la materia prima y su precio al costo con el margen objetivo, salvo que sea manual. Una materia prima admite un solo producto de reventa. Estructura: columna productos.id_materia_prima, tipo Reventa, funciones reventa_crear y recalcular_reventas, trigger tg_reventa_sigue_costo; recosteo_general y costos_fijar las consideran. |
