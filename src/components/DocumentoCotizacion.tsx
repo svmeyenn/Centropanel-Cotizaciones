@@ -79,6 +79,7 @@ export default function DocumentoCotizacion({
   p: Parametros;
 }) {
   const vence = sumarDias(d.fecha.slice(0, 10), d.validez_dias ?? 7);
+  const hayDesc = d.items.some((it) => Number(it.descuento_pct ?? 0) > 0 && it.precio_lista != null);
 
   return (
     <div className="mx-auto bg-white text-[#1A1A1A] p-10 max-w-[820px] print:max-w-none print:p-[14mm]">
@@ -141,6 +142,8 @@ export default function DocumentoCotizacion({
       </div>
 
       {/* ---- items ---- */}
+      {/* Con descuento en alguna linea: P. LISTA, DESC. % y V. UNITARIO final;
+          sin descuentos queda solo el V. UNITARIO. */}
       <table className="w-full table-fixed text-[11px] mb-5">
         <thead>
           {/* Las columnas de la derecha se ajustan a lo que miden de verdad
@@ -153,6 +156,12 @@ export default function DocumentoCotizacion({
             <th className="text-right px-2 py-1.5 w-16 whitespace-nowrap">
               UNID.
             </th>
+            {hayDesc && (
+              <>
+                <th className="text-right px-2 py-1.5 w-[4.5rem] whitespace-nowrap">P. LISTA</th>
+                <th className="text-right px-2 py-1.5 w-14 whitespace-nowrap">DESC. %</th>
+              </>
+            )}
             <th className="text-right px-2 py-1.5 w-[4.5rem] whitespace-nowrap">
               V. UNITARIO
             </th>
@@ -171,13 +180,18 @@ export default function DocumentoCotizacion({
               <td className="px-2 py-1 text-right whitespace-nowrap">
                 {fmtUnid(it.unidades)}
               </td>
+              {hayDesc && (
+                <>
+                  <td className="px-2 py-1 text-right whitespace-nowrap">
+                    {importe(it.precio_lista ?? it.valor_unitario, d.moneda)}
+                  </td>
+                  <td className="px-2 py-1 text-right whitespace-nowrap">
+                    {Number(it.descuento_pct ?? 0) > 0 ? `${porcentaje(Number(it.descuento_pct))} %` : ""}
+                  </td>
+                </>
+              )}
               <td className="px-2 py-1 text-right whitespace-nowrap">
                 {importe(it.valor_unitario, d.moneda)}
-                {Number(it.descuento_pct ?? 0) > 0 && it.precio_lista != null && (
-                  <span className="block text-[10px] text-gray-500">
-                    lista {importe(it.precio_lista, d.moneda)} · desc. {porcentaje(Number(it.descuento_pct))} %
-                  </span>
-                )}
               </td>
               <td className="px-2 py-1 text-right whitespace-nowrap">
                 {importe(Number(it.unidades) * Number(it.valor_unitario), d.moneda)}

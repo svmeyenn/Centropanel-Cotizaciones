@@ -62,7 +62,9 @@ const s = StyleSheet.create({
   cSku: { width: 58 },
   cDesc: { flex: 1 },
   cUnid: { width: 42, textAlign: "right" },
-  cUnit: { width: 70, textAlign: "right" },
+  cUnit: { width: 62, textAlign: "right" },
+  cLista: { width: 62, textAlign: "right" },
+  cDesc2: { width: 42, textAlign: "right" },
   cSub: { width: 80, textAlign: "right" },
   totales: { alignSelf: "flex-end", width: 250, marginTop: 12, marginBottom: 14, fontSize: 8 },
   total: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 1.5, paddingHorizontal: 5 },
@@ -108,6 +110,7 @@ function Total({
 
 export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
   const vence = sumarDias(d.fecha.slice(0, 10), d.validez_dias ?? 7);
+  const hayDesc = d.items.some((it) => Number(it.descuento_pct ?? 0) > 0 && it.precio_lista != null);
   const idTrib = pTxt(p, "EtiquetaIdTributario", "RUT");
   const cli: PersonaDoc = d.cliente ?? {};
   const ven: PersonaDoc = d.vendedor ?? {};
@@ -163,6 +166,8 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
           <Text style={[s.celda, s.cSku]}>SKU</Text>
           <Text style={[s.celda, s.cDesc]}>DESCRIPCION</Text>
           <Text style={[s.celda, s.cUnid]}>UNID.</Text>
+          {hayDesc && <Text style={[s.celda, s.cLista]}>P. LISTA</Text>}
+          {hayDesc && <Text style={[s.celda, s.cDesc2]}>DESC. %</Text>}
           <Text style={[s.celda, s.cUnit]}>V. UNITARIO</Text>
           <Text style={[s.celda, s.cSub]}>SUBTOTAL NETO</Text>
         </View>
@@ -175,13 +180,13 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
             <Text style={[s.celda, s.cSku, { color: GRIS }]}>{it.sku ?? ""}</Text>
             <Text style={[s.celda, s.cDesc]}>{it.descripcion}</Text>
             <Text style={[s.celda, s.cUnid]}>{fmtUnid(it.unidades)}</Text>
-            <Text style={[s.celda, s.cUnit]}>
-              {importe(it.valor_unitario, d.moneda)}
-              {Number(it.descuento_pct ?? 0) > 0 && it.precio_lista != null
-                ? `
-lista ${importe(it.precio_lista, d.moneda)} · desc. ${porcentaje(Number(it.descuento_pct))} %`
-                : ""}
-            </Text>
+            {hayDesc && <Text style={[s.celda, s.cLista]}>{importe(it.precio_lista ?? it.valor_unitario, d.moneda)}</Text>}
+            {hayDesc && (
+              <Text style={[s.celda, s.cDesc2]}>
+                {Number(it.descuento_pct ?? 0) > 0 ? `${porcentaje(Number(it.descuento_pct))} %` : ""}
+              </Text>
+            )}
+            <Text style={[s.celda, s.cUnit]}>{importe(it.valor_unitario, d.moneda)}</Text>
             <Text style={[s.celda, s.cSub]}>
               {importe(Number(it.unidades) * Number(it.valor_unitario), d.moneda)}
             </Text>

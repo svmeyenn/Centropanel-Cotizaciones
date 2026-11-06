@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.038-20261106**
+Version vigente: **v008.039-20261106**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.038-20261106**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.038 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.039 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.039-20261106 | — | 06-11-2026 | PDF y enlace del cliente de cotizaciones y pedidos: el valor de lista deja de ir dentro de la columna V. UNITARIO. Cuando alguna linea tiene descuento se muestran las columnas P. LISTA, DESC. % (vacia en las lineas sin descuento) y V. UNITARIO final, y cada linea termina en el subtotal neto; sin descuentos queda solo V. UNITARIO. Sin cambios de estructura. |
 | v008.038-20261106 | — | 06-11-2026 | Cotizaciones y pedidos: las columnas de la tabla de items se ajustaron para que cada linea quede en una sola fila (menos relleno lateral, cifras sin salto de linea, campos de unidades, precio y descuento mas angostos) y el titulo de la columna de margen pasa de "Margen linea" a "Margen". Sin cambios de estructura. |
 | v008.037-20261106 | — | 06-11-2026 | Cotizaciones y pedidos: (1) descuento por linea: columnas P. lista, Desc. % y V. unit. neto; el neto es lo que suman totales, cuenta del pedido y contabilidad; el pedido hereda el descuento de la cotizacion y el PDF y el enlace del cliente muestran lista y %. (2) Margen por linea (monto y %) en pantalla, solo para quien ve margen; nunca en PDF ni enlace. (3) Las lineas se reordenan arrastrandolas por su asa (o con las flechas). (4) Pedido: el costo del margen teorico se abre por linea y cada costo del margen real se abre en sus egresos. Estructura: columnas precio_lista y descuento_pct en cotizacion_detalle y pedido_detalle, trigger tg_linea_descuento; generar_pedido, duplicar_cotizacion, cotizacion_publica y pedido_margen_real actualizadas. |
 | v008.036-20261105 | — | 05-11-2026 | El pedido muestra su proyecto aunque este inactivo o eliminado, marcado asi; antes aparecia "sin proyecto" aunque seguia vinculado. Desactivar un proyecto no desvincula sus pedidos. |
