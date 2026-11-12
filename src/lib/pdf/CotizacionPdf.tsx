@@ -16,8 +16,7 @@ import {
   importe,
   porcentaje,
   sumarDias,
-  unidades as fmtUnid,
-} from "@/lib/formato";
+  unidades as fmtUnid, textoMedidas } from "@/lib/formato";
 import { LOGO_PDF } from "@/lib/logo";
 import {
   ROTULO_DESCUENTO_1,
@@ -178,7 +177,12 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
             wrap={false}
           >
             <Text style={[s.celda, s.cSku, { color: GRIS }]}>{it.sku ?? ""}</Text>
-            <Text style={[s.celda, s.cDesc]}>{it.descripcion}</Text>
+            <View style={[s.celda, s.cDesc]}>
+              <Text>{it.descripcion}</Text>
+              {textoMedidas(it.largo_max, it.ancho_max) && (
+                <Text style={{ fontSize: 6.5, color: GRIS }}>{textoMedidas(it.largo_max, it.ancho_max)}</Text>
+              )}
+            </View>
             <Text style={[s.celda, s.cUnid]}>{fmtUnid(it.unidades)}</Text>
             {hayDesc && <Text style={[s.celda, s.cLista]}>{importe(it.precio_lista ?? it.valor_unitario, d.moneda)}</Text>}
             {hayDesc && (

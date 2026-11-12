@@ -3,7 +3,7 @@ import {
   ROTULO_DESCUENTO_2,
   ROTULO_DESCUENTO_3,
 } from "@/lib/descuentos";
-import { importe, porcentaje, unidades as fmtUnid, fecha as fmtFecha, sumarDias } from "@/lib/formato";
+import { importe, porcentaje, unidades as fmtUnid, fecha as fmtFecha, sumarDias, textoMedidas } from "@/lib/formato";
 import { pTxt, pNum, type Parametros } from "@/lib/parametros";
 import { LOGO_PDF } from "@/lib/logo";
 
@@ -32,6 +32,9 @@ export interface ItemDoc {
   valor_unitario: number;
   precio_lista?: number | null;
   descuento_pct?: number;
+  // Medidas maximas del panel (solo paneles).
+  largo_max?: number | null;
+  ancho_max?: number | null;
 }
 
 // Estado de pago de un pedido: lo que se debe, lo abonado y lo que falta.
@@ -176,7 +179,12 @@ export default function DocumentoCotizacion({
               <td className="px-2 py-1 text-gray-500 whitespace-nowrap">
                 {it.sku ?? ""}
               </td>
-              <td className="px-2 py-1">{it.descripcion}</td>
+              <td className="px-2 py-1">
+                {it.descripcion}
+                {textoMedidas(it.largo_max, it.ancho_max) && (
+                  <span className="block text-[10px] leading-tight text-gray-500">{textoMedidas(it.largo_max, it.ancho_max)}</span>
+                )}
+              </td>
               <td className="px-2 py-1 text-right whitespace-nowrap">
                 {fmtUnid(it.unidades)}
               </td>

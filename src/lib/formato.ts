@@ -255,3 +255,10 @@ export function pesosCorto(n: number | string | null | undefined): string {
   if (a >= 1e3) return Math.round(v / 1e3).toLocaleString("es-CL") + " mil";
   return Math.round(v).toLocaleString("es-CL");
 }
+
+// Leyenda chica bajo la descripcion de un panel: sus medidas maximas.
+export function textoMedidas(largo?: number | null, ancho?: number | null): string | null {
+  if (!largo || !ancho) return null;
+  const f = (n: number) => Number(n).toLocaleString("es-CL", { maximumFractionDigits: 0 });
+  return `Largo máx. ${f(largo)} mm · ancho máx. ${f(ancho)} mm`;
+}

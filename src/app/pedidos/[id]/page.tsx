@@ -1,3 +1,4 @@
+import { leerMedidas } from "@/lib/medidas";
 import { monedaDelPais } from "@/lib/formato";
 import { notFound } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
@@ -231,6 +232,7 @@ export default async function Pagina({
   });
   const necesidadesPedido = (nmsDb ?? []).map((n) => ({ id: Number(n.id), folio: n.folio as string, estado: n.estado as string }));
 
+  const med = await leerMedidas(supabase, (lineas ?? []).map((l) => l.id_producto as number | null));
   const filas: LineaVista[] = (lineas ?? []).map((l) => ({
     id: Number(l.id),
     sku: (l.sku as string | null) ?? null,
@@ -239,6 +241,8 @@ export default async function Pagina({
     valor_unitario: Number(l.valor_unitario),
     precio_lista: l.precio_lista != null ? Number(l.precio_lista) : null,
     descuento_pct: Number(l.descuento_pct ?? 0),
+    largo_max: med[Number(l.id_producto)]?.largo ?? null,
+    ancho_max: med[Number(l.id_producto)]?.ancho ?? null,
   }));
 
   const necesidades: NecesidadVista[] = (

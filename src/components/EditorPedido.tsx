@@ -4,7 +4,7 @@ import { useState, useTransition, type ReactNode } from "react";
 import { IconoAsa, moverEn, useArrastrarFilas } from "@/components/ArrastrarFilas";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { fecha as fmtFecha, porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia } from "@/lib/formato";
+import { fecha as fmtFecha, porcentaje, unidades as fmtUnid, telefono as fmtTelefono, hoyISO, importe, redondea, limpia, textoMedidas } from "@/lib/formato";
 import { crearNecesidadDesdePedido } from "@/app/necesidades/acciones";
 import BotonDuplicar from "@/components/BotonDuplicar";
 import BotonRecostearPedido from "@/components/BotonRecostearPedido";
@@ -79,6 +79,8 @@ export interface LineaVista {
   valor_unitario: number;
   precio_lista?: number | null;
   descuento_pct?: number;
+  largo_max?: number | null;
+  ancho_max?: number | null;
 }
 
 export interface NecesidadVista {
@@ -562,7 +564,12 @@ export default function EditorPedido({
                   <td className="px-2 py-2 text-gray-500 font-mono text-[11px] whitespace-nowrap">
                     {l.sku ?? ""}
                   </td>
-                  <td className="px-2 py-2">{l.descripcion}</td>
+                  <td className="px-2 py-2">
+                    {l.descripcion}
+                    {textoMedidas(l.largo_max, l.ancho_max) && (
+                      <span className="block text-[10px] leading-tight text-gray-500">{textoMedidas(l.largo_max, l.ancho_max)}</span>
+                    )}
+                  </td>
                   <td className="px-2 py-2 whitespace-nowrap text-right">
                     {soloLectura ? (
                       fmtUnid(l.unidades)

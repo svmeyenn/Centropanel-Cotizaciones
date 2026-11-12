@@ -78,6 +78,8 @@ export default async function Pagina({
       valor_unitario: Number(it.valor_unitario),
       precio_lista: it.precio_lista != null ? Number(it.precio_lista) : null,
       descuento_pct: Number(it.descuento_pct ?? 0),
+      largo_max: it.largo_max != null ? Number(it.largo_max) : null,
+      ancho_max: it.ancho_max != null ? Number(it.ancho_max) : null,
     })),
     subtotal: Number(t.subtotal ?? 0),
     descuento: Number(t.descuento_monto ?? 0),

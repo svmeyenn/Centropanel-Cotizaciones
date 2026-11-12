@@ -1,3 +1,4 @@
+import { leerMedidas } from "@/lib/medidas";
 import Cabecera from "@/components/Cabecera";
 import EditorCotizacion from "@/components/EditorCotizacion";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
@@ -134,6 +135,7 @@ export default async function Pagina({
         materias={materias ?? []}
         puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
+        medidas={await leerMedidas(supabase)}
         puedeEditar={v.puede_crear || tienePerfilAdmin(v)}
         verMargen
         costoPorProducto={costoPorProducto}

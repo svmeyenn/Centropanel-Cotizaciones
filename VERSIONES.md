@@ -18,7 +18,7 @@ fila de la entrega que abre el hito; esa entrega sale como vHHH.001.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.043-20261112**
+Version vigente: **v008.044-20261112**
 
 ## Grandes hitos
 
@@ -31,10 +31,11 @@ Version vigente: **v008.043-20261112**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.043 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.044 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.044-20261112 | — | 12-11-2026 | Adhesivo por superficie: el costo y la compra del adhesivo salen de los m² de EPS de cada panel por cara pegada (parametro AdhesivoM2PorBalde = 164,268 m², 60 planchas de 234x117; reemplaza los rendimientos por panel). Un panel de 478x117 lleva casi el doble. Recosteo general: 34 paneles y 14 cotizaciones sin pedido. 'Que hay que comprar' incluye los baldes de adhesivo. Cotizacion, pedido, enlace y PDF muestran en chico el largo y ancho maximo del panel. La estrella de panel estandar tambien se protege al crear. Proveedor al crear materia prima se suelta si cambia el pais. |
 | v008.043-20261112 | — | 12-11-2026 | Panel estandar: estrella (★) en los paneles que usan los espesores de EPS estandar, visible en Productos, buscador y cotizaciones; solo el administrador la marca, con filtro y columna en la exportacion. Materias primas: al crear un insumo se vincula de inmediato a un proveedor, que recibe el primer costo como preferente. Cambio de base: columna es_estandar. |
 | v008.042-20261112 | — | 12-11-2026 | Materias primas (alta y ficha): el peso por unidad se completa solo con densidad x volumen y se actualiza al cambiar la densidad o las medidas; si se escribe a mano queda fijo, marcado 'a mano', con opcion de volver al calculo. Sin cambios de estructura. |
 | v008.041-20261112 | — | 12-11-2026 | Materias primas: el alta muestra los mismos campos que la ficha (se agregan familia, unidad, ancho y largo), cada campo con una leyenda de para que se usa, y un recuadro de parametros calculados (volumen, unidades por m3, superficie, espesor nominal, costo neto por m3 y por m2, peso por unidad y por m2). En el EPS, el costo de la unidad se calcula desde el valor neto del m3; la regla por m3 de un proveedor se ofrece como sugerencia y el alta puede agregar el insumo a su maestra como preferente. Sin cambios de estructura. |

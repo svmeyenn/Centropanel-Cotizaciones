@@ -14,7 +14,7 @@ import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
 import ModalNuevoCliente from "@/components/ModalNuevoCliente";
 import type { MateriaVenta } from "@/components/Configurador";
 import type { MedioPago } from "@/components/GestorMediosPago";
-import { unidades as fmtUnid, sumarDias, fecha as fmtFecha, porcentaje, hoyISO, importe, redondea, limpia } from "@/lib/formato";
+import { unidades as fmtUnid, sumarDias, fecha as fmtFecha, porcentaje, hoyISO, importe, redondea, limpia, textoMedidas } from "@/lib/formato";
 import {
   crearCotizacion,
   actualizarCotizacion,
@@ -68,6 +68,8 @@ interface Props {
   materias: MateriaVenta[];
   puedeCrearPanel: boolean;
   ivaPorPais: Record<number, number>;
+  // Largo y ancho maximo de cada panel, para la leyenda bajo la descripcion.
+  medidas?: Record<number, { largo: number; ancho: number }>;
   inicial: DatosCotizacion;
   numCotizacion?: string | null;
   estado?: string;
@@ -822,7 +824,14 @@ export default function EditorCotizacion(p: Props) {
                   <td className="px-2 py-1 text-gray-500 font-mono text-[11px] whitespace-nowrap">
                     {skuDe(it)}
                   </td>
-                  <td className="px-2 py-1">{it.descripcion}</td>
+                  <td className="px-2 py-1">
+                    {it.descripcion}
+                    {it.id_producto != null && textoMedidas(p.medidas?.[it.id_producto]?.largo, p.medidas?.[it.id_producto]?.ancho) && (
+                      <span className="block text-[10px] leading-tight text-gray-500">
+                        {textoMedidas(p.medidas?.[it.id_producto]?.largo, p.medidas?.[it.id_producto]?.ancho)}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-2 py-1 whitespace-nowrap text-right">
                     {soloLectura ? (
                       fmtUnid(it.unidades)

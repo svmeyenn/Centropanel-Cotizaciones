@@ -1,3 +1,4 @@
+import { leerMedidas } from "@/lib/medidas";
 import { createClient } from "@/lib/supabase/server";
 import { leerParametros, type Parametros } from "@/lib/parametros";
 import { conComision } from "@/lib/formato";
@@ -29,6 +30,7 @@ export async function leerCotizacionDoc(id: number): Promise<{
       .order("orden"),
     supabase.from("v_cotizacion_totales").select("*").eq("id", id).single(),
   ]);
+  const med = await leerMedidas(supabase, (items ?? []).map((it) => it.id_producto as number | null));
 
   if (!cot) return null;
 
@@ -68,6 +70,8 @@ export async function leerCotizacionDoc(id: number): Promise<{
       valor_unitario: Number(it.valor_unitario),
       precio_lista: it.precio_lista != null ? Number(it.precio_lista) : null,
       descuento_pct: Number(it.descuento_pct ?? 0),
+      largo_max: med[Number(it.id_producto)]?.largo ?? null,
+      ancho_max: med[Number(it.id_producto)]?.ancho ?? null,
     })),
     subtotal: Number(tot?.subtotal ?? 0),
     descuento: Number(tot?.descuento_monto ?? 0),
