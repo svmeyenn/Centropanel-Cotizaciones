@@ -43,8 +43,9 @@ export default function GestorDocumentos({
 }) {
   const router = useRouter();
   const entrada = useRef<HTMLInputElement>(null);
-  const [archivo, setArchivo] = useState<File | null>(null);
-  const [nota, setNota] = useState("");
+  // Los archivos elegidos o arrastrados, cada uno con la nota que lo identifica, antes de subirlos.
+  const [pendientes, setPendientes] = useState<{ archivo: File; nota: string }[]>([]);
+  const [arrastrando, setArrastrando] = useState(false);
   const [pais, setPais] = useState<number | null>(paises.length === 1 ? paises[0].id : null);
   const [subiendo, setSubiendo] = useState(false);
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
@@ -55,29 +56,50 @@ export default function GestorDocumentos({
 
   const nombrePais = (id: number | null) => (id == null ? "Todos" : (paises.find((p) => p.id === id)?.nombre ?? "Otro"));
 
+  function agregar(lista: File[]) {
+    setAviso(null);
+    const malos = lista.filter((f) => EXTENSIONES_PROHIBIDAS.test(f.name) || f.size === 0 || f.size > TOPE_ARCHIVO_LEAD);
+    const buenos = lista.filter((f) => !malos.includes(f));
+    if (malos.length) setAviso({ ok: false, texto: `No se agregaron ${malos.map((f) => f.name).join(", ")}: estan vacios, pesan mas de 25 MB o son programas.` });
+    // La nota parte con el nombre del archivo sin extension, para corregirla y no partir de cero.
+    setPendientes((x) => [...x, ...buenos.map((f) => ({ archivo: f, nota: f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ") }))]);
+    if (entrada.current) entrada.current.value = "";
+  }
+
   async function subir() {
     setAviso(null);
-    if (!archivo) return setAviso({ ok: false, texto: "Elija el archivo." });
-    if (!nota.trim()) return setAviso({ ok: false, texto: "Escriba una nota que diga que es el documento." });
-    if (EXTENSIONES_PROHIBIDAS.test(archivo.name)) return setAviso({ ok: false, texto: "Ese tipo de archivo no se puede subir." });
-    if (archivo.size === 0) return setAviso({ ok: false, texto: "El archivo esta vacio." });
-    if (archivo.size > TOPE_ARCHIVO_LEAD) return setAviso({ ok: false, texto: "El archivo pesa mas de 25 MB." });
+    if (pendientes.length === 0) return setAviso({ ok: false, texto: "Elija o arrastre los archivos." });
+    if (pendientes.some((x) => !x.nota.trim())) return setAviso({ ok: false, texto: "Cada documento necesita una nota que diga que es." });
     setSubiendo(true);
+    const fallas: string[] = [];
+    const quedan: { archivo: File; nota: string }[] = [];
     try {
-      const ruta = `${crypto.randomUUID()}-${nombreSeguro(archivo.name)}`;
-      const { error } = await createClient().storage.from(BUCKET_DOCUMENTOS).upload(ruta, archivo, { contentType: archivo.type || undefined, upsert: false });
-      if (error) return setAviso({ ok: false, texto: error.message });
-      const r = await registrarDocumento({ ruta, nombre: archivo.name, tipo: archivo.type, tamano: archivo.size, nota, idPais: pais });
-      setAviso({ ok: r.ok, texto: r.mensaje ?? (r.ok ? "Documento subido." : "No se pudo registrar.") });
-      if (r.ok) {
-        setArchivo(null);
-        setNota("");
-        if (entrada.current) entrada.current.value = "";
-        router.refresh();
+      const supabase = createClient();
+      for (const x of pendientes) {
+        const ruta = `${crypto.randomUUID()}-${nombreSeguro(x.archivo.name)}`;
+        const { error } = await supabase.storage.from(BUCKET_DOCUMENTOS).upload(ruta, x.archivo, { contentType: x.archivo.type || undefined, upsert: false });
+        if (error) {
+          fallas.push(`${x.archivo.name}: ${error.message}`);
+          quedan.push(x);
+          continue;
+        }
+        const r = await registrarDocumento({ ruta, nombre: x.archivo.name, tipo: x.archivo.type, tamano: x.archivo.size, nota: x.nota, idPais: pais });
+        if (!r.ok) {
+          fallas.push(`${x.archivo.name}: ${r.mensaje ?? "no se pudo registrar"}`);
+          quedan.push(x);
+        }
       }
     } finally {
       setSubiendo(false);
     }
+    const subidos = pendientes.length - quedan.length;
+    setPendientes(quedan);
+    setAviso(
+      fallas.length
+        ? { ok: false, texto: `${subidos ? `Se subieron ${subidos}. ` : ""}No se pudieron subir: ${fallas.join("; ")}.` }
+        : { ok: true, texto: subidos === 1 ? "Documento subido." : `Se subieron ${subidos} documentos.` }
+    );
+    if (subidos) router.refresh();
   }
 
   async function abrir(id: number) {
@@ -119,47 +141,77 @@ export default function GestorDocumentos({
           <h2 className={TITULO}>
             <span>SUBIR UN DOCUMENTO</span>
           </h2>
-          <div className="p-3 grid gap-3 md:grid-cols-[1fr_2fr_auto] items-start">
-            <div>
-              <label htmlFor="doc-archivo" className="block text-xs font-semibold text-dorado-osc mb-0.5">Archivo</label>
+          <div className="p-3 space-y-3">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setArrastrando(true);
+              }}
+              onDragLeave={() => setArrastrando(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setArrastrando(false);
+                agregar(Array.from(e.dataTransfer.files));
+              }}
+              className={`rounded border border-dashed px-3 py-4 text-center text-xs ${arrastrando ? "border-verde bg-crema" : "border-gray-300 bg-gray-50"}`}
+            >
+              <p className="text-gray-700">Arrastre aqui fichas tecnicas, catalogos o certificados, o</p>
+              <button type="button" onClick={() => entrada.current?.click()} className={`${BOTON} mt-1`}>
+                Elegir archivos
+              </button>
               <input
-                id="doc-archivo"
                 ref={entrada}
                 type="file"
-                className="block w-full text-xs"
-                onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+                multiple
+                className="sr-only"
+                aria-label="Elegir documentos"
+                onChange={(e) => agregar(Array.from(e.target.files ?? []))}
               />
-              <span className="block text-[11px] text-gray-500 mt-0.5">PDF, imagen, planilla u otro; hasta 25 MB.</span>
+              <p className="mt-1 text-[11px] text-gray-500">Varios a la vez; hasta 25 MB cada uno.</p>
             </div>
-            <div>
-              <label htmlFor="doc-nota" className="block text-xs font-semibold text-dorado-osc mb-0.5">Nota</label>
-              <input
-                id="doc-nota"
-                className={INPUT}
-                placeholder="Ficha tecnica panel SIP 114 mm OSB/OSB"
-                maxLength={500}
-                value={nota}
-                onChange={(e) => setNota(e.target.value)}
-              />
-              <span className="block text-[11px] text-gray-500 mt-0.5">Es lo que se ve al elegirlo en el lead: diga que es, para reconocerlo.</span>
-            </div>
-            <div>
-              <label htmlFor="doc-pais" className="block text-xs font-semibold text-dorado-osc mb-0.5">Mercado</label>
-              <select
-                id="doc-pais"
-                className={INPUT}
-                value={pais ?? ""}
-                onChange={(e) => setPais(e.target.value ? Number(e.target.value) : null)}
-              >
-                {paises.length > 1 && <option value="">Todos</option>}
-                {paises.map((p) => (
-                  <option key={p.id} value={p.id}>{p.nombre}</option>
-                ))}
-              </select>
-              <button type="button" onClick={subir} disabled={subiendo || !archivo || !nota.trim()} className={`${BOTON} mt-2 w-full`}>
-                {subiendo ? "Subiendo..." : "Subir"}
-              </button>
-            </div>
+
+            {pendientes.length > 0 && (
+              <>
+                <ul className="space-y-2">
+                  {pendientes.map((x, i) => (
+                    <li key={`${x.archivo.name}-${i}`} className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-center">
+                      <span className="text-xs break-all">
+                        {x.archivo.name} <span className="text-gray-500">({peso(x.archivo.size)})</span>
+                      </span>
+                      <span>
+                        <label htmlFor={`doc-nota-nueva-${i}`} className="sr-only">Nota de {x.archivo.name}</label>
+                        <input
+                          id={`doc-nota-nueva-${i}`}
+                          className={INPUT}
+                          maxLength={500}
+                          placeholder="Que es: Ficha tecnica panel SIP 114 mm OSB/OSB"
+                          value={x.nota}
+                          onChange={(e) => setPendientes((l) => l.map((y, k) => (k === i ? { ...y, nota: e.target.value } : y)))}
+                        />
+                      </span>
+                      <button type="button" onClick={() => setPendientes((l) => l.filter((_, k) => k !== i))} className="text-red-700 underline text-xs justify-self-start">
+                        Sacar
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-gray-500">La nota es lo que se ve al elegirlo en el lead: diga que es, para reconocerlo.</p>
+                <div className="flex flex-wrap items-end gap-3">
+                  <label className="text-xs">
+                    <span className="block font-semibold text-dorado-osc mb-0.5">Mercado</span>
+                    <select id="doc-pais" className="border border-gray-300 rounded px-2 py-1 text-sm" value={pais ?? ""} onChange={(e) => setPais(e.target.value ? Number(e.target.value) : null)}>
+                      {paises.length > 1 && <option value="">Todos</option>}
+                      {paises.map((p) => (
+                        <option key={p.id} value={p.id}>{p.nombre}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button type="button" onClick={subir} disabled={subiendo || pendientes.some((x) => !x.nota.trim())} className={BOTON}>
+                    {subiendo ? "Subiendo..." : pendientes.length === 1 ? "Subir" : `Subir los ${pendientes.length}`}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </section>
       )}
