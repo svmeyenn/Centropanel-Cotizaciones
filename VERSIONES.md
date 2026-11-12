@@ -10,7 +10,7 @@ de pruebas no suben la version hasta que se aprueban.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.040-20261112**
+Version vigente: **v008.041-20261112**
 
 ## Grandes hitos
 
@@ -23,10 +23,11 @@ Version vigente: **v008.040-20261112**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.040 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.041 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.041-20261112 | — | 12-11-2026 | Materias primas: el alta muestra los mismos campos que la ficha (se agregan familia, unidad, ancho y largo), cada campo con una leyenda de para que se usa, y un recuadro de parametros calculados (volumen, unidades por m3, superficie, espesor nominal, costo neto por m3 y por m2, peso por unidad y por m2). En el EPS, el costo de la unidad se calcula desde el valor neto del m3; la regla por m3 de un proveedor se ofrece como sugerencia y el alta puede agregar el insumo a su maestra como preferente. Sin cambios de estructura. |
 | v008.040-20261112 | — | 12-11-2026 | Proveedores: calculo del costo por m3 o por SKU, para todo el proveedor, una familia o un item (lo puntual manda). El valor del m3 es neto; al guardar se recalculan los items por m3 (volumen de la ficha x valor), con historial origen 'Por m3' y recosteo de paneles y cotizaciones sin pedido si es preferente. Pantalla /proveedores/[id]/calculo. Estructura: tabla proveedor_reglas_costo, funciones proveedor_costo_calculo y proveedor_reglas_guardar. |
 | v008.039-20261106 | — | 06-11-2026 | PDF y enlace del cliente de cotizaciones y pedidos: el valor de lista deja de ir dentro de la columna V. UNITARIO. Cuando alguna linea tiene descuento se muestran las columnas P. LISTA, DESC. % (vacia en las lineas sin descuento) y V. UNITARIO final, y cada linea termina en el subtotal neto; sin descuentos queda solo V. UNITARIO. Sin cambios de estructura. |
 | v008.038-20261106 | — | 06-11-2026 | Cotizaciones y pedidos: las columnas de la tabla de items se ajustaron para que cada linea quede en una sola fila (menos relleno lateral, cifras sin salto de linea, campos de unidades, precio y descuento mas angostos) y el titulo de la columna de margen pasa de "Margen linea" a "Margen". Sin cambios de estructura. |
