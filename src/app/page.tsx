@@ -189,7 +189,7 @@ async function VistaGestion({
     // enviar--: se pide junto con lo demas, no despues.
     supabase
       .from("mensajes_programados")
-      .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, nombres_adjuntos, estado, clientify_contactos(nombre_completo, id_pais)")
+      .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, ids_documento, nombres_adjuntos, estado, clientify_contactos(nombre_completo, id_pais)")
       .in("estado", ["Programado", "En bandeja de salida"])
       .eq("id_vendedor", v.id)
       .order("programado_para")

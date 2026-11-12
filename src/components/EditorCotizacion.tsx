@@ -701,6 +701,22 @@ export default function EditorCotizacion(p: Props) {
               La fecha comprometida se fija al generar el pedido.
             </span>
           </label>
+          <label className="text-xs">
+            <span className="block text-dorado-osc font-semibold mb-0.5">
+              Distintivo
+            </span>
+            <input
+              className={inputCls}
+              disabled={soloLectura}
+              maxLength={200}
+              placeholder="Casa Perez, opcion 2"
+              value={d.distintivo ?? ""}
+              onChange={(e) => set("distintivo", e.target.value)}
+            />
+            <span className="block text-[11px] text-gray-500 mt-0.5">
+              Va en el documento, en verde, sobre el detalle de la cotizacion.
+            </span>
+          </label>
         </GrupoCabecera>
       </div>
 

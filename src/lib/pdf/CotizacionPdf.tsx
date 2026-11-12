@@ -159,6 +159,10 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
           </View>
         </View>
 
+        {d.distintivo ? (
+          <Text style={{ color: VERDE, fontSize: 7, fontFamily: "Helvetica-Bold", marginBottom: 3 }}>{d.distintivo}</Text>
+        ) : null}
+
         {/* ---- items: la cabecera se repite en cada pagina que ocupa la tabla ---- */}
         <View>
         <View style={s.tablaCab} fixed>

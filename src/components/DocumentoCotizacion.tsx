@@ -56,6 +56,8 @@ export interface CotizacionDoc {
   fecha: string;
   validez_dias: number;
   tiempo_entrega: string | null;
+  // Comentario que distingue la cotizacion: va en verde sobre el detalle.
+  distintivo?: string | null;
   direccion_despacho: string | null;
   cliente: PersonaDoc | null;
   vendedor: PersonaDoc | null;
@@ -143,6 +145,10 @@ export default function DocumentoCotizacion({
           <Campo rotulo="Telefono" valor={d.vendedor?.telefono} />
         </div>
       </div>
+
+      {d.distintivo && (
+        <div className="text-verde text-[11px] font-bold mb-1">{d.distintivo}</div>
+      )}
 
       {/* ---- items ---- */}
       {/* Con descuento en alguna linea: P. LISTA, DESC. % y V. UNITARIO final;

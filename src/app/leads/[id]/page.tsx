@@ -1,3 +1,4 @@
+import type { DocumentoAdjuntable } from "@/lib/documentos";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
@@ -243,7 +244,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   // Lo que esta dejado para despues en este lead: correos en la bandeja de salida y WhatsApp por enviar.
   const { data: programadosDb } = await supabase
     .from("mensajes_programados")
-    .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, nombres_adjuntos, estado")
+    .select("id, id_clientify, canal, programado_para, destino, asunto, cuerpo, plantilla, ids_cotizacion, ids_archivo, ids_documento, nombres_adjuntos, estado")
     .eq("id_clientify", idContacto)
     .in("estado", ["Programado", "En bandeja de salida"])
     .order("programado_para");
@@ -258,6 +259,16 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
   const archivos = ((archivosDb ?? []) as unknown as (Omit<ArchivoLead, "vendedor"> & {
     vendedores: { nombre: string } | null;
   })[]).map((a) => ({ ...a, vendedor: a.vendedores?.nombre ?? null })) as ArchivoLead[];
+
+  // La biblioteca de documentos para clientes del mercado del lead (o de todos), en uso.
+  const { data: docsDb } = await supabase
+    .from("documentos_comerciales")
+    .select("id, nombre, nota, tamano, id_pais")
+    .eq("activo", true)
+    .order("nota");
+  const documentos: DocumentoAdjuntable[] = ((docsDb ?? []) as { id: number; nombre: string; nota: string; tamano: number; id_pais: number | null }[])
+    .filter((x) => x.id_pais == null || x.id_pais === c.id_pais)
+    .map((x) => ({ id: Number(x.id), nombre: x.nombre, nota: x.nota, tamano: Number(x.tamano ?? 0) }));
 
   const puedeEscribir = puedeEscribirLeads(v);
   // Quien genero cada cotizacion del lead, para rotular sus anotaciones.
@@ -329,6 +340,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
             prefijoTelefono={codigoPais === "PE" ? "51" : "56"}
             cotizaciones={cotizaciones.filter((q) => q.folio).map((q) => ({ id: q.id_cotizacion, folio: q.folio }))}
             archivos={archivos.map((a) => ({ id: a.id, nombre: a.nombre, tamano: a.tamano ?? 0 }))}
+            documentos={documentos}
             datos={{
               genero: generoManual ?? generoAuto,
               generoVendedor: v.genero ?? inferirGenero(v.nombre),

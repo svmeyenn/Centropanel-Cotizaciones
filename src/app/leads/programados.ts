@@ -16,6 +16,8 @@ export type DatosProgramado = {
   plantilla: string;
   idsCotizacion: number[];
   idsArchivo: number[];
+  // Documentos de la biblioteca: van despues de los archivos del lead en nombresAdjuntos.
+  idsDocumento?: number[];
   nombresAdjuntos: string[];
   // El correo ya esta en la bandeja de salida de Outlook; el WhatsApp espera su hora aqui.
   estado: "Programado" | "En bandeja de salida";
@@ -44,6 +46,7 @@ export async function programarMensaje(d: DatosProgramado): Promise<Resultado & 
       plantilla: d.plantilla || null,
       ids_cotizacion: d.idsCotizacion,
       ids_archivo: d.idsArchivo,
+      ids_documento: d.idsDocumento ?? [],
       nombres_adjuntos: d.nombresAdjuntos,
       estado: d.estado,
       id_vendedor: v.id,

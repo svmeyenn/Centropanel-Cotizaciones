@@ -104,6 +104,8 @@ export const GRUPOS: Grupo[] = [
     opciones: [
       { texto: "Configurar panel SIP", href: "/configurador" },
       { texto: "Catalogo de productos", href: "/productos" },
+      // Fichas tecnicas, catalogos y certificados para adjuntar desde un lead.
+      { texto: "Documentos para clientes", href: "/documentos" },
       { texto: "Familias y subfamilias", href: "/familias", soloAdmin: true },
       { texto: "Materias primas", href: "/materias-primas", soloAdmin: true },
       {

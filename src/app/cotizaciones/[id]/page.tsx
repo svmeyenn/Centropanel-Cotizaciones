@@ -231,6 +231,7 @@ export default async function Pagina({
           fecha: (cot.fecha as string).slice(0, 10),
           validez_dias: cot.validez_dias,
           tiempo_entrega: cot.tiempo_entrega ?? "",
+          distintivo: cot.distintivo ?? "",
           direccion_despacho: cot.direccion_despacho ?? "",
           notas: cot.notas ?? "",
           descuento_tipo: cot.descuento_tipo,

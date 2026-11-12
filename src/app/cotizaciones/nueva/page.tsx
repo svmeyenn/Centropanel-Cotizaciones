@@ -148,6 +148,7 @@ export default async function Pagina({
           fecha: hoyISO(),
           validez_dias: pNum(params, "ValidezDias", 7),
           tiempo_entrega: pTxt(params, "TiempoEntregaDefecto"),
+          distintivo: "",
           direccion_despacho: direccionDelCliente,
           notas: "",
           descuento_tipo: "Monto",

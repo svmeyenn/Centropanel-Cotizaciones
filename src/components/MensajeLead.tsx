@@ -6,6 +6,8 @@ import { useTurnoWhatsapp } from "@/lib/turnoWhatsapp";
 import { programarMensaje } from "@/app/leads/programados";
 import { aBase64, estadoAyudante, outlookCorreo, whatsappAbrir, type AdjuntoB64, type EstadoAyudante } from "@/lib/ayudante";
 import { urlArchivoLead } from "@/app/leads/edicion-lead";
+import { urlDocumento } from "@/app/documentos/acciones";
+import type { DocumentoAdjuntable } from "@/lib/documentos";
 import { aplicarPlantilla, normalizarFono, type Canal, type DatosMensaje, type Plantilla } from "@/lib/mensajes";
 
 export type CotizacionAdjuntable = { id: number; folio: string };
@@ -53,6 +55,7 @@ export default function MensajeLead({
   prefijoTelefono,
   cotizaciones,
   archivos,
+  documentos = [],
   datos,
   lineaTexto,
 }: {
@@ -64,6 +67,8 @@ export default function MensajeLead({
   cotizaciones: CotizacionAdjuntable[];
   // Los archivos que ya estan cargados en el lead.
   archivos: ArchivoAdjuntable[];
+  // La biblioteca de documentos para clientes (fichas tecnicas, catalogos): se adjuntan igual que un archivo.
+  documentos?: DocumentoAdjuntable[];
   datos: Omit<DatosMensaje, "folios">;
   // La linea del lead: los mensajes son los de esa linea.
   lineaTexto: string;
@@ -75,6 +80,7 @@ export default function MensajeLead({
   const [destino, setDestino] = useState("");
   const [elegidas, setElegidas] = useState<number[]>([]);
   const [archivosElegidos, setArchivosElegidos] = useState<number[]>([]);
+  const [docsElegidos, setDocsElegidos] = useState<number[]>([]);
   // Los archivos ya traidos, listos para adjuntar: se preparan al elegirlos, para que el
   // boton de compartir actue dentro del clic, que es lo unico que el navegador deja.
   const preparados = useRef(new Map<string, File>());
@@ -99,8 +105,12 @@ export default function MensajeLead({
   const nota = useRef("");
 
   const folios = cotizaciones.filter((c) => elegidas.includes(c.id)).map((c) => c.folio);
-  const nombresArchivos = archivos.filter((a) => archivosElegidos.includes(a.id)).map((a) => a.nombre);
-  const claves = [...elegidas.map((i) => `c${i}`), ...archivosElegidos.map((i) => `a${i}`)];
+  // Archivos del lead y documentos de la biblioteca, en ese orden: asi se guardan y se adjuntan.
+  const nombresArchivos = [
+    ...archivos.filter((a) => archivosElegidos.includes(a.id)).map((a) => a.nombre),
+    ...documentos.filter((x) => docsElegidos.includes(x.id)).map((x) => x.nombre),
+  ];
+  const claves = [...elegidas.map((i) => `c${i}`), ...archivosElegidos.map((i) => `a${i}`), ...docsElegidos.map((i) => `d${i}`)];
   const clavesTexto = claves.join(",");
   const preparando = claves.length > 0 && listos !== clavesTexto;
   const plantilla = delCanal.find((p) => p.id === idPlantilla) ?? null;
@@ -197,6 +207,14 @@ export default function MensajeLead({
       if (!r.ok) throw new Error(`No se pudo generar el PDF de ${c?.folio ?? "la cotizacion"}.`);
       blob = await r.blob();
       nombre = `${c?.folio ?? `Cotizacion-${id}`}.pdf`;
+    } else if (clave[0] === "d") {
+      const x = documentos.find((y) => y.id === id);
+      const u = await urlDocumento(id);
+      if (!u.url) throw new Error(u.error ?? `No se pudo abrir ${x?.nota ?? "el documento"}.`);
+      const r = await fetch(u.url);
+      if (!r.ok) throw new Error(`No se pudo traer ${x?.nota ?? "el documento"}.`);
+      blob = await r.blob();
+      nombre = x?.nombre ?? `documento-${id}`;
     } else {
       const a = archivos.find((x) => x.id === id);
       const u = await urlArchivoLead(id);
@@ -238,6 +256,7 @@ export default function MensajeLead({
     plantilla: plantilla?.nombre ?? "Mensaje libre",
     idsCotizacion: elegidas,
     idsArchivo: archivosElegidos,
+    idsDocumento: docsElegidos,
     nombresAdjuntos: [...folios.map((f) => `${f}.pdf`), ...nombresArchivos],
     estado,
   });
@@ -339,7 +358,7 @@ export default function MensajeLead({
       // Queda anotado apenas se genera, aunque despues falle algo al armar el
       // archivo: si no se envio, el registro se borra desde el lead.
       if (!(await anotar())) return;
-      const r = await armarBorradorOutlook(idLead, destino, asunto, cuerpo, elegidas, archivosElegidos);
+      const r = await armarBorradorOutlook(idLead, destino, asunto, cuerpo, elegidas, archivosElegidos, docsElegidos);
       if (!r.ok) return setAviso({ ok: false, texto: `${r.mensaje} El registro ya quedo en el lead: si no va a enviar, borrelo desde ahi.` });
       const bin = atob(r.base64);
       const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
@@ -570,6 +589,28 @@ export default function MensajeLead({
                 </ul>
               )}
             </fieldset>
+
+            {documentos.length > 0 && (
+              <fieldset>
+                <legend className={ROTULO}>Adjuntar documentos de la biblioteca</legend>
+                <ul className="flex flex-wrap gap-x-4 gap-y-1">
+                  {documentos.map((x) => (
+                    <li key={x.id}>
+                      <label className="inline-flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={docsElegidos.includes(x.id)}
+                          onChange={(e) => setDocsElegidos((l) => (e.target.checked ? [...l, x.id] : l.filter((i) => i !== x.id)))}
+                        />
+                        <span>
+                          {x.nota} <span className="text-gray-500">({x.nombre}, {mb(x.tamano)})</span>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </fieldset>
+            )}
 
             {canal === "email" && (
               <div>

@@ -63,6 +63,7 @@ export default async function Pagina({
     fecha: String(j.fecha).slice(0, 10),
     validez_dias: Number(j.validez_dias ?? 7),
     tiempo_entrega: j.tiempo_entrega ?? null,
+    distintivo: (j.distintivo as string | null) ?? null,
     direccion_despacho: j.direccion_despacho ?? null,
     cliente: j.cliente ?? null,
     vendedor: j.vendedor ?? null,

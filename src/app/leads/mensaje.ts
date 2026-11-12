@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requerirVendedor } from "@/lib/sesion";
 import { BUCKET_LEADS, puedeEscribirLeads } from "@/lib/leads";
 import { leerCotizacionDoc } from "@/lib/cotizacionDoc";
+import { BUCKET_DOCUMENTOS } from "@/lib/documentos";
 import { archivoCotizacionPdf } from "@/lib/pdf/CotizacionPdf";
 import { normalizarFono, type Canal } from "@/lib/mensajes";
 import { contactosConfigurado, guardarContacto } from "@/lib/contactosGoogle";
@@ -183,7 +184,8 @@ export async function armarBorradorOutlook(
   asunto: string,
   cuerpo: string,
   idsCotizacion: number[],
-  idsArchivo: number[] = []
+  idsArchivo: number[] = [],
+  idsDocumento: number[] = []
 ): Promise<{ ok: true; nombre: string; base64: string } | { ok: false; mensaje: string }> {
   const v = await requerirVendedor();
   if (!puedeEscribirLeads(v)) return { ok: false, mensaje: "Su perfil no permite escribirle a los leads." };
@@ -207,6 +209,20 @@ export async function armarBorradorOutlook(
     for (const f of filas ?? []) {
       const { data: blob, error } = await supabase.storage.from(BUCKET_LEADS).download(f.ruta as string);
       if (error || !blob) return { ok: false, mensaje: `No se pudo leer el archivo ${f.nombre}.` };
+      adjuntos.push({ nombre: f.nombre as string, datos: Buffer.from(await blob.arrayBuffer()), tipo: (f.tipo_mime as string | null) || "application/octet-stream" });
+    }
+  }
+  // Los documentos de la biblioteca: los que la base deja ver a esta persona y estan en uso.
+  if (idsDocumento.length > 0) {
+    const { data: docs } = await supabase
+      .from("documentos_comerciales")
+      .select("id, nombre, ruta, tipo_mime")
+      .eq("activo", true)
+      .in("id", idsDocumento);
+    if ((docs ?? []).length !== new Set(idsDocumento).size) return { ok: false, mensaje: "Hay un documento de la biblioteca que ya no esta disponible." };
+    for (const f of docs ?? []) {
+      const { data: blob, error } = await supabase.storage.from(BUCKET_DOCUMENTOS).download(f.ruta as string);
+      if (error || !blob) return { ok: false, mensaje: `No se pudo leer el documento ${f.nombre}.` };
       adjuntos.push({ nombre: f.nombre as string, datos: Buffer.from(await blob.arrayBuffer()), tipo: (f.tipo_mime as string | null) || "application/octet-stream" });
     }
   }

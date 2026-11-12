@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { registrarEnvioLead } from "@/app/leads/mensaje";
 import { cerrarProgramado } from "@/app/leads/programados";
 import { urlArchivoLead } from "@/app/leads/edicion-lead";
+import { urlDocumento } from "@/app/documentos/acciones";
 import { aBase64, estadoAyudante, outlookCancelar, whatsappAbrir, type AdjuntoB64, type EstadoAyudante } from "@/lib/ayudante";
 import { normalizarFono } from "@/lib/mensajes";
 import { useTurnoWhatsapp } from "@/lib/turnoWhatsapp";
@@ -25,6 +26,7 @@ export type Programado = {
   plantilla: string | null;
   ids_cotizacion: number[];
   ids_archivo: number[];
+  ids_documento?: number[] | null;
   nombres_adjuntos: string[];
   estado: "Programado" | "En bandeja de salida";
 };
@@ -88,6 +90,14 @@ export default function MensajesProgramados({
       const r = await fetch(u.url);
       if (!r.ok) throw new Error("No se pudo traer un archivo del lead.");
       salida.push({ nombre: p.nombres_adjuntos[p.ids_cotizacion.length + i] ?? `archivo-${p.ids_archivo[i]}`, base64: await aBase64(await r.blob()) });
+    }
+    const docs = p.ids_documento ?? [];
+    for (let i = 0; i < docs.length; i++) {
+      const u = await urlDocumento(docs[i]);
+      if (!u.url) throw new Error(u.error ?? "No se pudo abrir un documento de la biblioteca.");
+      const r = await fetch(u.url);
+      if (!r.ok) throw new Error("No se pudo traer un documento de la biblioteca.");
+      salida.push({ nombre: p.nombres_adjuntos[p.ids_cotizacion.length + p.ids_archivo.length + i] ?? `documento-${docs[i]}`, base64: await aBase64(await r.blob()) });
     }
     return salida;
   }, []);

@@ -32,6 +32,8 @@ export interface DatosCotizacion {
   fecha: string;
   validez_dias: number;
   tiempo_entrega: string;
+  // Comentario corto que distingue la cotizacion; va sobre el detalle en el documento.
+  distintivo?: string;
   direccion_despacho: string;
   notas: string;
   descuento_tipo: TipoDescuento;
@@ -120,6 +122,7 @@ export async function crearCotizacion(d: DatosCotizacion) {
       fecha: d.fecha,
       validez_dias: d.validez_dias,
       tiempo_entrega: d.tiempo_entrega,
+      distintivo: (d.distintivo ?? "").trim().slice(0, 200) || null,
       direccion_despacho: d.direccion_despacho,
       notas: d.notas,
       estado: emitida,
@@ -186,6 +189,7 @@ export async function actualizarCotizacion(id: number, d: DatosCotizacion) {
       fecha: d.fecha,
       validez_dias: d.validez_dias,
       tiempo_entrega: d.tiempo_entrega,
+      distintivo: (d.distintivo ?? "").trim().slice(0, 200) || null,
       direccion_despacho: d.direccion_despacho,
       notas: d.notas,
       descuento_tipo: d.descuento_tipo,

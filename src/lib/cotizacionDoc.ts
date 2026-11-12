@@ -56,6 +56,7 @@ export async function leerCotizacionDoc(id: number): Promise<{
     fecha: (cot.fecha as string).slice(0, 10),
     validez_dias: cot.validez_dias ?? 7,
     tiempo_entrega: cot.tiempo_entrega,
+    distintivo: (cot.distintivo as string | null) ?? null,
     direccion_despacho: cot.direccion_despacho,
     cliente: cli,
     vendedor: ven,
