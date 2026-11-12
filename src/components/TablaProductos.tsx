@@ -4,7 +4,7 @@ import { BanderaDe } from "@/components/Bandera";
 
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import { advertenciaEps } from "@/app/configurador/acciones";
-import { pesos, porcentaje, unidades, conIva, monedaDelPais } from "@/lib/formato";
+import { pesos, porcentaje, unidades, conIva, monedaDelPais, textoMedidas } from "@/lib/formato";
 import ProveedoresDelItem, { type ProveedorDeItem } from "@/components/ProveedoresDelItem";
 import { nombreImpuesto } from "@/lib/impuesto";
 import {
@@ -64,11 +64,14 @@ export default function TablaProductos({
   gruposFamilia = {},
   advertencias = {},
   pesoUsado = {},
+  medidas = {},
   preferentes = {},
   proveedoresDe = {},
 }: {
   // Peso con que se cotiza el flete de cada producto, y de donde sale (ficha, calculado o falta).
   pesoUsado?: Record<number, { peso: number | null; origen: string }>;
+  // Largo y ancho maximo de cada panel: distingue un panel de 488 de uno de 244 con la misma descripcion.
+  medidas?: Record<number, { largo: number; ancho: number }>;
   productos: ProductoFila[];
   esAdmin: boolean;
   materias?: MateriaVenta[];
@@ -151,9 +154,10 @@ export default function TablaProductos({
           (p.sku ?? "").toLowerCase().includes(q) ||
           (qSku !== "" && (p.sku ?? "").toLowerCase().replace(/[\s-]/g, "").includes(qSku)) ||
           (p.familia ?? "").toLowerCase().includes(q) ||
-          (p.subfamilia ?? "").toLowerCase().includes(q)),
+          (p.subfamilia ?? "").toLowerCase().includes(q) ||
+          (medidas[p.id] != null && `${medidas[p.id].largo} ${medidas[p.id].ancho}`.includes(q))),
     );
-  }, [busca, soloActivos, soloAdvertidos, soloSinPeso, advertencias, pesoUsado, familia, productos]);
+  }, [busca, soloActivos, soloAdvertidos, soloEstandar, soloSinPeso, advertencias, pesoUsado, medidas, familia, productos]);
 
   // El catalogo se lee en dos niveles: familia (Paneles SIP, Madera,
   // Tornillos...) y dentro de ella subfamilia (APA / Smart, Pino Bruta,
@@ -318,6 +322,8 @@ export default function TablaProductos({
             { titulo: "Familia", valor: (p) => p.familia ?? "" },
             { titulo: "Subfamilia", valor: (p) => p.subfamilia ?? "" },
             { titulo: "Espesor", valor: (p) => p.espesor_total ?? "" },
+            { titulo: "Largo max mm", valor: (p) => medidas[p.id]?.largo ?? "" },
+            { titulo: "Ancho max mm", valor: (p) => medidas[p.id]?.ancho ?? "" },
             { titulo: "Costo", valor: (p) => p.costo_unitario ?? "" },
             { titulo: "Precio neto", valor: (p) => p.precio_venta },
             { titulo: "Peso kg", valor: (p) => pesoUsado[p.id]?.peso ?? "" },
@@ -911,6 +917,9 @@ export default function TablaProductos({
                               >
                                 precio manual
                               </span>
+                            )}
+                          {textoMedidas(medidas[p.id]?.largo, medidas[p.id]?.ancho) && (
+                              <span className="block text-[10px] leading-tight text-gray-500">{textoMedidas(medidas[p.id]?.largo, medidas[p.id]?.ancho)}</span>
                             )}
                           </td>
                           {esAdmin && (

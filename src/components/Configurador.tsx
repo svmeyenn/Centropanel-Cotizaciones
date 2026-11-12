@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { Pais } from "@/types/database";
 import Link from "next/link";
-import { pesos, porcentaje, unidades, conIva } from "@/lib/formato";
+import { pesos, porcentaje, unidades, conIva, textoMedidas } from "@/lib/formato";
 import { nombreImpuesto } from "@/lib/impuesto";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import {
@@ -258,6 +258,9 @@ export default function Configurador({
               <div className="text-base font-bold text-verde">
                 {res.descripcion ?? "--"}
               </div>
+              {textoMedidas(res.largo_max, res.ancho_max) && (
+                <div className="text-xs text-gray-500">{textoMedidas(res.largo_max, res.ancho_max)}</div>
+              )}
               {res.espesor_total != null && (
                 <div className="text-xs text-gray-500">
                   Espesor total: {unidades(res.espesor_total)} mm

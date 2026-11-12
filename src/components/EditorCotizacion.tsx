@@ -50,6 +50,9 @@ export interface ProductoVenta {
   precio_manual?: boolean | null;
   // Panel estandar (estrella): lo marca el administrador del catalogo.
   es_estandar?: boolean;
+  // Medidas maximas del panel.
+  largo_max?: number | null;
+  ancho_max?: number | null;
 }
 
 interface Props {

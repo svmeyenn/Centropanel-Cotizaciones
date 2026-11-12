@@ -1,3 +1,4 @@
+import { leerMedidas } from "@/lib/medidas";
 import Link from "next/link";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
@@ -157,6 +158,7 @@ export default async function Pagina() {
           gruposFamilia={gruposFamilia}
           advertencias={advertencias}
           pesoUsado={pesoUsado}
+          medidas={await leerMedidas(supabase)}
           preferentes={preferentes}
           proveedoresDe={proveedoresDe}
         />

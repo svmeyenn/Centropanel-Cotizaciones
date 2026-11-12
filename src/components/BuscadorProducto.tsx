@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { textoMedidas } from "@/lib/formato";
 import type { ProductoVenta } from "@/components/EditorCotizacion";
 
 // Un solo campo para elegir el producto. Antes eran dos --uno para filtrar y
@@ -41,7 +42,7 @@ export default function BuscadorProducto({
     const partes = texto.trim().toLowerCase().split(/\s+/).filter(Boolean);
     if (!abierto || partes.length === 0) return productos;
     return productos.filter((x) => {
-      const d = `${x.sku ?? ""} ${x.descripcion}`.toLowerCase();
+      const d = `${x.sku ?? ""} ${x.descripcion} ${x.largo_max ?? ""} ${x.ancho_max ?? ""}`.toLowerCase();
       return partes.every((t) => d.includes(t));
     });
   }, [texto, productos, abierto]);
@@ -204,6 +205,11 @@ export default function BuscadorProducto({
                           className={`ml-1.5 ${activo ? "text-dorado" : "text-dorado-osc"}`}
                         >
                           ★
+                        </span>
+                      )}
+                      {textoMedidas(x.largo_max, x.ancho_max) && (
+                        <span className={`block text-[10px] leading-tight ${activo ? "text-white/80" : "text-gray-500"}`}>
+                          {textoMedidas(x.largo_max, x.ancho_max)}
                         </span>
                       )}
                       {sinPrecio && (

@@ -111,6 +111,7 @@ export default async function Pagina({
     grupoPorProducto[Number(g.id)] = g.grupo;
   }
 
+  const med = await leerMedidas(supabase);
   return (
     <div className="min-h-screen">
       <Cabecera proceso={{ tipo: "venta", etapa: "cotizacion" }}
@@ -130,12 +131,12 @@ export default async function Pagina({
           activo: Boolean(m.activo),
           id_pais: Number(m.id_pais),
         }))}
-        productos={productos ?? []}
+        productos={(productos ?? []).map((x) => ({ ...x, largo_max: med[Number(x.id)]?.largo ?? null, ancho_max: med[Number(x.id)]?.ancho ?? null }))}
         grupoPorProducto={grupoPorProducto}
         materias={materias ?? []}
         puedeCrearPanel={v.puede_crear || tienePerfilAdmin(v)}
         ivaPorPais={ivaPorPais}
-        medidas={await leerMedidas(supabase)}
+        medidas={med}
         puedeEditar={v.puede_crear || tienePerfilAdmin(v)}
         verMargen
         costoPorProducto={costoPorProducto}

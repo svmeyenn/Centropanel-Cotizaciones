@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { pesos, unidades, conIva } from "@/lib/formato";
+import { pesos, unidades, conIva, textoMedidas } from "@/lib/formato";
 import {
   calcularPanel,
   guardarPanel,
@@ -220,6 +220,9 @@ export default function ModalNuevoPanel({
               <div className="text-sm font-bold text-verde">
                 {res.descripcion ?? "--"}
               </div>
+              {textoMedidas(res.largo_max, res.ancho_max) && (
+                <div className="text-[11px] text-gray-500">{textoMedidas(res.largo_max, res.ancho_max)}</div>
+              )}
               <div className="text-xs text-gray-600">
                 Precio neto: <strong>{pesos(res.precio)}</strong> · PVP{" "}
                 {pesos(conIva(res.precio, iva))}

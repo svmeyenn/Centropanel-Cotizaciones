@@ -32,6 +32,9 @@ export interface ResultadoPanel {
   // Desglose de como se llego al costo, equivalente a CfgDesglose en Access.
   // Solo se arma para el administrador: detalla el costo de cada insumo.
   costeo: LineaCosteo[] | null;
+  // Largo y ancho maximo del panel (la mayor de sus placas y su EPS).
+  largo_max: number | null;
+  ancho_max: number | null;
 }
 
 // Devuelve un producto listo para agregarlo a una cotizacion. Lee
@@ -181,6 +184,9 @@ export async function calcularPanel(
       }))
     : null;
 
+  const { data: medRaw } = await supabase.rpc("medidas_panel", { p_eps: c.id_eps, p_placa_a: c.id_placa_a, p_placa_b: b });
+  const medidas = medRaw ? { largo: Number((medRaw as { largo: number }).largo), ancho: Number((medRaw as { ancho: number }).ancho) } : null;
+
   return {
     descripcion: rDesc.data ?? null,
     espesor_total: rEspesor.data ? Number(rEspesor.data) : null,
@@ -189,6 +195,8 @@ export async function calcularPanel(
     costo,
     precio,
     margen: precio > 0 ? (precio - costo) / precio : null,
+    largo_max: medidas?.largo ?? null,
+    ancho_max: medidas?.ancho ?? null,
     existe_id: existeId,
     misma_config: mismaConfig,
     descripcion_existente: descExistente,

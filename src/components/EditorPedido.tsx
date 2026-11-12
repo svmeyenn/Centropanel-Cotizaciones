@@ -702,6 +702,9 @@ export default function EditorPedido({
                       izq={
                         <>
                           {l.descripcion}{" "}
+                          {textoMedidas(l.largo_max, l.ancho_max) && (
+                            <span className="text-[10px] text-gray-500">[{textoMedidas(l.largo_max, l.ancho_max)}] </span>
+                          )}
                           <span className="text-gray-500">
                             ({fmtUnid(l.unidades)} × {cu ? importe(cu, moneda) : "sin costo"})
                           </span>
