@@ -89,6 +89,12 @@ export default function ModalNuevaMateria({
     });
   }
 
+  // Al cambiar de pais, un proveedor de otro mercado deja de valer: se suelta para no vincularlo por error.
+  useEffect(() => {
+    const p = proveedores.find((x) => x.id === proveedor);
+    if (p && form.id_pais && p.id_pais && p.id_pais !== form.id_pais) setProveedor(null);
+  }, [form.id_pais, proveedor, proveedores]);
+
   const moneda = monedaDelPais(form.id_pais ?? paisPorDefecto);
 
   return (
