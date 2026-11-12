@@ -81,7 +81,7 @@ export default async function Pagina({
     supabase.from("medios_pago").select("*").eq("activo", true).order("orden"),
     supabase
       .from("v_catalogo_venta")
-      .select("id, sku, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual")
+      .select("id, sku, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual, es_estandar")
       .eq("activo", true)
       .order("familia")
         .order("subfamilia")

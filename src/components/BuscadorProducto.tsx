@@ -196,6 +196,16 @@ export default function BuscadorProducto({
                         </span>
                       )}
                       {x.descripcion}
+                      {x.es_estandar && (
+                        <span
+                          role="img"
+                          aria-label="Panel estandar"
+                          title="Panel estandar"
+                          className={`ml-1.5 ${activo ? "text-dorado" : "text-dorado-osc"}`}
+                        >
+                          ★
+                        </span>
+                      )}
                       {sinPrecio && (
                         <span
                           className={activo ? "text-white/80" : "text-gray-500"}

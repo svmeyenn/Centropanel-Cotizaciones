@@ -22,7 +22,7 @@ export default async function Pagina() {
         supabase
           .from("productos")
           .select(
-            "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais, grupo_descuento, ancho_mm, largo_mm, alto_mm, peso_kg",
+            "id, sku, descripcion, tipo, familia, subfamilia, espesor_total, costo_unitario, precio_venta, margen_aplicado, precio_manual, activo, id_eps, id_placa_a, id_placa_b, id_pais, grupo_descuento, ancho_mm, largo_mm, alto_mm, peso_kg, es_estandar",
           ),
         idPaisActivo,
       )
@@ -33,7 +33,7 @@ export default async function Pagina() {
         supabase
           .from("v_catalogo_venta")
           .select(
-            "id, sku, descripcion, tipo, familia, subfamilia, precio_venta, activo, id_pais",
+            "id, sku, descripcion, tipo, familia, subfamilia, precio_venta, activo, id_pais, es_estandar",
           ),
         idPaisActivo,
       )

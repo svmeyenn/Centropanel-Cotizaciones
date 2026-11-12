@@ -423,3 +423,24 @@ export async function asignarGrupoProducto(id: number, grupo: string | null) {
   revalidatePath("/cotizaciones");
   return {};
 }
+
+// Estrella de "panel estandar". La marca la administra quien administra el catalogo --la misma regla que crear y
+// editar productos--, y la base lo exige tambien con un disparador. Solo un panel puede llevarla.
+export async function marcarPanelEstandar(id: number, estandar: boolean) {
+  const v = await requerirVendedor();
+  if (!tienePerfilAdmin(v)) {
+    return { error: "Solo el administrador puede marcar un panel como estandar." };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("productos")
+    .update({ es_estandar: estandar })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!data) return { error: "No se pudo cambiar la marca: el producto no existe o no es de su mercado." };
+  revalidatePath("/productos");
+  revalidatePath("/cotizaciones");
+  return { ok: true };
+}

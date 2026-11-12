@@ -48,6 +48,8 @@ export interface ProductoVenta {
   // Producto cuyo valor se pacta en cada cotizacion (mano de obra, flete,
   // descuento): son los unicos que pueden ir en cero.
   precio_manual?: boolean | null;
+  // Panel estandar (estrella): lo marca el administrador del catalogo.
+  es_estandar?: boolean;
 }
 
 interface Props {

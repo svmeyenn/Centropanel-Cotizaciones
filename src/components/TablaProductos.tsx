@@ -11,6 +11,7 @@ import {
   actualizarProducto,
   volverAPrecioAutomatico,
   cambiarActivoProducto,
+  marcarPanelEstandar,
   editarComposicionPanel,
   eliminarProducto,
   asignarGrupoFamilia,
@@ -47,6 +48,8 @@ interface ProductoFila {
   largo_mm?: number | null;
   alto_mm?: number | null;
   peso_kg?: number | null;
+  // Estrella de panel estandar: la marca el administrador del catalogo.
+  es_estandar?: boolean;
 }
 
 const kg = (n: number) => `${n.toLocaleString("es-CL", { maximumFractionDigits: 2 })} kg`;
@@ -97,6 +100,7 @@ export default function TablaProductos({
   const [soloActivos, setSoloActivos] = useState(true);
   const [soloAdvertidos, setSoloAdvertidos] = useState(false);
   const [soloSinPeso, setSoloSinPeso] = useState(false);
+  const [soloEstandar, setSoloEstandar] = useState(false);
   const [advComp, setAdvComp] = useState<string | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
   const [form, setForm] = useState<DatosProducto | null>(null);
@@ -139,6 +143,7 @@ export default function TablaProductos({
       (p) =>
         (!soloActivos || p.activo) &&
         (!soloAdvertidos || advertencias[p.id] != null) &&
+        (!soloEstandar || p.es_estandar) &&
         (!soloSinPeso || (p.tipo !== "Servicio" && pesoUsado[p.id]?.peso == null)) &&
         (!familia || (p.familia ?? "Otros") === familia) &&
         (!q ||
@@ -280,6 +285,10 @@ export default function TablaProductos({
           />
           Solo activos
         </label>
+        <label className="text-sm text-gray-600 flex items-center gap-2">
+          <input type="checkbox" checked={soloEstandar} onChange={(e) => setSoloEstandar(e.target.checked)} />
+          <span aria-hidden="true" className="text-dorado">★</span> Solo paneles estandar
+        </label>
         {esAdmin && (
           <label className="text-sm text-gray-600 flex items-center gap-2">
             <input type="checkbox" checked={soloSinPeso} onChange={(e) => setSoloSinPeso(e.target.checked)} />
@@ -317,6 +326,7 @@ export default function TablaProductos({
               valor: (p) =>
                 p.grupo_descuento ?? gruposFamilia[p.familia ?? ""] ?? GRUPO_PRODUCTOS,
             },
+            { titulo: "Estandar", valor: (p) => (p.es_estandar ? "Si" : "") },
             { titulo: "Estado", valor: (p) => (p.activo ? "Activo" : "Inactivo") },
           ]}
           filas={filtrados}
@@ -872,6 +882,20 @@ export default function TablaProductos({
                             ) : (
                               p.descripcion
                             )}
+                            {p.tipo === "Panel SIP" && (
+                              <EstrellaEstandar
+                                estandar={Boolean(p.es_estandar)}
+                                editable={esAdmin}
+                                descripcion={p.descripcion}
+                                onCambiar={(v) =>
+                                  empezar(async () => {
+                                    setError(null);
+                                    const r = await marcarPanelEstandar(p.id, v);
+                                    if (r?.error) setError(r.error);
+                                  })
+                                }
+                              />
+                            )}
                             {advertencias[p.id] && (
                               <span
                                 className="ml-2 text-[11px] bg-amber-100 text-amber-900 border border-amber-400 px-1.5 py-0.5 rounded"
@@ -1108,5 +1132,40 @@ function GrupoDelProducto({
       </p>
       {error && <p className="text-[11px] text-red-700">{error}</p>}
     </div>
+  );
+}
+
+// Estrella de panel estandar. Para el administrador es un boton que la pone o la quita; para el resto, solo la marca.
+function EstrellaEstandar({
+  estandar,
+  editable,
+  descripcion,
+  onCambiar,
+}: {
+  estandar: boolean;
+  editable: boolean;
+  descripcion: string;
+  onCambiar: (v: boolean) => void;
+}) {
+  if (!editable) {
+    return estandar ? (
+      <span className="ml-2 text-dorado" title="Panel estandar" aria-label="Panel estandar" role="img">
+        ★
+      </span>
+    ) : null;
+  }
+  return (
+    <button
+      type="button"
+      aria-pressed={estandar}
+      aria-label={`Panel estandar: ${descripcion}`}
+      title={estandar ? "Panel estandar. Pulse para quitar la estrella" : "Pulse para marcar como panel estandar"}
+      onClick={() => onCambiar(!estandar)}
+      className={`ml-2 inline-flex items-center justify-center w-6 h-6 rounded text-base leading-none align-middle focus:outline-none focus-visible:ring-2 focus-visible:ring-verde ${
+        estandar ? "text-dorado hover:text-dorado-osc" : "text-gray-300 hover:text-dorado"
+      }`}
+    >
+      {estandar ? "★" : "☆"}
+    </button>
   );
 }
