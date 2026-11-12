@@ -449,3 +449,41 @@ export async function historialCostos(idItem: number): Promise<{ error: string }
     }),
   };
 }
+
+export type ReglaCosto = {
+  alcance: "Proveedor" | "Familia" | "Item";
+  familia?: string | null;
+  id_item?: number | null;
+  metodo: "m3" | "sku";
+  valor_m3?: number | null;
+};
+
+// Guarda como se calcula el costo del proveedor (todo, por familia o por item) y recalcula de una vez los que van
+// por metro cubico. Los costos cambiados quedan en el historial con origen "Por m3" y, si el proveedor es el
+// preferente, se recostean paneles y cotizaciones sin pedido.
+export async function guardarReglasCosto(idProveedor: number, reglas: ReglaCosto[], vigenteDesde: string, nota: string) {
+  const err = await soloAdmin();
+  if (err) return { error: err };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(vigenteDesde)) return { error: "Indique desde cuando rige el costo." };
+  if (reglas.some((r) => r.metodo === "m3" && !(Number(r.valor_m3) > 0))) return { error: "Indique el valor del metro cubico en cada regla por m3." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("proveedor_reglas_guardar", {
+    p_proveedor: idProveedor,
+    p_reglas: reglas,
+    p_vigente_desde: vigenteDesde,
+    p_nota: nota.trim() || null,
+  });
+  if (error) return { error: error.message };
+  revalidarCostos(idProveedor);
+  revalidatePath(`/proveedores/${idProveedor}/calculo`);
+  const r = (data ?? {}) as { actualizados?: number; sin_medida?: number; preferentes?: number; paneles?: number; cotizaciones?: number };
+  return {
+    ok: true,
+    actualizados: Number(r.actualizados ?? 0),
+    sinMedida: Number(r.sin_medida ?? 0),
+    preferentes: Number(r.preferentes ?? 0),
+    paneles: Number(r.paneles ?? 0),
+    cotizaciones: Number(r.cotizaciones ?? 0),
+  };
+}

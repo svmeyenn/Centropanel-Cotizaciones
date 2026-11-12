@@ -155,6 +155,12 @@ export default async function Pagina({
           >
             Actualizar costos
           </Link>
+          <Link
+            href={`/proveedores/${id}/calculo`}
+            className="bg-white border border-gray-300 text-gray-800 text-xs font-semibold px-2.5 py-1 rounded"
+          >
+            Calculo del costo (m³ / SKU)
+          </Link>
         </BarraNavegacion>
 
         <div className="bg-white border border-gray-200 rounded p-4 text-sm grid md:grid-cols-4 gap-3">
