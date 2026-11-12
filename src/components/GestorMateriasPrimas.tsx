@@ -43,9 +43,11 @@ export default function GestorMateriasPrimas({
   proveedoresDe,
   pesoUsado = {},
   reglasM3 = [],
+  proveedoresLista = [],
 }: {
   // Reglas por m3 de los proveedores: sugieren el valor del metro cubico al crear o editar un insumo.
   reglasM3?: ReglaM3[];
+  proveedoresLista?: { id: number; nombre: string; id_pais: number | null }[];
   // Peso con que se cotiza el flete de cada insumo, y de donde sale (ficha, calculado o falta).
   pesoUsado?: Record<number, { peso: number | null; origen: string }>;
   // Proveedor preferente de cada insumo que lo tiene, y el costo que cobra.
@@ -259,6 +261,7 @@ export default function GestorMateriasPrimas({
             paises={paises}
             eligePais={esAdminGeneral}
             reglasM3={reglasM3}
+            proveedores={proveedoresLista}
           />
         </div>
       </div>

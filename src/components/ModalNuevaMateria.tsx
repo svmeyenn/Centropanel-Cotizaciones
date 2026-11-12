@@ -34,6 +34,7 @@ export default function ModalNuevaMateria({
   paises = [],
   eligePais,
   reglasM3 = [],
+  proveedores = [],
 }: {
   etiquetas: string[];
   familias?: string[];
@@ -44,6 +45,7 @@ export default function ModalNuevaMateria({
   paises?: Pais[];
   eligePais?: boolean;
   reglasM3?: ReglaM3[];
+  proveedores?: { id: number; nombre: string; id_pais: number | null }[];
 }) {
   // Quien trabaja un solo mercado no elige: su pais viene puesto. El
   // administrador general, que alcanza los dos, tiene que decidir.
@@ -53,7 +55,7 @@ export default function ModalNuevaMateria({
   const [abierto, setAbierto] = useState(false);
   const [form, setForm] = useState<DatosMateria>(vacio(paisPorDefecto));
   const [regla, setRegla] = useState<ReglaM3 | null>(null);
-  const [aMaestra, setAMaestra] = useState(true);
+  const [proveedor, setProveedor] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -69,7 +71,7 @@ export default function ModalNuevaMateria({
   function guardar() {
     setError(null);
     empezar(async () => {
-      const r = await crearMateria({ ...form, id_proveedor_maestra: regla && aMaestra ? regla.id_proveedor : null });
+      const r = await crearMateria({ ...form, id_proveedor_maestra: proveedor });
       if (r?.error) {
         setError(r.error);
         return;
@@ -82,6 +84,7 @@ export default function ModalNuevaMateria({
       setAbierto(false);
       setForm(vacio(paisPorDefecto));
       setRegla(null);
+      setProveedor(null);
       router.refresh();
     });
   }
@@ -95,6 +98,7 @@ export default function ModalNuevaMateria({
           setError(null);
           setForm(vacio(paisPorDefecto));
           setRegla(null);
+          setProveedor(null);
           setAbierto(true);
         }}
         className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-auto"
@@ -126,20 +130,31 @@ export default function ModalNuevaMateria({
                 eligePais={eligePais}
                 conPais
                 reglasM3={reglasM3}
-                onReglaUsada={setRegla}
+                onReglaUsada={(r) => { setRegla(r); if (r) setProveedor(r.id_proveedor); }}
               />
 
-              {regla && (
-                <label className="text-sm flex items-start gap-2 bg-white border border-gray-200 rounded p-2">
-                  <input type="checkbox" className="mt-0.5" checked={aMaestra} onChange={(e) => setAMaestra(e.target.checked)} />
-                  <span>
-                    Agregar a la maestra de <strong>{regla.proveedor}</strong> como proveedor preferente
-                    <span className="block text-[11px] text-gray-500">
-                      Su regla por m³ mantiene el costo al dia: cuando cambie el valor del m³ en la ficha del proveedor, este insumo se recalcula con los demas.
-                    </span>
-                  </span>
-                </label>
-              )}
+              <div className="bg-white border border-gray-200 rounded p-2">
+                <label htmlFor="nueva-mp-proveedor" className="block text-xs font-semibold text-gray-700">Proveedor</label>
+                <select
+                  id="nueva-mp-proveedor"
+                  className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                  value={proveedor ?? ""}
+                  onChange={(e) => setProveedor(e.target.value ? Number(e.target.value) : null)}
+                >
+                  <option value="">Sin proveedor por ahora</option>
+                  {proveedores
+                    .filter((p) => !form.id_pais || !p.id_pais || p.id_pais === form.id_pais)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>{p.nombre}</option>
+                    ))}
+                </select>
+                <span className="block text-[11px] text-gray-500 mt-1">
+                  {proveedor
+                    ? `Entra a la maestra del proveedor como preferente y el costo de arriba (${form.costo > 0 ? "neto" : "aun en 0"}) queda como su primer costo.`
+                    : "Sin proveedor, el costo queda solo en la ficha del insumo. Se puede vincular despues desde la ficha."}
+                  {regla && proveedor === regla.id_proveedor && " Su regla por m³ mantiene el costo al dia."}
+                </span>
+              </div>
 
               <label className="text-sm flex items-start gap-2">
                 <input type="checkbox" className="mt-0.5" checked={form.activo} onChange={(e) => setForm({ ...form, activo: e.target.checked })} />

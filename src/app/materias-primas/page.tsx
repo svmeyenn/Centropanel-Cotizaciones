@@ -98,6 +98,19 @@ export default async function Pagina() {
     };
   });
 
+  // Proveedores activos para vincular un insumo nuevo desde su creacion.
+  const { data: provs } = await supabase
+    .from("entidades")
+    .select("id_entidad, razon_social, nombre_referencia, id_pais, entidad_tipos!inner(tipo)")
+    .eq("entidad_tipos.tipo", "proveedor")
+    .eq("activo", true)
+    .order("razon_social");
+  const proveedoresLista = (provs ?? []).map((p) => ({
+    id: Number(p.id_entidad),
+    nombre: (p.nombre_referencia as string | null) || (p.razon_social as string),
+    id_pais: (p.id_pais as number | null) ?? null,
+  }));
+
   const { data: tipos } = await supabase
     .from("tipos_materia")
     .select("id, nombre, es_nucleo, es_cara, orden, activo")
@@ -124,6 +137,7 @@ export default async function Pagina() {
           proveedoresDe={proveedoresDe}
           pesoUsado={pesoUsado}
           reglasM3={reglasM3}
+          proveedoresLista={proveedoresLista}
         />
       </div>
     </div>
