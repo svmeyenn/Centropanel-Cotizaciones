@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { DatosMateria } from "@/app/materias-primas/acciones";
 import type { Pais, TipoMateria } from "@/types/database";
 import { importe, leerMontoLibre, redondea } from "@/lib/formato";
@@ -36,6 +36,13 @@ function Lista({ value, opciones, onChange, id }: { value: string; opciones: str
 }
 
 const num = (v: string) => (v === "" ? null : Number(v));
+
+// Peso de una unidad con su densidad: densidad x ancho x largo x espesor, a dos decimales. Null si falta un dato.
+function pesoPorDensidad(f: DatosMateria): number | null {
+  const a = Number(f.ancho_mm) || 0, l = Number(f.largo_mm) || 0, e = Number(f.espesor_mm) || 0, d = Number(f.densidad_kg_m3) || 0;
+  if (!(a > 0 && l > 0 && e > 0 && d > 0)) return null;
+  return Math.round(((a * l * e) / 1e9) * d * 100) / 100;
+}
 const fmt = (n: number, dec = 2) => n.toLocaleString("es-CL", { minimumFractionDigits: dec, maximumFractionDigits: dec });
 
 // Los campos de una materia prima, iguales al crearla y al editarla, con los parametros que se derivan de sus medidas.
@@ -73,6 +80,18 @@ export default function CamposMateria({
   onReglaUsada?: (r: ReglaM3 | null) => void;
 }) {
   const [m3, setM3] = useState("");
+  // El peso sigue a la densidad y las medidas mientras no se escriba a mano. Abre en automatico si esta vacio
+  // o si ya coincide con el calculo.
+  const [pesoAuto, setPesoAuto] = useState(() => {
+    const c = pesoPorDensidad(form);
+    return form.peso_kg == null || (c != null && Math.abs(Number(form.peso_kg) - c) < 0.01);
+  });
+  // Con el peso en automatico, cualquier cambio de densidad o medidas lo deja al dia (tambien al abrir la ficha).
+  const calculado = pesoPorDensidad(form);
+  useEffect(() => {
+    if (pesoAuto && calculado != null && form.peso_kg !== calculado) setForm({ ...form, peso_kg: calculado });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pesoAuto, calculado]);
   const tipo = tipos.find((t) => t.nombre === form.tipo);
   const a = Number(form.ancho_mm) || 0;
   const l = Number(form.largo_mm) || 0;
@@ -166,10 +185,43 @@ export default function CamposMateria({
           <Dato rotulo="Largo (mm)" para="Medida de la unidad. Con el ancho da la superficie; con el espesor, el volumen para el costo por m³ y el flete.">
             <input id={`${prefijo}-largo`} type="number" step="any" min="0" className={input} value={form.largo_mm ?? ""} onChange={(ev) => cambiarMedida("largo_mm", num(ev.target.value))} />
           </Dato>
-          <Dato rotulo="Peso por unidad (kg)" para="Peso real de una unidad (placas). Si esta, manda sobre la densidad para el peso del panel y el flete.">
-            <input id={`${prefijo}-peso`} type="number" step="any" min="0" className={input} value={form.peso_kg ?? ""} onChange={(ev) => setForm({ ...form, peso_kg: num(ev.target.value) })} />
+          <Dato
+            rotulo="Peso por unidad (kg)"
+            para={
+              pesoAuto && calculado != null
+                ? "Calculado: densidad x volumen. Se actualiza solo al cambiar la densidad o las medidas; escriba encima si tiene el peso real."
+                : "Peso real de una unidad (placas). Manda sobre la densidad para el peso del panel y el flete."
+            }
+          >
+            <span className="relative block">
+              <input
+                id={`${prefijo}-peso`}
+                type="number"
+                step="any"
+                min="0"
+                aria-describedby={`${prefijo}-peso-origen`}
+                className={`${input} pr-24 ${pesoAuto && calculado != null ? "bg-crema" : ""}`}
+                value={form.peso_kg ?? ""}
+                onChange={(ev) => {
+                  setPesoAuto(false);
+                  setForm({ ...form, peso_kg: num(ev.target.value) });
+                }}
+              />
+              <span id={`${prefijo}-peso-origen`} className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-verde pointer-events-none">
+                {pesoAuto && calculado != null ? "por densidad" : form.peso_kg != null ? "a mano" : ""}
+              </span>
+            </span>
+            {!pesoAuto && calculado != null && Math.abs(Number(form.peso_kg ?? 0) - calculado) >= 0.01 && (
+              <button
+                type="button"
+                className="mt-1 text-[11px] text-verde underline underline-offset-2 min-h-6"
+                onClick={() => setPesoAuto(true)}
+              >
+                Usar densidad x volumen ({calculado.toLocaleString("es-CL", { maximumFractionDigits: 2 })} kg)
+              </button>
+            )}
           </Dato>
-          <Dato rotulo="Densidad (kg/m³)" para="Del poliestireno (EPS). Sin peso por unidad, el peso se calcula con ella y el volumen; sirve para el panel y el flete.">
+          <Dato rotulo="Densidad (kg/m³)" para="Del poliestireno (EPS). Con las medidas calcula el peso por unidad, que sirve para el peso del panel y el flete.">
             <input id={`${prefijo}-densidad`} type="number" step="any" min="0" className={input} value={form.densidad_kg_m3 ?? ""} onChange={(ev) => setForm({ ...form, densidad_kg_m3: num(ev.target.value) })} />
           </Dato>
         </div>
@@ -220,7 +272,7 @@ export default function CamposMateria({
             <Calc
               rotulo="Peso por unidad"
               valor={pesoFlete != null ? `${fmt(Number(pesoFlete), 2)} kg` : "falta peso o densidad"}
-              para={form.peso_kg != null ? "de la ficha" : pesoCalc != null ? "densidad x volumen" : "para el flete"}
+              para={pesoAuto && calculado != null ? "densidad x volumen" : form.peso_kg != null ? "escrito a mano" : "para el flete"}
             />
             <Calc rotulo="Peso por m²" valor={pesoFlete != null && superficie ? `${fmt(Number(pesoFlete) / superficie, 2)} kg/m²` : "—"} para="peso / superficie" />
           </dl>
