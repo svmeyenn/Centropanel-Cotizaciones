@@ -27,6 +27,8 @@ export interface DatosMateria {
   activo?: boolean;
   // Mercado del insumo. Solo lo elige el administrador general.
   id_pais?: number | null;
+  // Al crear: proveedor a cuya maestra entra el insumo como preferente, con este costo (el de su regla por m3).
+  id_proveedor_maestra?: number | null;
 }
 
 const datosCargaInvalidos = (d: DatosMateria) =>
@@ -85,9 +87,24 @@ export async function crearMateria(d: DatosMateria) {
     };
   }
 
+  // Entra a la maestra del proveedor elegido como preferente: su costo pasa a ser el del insumo y la regla
+  // por m3 del proveedor lo mantiene al dia.
+  let aviso: string | null = null;
+  if (d.id_proveedor_maestra) {
+    const { error: eProv } = await supabase.from("proveedor_items").insert({
+      id_proveedor: d.id_proveedor_maestra,
+      id_materia_prima: data.id,
+      costo: d.costo,
+      es_preferente: d.costo > 0,
+      activo: d.costo > 0,
+    });
+    if (eProv) aviso = `El insumo se creo, pero no se pudo agregar a la maestra del proveedor: ${eProv.message}`;
+    revalidatePath(`/proveedores/${d.id_proveedor_maestra}`);
+  }
+
   revalidatePath("/materias-primas");
   revalidatePath("/configurador");
-  return { ok: true, materia: data };
+  return { ok: true, materia: data, aviso };
 }
 
 export async function actualizarMateria(id: number, d: DatosMateria) {

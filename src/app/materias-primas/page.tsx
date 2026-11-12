@@ -5,6 +5,7 @@ import GestorMateriasPrimas from "@/components/GestorMateriasPrimas";
 import { conPais, contextoMercado, requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import type { ProveedorDeItem } from "@/components/ProveedoresDelItem";
+import type { ReglaM3 } from "@/components/CamposMateria";
 
 export default async function Pagina() {
   const v = await requerirVendedor();
@@ -79,6 +80,24 @@ export default async function Pagina() {
     if (c.clase === "materia") pesoUsado[Number(c.id)] = { peso: c.peso_kg == null ? null : Number(c.peso_kg), origen: c.origen };
   }
 
+  // Reglas por m3 de los proveedores (de familia o de todo el proveedor): sugieren el valor del metro cubico.
+  const { data: reglas } = await supabase
+    .from("proveedor_reglas_costo")
+    .select("id_proveedor, alcance, familia, valor_m3, entidades(nombre_referencia, id_pais)")
+    .eq("metodo", "m3")
+    .in("alcance", ["Proveedor", "Familia"]);
+  const reglasM3: ReglaM3[] = (reglas ?? []).map((r) => {
+    const e = (Array.isArray(r.entidades) ? r.entidades[0] : r.entidades) as { nombre_referencia?: string; id_pais?: number } | null;
+    return {
+      id_proveedor: Number(r.id_proveedor),
+      proveedor: e?.nombre_referencia ?? "",
+      alcance: r.alcance as ReglaM3["alcance"],
+      familia: (r.familia as string | null) ?? null,
+      valor_m3: Number(r.valor_m3),
+      id_pais: e?.id_pais ?? null,
+    };
+  });
+
   const { data: tipos } = await supabase
     .from("tipos_materia")
     .select("id, nombre, es_nucleo, es_cara, orden, activo")
@@ -104,6 +123,7 @@ export default async function Pagina() {
           preferentes={preferentes}
           proveedoresDe={proveedoresDe}
           pesoUsado={pesoUsado}
+          reglasM3={reglasM3}
         />
       </div>
     </div>

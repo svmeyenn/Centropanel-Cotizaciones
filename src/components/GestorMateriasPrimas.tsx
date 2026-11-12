@@ -17,6 +17,7 @@ import {
 } from "@/app/materias-primas/acciones";
 import type { MateriaPrima, Pais, TipoMateria } from "@/types/database";
 import ModalNuevaMateria from "@/components/ModalNuevaMateria";
+import CamposMateria, { type ReglaM3 } from "@/components/CamposMateria";
 import ProveedoresDelItem, { type ProveedorDeItem } from "@/components/ProveedoresDelItem";
 import { monedaDelPais } from "@/lib/formato";
 
@@ -41,7 +42,10 @@ export default function GestorMateriasPrimas({
   preferentes,
   proveedoresDe,
   pesoUsado = {},
+  reglasM3 = [],
 }: {
+  // Reglas por m3 de los proveedores: sugieren el valor del metro cubico al crear o editar un insumo.
+  reglasM3?: ReglaM3[];
   // Peso con que se cotiza el flete de cada insumo, y de donde sale (ficha, calculado o falta).
   pesoUsado?: Record<number, { peso: number | null; origen: string }>;
   // Proveedor preferente de cada insumo que lo tiene, y el costo que cobra.
@@ -99,6 +103,7 @@ export default function GestorMateriasPrimas({
       densidad_kg_m3: m.densidad_kg_m3 ?? null,
       costo: m.costo,
       unidad: m.unidad ?? "",
+      id_pais: m.id_pais ?? null,
     });
   }
 
@@ -248,9 +253,12 @@ export default function GestorMateriasPrimas({
           )}
           <ModalNuevaMateria
             etiquetas={etiquetas}
+            familias={familias}
+            unidades={unidadesLista}
             tipos={tipos}
             paises={paises}
             eligePais={esAdminGeneral}
+            reglasM3={reglasM3}
           />
         </div>
       </div>
@@ -360,141 +368,24 @@ export default function GestorMateriasPrimas({
         >
         <div className="space-y-3">
           <div className="text-sm font-semibold text-verde">Modificar insumo</div>
-          <div className="grid md:grid-cols-3 gap-3">
-            <Campo
-              label="Nombre"
-              value={form.nombre}
-              onChange={(v) => setForm({ ...form, nombre: v })}
-              cls={input}
-            />
-            <label className="text-sm">
-              <span className="block text-dorado-osc font-semibold mb-1">
-                Tipo
+          <CamposMateria
+            prefijo="ficha-mp"
+            form={form}
+            setForm={setForm}
+            tipos={tipos}
+            etiquetas={etiquetas}
+            familias={familias}
+            unidades={unidadesLista}
+            moneda={monedaDelPais(materias.find((m) => m.id === editando)?.id_pais)}
+            reglasM3={reglasM3}
+            notaCosto={
+              <span className="block text-[11px] text-gray-500 mt-0.5">
+                {preferentes[editando] != null
+                  ? `Es el costo del proveedor preferente, ${preferentes[editando].proveedor}: si lo cambia aqui, cambia el de ese proveedor para este insumo (una sola cifra; si cotiza en otra moneda, se convierte).`
+                  : "Sin proveedor preferente: el costo se escribe a mano."}
               </span>
-              <select
-                className={input}
-                value={form.tipo}
-                onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-              >
-                <option value="">-- elija --</option>
-                {tipos.map((t) => (
-                  <option key={t.id} value={t.nombre}>
-                    {t.nombre}
-                  </option>
-                ))}
-              </select>
-              <span className="text-xs text-gray-500">
-                El EPS es el nucleo del panel y la Placa sus caras.
-              </span>
-            </label>
-            <Lista
-              label="Etiqueta"
-              value={form.etiqueta}
-              opciones={etiquetas}
-              onChange={(v) => setForm({ ...form, etiqueta: v })}
-              cls={input}
-            />
-            <Lista
-              label="Familia"
-              value={form.familia}
-              opciones={familias}
-              onChange={(v) => setForm({ ...form, familia: v })}
-              cls={input}
-            />
-            <label className="text-sm">
-              <span className="block text-dorado-osc font-semibold mb-1">
-                Espesor (mm)
-              </span>
-              <input
-                type="number"
-                step="any"
-                className={input}
-                value={form.espesor_mm ?? ""}
-                onChange={(e) => {
-                  const v = e.target.value ? Number(e.target.value) : null;
-                  // El nominal es solo para agrupar; el que manda es este.
-                  setForm({
-                    ...form,
-                    espesor_mm: v,
-                    espesor_nominal: v == null ? null : Math.round(v),
-                  });
-                }}
-              />
-              <span className="text-xs text-gray-500">
-                Admite decimales (12,7). Es el que suma al espesor del panel y
-                el que sale en su descripcion.
-              </span>
-            </label>
-            <label className="text-sm">
-              <span className="block text-dorado-osc font-semibold mb-1">Costo</span>
-              <input
-                type="number"
-                className={input}
-                value={form.costo}
-                onChange={(e) => setForm({ ...form, costo: Number(e.target.value) })}
-              />
-              {editando != null && preferentes[editando] != null ? (
-                <span className="text-xs text-gray-500">
-                  Es el costo del proveedor preferente: {preferentes[editando].proveedor}. Si lo
-                  cambia aqui, se actualiza el costo de ese proveedor para este insumo (una sola
-                  cifra). Si el proveedor cotiza en otra moneda, se convierte.
-                </span>
-              ) : (
-                <span className="text-xs text-gray-500">
-                  Sin proveedor preferente: el costo se escribe a mano.
-                </span>
-              )}
-            </label>
-            <Lista
-              label="Unidad"
-              value={form.unidad}
-              opciones={unidadesLista}
-              onChange={(v) => setForm({ ...form, unidad: v })}
-              cls={input}
-            />
-          </div>
-          <fieldset className="border-t border-gray-200 pt-3">
-            <legend className="text-xs font-semibold text-verde pr-2">Peso y dimensiones (para cotizar el flete)</legend>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {(
-                [
-                  ["ancho_mm", "Ancho (mm)"],
-                  ["largo_mm", "Largo (mm)"],
-                  ["peso_kg", "Peso por unidad (kg)"],
-                  ["densidad_kg_m3", "Densidad (kg/m³)"],
-                ] as const
-              ).map(([k, etiqueta]) => (
-                <label key={k} className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">{etiqueta}</span>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    className={input}
-                    value={form[k] ?? ""}
-                    onChange={(e) => setForm({ ...form, [k]: e.target.value === "" ? null : Number(e.target.value) })}
-                  />
-                </label>
-              ))}
-              <div className="text-sm">
-                <span className="block text-dorado-osc font-semibold mb-1">Peso que usa el flete</span>
-                {editando != null && pesoUsado[editando]?.peso != null ? (
-                  <span className="tabular-nums">
-                    {pesoUsado[editando].peso?.toLocaleString("es-CL", { maximumFractionDigits: 2 })} kg
-                    <span className="block text-[11px] text-gray-500">
-                      {pesoUsado[editando].origen === "calculado" ? "calculado con la densidad" : "de esta ficha"}
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-red-700">Falta</span>
-                )}
-              </div>
-            </div>
-            <p className="text-[11px] text-gray-500 mt-1">
-              El peso de los paneles SIP se calcula de sus partes: cargue el peso de cada placa y la densidad del poliestireno (EPS), y el panel queda resuelto.
-              El espesor se carga arriba.
-            </p>
-          </fieldset>
+            }
+          />
           {editando != null && (
             <ProveedoresDelItem
               proveedores={proveedoresDe[editando] ?? []}
@@ -656,59 +547,5 @@ export default function GestorMateriasPrimas({
         </div>
       </div>
     </div>
-  );
-}
-
-function Campo({
-  label,
-  value,
-  onChange,
-  cls,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  cls: string;
-}) {
-  return (
-    <label className="text-sm">
-      <span className="block text-dorado-osc font-semibold mb-1">{label}</span>
-      <input className={cls} value={value} onChange={(e) => onChange(e.target.value)} />
-    </label>
-  );
-}
-
-// Valor tomado de una lista configurable. Si el insumo trae un valor que ya no
-// esta en la lista se ofrece igual, para no cambiarlo sin querer al abrir el
-// desplegable.
-function Lista({
-  label,
-  value,
-  opciones,
-  onChange,
-  cls,
-}: {
-  label: string;
-  value: string;
-  opciones: string[];
-  onChange: (v: string) => void;
-  cls: string;
-}) {
-  const lista = value && !opciones.includes(value) ? [value, ...opciones] : opciones;
-  return (
-    <label className="text-sm">
-      <span className="block text-dorado-osc font-semibold mb-1">{label}</span>
-      <select className={cls} value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">-- elija --</option>
-        {lista.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-      <span className="text-xs text-gray-500">
-        Se configura en Parametros de materias primas.
-      </span>
-    </label>
   );
 }

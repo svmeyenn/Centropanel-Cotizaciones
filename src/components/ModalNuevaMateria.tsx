@@ -4,6 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { crearMateria, type DatosMateria } from "@/app/materias-primas/acciones";
 import type { Pais, TipoMateria } from "@/types/database";
+import CamposMateria, { type ReglaM3 } from "@/components/CamposMateria";
+import { monedaDelPais } from "@/lib/formato";
 
 const vacio = (pais: number | null): DatosMateria => ({
   nombre: "",
@@ -19,23 +21,29 @@ const vacio = (pais: number | null): DatosMateria => ({
   costo: 0,
   unidad: "",
   activo: true,
+  id_pais: pais,
 });
 
-// Alta de un insumo: descripcion, tipo, etiqueta, espesor, costo y estado. Nada
-// mas -- las medidas de la plancha no intervienen en el costeo, que trabaja con
-// el costo de la unidad completa.
+// Alta de un insumo con los mismos datos que su ficha: categorizacion, medidas, peso y costo, y los
+// parametros que salen de las medidas. Con un costo por m3 y las tres medidas, el costo de la unidad se calcula.
 export default function ModalNuevaMateria({
   etiquetas,
+  familias = [],
+  unidades = [],
   tipos,
   paises = [],
   eligePais,
+  reglasM3 = [],
 }: {
   etiquetas: string[];
+  familias?: string[];
+  unidades?: string[];
   // Los tipos vienen de la tabla, no del codigo: agregar uno nuevo --sellos,
   // cintas, herrajes-- no deberia requerir tocar el programa.
   tipos: TipoMateria[];
   paises?: Pais[];
   eligePais?: boolean;
+  reglasM3?: ReglaM3[];
 }) {
   // Quien trabaja un solo mercado no elige: su pais viene puesto. El
   // administrador general, que alcanza los dos, tiene que decidir.
@@ -44,6 +52,8 @@ export default function ModalNuevaMateria({
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [form, setForm] = useState<DatosMateria>(vacio(paisPorDefecto));
+  const [regla, setRegla] = useState<ReglaM3 | null>(null);
+  const [aMaestra, setAMaestra] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, empezar] = useTransition();
 
@@ -59,18 +69,24 @@ export default function ModalNuevaMateria({
   function guardar() {
     setError(null);
     empezar(async () => {
-      const r = await crearMateria(form);
+      const r = await crearMateria({ ...form, id_proveedor_maestra: regla && aMaestra ? regla.id_proveedor : null });
       if (r?.error) {
         setError(r.error);
         return;
       }
+      if (r && "aviso" in r && r.aviso) {
+        setError(r.aviso);
+        router.refresh();
+        return;
+      }
       setAbierto(false);
       setForm(vacio(paisPorDefecto));
+      setRegla(null);
       router.refresh();
     });
   }
 
-  const input = "border border-gray-300 rounded px-2 py-1 text-sm w-full";
+  const moneda = monedaDelPais(form.id_pais ?? paisPorDefecto);
 
   return (
     <>
@@ -78,6 +94,7 @@ export default function ModalNuevaMateria({
         onClick={() => {
           setError(null);
           setForm(vacio(paisPorDefecto));
+          setRegla(null);
           setAbierto(true);
         }}
         className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded ml-auto"
@@ -86,185 +103,59 @@ export default function ModalNuevaMateria({
       </button>
 
       {abierto && (
-        <div
-          className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto"
-          onClick={() => setAbierto(false)}
-        >
-          <div
-            className="bg-white rounded shadow-lg w-full max-w-xl mt-10 text-left"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setAbierto(false)}>
+          <div role="dialog" aria-modal="true" aria-label="Nueva materia prima" className="bg-white rounded shadow-lg w-full max-w-3xl mt-6 text-left" onClick={(e) => e.stopPropagation()}>
             <div className="bg-verde text-white px-4 py-2.5 rounded-t flex items-center justify-between">
               <span className="text-sm font-semibold">Nueva materia prima</span>
-              <button
-                onClick={() => setAbierto(false)}
-                className="text-white/80 hover:text-white text-lg leading-none"
-                title="Cerrar (Esc)"
-              >
+              <button onClick={() => setAbierto(false)} className="text-white/80 hover:text-white text-lg leading-none" title="Cerrar (Esc)" aria-label="Cerrar">
                 ×
               </button>
             </div>
 
             <div className="p-4 space-y-3">
-              <label className="text-sm block">
-                <span className="block text-dorado-osc font-semibold mb-1">
-                  Descripcion
-                </span>
-                <input
-                  className={input}
-                  autoFocus
-                  value={form.nombre}
-                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                />
-              </label>
+              <CamposMateria
+                prefijo="nueva-mp"
+                form={form}
+                setForm={setForm}
+                tipos={tipos}
+                etiquetas={etiquetas}
+                familias={familias}
+                unidades={unidades}
+                moneda={moneda}
+                paises={paises}
+                eligePais={eligePais}
+                conPais
+                reglasM3={reglasM3}
+                onReglaUsada={setRegla}
+              />
 
-              <div className="grid md:grid-cols-2 gap-3">
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">
-                    Tipo
+              {regla && (
+                <label className="text-sm flex items-start gap-2 bg-white border border-gray-200 rounded p-2">
+                  <input type="checkbox" className="mt-0.5" checked={aMaestra} onChange={(e) => setAMaestra(e.target.checked)} />
+                  <span>
+                    Agregar a la maestra de <strong>{regla.proveedor}</strong> como proveedor preferente
+                    <span className="block text-[11px] text-gray-500">
+                      Su regla por m³ mantiene el costo al dia: cuando cambie el valor del m³ en la ficha del proveedor, este insumo se recalcula con los demas.
+                    </span>
                   </span>
-                  <select
-                    className={input}
-                    value={form.tipo}
-                    onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                  >
-                    <option value="">-- elija --</option>
-                    {tipos.map((t) => (
-                      <option key={t.id} value={t.nombre}>
-                        {t.nombre}
-                      </option>
-                    ))}
-                  </select>
                 </label>
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">
-                    Pais
-                  </span>
-                  <select
-                    className={input}
-                    value={form.id_pais ?? ""}
-                    disabled={!eligePais}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        id_pais: Number(e.target.value) || null,
-                      })
-                    }
-                  >
-                    {eligePais && <option value="">-- elija --</option>}
-                    {paises.map((x) => (
-                      <option key={x.id} value={x.id}>
-                        {x.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">
-                    Etiqueta
-                  </span>
-                  <input
-                    className={input}
-                    list="etiquetas-mp"
-                    placeholder="APA, Smart, EPS15..."
-                    value={form.etiqueta}
-                    onChange={(e) =>
-                      setForm({ ...form, etiqueta: e.target.value })
-                    }
-                  />
-                  <datalist id="etiquetas-mp">
-                    {etiquetas.map((x) => (
-                      <option key={x} value={x} />
-                    ))}
-                  </datalist>
-                </label>
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">
-                    Espesor (mm)
-                  </span>
-                  <input
-                    type="number"
-                    step="any"
-                    className={input}
-                    value={form.espesor_mm ?? ""}
-                    onChange={(e) => {
-                      const v = e.target.value ? Number(e.target.value) : null;
-                      setForm({
-                        ...form,
-                        espesor_mm: v,
-                        espesor_nominal: v == null ? null : Math.round(v),
-                      });
-                    }}
-                  />
-                </label>
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">
-                    Costo neto
-                  </span>
-                  <input
-                    type="number"
-                    className={input}
-                    value={form.costo}
-                    onChange={(e) =>
-                      setForm({ ...form, costo: Number(e.target.value) || 0 })
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">Peso por unidad (kg)</span>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    className={input}
-                    value={form.peso_kg ?? ""}
-                    onChange={(e) => setForm({ ...form, peso_kg: e.target.value === "" ? null : Number(e.target.value) })}
-                  />
-                </label>
-                <label className="text-sm">
-                  <span className="block text-dorado-osc font-semibold mb-1">Densidad (kg/m³)</span>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    className={input}
-                    value={form.densidad_kg_m3 ?? ""}
-                    onChange={(e) => setForm({ ...form, densidad_kg_m3: e.target.value === "" ? null : Number(e.target.value) })}
-                  />
-                </label>
-                <p className="col-span-2 text-[11px] text-gray-500 -mt-1">Para el flete: placas con su peso, poliestireno con su densidad. Se puede completar despues en la ficha.</p>
-              </div>
-
-              <label className="text-sm flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={form.activo}
-                  onChange={(e) => setForm({ ...form, activo: e.target.checked })}
-                />
-                <span className="text-gray-700">Activo</span>
-              </label>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded p-3">
-                  {error}
-                </div>
               )}
 
+              <label className="text-sm flex items-start gap-2">
+                <input type="checkbox" className="mt-0.5" checked={form.activo} onChange={(e) => setForm({ ...form, activo: e.target.checked })} />
+                <span className="text-gray-700">
+                  Activo
+                  <span className="block text-[11px] text-gray-500">Un insumo inactivo no se ofrece en el configurador ni al pedir materiales.</span>
+                </span>
+              </label>
+
+              {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-xs rounded p-3">{error}</div>}
+
               <div className="flex gap-2 pt-1">
-                <button
-                  onClick={guardar}
-                  disabled={pendiente || !form.nombre.trim()}
-                  className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40"
-                >
+                <button onClick={guardar} disabled={pendiente || !form.nombre.trim()} className="bg-verde text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-40">
                   {pendiente ? "Grabando..." : "Crear"}
                 </button>
-                <button
-                  onClick={() => setAbierto(false)}
-                  className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
-                >
+                <button onClick={() => setAbierto(false)} className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded">
                   Cancelar
                 </button>
               </div>
