@@ -71,11 +71,12 @@ function Selector({
             className={`${input} w-28 text-right tabular-nums ${leerMontoLibre(regla.valor) > 0 ? "" : "border-red-500 bg-red-50"}`}
             inputMode="decimal"
             value={regla.valor}
-            placeholder="valor m³"
-            aria-label={`Valor del metro cubico: ${rotulo}`}
+            placeholder="valor m³ neto"
+            aria-label={`Valor neto del metro cubico, sin IVA: ${rotulo}`}
+            title="Valor neto, sin IVA"
             onChange={(e) => onChange({ ...regla, valor: e.target.value })}
           />
-          <span className="text-gray-500">{moneda}/m³</span>
+          <span className="text-gray-500">{moneda}/m³ <strong className="font-semibold text-dorado-osc">neto (sin IVA)</strong></span>
         </label>
       )}
     </span>
@@ -178,7 +179,7 @@ export default function CalculoCostoProveedor({
     });
   }
 
-  const etiquetaProv = prov.metodo === "m3" ? `Como el proveedor (m³ a ${importe(leerMontoLibre(prov.valor), monedaMercado)})` : "Como el proveedor (por SKU)";
+  const etiquetaProv = prov.metodo === "m3" ? `Como el proveedor (m³ a ${importe(leerMontoLibre(prov.valor), monedaMercado)} neto)` : "Como el proveedor (por SKU)";
 
   return (
     <div className="space-y-3 text-xs">
@@ -234,8 +235,8 @@ export default function CalculoCostoProveedor({
                   <th className="px-3 py-1.5 text-left font-semibold">Descripcion</th>
                   <th className="px-3 py-1.5 text-right font-semibold">Volumen m³</th>
                   <th className="px-3 py-1.5 text-left font-semibold">Calculo</th>
-                  <th className="px-3 py-1.5 text-right font-semibold">Costo actual</th>
-                  <th className="px-3 py-1.5 text-right font-semibold">Costo por m³</th>
+                  <th className="px-3 py-1.5 text-right font-semibold">Costo actual neto</th>
+                  <th className="px-3 py-1.5 text-right font-semibold">Costo por m³ neto</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,7 +247,7 @@ export default function CalculoCostoProveedor({
                   const famEf = rf.metodo !== "hereda" ? rf : prov;
                   const heredaItem =
                     famEf.metodo === "m3"
-                      ? `Como la familia (m³ a ${importe(leerMontoLibre(famEf.valor), monedaMercado)})`
+                      ? `Como la familia (m³ a ${importe(leerMontoLibre(famEf.valor), monedaMercado)} neto)`
                       : "Como la familia (por SKU)";
                   const cambia = c != null && c !== it.costo;
                   return (

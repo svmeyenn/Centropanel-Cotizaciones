@@ -66,7 +66,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         </BarraNavegacion>
         <p className="text-xs text-gray-600 max-w-3xl">
           Elija como se calcula el costo. <strong>Por m³</strong>: el costo de cada item es su volumen (ancho x largo x espesor de la ficha) por el
-          valor del metro cubico, y al cambiar ese valor se actualizan todos de una vez. <strong>Por SKU</strong>: cada item lleva su propio costo,
+          valor <strong>neto</strong> (sin IVA) del metro cubico, y al cambiar ese valor se actualizan todos de una vez. <strong>Por SKU</strong>: cada item lleva su propio costo,
           que se cambia en &quot;Actualizar costos&quot;. Lo puntual manda: un item con su propia regla ignora la de su familia, y una familia con
           regla ignora la del proveedor.
         </p>
