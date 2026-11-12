@@ -147,7 +147,7 @@ export default function DocumentoCotizacion({
       </div>
 
       {d.distintivo && (
-        <div className="text-verde text-[13px] font-bold mb-1">{d.distintivo}</div>
+        <div className="text-verde text-[15px] font-bold mb-1">{d.distintivo}</div>
       )}
 
       {/* ---- items ---- */}

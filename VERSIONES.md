@@ -18,7 +18,7 @@ fila de la entrega que abre el hito; esa entrega sale como vHHH.001.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.047-20261112**
+Version vigente: **v008.048-20261112**
 
 ## Grandes hitos
 
@@ -31,10 +31,11 @@ Version vigente: **v008.047-20261112**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.047 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.048 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.048-20261112 | — | 12-11-2026 | Distintivo de la cotizacion a 11 pt en el PDF adjunto y 15 px en la vista que se imprime y en el enlace. Sin cambios de base. |
 | v008.047-20261112 | — | 12-11-2026 | Distintivo de la cotizacion dos puntos mas grande: 13 px en pantalla y enlace, 9 pt en el PDF. Sin cambios de base. |
 | v008.046-20261112 | — | 12-11-2026 | Documentos para clientes (Catalogo): biblioteca de fichas tecnicas, catalogos y certificados con nota y mercado; solo el administrador sube y edita, todos la ven. Al escribirle a un lead se adjuntan desde 'Adjuntar documentos de la biblioteca' (correo, WhatsApp y programados). Cotizacion: campo Distintivo, que va en verde sobre el detalle en pantalla, enlace y PDF; se copia al duplicar. Base: tabla documentos_comerciales, deposito documentos, mensajes_programados.ids_documento, cotizaciones.distintivo. |
 | v008.045-20261112 | — | 12-11-2026 | Medidas maximas del panel tambien en el catalogo (leyenda, busqueda por medida y columnas en la exportacion), en el buscador de productos de la cotizacion, en el configurador y el panel rapido, y en el detalle del margen del pedido. Corrige el filtro 'Solo paneles estandar' del catalogo, que no reaccionaba. Base: funcion medidas_panel. |
