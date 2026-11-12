@@ -8,6 +8,14 @@ la de esa entrega, en hora de Chile. Un gran hito nuevo se abre solo cuando
 se decide, y no cambia lo ya numerado. Los cambios que quedan en el ambiente
 de pruebas no suben la version hasta que se aprueban.
 
+Cuando se abre un gran hito: cuando entra a produccion algo que cambia el
+alcance del sistema, no solo lo mejora. Por ejemplo, un modulo completo nuevo
+operando de punta a punta (finanzas con sus perfiles por area), un mercado
+nuevo funcionando entero (Peru), o un cambio de base que obliga a trabajar
+distinto. Mejoras, correcciones y pantallas nuevas dentro de lo que ya existe
+siguen en el mismo hito. La decision la toma la gerencia y se anota en la
+fila de la entrega que abre el hito; esa entrega sale como vHHH.001.
+
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
 Version vigente: **v008.042-20261112**
