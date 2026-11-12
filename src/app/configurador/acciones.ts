@@ -161,8 +161,8 @@ export async function calcularPanel(
     skuExistente = (rProd.data?.sku as string | null) ?? null;
   }
 
-  // Desglose: EPS + cara A + cara B + adhesivo prorrateado. El balde rinde 30
-  // paneles de dos caras o 60 de una, segun los parametros del sistema.
+  // Desglose: EPS + cara A + cara B + adhesivo segun la superficie del EPS. El
+  // balde cubre los m2 de EPS que indica el parametro AdhesivoM2PorBalde, por cada cara pegada.
   //
   // Se pide a desglose_costo_panel (SECURITY DEFINER) y no leyendo
   // materias_primas y parametros: esas tablas las reserva el RLS al
