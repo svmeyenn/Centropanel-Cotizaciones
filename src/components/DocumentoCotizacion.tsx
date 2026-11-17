@@ -3,9 +3,18 @@ import {
   ROTULO_DESCUENTO_2,
   ROTULO_DESCUENTO_3,
 } from "@/lib/descuentos";
-import { importe, porcentaje, unidades as fmtUnid, fecha as fmtFecha, sumarDias, textoMedidas } from "@/lib/formato";
+import {
+  importe,
+  porcentaje,
+  unidades as fmtUnid,
+  fecha as fmtFecha,
+  sumarDias,
+  textoMedidas,
+} from "@/lib/formato";
 import { pTxt, pNum, type Parametros } from "@/lib/parametros";
 import { LOGO_PDF } from "@/lib/logo";
+import { Fragment } from "react";
+import HojasImprimibles, { NumeroPagina } from "@/components/HojasImprimibles";
 
 // La cotizacion impresa, replica de rptCotizacion. Vive en un componente propio
 // porque la usan dos rutas: /cotizaciones/[id]/pdf (interna, con sesion) y
@@ -84,10 +93,14 @@ export default function DocumentoCotizacion({
   p: Parametros;
 }) {
   const vence = sumarDias(d.fecha.slice(0, 10), d.validez_dias ?? 7);
-  const hayDesc = d.items.some((it) => Number(it.descuento_pct ?? 0) > 0 && it.precio_lista != null);
+  const hayDesc = d.items.some(
+    (it) => Number(it.descuento_pct ?? 0) > 0 && it.precio_lista != null,
+  );
 
-  return (
-    <div className="mx-auto bg-white text-[#1A1A1A] p-10 max-w-[820px] print:max-w-none print:p-[14mm]">
+  // Cada parte va por separado: al imprimir se reparten en hojas y la cabecera se
+  // repite en todas.
+  const cabecera = (
+    <>
       {/* ---- cabecera: logo y marca a la izquierda, folio en el bloque verde ---- */}
       <div className="flex justify-between items-start gap-6 mb-5">
         <div className="flex items-start gap-3">
@@ -101,28 +114,42 @@ export default function DocumentoCotizacion({
             <div className="text-xl font-bold text-verde leading-tight">
               {pTxt(p, "EmpresaMarca")}
             </div>
-            <div className="text-[11px] text-gray-600">{pTxt(p, "EmpresaGiro")}</div>
+            <div className="text-[11px] text-gray-600">
+              {pTxt(p, "EmpresaGiro")}
+            </div>
             <div className="text-[11px] text-gray-600">
               {pTxt(p, "EmpresaDireccion")}
             </div>
           </div>
         </div>
         <div className="bg-verde text-white px-4 py-2.5 text-right min-w-[260px]">
-          {d.pedido && <div className="text-[11px] font-bold text-dorado">PEDIDO</div>}
-          <div className="text-xl font-bold leading-tight">{d.num_cotizacion}</div>
+          {d.pedido && (
+            <div className="text-[11px] font-bold text-dorado">PEDIDO</div>
+          )}
+          <div className="text-xl font-bold leading-tight">
+            {d.num_cotizacion}
+            <NumeroPagina />
+          </div>
           <div className="text-[11px] text-dorado">
-            {pTxt(p, "EmpresaNombre")} &nbsp; {pTxt(p, "EtiquetaIdTributario", "RUT")} {pTxt(p, "EmpresaRUT")}
+            {pTxt(p, "EmpresaNombre")} &nbsp;{" "}
+            {pTxt(p, "EtiquetaIdTributario", "RUT")} {pTxt(p, "EmpresaRUT")}
           </div>
           <div className="text-[11px]">
             {d.pedido ? (
               <>Fecha {fmtFecha(d.fecha)}</>
             ) : (
-              <>Emitida {fmtFecha(d.fecha)} &nbsp; Vence {fmtFecha(vence)}</>
+              <>
+                Emitida {fmtFecha(d.fecha)} &nbsp; Vence {fmtFecha(vence)}
+              </>
             )}
           </div>
         </div>
       </div>
+    </>
+  );
 
+  const datos = (
+    <>
       {/* ---- cliente / ejecutivo: un campo por linea, rotulo y valor ---- */}
       <div className="grid grid-cols-2 gap-6 mb-5">
         <div>
@@ -130,7 +157,10 @@ export default function DocumentoCotizacion({
             CLIENTE
           </div>
           <Campo rotulo="Razon social" valor={d.cliente?.razon_social} />
-          <Campo rotulo={pTxt(p, "EtiquetaIdTributario", "RUT")} valor={d.cliente?.rut} />
+          <Campo
+            rotulo={pTxt(p, "EtiquetaIdTributario", "RUT")}
+            valor={d.cliente?.rut}
+          />
           <Campo rotulo="Contacto" valor={d.cliente?.contacto} />
           <Campo rotulo="Correo" valor={d.cliente?.email} />
           <Campo rotulo="Telefono" valor={d.cliente?.telefono} />
@@ -147,81 +177,87 @@ export default function DocumentoCotizacion({
       </div>
 
       {d.distintivo && (
-        <div className="text-verde text-[15px] font-bold mb-1">{d.distintivo}</div>
+        <div className="text-verde text-[15px] font-bold mb-1">
+          {d.distintivo}
+        </div>
       )}
+    </>
+  );
 
-      {/* ---- items ---- */}
-      {/* Con descuento en alguna linea: P. LISTA, DESC. % y V. UNITARIO final;
-          sin descuentos queda solo el V. UNITARIO. */}
-      <table className="w-full table-fixed text-[11px] mb-5">
-        <thead>
-          {/* Las columnas de la derecha se ajustan a lo que miden de verdad
-              --un codigo de ocho digitos, un monto de siete-- para dejarle el
-              ancho restante a la descripcion: el nombre de un panel entra
-              completo en una linea y la tabla no se desarma en el papel. */}
-          <tr className="bg-verde text-white text-[11px]">
-            <th className="text-left px-2 py-1.5 w-[4.5rem]">SKU</th>
-            <th className="text-left px-2 py-1.5">DESCRIPCION</th>
-            <th className="text-right px-2 py-1.5 w-16 whitespace-nowrap">
-              UNID.
-            </th>
-            {hayDesc && (
-              <>
-                <th className="text-right px-2 py-1.5 w-[4.5rem] whitespace-nowrap">P. LISTA</th>
-                <th className="text-right px-2 py-1.5 w-14 whitespace-nowrap">DESC. %</th>
-              </>
-            )}
-            <th className="text-right px-2 py-1.5 w-[4.5rem] whitespace-nowrap">
-              V. UNITARIO
-            </th>
-            {/* El unico rotulo que no cabe en una linea; se parte en dos en el
+  const encabezado = (
+    <tr className="bg-verde text-white text-[11px]">
+      <th className="text-left px-2 py-1.5 w-[4.5rem]">SKU</th>
+      <th className="text-left px-2 py-1.5">DESCRIPCION</th>
+      <th className="text-right px-2 py-1.5 w-16 whitespace-nowrap">UNID.</th>
+      {hayDesc && (
+        <>
+          <th className="text-right px-2 py-1.5 w-[4.5rem] whitespace-nowrap">
+            P. LISTA
+          </th>
+          <th className="text-right px-2 py-1.5 w-14 whitespace-nowrap">
+            DESC. %
+          </th>
+        </>
+      )}
+      <th className="text-right px-2 py-1.5 w-[4.5rem] whitespace-nowrap">
+        V. UNITARIO
+      </th>
+      {/* El unico rotulo que no cabe en una linea; se parte en dos en el
                 encabezado antes que robarle ancho a la descripcion. */}
-            <th className="text-right px-2 py-1.5 w-[5.5rem]">SUBTOTAL NETO</th>
-          </tr>
-        </thead>
-        <tbody>
-          {d.items.map((it, i) => (
-            <tr key={i} className={i % 2 ? "bg-gray-50" : ""}>
-              <td className="px-2 py-1 text-gray-500 whitespace-nowrap">
-                {it.sku ?? ""}
-              </td>
-              <td className="px-2 py-1">
-                {it.descripcion}
-                {textoMedidas(it.largo_max, it.ancho_max) && (
-                  <span className="block text-[10px] leading-tight text-gray-500">{textoMedidas(it.largo_max, it.ancho_max)}</span>
-                )}
-              </td>
-              <td className="px-2 py-1 text-right whitespace-nowrap">
-                {fmtUnid(it.unidades)}
-              </td>
-              {hayDesc && (
-                <>
-                  <td className="px-2 py-1 text-right whitespace-nowrap">
-                    {importe(it.precio_lista ?? it.valor_unitario, d.moneda)}
-                  </td>
-                  <td className="px-2 py-1 text-right whitespace-nowrap">
-                    {Number(it.descuento_pct ?? 0) > 0 ? `${porcentaje(Number(it.descuento_pct))} %` : ""}
-                  </td>
-                </>
-              )}
-              <td className="px-2 py-1 text-right whitespace-nowrap">
-                {importe(it.valor_unitario, d.moneda)}
-              </td>
-              <td className="px-2 py-1 text-right whitespace-nowrap">
-                {importe(Number(it.unidades) * Number(it.valor_unitario), d.moneda)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <th className="text-right px-2 py-1.5 w-[5.5rem]">SUBTOTAL NETO</th>
+    </tr>
+  );
 
+  // Con descuento en alguna linea: P. LISTA, DESC. % y V. UNITARIO final;
+  // sin descuentos queda solo el V. UNITARIO.
+  const filas = d.items.map((it, i) => (
+    <tr key={i} className={i % 2 ? "bg-gray-50" : ""}>
+      <td className="px-2 py-1 text-gray-500 whitespace-nowrap">
+        {it.sku ?? ""}
+      </td>
+      <td className="px-2 py-1">
+        {it.descripcion}
+        {textoMedidas(it.largo_max, it.ancho_max) && (
+          <span className="block text-[10px] leading-tight text-gray-500">
+            {textoMedidas(it.largo_max, it.ancho_max)}
+          </span>
+        )}
+      </td>
+      <td className="px-2 py-1 text-right whitespace-nowrap">
+        {fmtUnid(it.unidades)}
+      </td>
+      {hayDesc && (
+        <>
+          <td className="px-2 py-1 text-right whitespace-nowrap">
+            {importe(it.precio_lista ?? it.valor_unitario, d.moneda)}
+          </td>
+          <td className="px-2 py-1 text-right whitespace-nowrap">
+            {Number(it.descuento_pct ?? 0) > 0
+              ? `${porcentaje(Number(it.descuento_pct))} %`
+              : ""}
+          </td>
+        </>
+      )}
+      <td className="px-2 py-1 text-right whitespace-nowrap">
+        {importe(it.valor_unitario, d.moneda)}
+      </td>
+      <td className="px-2 py-1 text-right whitespace-nowrap">
+        {importe(Number(it.unidades) * Number(it.valor_unitario), d.moneda)}
+      </td>
+    </tr>
+  ));
+
+  const totales = (
+    <>
       {/* ---- totales ---- */}
       <div className="flex justify-end mb-5">
         <table className="text-[11px]">
           <tbody>
             <tr>
               <td className="text-right pr-6 py-0.5">SUBTOTAL</td>
-              <td className="text-right py-0.5 w-32">{importe(d.subtotal, d.moneda)}</td>
+              <td className="text-right py-0.5 w-32">
+                {importe(d.subtotal, d.moneda)}
+              </td>
             </tr>
             {/* Las lineas de descuento no se imprimen cuando son cero, igual
                 que el IIf(Nz([DescuentoMonto],0)=0,Null,...) del informe. Cada
@@ -229,34 +265,45 @@ export default function DocumentoCotizacion({
             {d.descuento > 0 && (
               <tr>
                 <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_1}</td>
-                <td className="text-right py-0.5">{importe(d.descuento, d.moneda)}</td>
+                <td className="text-right py-0.5">
+                  {importe(d.descuento, d.moneda)}
+                </td>
               </tr>
             )}
             {d.descuento2 > 0 && (
               <tr>
                 <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_2}</td>
-                <td className="text-right py-0.5">{importe(d.descuento2, d.moneda)}</td>
+                <td className="text-right py-0.5">
+                  {importe(d.descuento2, d.moneda)}
+                </td>
               </tr>
             )}
             {d.descuento3 > 0 && (
               <tr>
                 <td className="text-right pr-6 py-0.5">{ROTULO_DESCUENTO_3}</td>
-                <td className="text-right py-0.5">{importe(d.descuento3, d.moneda)}</td>
+                <td className="text-right py-0.5">
+                  {importe(d.descuento3, d.moneda)}
+                </td>
               </tr>
             )}
             <tr className="font-bold">
               <td className="text-right pr-6 py-0.5">TOTAL NETO</td>
-              <td className="text-right py-0.5">{importe(d.total_neto, d.moneda)}</td>
+              <td className="text-right py-0.5">
+                {importe(d.total_neto, d.moneda)}
+              </td>
             </tr>
             <tr>
               <td className="text-right pr-6 py-0.5">
-                {pTxt(p, "NombreImpuesto", "IVA")} {Math.round(pNum(p, "IVA", 0.19) * 100)}%
+                {pTxt(p, "NombreImpuesto", "IVA")}{" "}
+                {Math.round(pNum(p, "IVA", 0.19) * 100)}%
               </td>
               <td className="text-right py-0.5">{importe(d.iva, d.moneda)}</td>
             </tr>
             <tr className="bg-verde text-white font-bold">
               <td className="text-right pr-6 py-1.5">TOTAL</td>
-              <td className="text-right py-1.5 pr-2">{importe(d.total, d.moneda)}</td>
+              <td className="text-right py-1.5 pr-2">
+                {importe(d.total, d.moneda)}
+              </td>
             </tr>
             {d.comision_pct > 0 && (
               <>
@@ -279,11 +326,17 @@ export default function DocumentoCotizacion({
           </tbody>
         </table>
       </div>
+    </>
+  );
 
+  const pie = (
+    <>
       {/* ---- pie: condiciones y datos bancarios ---- */}
       <div className="grid grid-cols-2 gap-6 text-[11px] leading-relaxed">
         <div>
-          <div className="text-dorado-osc font-bold mb-1">CONDICIONES COMERCIALES</div>
+          <div className="text-dorado-osc font-bold mb-1">
+            CONDICIONES COMERCIALES
+          </div>
           {!d.pedido && (
             <p>
               Validez de la cotizacion: {d.validez_dias} dias corridos (vence el{" "}
@@ -298,9 +351,13 @@ export default function DocumentoCotizacion({
           <p>{pTxt(p, "CondDescarga")}</p>
         </div>
         <div>
-          <div className="text-dorado-osc font-bold mb-1">DATOS PARA EL DEPOSITO</div>
+          <div className="text-dorado-osc font-bold mb-1">
+            DATOS PARA EL DEPOSITO
+          </div>
           <p>{pTxt(p, "EmpresaNombre")}</p>
-          <p>{pTxt(p, "EtiquetaIdTributario", "RUT")}: {pTxt(p, "EmpresaRUT")}</p>
+          <p>
+            {pTxt(p, "EtiquetaIdTributario", "RUT")}: {pTxt(p, "EmpresaRUT")}
+          </p>
           <p>Banco: {pTxt(p, "Banco")}</p>
           <p>Tipo de cuenta: {pTxt(p, "TipoCuenta")}</p>
           <p>N de cuenta: {pTxt(p, "NumeroCuenta")}</p>
@@ -322,7 +379,17 @@ export default function DocumentoCotizacion({
           {" \u00b7 "}Saldo {importe(d.pago.saldo, d.moneda)}
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <HojasImprimibles
+      cabecera={cabecera}
+      datos={datos}
+      encabezado={encabezado}
+      filas={filas}
+      cola={[<Fragment key="totales">{totales}</Fragment>, <Fragment key="pie">{pie}</Fragment>]}
+    />
   );
 }
 

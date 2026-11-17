@@ -117,8 +117,8 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
   return (
     <Document title={d.num_cotizacion ?? (d.pedido ? "Pedido" : "Cotizacion")} author={pTxt(p, "EmpresaNombre")}>
       <Page size="A4" style={s.pagina}>
-        {/* ---- cabecera ---- */}
-        <View style={s.cabecera}>
+        {/* ---- cabecera: se repite en cada hoja ---- */}
+        <View style={s.cabecera} fixed>
           <View style={s.fila}>
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image src={LOGO_PDF} style={s.logo} />
@@ -130,7 +130,16 @@ export function CotizacionPdf({ d, p }: { d: CotizacionDoc; p: Parametros }) {
           </View>
           <View style={s.folio}>
             {d.pedido ? <Text style={{ fontSize: 7, color: DORADO, fontFamily: "Helvetica-Bold" }}>PEDIDO</Text> : null}
-            <Text style={s.folioNum}>{d.num_cotizacion}</Text>
+            <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
+              <Text style={s.folioNum}>{d.num_cotizacion}</Text>
+              {/* "(Pagina n de m)" solo si el documento ocupa mas de una hoja. */}
+              <Text
+                style={{ fontSize: 7, marginLeft: 4, marginBottom: 2 }}
+                render={({ pageNumber, totalPages }) =>
+                  totalPages > 1 ? `(Página ${pageNumber} de ${totalPages})` : ""
+                }
+              />
+            </View>
             <Text style={{ fontSize: 7, color: DORADO }}>
               {pTxt(p, "EmpresaNombre")}   {idTrib} {pTxt(p, "EmpresaRUT")}
             </Text>
