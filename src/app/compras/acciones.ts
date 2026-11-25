@@ -216,6 +216,18 @@ export async function marcarEnviadaOC(id: number) {
 export async function anularOC(id: number) {
   return llamar("oc_anular", { p_oc: id }, id);
 }
+// Anula la orden con todo lo que salio de ella (egresos pendientes, recepciones, envio). Solo Administrador.
+export async function anularCascadaOC(id: number, motivo: string) {
+  const r = await llamar("oc_anular_cascada", { p_oc: id, p_motivo: motivo }, id);
+  if (r.ok) revalidatePath("/necesidades");
+  return r;
+}
+export async function reversarFacturaOC(id: number, motivo: string) {
+  return llamar("oc_reversar_factura", { p_oc: id, p_motivo: motivo }, id);
+}
+export async function reversarRecepcionesOC(id: number, motivo: string) {
+  return llamar("oc_reversar_recepciones", { p_oc: id, p_motivo: motivo }, id);
+}
 export async function recibirOC(id: number, lineas: { id_detalle: number; cantidad: number }[], guia: string) {
   return llamar("oc_recibir", { p_oc: id, p_lineas: lineas, p_guia: guia }, id);
 }

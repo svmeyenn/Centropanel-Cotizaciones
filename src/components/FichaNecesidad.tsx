@@ -19,6 +19,7 @@ import {
   agregarItems,
   anularNecesidad,
   anularSolicitud,
+  anularSolicitudCascada,
   buscarItemsCompra,
   crearSolicitud,
   declinarProveedor,
@@ -118,10 +119,13 @@ export default function FichaNecesidad({
   detalle,
   moneda,
   proveedoresDisponibles,
+  esAdmin = false,
 }: {
   detalle: Detalle;
   moneda: string;
   proveedoresDisponibles: { id: number; nombre: string }[];
+  // El Administrador anula una solicitud con lo que salio de ella (su orden de compra, sus hijas).
+  esAdmin?: boolean;
 }) {
   const router = useRouter();
   const { nm, items, proveedores, solicitudes } = detalle;
@@ -413,6 +417,7 @@ export default function FichaNecesidad({
           ivaPct={Number(nm.iva_pct ?? 0)}
           impuesto={impuestoDelPais(nm.id_pais)}
           comprador={comprador}
+          esAdmin={esAdmin}
           pendiente={pendiente}
           ejecutar={ejecutar}
           idNm={nm.id}
@@ -434,6 +439,19 @@ export default function FichaNecesidad({
                   <span className="text-gray-600"> · se abrio en {solicitudes.filter((h) => h.id_padre === s.id).map((h) => h.folio).join(", ")}</span>
                 )}
                 {s.folio_padre && <span className="text-gray-600"> · viene de {s.folio_padre}</span>}
+                {esAdmin && s.estado === "Abierta" && solicitudes.some((h) => h.id_padre === s.id && h.estado !== "Anulada") && (
+                  <button
+                    type="button"
+                    className="ml-2 text-red-700 text-[11px] font-semibold underline disabled:opacity-40"
+                    disabled={pendiente}
+                    onClick={() => {
+                      const motivo = prompt(`Motivo para anular ${s.folio}. Se anulan tambien las solicitudes en que se abrio y sus ordenes de compra.`);
+                      if (motivo) ejecutar(() => anularSolicitudCascada(nm.id, s.id, motivo), "Solicitud anulada con lo que salio de ella.");
+                    }}
+                  >
+                    Anular con sus hijas
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -479,7 +497,7 @@ export default function FichaNecesidad({
 // Una solicitud con su cuadro comparativo: items en filas, proveedores en columnas, el mejor precio de cada item
 // destacado, y el total de cada proveedor si cotizo todo.
 function TarjetaSolicitud({
-  s, destinoNm, items, proveedores: todosLosProveedores, precio, maestra, excluidos, total, moneda, ivaPct, impuesto, comprador, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
+  s, destinoNm, items, proveedores: todosLosProveedores, precio, maestra, excluidos, total, moneda, ivaPct, impuesto, comprador, esAdmin, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
 }: {
   s: Sol;
   destinoNm: { fecha: string | null; direccion: string | null };
@@ -493,6 +511,7 @@ function TarjetaSolicitud({
   ivaPct: number;
   impuesto: string;
   comprador: boolean;
+  esAdmin: boolean;
   pendiente: boolean;
   ejecutar: (f: () => Promise<Resultado>, ok?: string, fin?: () => void) => void;
   idNm: number;
@@ -580,6 +599,19 @@ function TarjetaSolicitud({
           {comprador && !s.id_oc && (
             <button type="button" className="bg-white text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40" disabled={pendiente} onClick={() => confirm(`Anular ${s.folio}? Sus items quedan sin solicitud.`) && ejecutar(() => anularSolicitud(idNm, s.id), "Solicitud anulada.")}>
               Anular
+            </button>
+          )}
+          {esAdmin && s.id_oc && (
+            <button
+              type="button"
+              className="bg-white text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40"
+              disabled={pendiente}
+              onClick={() => {
+                const motivo = prompt(`Motivo para anular ${s.folio}. Se anula tambien ${s.num_oc} con sus egresos pendientes y recepciones; los pagos hechos hay que reversarlos antes en Egresos.`);
+                if (motivo) ejecutar(() => anularSolicitudCascada(idNm, s.id, motivo), "Solicitud y orden de compra anuladas.");
+              }}
+            >
+              Anular con su OC
             </button>
           )}
         </span>

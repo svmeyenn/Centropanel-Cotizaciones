@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Cabecera from "@/components/Cabecera";
 import BarraNavegacion from "@/components/BarraNavegacion";
 import FichaNecesidad, { type Detalle } from "@/components/FichaNecesidad";
-import { requerirVendedor } from "@/lib/sesion";
+import { requerirVendedor, tienePerfilAdmin } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { monedaDelPais } from "@/lib/formato";
 import { etiquetaProyecto } from "@/lib/compras";
@@ -10,7 +10,7 @@ import { etiquetaProyecto } from "@/lib/compras";
 export const dynamic = "force-dynamic";
 
 export default async function Pagina({ params }: { params: Promise<{ id: string }> }) {
-  await requerirVendedor();
+  const v = await requerirVendedor();
   const id = Number((await params).id);
   if (!Number.isFinite(id)) notFound();
   const supabase = await createClient();
@@ -39,6 +39,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
         <BarraNavegacion volverA="/necesidades" />
         <FichaNecesidad
           detalle={detalle}
+          esAdmin={tienePerfilAdmin(v)}
           moneda={monedaDelPais(Number(detalle.nm.id_pais))}
           proveedoresDisponibles={(provs ?? []).filter((p) => cubre.has(Number(p.id_entidad))).map((p) => ({ id: Number(p.id_entidad), nombre: `${p.nombre_referencia as string} (${cubre.get(Number(p.id_entidad))} de ${detalle.items.length} items)` }))}
         />

@@ -198,6 +198,13 @@ export async function anularSolicitud(idNm: number, idSc: number) {
   return llamar((s) => s.rpc("sc_anular", { p_sc: idSc }), idNm);
 }
 
+// Anula la solicitud con lo que salio de ella: su orden de compra y, si se abrio en varias, las hijas. Solo Administrador.
+export async function anularSolicitudCascada(idNm: number, idSc: number, motivo: string) {
+  const r = await llamar((s) => s.rpc("sc_anular_cascada", { p_sc: idSc, p_motivo: motivo }), idNm);
+  if (r.ok) revalidatePath("/compras");
+  return r;
+}
+
 export async function anularNecesidad(idNm: number) {
   return llamar((s) => s.rpc("nm_anular", { p_nm: idNm }), idNm);
 }

@@ -10,6 +10,7 @@ import {
   costoItemOC,
   type ItemOC,
   anularOC,
+  anularCascadaOC,
   asignarMaestraOC,
   aprobarOC,
   borrarLineaOC,
@@ -23,6 +24,8 @@ import {
   rechazarOC,
   recibirOC,
   reversarAprobacionOC,
+  reversarFacturaOC,
+  reversarRecepcionesOC,
   solicitarPagoOC,
 } from "@/app/compras/acciones";
 import { dinero, fecha as fmtFecha, unidades as fmtUnid } from "@/lib/formato";
@@ -248,7 +251,47 @@ export default function EditorOC({
             {editando ? "Cerrar edicion" : "Editar cabecera"}
           </button>
         )}
-        {anulable && puedeCrear && (
+        {(oc.estado === "Facturada" || oc.estado === "Pagada") && esAdmin && (
+          <button
+            className={botonGris}
+            disabled={pendiente}
+            onClick={() => {
+              const motivo = prompt("Motivo para reversar la factura (se borra la factura y el egreso pendiente del saldo; los pagos hechos hay que reversarlos antes en Egresos):");
+              if (motivo) ejecutar(() => reversarFacturaOC(oc.id, motivo));
+            }}
+          >
+            Reversar factura
+          </button>
+        )}
+        {(oc.estado === "Recibida" || oc.estado === "Recibida parcial") && esAdmin && (
+          <button
+            className={botonGris}
+            disabled={pendiente}
+            onClick={() => {
+              const motivo = prompt("Motivo para reversar las recepciones (se borran todas y la orden vuelve a Enviada):");
+              if (motivo) ejecutar(() => reversarRecepcionesOC(oc.id, motivo));
+            }}
+          >
+            Reversar recepciones
+          </button>
+        )}
+        {/* El Administrador anula en cualquier estado y con todo lo que salio de la orden;
+            el resto, solo mientras no tiene recepciones ni pagos. */}
+        {esAdmin && oc.estado !== "Anulada" && (
+          <button
+            className={botonGris}
+            disabled={pendiente}
+            onClick={() => {
+              const motivo = prompt(
+                "Motivo de la anulacion. Se anula la orden y se eliminan sus egresos pendientes y recepciones; si salio de una solicitud, esta queda adjudicada y sin orden. Los pagos hechos hay que reversarlos antes en Egresos."
+              );
+              if (motivo) ejecutar(() => anularCascadaOC(oc.id, motivo));
+            }}
+          >
+            Anular
+          </button>
+        )}
+        {anulable && puedeCrear && !esAdmin && (
           <button
             className={botonGris}
             disabled={pendiente}
