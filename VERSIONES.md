@@ -18,7 +18,7 @@ fila de la entrega que abre el hito; esa entrega sale como vHHH.001.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.050-20261117**
+Version vigente: **v008.051-20261125**
 
 ## Grandes hitos
 
@@ -31,10 +31,11 @@ Version vigente: **v008.050-20261117**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.050 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.051 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.051-20261125 | anular_cascada_sc_oc | 25-11-2026 | Compras: el Administrador anula una OC en cualquier estado con todo lo que salio de ella (egresos pendientes, recepciones, envio) y reversa su factura o sus recepciones; anula una solicitud de cotizacion con su OC o con las solicitudes en que se abrio. Motivo obligatorio y registro en aprobacion_reversos (nueva columna accion). Los pagos hechos bloquean hasta reversarlos en Egresos. |
 | v008.050-20261117 | — | 17-11-2026 | Cotizacion y pedido de varias hojas: cada hoja repite la cabecera y junto al folio va "(Pagina n de m)", solo si hay dos o mas hojas; aplica a la impresion del navegador y al PDF adjunto. Sin cambios de base. |
 | v008.049-20261112 | — | 12-11-2026 | Documentos para clientes: se pueden arrastrar o elegir varios archivos a la vez; cada uno queda en una fila con su nota (parte con el nombre del archivo) y se suben juntos. Sin cambios de base. |
 | v008.048-20261112 | — | 12-11-2026 | Distintivo de la cotizacion a 11 pt en el PDF adjunto y 15 px en la vista que se imprime y en el enlace. Sin cambios de base. |
