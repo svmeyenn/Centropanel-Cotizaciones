@@ -251,7 +251,19 @@ export default async function Pagina({
     descuento_pct: Number(l.descuento_pct ?? 0),
     largo_max: med[Number(l.id_producto)]?.largo ?? null,
     ancho_max: med[Number(l.id_producto)]?.ancho ?? null,
+    id_producto: l.id_producto != null ? Number(l.id_producto) : null,
   }));
+
+  // Catalogo de venta del mercado del pedido, para agregarle productos mientras no genere su necesidad.
+  const { data: catalogo } = await supabase
+    .from("v_catalogo_venta")
+    .select("id, sku, descripcion, tipo, familia, subfamilia, precio_venta, precio_manual, es_estandar")
+    .eq("activo", true)
+    .eq("id_pais", Number(ped.id_pais))
+    .order("familia")
+    .order("subfamilia")
+    .order("descripcion");
+  const medCat = await leerMedidas(supabase, (catalogo ?? []).map((x) => Number(x.id)));
 
   const necesidades: NecesidadVista[] = (
     (nec ?? []) as { descripcion: string; unidades: number }[]
@@ -395,6 +407,13 @@ export default async function Pagina({
           medio: g.medio as string | null,
           referencia: g.referencia as string | null,
           quien: uno<{ nombre: string }>(g.vendedores)?.nombre ?? null,
+        }))}
+        productos={(catalogo ?? []).map((x) => ({
+          ...x,
+          id: Number(x.id),
+          precio_venta: Number(x.precio_venta ?? 0),
+          largo_max: medCat[Number(x.id)]?.largo ?? null,
+          ancho_max: medCat[Number(x.id)]?.ancho ?? null,
         }))}
         despachos={(desp ?? []).map((d) => ({
           id: Number(d.id),

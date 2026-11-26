@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { IconoAsa, moverEn, useArrastrarFilas } from "@/components/ArrastrarFilas";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,6 +23,8 @@ import CuentaCorrientePedido, {
   type PagoVista,
 } from "@/components/CuentaCorrientePedido";
 import DespachosPedido, { type DespachoVista } from "@/components/DespachosPedido";
+import BuscadorProducto from "@/components/BuscadorProducto";
+import type { ProductoVenta } from "@/components/EditorCotizacion";
 import FacturaPedido, {
   type FacturaVista,
 } from "@/components/FacturaPedido";
@@ -30,6 +32,8 @@ import {
   actualizarPedido,
   actualizarLineasPedido,
   quitarLineaPedido,
+  agregarLineasPedido,
+  actualizarDescuentosPedido,
   autorizarSinPie,
   revocarSinPie,
   type DatosPedido,
@@ -82,6 +86,7 @@ export interface LineaVista {
   descuento_pct?: number;
   largo_max?: number | null;
   ancho_max?: number | null;
+  id_producto?: number | null;
 }
 
 export interface NecesidadVista {
@@ -118,6 +123,7 @@ export default function EditorPedido({
   pagos,
   facturas,
   despachos = [],
+  productos = [],
   formaPago,
   medioPago,
   puedeEditar,
@@ -160,6 +166,8 @@ export default function EditorPedido({
   pagos: PagoVista[];
   facturas: FacturaVista[];
   despachos?: DespachoVista[];
+  // Catalogo de venta del mercado del pedido, para agregarle productos.
+  productos?: ProductoVenta[];
   formaPago: string | null;
   medioPago: string | null;
   puedeEditar: boolean;
@@ -201,19 +209,35 @@ export default function EditorPedido({
   const [motivoSinPie, setMotivoSinPie] = useState("");
 
   const soloLectura = !editable || !puedeEditar;
+  // Productos, cantidades, precios y descuentos se modifican solo hasta que el pedido genera su necesidad
+  // de material (o, en el flujo antiguo, sus solicitudes): desde ahi se compra con esas cantidades.
+  const conNecesidad = necesidadesPedido.some((n) => n.estado !== "Anulada") || solicitudes.length > 0;
+  const editaLineas = !soloLectura && !conNecesidad;
+  // Producto que se esta por agregar.
+  const [nuevo, setNuevo] = useState<{ prod: ProductoVenta | null; cantidad: string; valor: string }>({ prod: null, cantidad: "1", valor: "" });
   const subtotal = ls.reduce((s, l) => s + l.unidades * l.valor_unitario, 0);
   // Los descuentos vienen de la cotizacion y quedan grabados en el pedido:
   // aqui no se editan, pero el neto y el margen tienen que considerarlos. La
   // cuenta ya los trae recortados a su base (productos el primero, flete y
   // mano de obra el segundo).
-  const descuento = Number(cuenta.descuento_monto ?? 0);
-  const descuento2 = Number(cuenta.descuento2_monto ?? 0);
-  const descuento3 = Number(cuenta.descuento3_monto ?? 0);
+  const [descs, setDescs] = useState<[number, number, number]>([
+    Number(cuenta.descuento_monto ?? 0),
+    Number(cuenta.descuento2_monto ?? 0),
+    Number(cuenta.descuento3_monto ?? 0),
+  ]);
+  const [descuento, descuento2, descuento3] = descs;
+  // Al volver de grabar, la pantalla toma lo que quedo en la base: las lineas nuevas ya tienen su id real.
+  useEffect(() => {
+    setLs(lineas);
+  }, [lineas]);
+  useEffect(() => {
+    setDescs([Number(cuenta.descuento_monto ?? 0), Number(cuenta.descuento2_monto ?? 0), Number(cuenta.descuento3_monto ?? 0)]);
+  }, [cuenta.descuento_monto, cuenta.descuento2_monto, cuenta.descuento3_monto]);
   const descuentos = [
-    { rotulo: ROTULO_DESCUENTO_1, monto: descuento },
-    { rotulo: ROTULO_DESCUENTO_2, monto: descuento2 },
-    { rotulo: ROTULO_DESCUENTO_3, monto: descuento3 },
-  ].filter((x) => x.monto > 0);
+    { i: 0, rotulo: ROTULO_DESCUENTO_1, monto: descuento },
+    { i: 1, rotulo: ROTULO_DESCUENTO_2, monto: descuento2 },
+    { i: 2, rotulo: ROTULO_DESCUENTO_3, monto: descuento3 },
+  ].filter((x) => editaLineas || x.monto > 0);
   const totalNeto = subtotal - descuento - descuento2 - descuento3;
   // El pedido tiene que mostrar los mismos escalones que la cotizacion y la
   // factura: neto, impuesto y bruto. La tasa sale de la cuenta del pedido
@@ -289,20 +313,52 @@ export default function EditorPedido({
         setError(r1.error);
         return;
       }
+      // Las lineas nuevas (id negativo) se insertan; las demas se actualizan. El orden es el de la pantalla.
       const r2 = await actualizarLineasPedido(
         id,
-        ls.map((l, i) => ({
-          id: l.id,
-          orden: i + 1,
-          unidades: l.unidades,
-          valor_unitario: l.valor_unitario,
-          precio_lista: l.precio_lista ?? null,
-          descuento_pct: l.descuento_pct ?? 0,
-        }))
+        ls
+          .map((l, i) => ({
+            id: l.id,
+            orden: i + 1,
+            unidades: l.unidades,
+            valor_unitario: l.valor_unitario,
+            precio_lista: l.precio_lista ?? null,
+            descuento_pct: l.descuento_pct ?? 0,
+          }))
+          .filter((l) => l.id > 0)
       );
       if (r2?.error) {
         setError(r2.error);
         return;
+      }
+      const nuevas = ls
+        .map((l, i) => ({ l, orden: i + 1 }))
+        .filter((x) => x.l.id < 0 && x.l.id_producto != null);
+      if (nuevas.length) {
+        const r3 = await agregarLineasPedido(
+          id,
+          nuevas.map(({ l, orden }) => ({
+            orden,
+            id_producto: Number(l.id_producto),
+            descripcion: l.descripcion,
+            unidades: l.unidades,
+            valor_unitario: l.valor_unitario,
+            precio_lista: l.precio_lista ?? null,
+            descuento_pct: l.descuento_pct ?? 0,
+          }))
+        );
+        if (r3?.error) {
+          setError(r3.error);
+          return;
+        }
+      }
+      const antes = [Number(cuenta.descuento_monto ?? 0), Number(cuenta.descuento2_monto ?? 0), Number(cuenta.descuento3_monto ?? 0)];
+      if (descs.some((m, i) => m !== antes[i])) {
+        const r4 = await actualizarDescuentosPedido(id, descs);
+        if (r4?.error) {
+          setError(r4.error);
+          return;
+        }
       }
       setEditable(false);
       router.refresh();
@@ -529,7 +585,7 @@ export default function EditorPedido({
           <table className="w-full text-xs">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
-                {!soloLectura && <th className="w-6" aria-label="Orden" />}
+                {editaLineas && <th className="w-6" aria-label="Orden" />}
                 <th className="text-left px-2 py-2 w-8">N</th>
                 <th className="text-left px-2 py-2 w-20 whitespace-nowrap">SKU</th>
                 <th className="text-left px-2 py-2">Descripcion</th>
@@ -543,7 +599,7 @@ export default function EditorPedido({
                     Margen
                   </th>
                 )}
-                {!soloLectura && <th className="w-16" />}
+                {editaLineas && <th className="w-16" />}
               </tr>
             </thead>
             <tbody>
@@ -552,11 +608,11 @@ export default function EditorPedido({
                 return (
                 <tr
                   key={l.id}
-                  className={`border-t border-gray-100 ${soloLectura ? "" : f.className}`}
-                  onDragOver={soloLectura ? undefined : f.onDragOver}
-                  onDrop={soloLectura ? undefined : f.onDrop}
+                  className={`border-t border-gray-100 ${!editaLineas ? "" : f.className}`}
+                  onDragOver={!editaLineas ? undefined : f.onDragOver}
+                  onDrop={!editaLineas ? undefined : f.onDrop}
                 >
-                  {!soloLectura && (
+                  {editaLineas && (
                     <td className="pl-2 py-2">
                       <span {...arrastre.asa(i)}>
                         <IconoAsa />
@@ -574,7 +630,7 @@ export default function EditorPedido({
                     )}
                   </td>
                   <td className="px-2 py-2 whitespace-nowrap text-right">
-                    {soloLectura ? (
+                    {!editaLineas ? (
                       fmtUnid(l.unidades)
                     ) : (
                       <input
@@ -594,7 +650,7 @@ export default function EditorPedido({
                     )}
                   </td>
                   <td className="px-2 py-2 whitespace-nowrap text-right">
-                    {soloLectura ? (
+                    {!editaLineas ? (
                       <span className="text-gray-600">{importe(l.precio_lista ?? l.valor_unitario, moneda)}</span>
                     ) : (
                       <input
@@ -610,7 +666,7 @@ export default function EditorPedido({
                     )}
                   </td>
                   <td className="px-2 py-2 whitespace-nowrap text-right">
-                    {soloLectura ? (
+                    {!editaLineas ? (
                       l.descuento_pct ? `${porcentaje(l.descuento_pct)} %` : <span className="text-gray-400">—</span>
                     ) : (
                       <input
@@ -645,15 +701,17 @@ export default function EditorPedido({
                       })()}
                     </td>
                   )}
-                  {!soloLectura && (
+                  {editaLineas && (
                     <td className="px-2 text-right">
                       <button
                         onClick={() =>
-                          empezar(async () => {
-                            const r = await quitarLineaPedido(l.id, id);
-                            if (r?.error) setError(r.error);
-                            else setLs((x) => x.filter((y) => y.id !== l.id));
-                          })
+                          l.id < 0
+                            ? setLs((x) => x.filter((y) => y.id !== l.id))
+                            : empezar(async () => {
+                                const r = await quitarLineaPedido(l.id, id);
+                                if (r?.error) setError(r.error);
+                                else setLs((x) => x.filter((y) => y.id !== l.id));
+                              })
                         }
                         className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded"
                       >
@@ -667,6 +725,60 @@ export default function EditorPedido({
             </tbody>
           </table>
         </div>
+        {editaLineas && (
+          <div className="border-t border-gray-200 p-3 flex flex-wrap items-end gap-2 text-xs">
+            <div className="min-w-[18rem] flex-1">
+              <span className="block text-dorado-osc font-semibold mb-0.5">Agregar producto</span>
+              <BuscadorProducto
+                productos={productos}
+                valor={nuevo.prod?.id ?? null}
+                onElegir={(pr) => setNuevo((x) => ({ ...x, prod: pr, valor: pr ? String(pr.precio_venta ?? 0) : "" }))}
+                className="border border-gray-300 rounded px-2 py-1 text-xs w-full"
+              />
+            </div>
+            <label className="w-20">
+              <span className="block text-dorado-osc font-semibold mb-0.5">Cantidad</span>
+              <input id="ped-nuevo-cant" type="number" step="any" className="border border-gray-300 rounded px-2 py-1 text-right w-full" value={nuevo.cantidad} onChange={(e) => setNuevo((x) => ({ ...x, cantidad: e.target.value }))} />
+            </label>
+            <label className="w-28">
+              <span className="block text-dorado-osc font-semibold mb-0.5">V. unit. neto</span>
+              <input id="ped-nuevo-valor" type="number" step="any" className="border border-gray-300 rounded px-2 py-1 text-right w-full" value={nuevo.valor} onChange={(e) => setNuevo((x) => ({ ...x, valor: e.target.value }))} />
+            </label>
+            <button
+              type="button"
+              className="bg-verde text-white font-semibold px-3 py-1 rounded disabled:opacity-40"
+              disabled={!nuevo.prod || !(Number(nuevo.cantidad) > 0)}
+              onClick={() => {
+                const pr = nuevo.prod;
+                if (!pr) return;
+                setLs((x) => [
+                  ...x,
+                  {
+                    id: -Date.now(),
+                    id_producto: pr.id,
+                    sku: pr.sku ?? null,
+                    descripcion: pr.descripcion,
+                    unidades: Number(nuevo.cantidad.replace(",", ".")),
+                    valor_unitario: Number(nuevo.valor.replace(",", ".")) || 0,
+                    precio_lista: null,
+                    descuento_pct: 0,
+                    largo_max: pr.largo_max ?? null,
+                    ancho_max: pr.ancho_max ?? null,
+                  },
+                ]);
+                setNuevo({ prod: null, cantidad: "1", valor: "" });
+              }}
+            >
+              Agregar
+            </button>
+            <span className="text-gray-500 basis-full">Queda en el pedido al GRABAR.</span>
+          </div>
+        )}
+        {!soloLectura && conNecesidad && (
+          <p className="border-t border-gray-200 px-3 py-2 text-xs text-amber-800 bg-amber-50">
+            El pedido ya genero su necesidad de material: los productos, cantidades, precios y descuentos ya no se pueden modificar.
+          </p>
+        )}
       </div>
 
       {/* Los totales van fuera de la tabla, en su propia columna a la derecha,
@@ -676,9 +788,26 @@ export default function EditorPedido({
       <div className="bg-white border border-gray-200 rounded px-3 py-2">
         <div className="max-w-md ml-auto space-y-0.5 text-xs">
           <Fila label="SUBTOTAL" valor={importe(subtotal, moneda)} />
-          {descuentos.map((x) => (
-            <Fila key={x.rotulo} label={x.rotulo} valor={importe(x.monto, moneda)} />
-          ))}
+          {descuentos.map((x) =>
+            editaLineas ? (
+              <div key={x.rotulo} className="flex justify-between items-center gap-2 px-3">
+                <label htmlFor={`ped-desc-${x.i}`}>{x.rotulo}</label>
+                <input
+                  id={`ped-desc-${x.i}`}
+                  type="text"
+                  inputMode="numeric"
+                  className="border border-gray-300 rounded px-2 py-0.5 text-right w-32"
+                  value={importe(x.monto, moneda)}
+                  onChange={(e) => {
+                    const m = Number(e.target.value.replace(/\D/g, "")) || 0;
+                    setDescs((d) => d.map((v, k) => (k === x.i ? m : v)) as [number, number, number]);
+                  }}
+                />
+              </div>
+            ) : (
+              <Fila key={x.rotulo} label={x.rotulo} valor={importe(x.monto, moneda)} />
+            )
+          )}
           <Fila label="TOTAL NETO" valor={importe(totalNeto, moneda)} fuerte />
           <Fila
             label={`${impuesto} ${Math.round(tasaIva * 100)}%`}

@@ -135,6 +135,52 @@ export async function actualizarLineasPedido(
   return { ok: true };
 }
 
+// Productos que se agregan al pedido; la base no lo deja si ya genero su necesidad de material.
+export async function agregarLineasPedido(
+  idPedido: number,
+  lineas: { orden: number; id_producto: number; descripcion: string; unidades: number; valor_unitario: number; precio_lista?: number | null; descuento_pct?: number }[]
+) {
+  const v = await requerirVendedor();
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
+    return { error: "Su perfil no permite modificar pedidos." };
+  }
+  if (lineas.length === 0) return { ok: true };
+  const supabase = await createClient();
+  const { error } = await supabase.from("pedido_detalle").insert(
+    lineas.map((l) => ({
+      id_pedido: idPedido,
+      orden: l.orden,
+      id_producto: l.id_producto,
+      descripcion: l.descripcion,
+      unidades: l.unidades,
+      valor_unitario: l.valor_unitario,
+      precio_lista: l.descuento_pct ? (l.precio_lista ?? l.valor_unitario) : null,
+      descuento_pct: l.descuento_pct ?? 0,
+    }))
+  );
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  return { ok: true };
+}
+
+// Los tres descuentos generales del pedido, en monto.
+export async function actualizarDescuentosPedido(idPedido: number, montos: [number, number, number]) {
+  const v = await requerirVendedor();
+  if (!v.puede_editar && !tienePerfilAdmin(v)) {
+    return { error: "Su perfil no permite modificar pedidos." };
+  }
+  if (montos.some((m) => !(m >= 0))) return { error: "Un descuento no puede ser negativo." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("pedidos")
+    .update({ descuento_monto: montos[0], descuento2_monto: montos[1], descuento3_monto: montos[2] })
+    .eq("id", idPedido);
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/pedidos");
+  return { ok: true };
+}
+
 export async function quitarLineaPedido(id: number, idPedido: number) {
   const v = await requerirVendedor();
   if (!v.puede_editar && !tienePerfilAdmin(v)) {
