@@ -1,4 +1,4 @@
 // Version vigente en produccion, formato vHHH.SSS-AAAAMMDD: gran hito, subhito
 // y fecha. El subhito sube en uno con cada entrega a produccion; el historial
 // completo esta en VERSIONES.md.
-export const VERSION = "v008.051-20261125";
+export const VERSION = "v008.052-20261125";
