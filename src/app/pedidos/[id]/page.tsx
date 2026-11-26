@@ -51,6 +51,7 @@ export default async function Pagina({
     { data: pagos },
     { data: fact },
     { data: proyectosAct },
+    { data: desp },
   ] = await Promise.all([
       supabase
         .from("pedidos")
@@ -95,6 +96,13 @@ export default async function Pagina({
         .eq("activo", true)
         .eq("tipo", "obra")
         .order("nombre"),
+      // Las tandas en que sale el pedido, cada una con lo que lleva de cada linea.
+      supabase
+        .from("pedido_despachos")
+        .select("id, fecha, guia, notas, id_vendedor, vendedores(nombre), pedido_despacho_detalle(id_detalle, cantidad)")
+        .eq("id_pedido", id)
+        .order("fecha")
+        .order("id"),
     ]);
 
   if (!ped) notFound();
@@ -387,6 +395,18 @@ export default async function Pagina({
           medio: g.medio as string | null,
           referencia: g.referencia as string | null,
           quien: uno<{ nombre: string }>(g.vendedores)?.nombre ?? null,
+        }))}
+        despachos={(desp ?? []).map((d) => ({
+          id: Number(d.id),
+          fecha: d.fecha as string,
+          guia: (d.guia as string | null) ?? null,
+          notas: (d.notas as string | null) ?? null,
+          quien: uno<{ nombre: string }>(d.vendedores)?.nombre ?? null,
+          propio: Number(d.id_vendedor) === Number(v.id),
+          lineas: ((d.pedido_despacho_detalle ?? []) as { id_detalle: number; cantidad: number }[]).map((l) => ({
+            id_detalle: Number(l.id_detalle),
+            cantidad: Number(l.cantidad),
+          })),
         }))}
         facturas={(fact ?? []).map(
           (f) =>

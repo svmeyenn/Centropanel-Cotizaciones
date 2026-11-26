@@ -647,3 +647,34 @@ export async function definirGastoFinanciero(idPago: number, idPedido: number, m
   revalidatePath("/");
   return { ok: true };
 }
+
+// Despacho parcial o total: una guia con cuanto sale de cada linea. El estado del
+// pedido (Despacho parcial / Despachado) y la fecha de entrega los ajusta la base.
+export async function registrarDespacho(
+  idPedido: number,
+  d: { fecha: string; guia: string; notas: string; lineas: { id_detalle: number; cantidad: number }[] }
+) {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("pedido_registrar_despacho", {
+    p_pedido: idPedido,
+    p_fecha: d.fecha || null,
+    p_guia: d.guia,
+    p_notas: d.notas,
+    p_lineas: d.lineas,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/pedidos");
+  return { ok: true };
+}
+
+export async function anularDespacho(idDespacho: number, idPedido: number) {
+  await requerirVendedor();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("pedido_anular_despacho", { p_despacho: idDespacho });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${idPedido}`);
+  revalidatePath("/pedidos");
+  return { ok: true };
+}

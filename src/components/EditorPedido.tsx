@@ -22,6 +22,7 @@ import CuentaCorrientePedido, {
   type Cuenta,
   type PagoVista,
 } from "@/components/CuentaCorrientePedido";
+import DespachosPedido, { type DespachoVista } from "@/components/DespachosPedido";
 import FacturaPedido, {
   type FacturaVista,
 } from "@/components/FacturaPedido";
@@ -116,6 +117,7 @@ export default function EditorPedido({
   cuenta,
   pagos,
   facturas,
+  despachos = [],
   formaPago,
   medioPago,
   puedeEditar,
@@ -157,6 +159,7 @@ export default function EditorPedido({
   cuenta: Cuenta;
   pagos: PagoVista[];
   facturas: FacturaVista[];
+  despachos?: DespachoVista[];
   formaPago: string | null;
   medioPago: string | null;
   puedeEditar: boolean;
@@ -1084,6 +1087,15 @@ export default function EditorPedido({
           </table>
         </div>
       )}
+
+      <DespachosPedido
+        idPedido={id}
+        lineas={lineas.map((l) => ({ id: l.id, sku: l.sku, descripcion: l.descripcion, unidades: Number(l.unidades) }))}
+        despachos={despachos}
+        puedeRegistrar={puedeEditar}
+        esAdmin={esAdmin}
+        anulado={inicial.estado === "Anulado"}
+      />
 
       <FacturaPedido
         idPedido={id}

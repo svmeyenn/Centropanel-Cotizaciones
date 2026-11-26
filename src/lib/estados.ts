@@ -4,6 +4,7 @@
 export const ESTADOS_PEDIDO = [
   "Emitido",
   "En preparacion",
+  "Despacho parcial",
   "Despachado",
   "Facturado",
   "Anulado",
