@@ -78,6 +78,14 @@ export async function agregarItems(idNm: number, items: ItemNuevo[]) {
   return llamar((s) => s.rpc("nm_agregar_items", { p_nm: idNm, p_items: items }), idNm);
 }
 
+// Agrega materias primas o productos directo a una solicitud en borrador o en cotizacion (entran tambien a la
+// necesidad). enMaestraDe: invitados (participantes) a cuya maestra entran los items.
+export async function agregarItemsSolicitud(idNm: number, idSc: number, items: ItemNuevo[], enMaestraDe: number[]) {
+  const r = await llamar((s) => s.rpc("sc_agregar_items", { p_sc: idSc, p_items: items, p_maestra: enMaestraDe.length ? enMaestraDe : null }), idNm);
+  if (r.ok && enMaestraDe.length) revalidatePath("/proveedores");
+  return r;
+}
+
 export async function quitarItem(idNm: number, idItem: number) {
   return llamar((s) => s.rpc("nm_quitar_item", { p_item: idItem }), idNm);
 }

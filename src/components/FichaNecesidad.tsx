@@ -17,6 +17,7 @@ import {
   diferenciasCosto,
   type DiferenciaCosto,
   agregarItems,
+  agregarItemsSolicitud,
   anularNecesidad,
   anularSolicitud,
   anularSolicitudCascada,
@@ -418,6 +419,7 @@ export default function FichaNecesidad({
           impuesto={impuestoDelPais(nm.id_pais)}
           comprador={comprador}
           esAdmin={esAdmin}
+          idPais={nm.id_pais}
           pendiente={pendiente}
           ejecutar={ejecutar}
           idNm={nm.id}
@@ -497,7 +499,7 @@ export default function FichaNecesidad({
 // Una solicitud con su cuadro comparativo: items en filas, proveedores en columnas, el mejor precio de cada item
 // destacado, y el total de cada proveedor si cotizo todo.
 function TarjetaSolicitud({
-  s, destinoNm, items, proveedores: todosLosProveedores, precio, maestra, excluidos, total, moneda, ivaPct, impuesto, comprador, esAdmin, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
+  s, destinoNm, items, proveedores: todosLosProveedores, precio, maestra, excluidos, total, moneda, ivaPct, impuesto, comprador, esAdmin, idPais, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
 }: {
   s: Sol;
   destinoNm: { fecha: string | null; direccion: string | null };
@@ -512,6 +514,7 @@ function TarjetaSolicitud({
   impuesto: string;
   comprador: boolean;
   esAdmin: boolean;
+  idPais: number;
   pendiente: boolean;
   ejecutar: (f: () => Promise<Resultado>, ok?: string, fin?: () => void) => void;
   idNm: number;
@@ -532,9 +535,22 @@ function TarjetaSolicitud({
   const enCotizacion = s.estado === "En cotizacion";
   const adj = s.estado === "Adjudicada";
   const [editando, setEditando] = useState(false);
+  const [agregandoProd, setAgregandoProd] = useState(false);
   const router = useRouter();
   return (
     <section className="bg-white border border-gray-200 rounded overflow-hidden">
+      {agregandoProd && (
+        <VentanaAgregarItems
+          idNm={idNm}
+          idPais={idPais}
+          puedeCrearMateria={comprador}
+          solicitud={{ id: s.id, folio: s.folio, invitados: todosLosProveedores.map((p) => ({ id: p.id, nombre: p.nombre })) }}
+          alCerrar={(hecho) => {
+            setAgregandoProd(false);
+            if (hecho) router.refresh();
+          }}
+        />
+      )}
       {editando && <VentanaCabeceraSolicitud s={s} idNm={idNm} destinoNm={destinoNm} alCerrar={(hecho) => { setEditando(false); if (hecho) router.refresh(); }} />}
       <div className="bg-verde text-white px-3 py-1.5 flex flex-wrap items-center gap-2">
         <h2 className="text-[11px] font-semibold uppercase">
@@ -590,6 +606,11 @@ function TarjetaSolicitud({
             <Link href={`/compras/${s.id_oc}`} className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded">
               Ver {s.num_oc}
             </Link>
+          )}
+          {comprador && (s.estado === "Borrador" || enCotizacion) && (
+            <button type="button" className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded" onClick={() => setAgregandoProd(true)}>
+              Agregar productos
+            </button>
           )}
           {comprador && (s.estado === "Borrador" || enCotizacion) && (
             <button type="button" className="bg-white text-verde text-[11px] font-semibold px-2 py-0.5 rounded" onClick={() => setEditando(true)}>
@@ -1143,7 +1164,21 @@ function VentanaCabeceraSolicitud({ s, idNm, destinoNm, alCerrar }: { s: Sol; id
   );
 }
 
-function VentanaAgregarItems({ idNm, idPais, puedeCrearMateria, alCerrar }: { idNm: number; idPais: number; puedeCrearMateria: boolean; alCerrar: (hecho: boolean) => void }) {
+function VentanaAgregarItems({
+  idNm,
+  idPais,
+  puedeCrearMateria,
+  alCerrar,
+  solicitud,
+}: {
+  idNm: number;
+  idPais: number;
+  puedeCrearMateria: boolean;
+  alCerrar: (hecho: boolean) => void;
+  // Si viene, los items van directo a esa solicitud; los invitados se ofrecen para dejarlos en su maestra.
+  solicitud?: { id: number; folio: string; invitados: { id: number; nombre: string }[] };
+}) {
+  const [enMaestraDe, setEnMaestraDe] = useState<number[]>([]);
   const [busca, setBusca] = useState("");
   const [encontrados, setEncontrados] = useState<ItemBuscado[]>([]);
   const [elegidos, setElegidos] = useState<{ it: ItemBuscado; cantidad: string }[]>([]);
@@ -1178,15 +1213,40 @@ function VentanaAgregarItems({ idNm, idPais, puedeCrearMateria, alCerrar }: { id
     if (items.length === 0) return setError("Agregue al menos un item.");
     if (items.some((i) => !(i.cantidad > 0))) return setError("Cada item necesita una cantidad mayor que cero.");
     empezar(async () => {
-      const r = await agregarItems(idNm, items);
+      const r = solicitud ? await agregarItemsSolicitud(idNm, solicitud.id, items, enMaestraDe) : await agregarItems(idNm, items);
       if (!r.ok) setError(r.error ?? "No se pudo agregar.");
       else alCerrar(true);
     });
   }
 
   return (
-    <Ventana titulo="Agregar items" subtitulo="Quedan sin solicitud hasta que cree una con ellos" onCerrar={() => alCerrar(false)} ancho="max-w-2xl">
+    <Ventana
+      titulo={solicitud ? `Agregar productos a ${solicitud.folio}` : "Agregar items"}
+      subtitulo={solicitud ? "Entran a esta solicitud y a la necesidad" : "Quedan sin solicitud hasta que cree una con ellos"}
+      onCerrar={() => alCerrar(false)}
+      ancho="max-w-2xl"
+    >
       <div className="space-y-3 text-xs">
+        {solicitud && solicitud.invitados.length > 0 && (
+          <fieldset className="border border-gray-200 rounded p-2">
+            <legend className={ROTULO}>Agregar tambien a la maestra de</legend>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {solicitud.invitados.map((p) => (
+                <label key={p.id} className="flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={enMaestraDe.includes(p.id)}
+                    onChange={(e) => setEnMaestraDe((l) => (e.target.checked ? [...l, p.id] : l.filter((x) => x !== p.id)))}
+                  />
+                  {p.nombre}
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-[11px] text-gray-500">
+              Los que no marque no lo tienen en su maestra: se les puede pedir igual con &quot;Incluir&quot; en su columna.
+            </p>
+          </fieldset>
+        )}
         <div className="relative">
           <label htmlFor="ai-busca" className={ROTULO}>Materia prima o producto</label>
           <input id="ai-busca" className={CAMPO} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Nombre o SKU (minimo 2 letras)" autoComplete="off" autoFocus />
