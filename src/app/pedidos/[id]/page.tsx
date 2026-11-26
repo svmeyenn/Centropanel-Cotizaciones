@@ -42,6 +42,9 @@ export default async function Pagina({
   if (!Number.isFinite(id)) notFound();
 
   const supabase = await createClient();
+  const grupoPorProducto: Record<number, string> = {};
+  const { data: grupos } = await supabase.rpc("grupos_productos");
+  for (const g of (grupos ?? []) as { id: number; grupo: string }[]) grupoPorProducto[Number(g.id)] = g.grupo;
   const [
     { data: ped },
     { data: lineas },
@@ -408,6 +411,7 @@ export default async function Pagina({
           referencia: g.referencia as string | null,
           quien: uno<{ nombre: string }>(g.vendedores)?.nombre ?? null,
         }))}
+        grupoPorProducto={grupoPorProducto}
         productos={(catalogo ?? []).map((x) => ({
           ...x,
           id: Number(x.id),

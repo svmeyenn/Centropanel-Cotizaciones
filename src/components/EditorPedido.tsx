@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { IconoAsa, moverEn, useArrastrarFilas } from "@/components/ArrastrarFilas";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,10 @@ import {
   ROTULO_DESCUENTO_1,
   ROTULO_DESCUENTO_2,
   ROTULO_DESCUENTO_3,
+  GRUPO_PRODUCTOS,
+  GRUPO_FLETE,
+  GRUPO_INSTALACIONES,
+  grupoDe,
 } from "@/lib/descuentos";
 import { ESTADOS_PEDIDO as ESTADOS } from "@/lib/estados";
 import VentanaCliente, { type FichaCliente } from "@/components/VentanaCliente";
@@ -124,6 +128,7 @@ export default function EditorPedido({
   facturas,
   despachos = [],
   productos = [],
+  grupoPorProducto,
   formaPago,
   medioPago,
   puedeEditar,
@@ -168,6 +173,8 @@ export default function EditorPedido({
   despachos?: DespachoVista[];
   // Catalogo de venta del mercado del pedido, para agregarle productos.
   productos?: ProductoVenta[];
+  // Grupo de descuento de cada producto (productos, flete o instalaciones), para la base de cada descuento.
+  grupoPorProducto?: Record<number, string>;
   formaPago: string | null;
   medioPago: string | null;
   puedeEditar: boolean;
@@ -220,18 +227,47 @@ export default function EditorPedido({
   // aqui no se editan, pero el neto y el margen tienen que considerarlos. La
   // cuenta ya los trae recortados a su base (productos el primero, flete y
   // mano de obra el segundo).
-  const [descs, setDescs] = useState<[number, number, number]>([
-    Number(cuenta.descuento_monto ?? 0),
-    Number(cuenta.descuento2_monto ?? 0),
-    Number(cuenta.descuento3_monto ?? 0),
-  ]);
+  // Cada descuento va sobre su propia base (productos, flete, instalaciones), igual que en la cotizacion:
+  // se escribe el % o el monto y el otro se recalcula; al cambiar cantidades o precios, con el % vigente.
+  const bases = useMemo(() => {
+    const b = [0, 0, 0];
+    for (const l of ls) {
+      const g = grupoDe(grupoPorProducto, l.id_producto);
+      b[g === GRUPO_PRODUCTOS ? 0 : g === GRUPO_FLETE ? 1 : 2] += l.unidades * l.valor_unitario;
+    }
+    return b;
+  }, [ls, grupoPorProducto]);
+  type DescEstado = { tipo: "Porcentaje" | "Monto"; pct: number; monto: number };
+  const desdeCuenta = (): DescEstado[] =>
+    [cuenta.descuento_monto, cuenta.descuento2_monto, cuenta.descuento3_monto].map((m, i) => {
+      const monto = Number(m ?? 0);
+      const base = lineas.reduce((t, l) => {
+        const g = grupoDe(grupoPorProducto, l.id_producto);
+        return (g === GRUPO_PRODUCTOS ? 0 : g === GRUPO_FLETE ? 1 : 2) === i ? t + Number(l.unidades) * Number(l.valor_unitario) : t;
+      }, 0);
+      // El % exacto (sin redondear) reproduce el monto grabado.
+      return { tipo: "Porcentaje" as const, pct: base > 0 ? (monto / base) * 100 : 0, monto };
+    });
+  const [dstate, setDstate] = useState<DescEstado[]>(desdeCuenta);
+  const descs = useMemo(
+    () =>
+      dstate.map((x, i) =>
+        x.tipo === "Porcentaje"
+          ? redondea((bases[i] * Math.min(Math.max(x.pct, 0), 100)) / 100, moneda)
+          : Math.min(Math.max(x.monto, 0), bases[i])
+      ) as [number, number, number],
+    [dstate, bases, moneda]
+  );
   const [descuento, descuento2, descuento3] = descs;
+  const pctMostrado = (i: number) =>
+    dstate[i].tipo === "Porcentaje" ? dstate[i].pct : bases[i] > 0 ? Math.round((descs[i] / bases[i]) * 10000) / 100 : 0;
   // Al volver de grabar, la pantalla toma lo que quedo en la base: las lineas nuevas ya tienen su id real.
   useEffect(() => {
     setLs(lineas);
   }, [lineas]);
   useEffect(() => {
-    setDescs([Number(cuenta.descuento_monto ?? 0), Number(cuenta.descuento2_monto ?? 0), Number(cuenta.descuento3_monto ?? 0)]);
+    setDstate(desdeCuenta());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cuenta.descuento_monto, cuenta.descuento2_monto, cuenta.descuento3_monto]);
   const descuentos = [
     { i: 0, rotulo: ROTULO_DESCUENTO_1, monto: descuento },
@@ -790,17 +826,32 @@ export default function EditorPedido({
           <Fila label="SUBTOTAL" valor={importe(subtotal, moneda)} />
           {descuentos.map((x) =>
             editaLineas ? (
-              <div key={x.rotulo} className="flex justify-between items-center gap-2 px-3">
-                <label htmlFor={`ped-desc-${x.i}`}>{x.rotulo}</label>
+              <div key={x.rotulo} className="flex items-center justify-end gap-2 px-3">
+                <label htmlFor={`ped-desc-${x.i}`} className="mr-auto">
+                  {x.rotulo}
+                  <span className="block text-[11px] text-gray-500">sobre {["los productos", "el flete", "las instalaciones"][x.i]}: {importe(bases[x.i], moneda)}</span>
+                </label>
+                <input
+                  id={`ped-desc-pct-${x.i}`}
+                  type="number"
+                  aria-label={`${x.rotulo} en porcentaje`}
+                  className="border border-gray-300 rounded px-2 py-1 text-right w-24"
+                  value={pctMostrado(x.i)}
+                  onChange={(e) => {
+                    const v = Number(e.target.value) || 0;
+                    setDstate((d) => d.map((y, k) => (k === x.i ? { ...y, tipo: "Porcentaje" as const, pct: v } : y)));
+                  }}
+                />
+                <span className="text-gray-500">%</span>
                 <input
                   id={`ped-desc-${x.i}`}
                   type="text"
                   inputMode="numeric"
-                  className="border border-gray-300 rounded px-2 py-0.5 text-right w-32"
+                  className="border border-gray-300 rounded px-2 py-1 text-right w-32"
                   value={importe(x.monto, moneda)}
                   onChange={(e) => {
                     const m = Number(e.target.value.replace(/\D/g, "")) || 0;
-                    setDescs((d) => d.map((v, k) => (k === x.i ? m : v)) as [number, number, number]);
+                    setDstate((d) => d.map((y, k) => (k === x.i ? { ...y, tipo: "Monto" as const, monto: m } : y)));
                   }}
                 />
               </div>
