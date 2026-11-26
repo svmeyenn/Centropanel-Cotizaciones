@@ -99,6 +99,16 @@ export async function actualizarPedido(id: number, d: DatosPedido) {
   return { ok: true };
 }
 
+// El recargo del medio nuevo pasa al pedido y su total cambia con el.
+export async function cambiarMedioPagoPedido(id: number, idMedio: number) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("pedido_cambiar_medio_pago", { p_pedido: id, p_medio: idMedio });
+  if (error) return { error: error.message };
+  revalidatePath(`/pedidos/${id}`);
+  revalidatePath("/pedidos");
+  return { ok: true };
+}
+
 export interface LineaPedido {
   id: number;
   // Posicion de la linea en el pedido (1, 2, 3...), tal como quedo en pantalla.

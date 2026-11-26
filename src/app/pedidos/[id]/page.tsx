@@ -226,6 +226,12 @@ export default async function Pagina({
   const { data: nmsDb } = await supabase.from("necesidades_material").select("id, folio, estado").eq("id_pedido", id).order("id");
   // Medios de pago que llevan gasto financiero para la empresa, y la tasa con que se sugiere.
   const { data: mediosDb } = await supabase.from("medios_pago").select("nombre, con_gasto, costo_pct").eq("id_pais", ped.id_pais);
+  const { data: mediosLista } = await supabase
+    .from("medios_pago")
+    .select("id, nombre")
+    .eq("id_pais", ped.id_pais)
+    .or(`activo.eq.true,id.eq.${Number(ped.id_medio_pago)}`)
+    .order("orden");
   const mediosGasto = new Map((mediosDb ?? []).map((m) => [m.nombre as string, { con_gasto: Boolean(m.con_gasto), costo_pct: Number(m.costo_pct ?? 0) }]));
   // El margen real, con los costos que ya se ingresaron: solo para administradores y supervisores.
   const margenReal = tienePerfilAdmin(v) ? ((await supabase.rpc("pedido_margen_real", { p_pedido: id })).data as MargenReal | null) : null;
@@ -344,6 +350,8 @@ export default async function Pagina({
         clienteTelefono={cli?.telefono ?? null}
         clienteCiudad={cli?.ciudad ?? null}
         vendedor={ven?.nombre ?? ""}
+        idMedioPago={ped.id_medio_pago == null ? null : Number(ped.id_medio_pago)}
+        mediosPago={(mediosLista ?? []).map((x) => ({ id: Number(x.id), nombre: x.nombre as string }))}
         ejecutivos={(ejecs ?? []).map((e) => ({ id: Number(e.id), nombre: e.nombre as string }))}
         inicial={{
           id_vendedor: ped.id_vendedor == null ? null : Number(ped.id_vendedor),

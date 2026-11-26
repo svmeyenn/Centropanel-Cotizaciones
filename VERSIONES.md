@@ -18,7 +18,7 @@ fila de la entrega que abre el hito; esa entrega sale como vHHH.001.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.054-20261125**
+Version vigente: **v008.055-20261126**
 
 ## Grandes hitos
 
@@ -31,10 +31,11 @@ Version vigente: **v008.054-20261125**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.054 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.055 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.055-20261126 | pedido_cambiar_medio_pago | 26-11-2026 | Pedido: el medio de pago se puede cambiar desde la cabecera; el recargo y el total pasan a los del medio nuevo. |
 | v008.054-20261125 | (sin migracion) | 25-11-2026 | Pedido: el ejecutivo se puede cambiar desde la cabecera (activos del mercado del pedido). |
 | v008.053-20261125 | pedido_despachos_parciales, pedido_bloqueo_por_necesidad | 25-11-2026 | Pedido: despachos en tandas (guia y cantidad por linea, estado Despacho parcial); productos, cantidades, precios y descuentos se editan hasta generar la necesidad, con descuentos generales en % y monto que se recalculan al cambiar cantidades. |
 | v008.052-20261125 | sc_agregar_items | 25-11-2026 | Solicitud de cotizacion: boton "Agregar productos" en borrador o en cotizacion; entran a la solicitud y a la necesidad, con casillas para dejarlos en la maestra de los proveedores invitados. |

@@ -34,6 +34,7 @@ import FacturaPedido, {
 } from "@/components/FacturaPedido";
 import {
   actualizarPedido,
+  cambiarMedioPagoPedido,
   actualizarLineasPedido,
   quitarLineaPedido,
   agregarLineasPedido,
@@ -121,6 +122,8 @@ export default function EditorPedido({
   vendedor,
   inicial,
   ejecutivos = [],
+  idMedioPago = null,
+  mediosPago = [],
   lineas,
   necesidades,
   solicitudes,
@@ -167,6 +170,9 @@ export default function EditorPedido({
   inicial: DatosPedido;
   // Ejecutivos a quienes se puede asignar el pedido.
   ejecutivos?: { id: number; nombre: string }[];
+  // Medio de pago del pedido y los que se pueden elegir; al cambiarlo, el recargo pasa al del medio nuevo.
+  idMedioPago?: number | null;
+  mediosPago?: { id: number; nombre: string }[];
   lineas: LineaVista[];
   necesidades: NecesidadVista[];
   solicitudes: SolicitudVista[];
@@ -211,6 +217,8 @@ export default function EditorPedido({
   const [editable, setEditable] = useState(false);
   const [d, setD] = useState<DatosPedido>(inicial);
   const [ls, setLs] = useState<LineaVista[]>(lineas);
+  const [medioSel, setMedioSel] = useState<number | null>(idMedioPago);
+  useEffect(() => setMedioSel(idMedioPago), [idMedioPago]);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [sinProveedor, setSinProveedor] = useState<string[]>([]);
@@ -351,6 +359,13 @@ export default function EditorPedido({
       if (r1?.error) {
         setError(r1.error);
         return;
+      }
+      if (medioSel != null && medioSel !== idMedioPago) {
+        const rm = await cambiarMedioPagoPedido(id, medioSel);
+        if (rm?.error) {
+          setError(rm.error);
+          return;
+        }
       }
       // Las lineas nuevas (id negativo) se insertan; las demas se actualizan. El orden es el de la pantalla.
       const r2 = await actualizarLineasPedido(
@@ -549,11 +564,22 @@ export default function EditorPedido({
             valor={formaPago ?? "--"}
             ancho="sm:col-span-2"
           />
-          <Dato
-            titulo="Medio de pago"
-            valor={medioPago ?? "--"}
-            ancho="sm:col-span-2"
-          />
+          <label className="text-xs sm:col-span-2">
+            <span className="block text-dorado-osc font-semibold mb-0.5">Medio de pago</span>
+            <select
+              className={input}
+              disabled={soloLectura || mediosPago.length === 0}
+              value={medioSel ?? ""}
+              onChange={(e) => setMedioSel(Number(e.target.value) || null)}
+            >
+              {medioSel == null && <option value="">{medioPago ?? "--"}</option>}
+              {mediosPago.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
         </GrupoCabecera>
 
         <GrupoCabecera titulo="ENTREGA" className="lg:col-span-4" columnas="sm:grid-cols-4">
