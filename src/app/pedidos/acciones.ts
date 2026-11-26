@@ -69,6 +69,7 @@ export interface DatosPedido {
   fecha_entrega_esperada: string;
   fecha_entrega_efectiva: string;
   notas: string;
+  id_vendedor: number | null;
 }
 
 export async function actualizarPedido(id: number, d: DatosPedido) {
@@ -76,10 +77,12 @@ export async function actualizarPedido(id: number, d: DatosPedido) {
   if (!v.puede_editar && !tienePerfilAdmin(v)) {
     return { error: "Su perfil no permite modificar pedidos." };
   }
+  if (!d.id_vendedor) return { error: "Elija el ejecutivo." };
   const supabase = await createClient();
   const { error } = await supabase
     .from("pedidos")
     .update({
+      id_vendedor: d.id_vendedor,
       fecha: d.fecha,
       estado: d.estado,
       direccion_despacho: d.direccion_despacho.trim() || null,

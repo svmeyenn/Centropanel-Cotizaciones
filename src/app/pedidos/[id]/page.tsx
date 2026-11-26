@@ -200,6 +200,12 @@ export default async function Pagina({
     ciudad: string | null;
   }>(ped.clientes);
   const ven = uno<{ nombre: string }>(ped.vendedores);
+  // Ejecutivos a quienes se puede asignar el pedido: activos que trabajan el mercado, mas el actual.
+  const { data: ejecs } = await supabase
+    .from("vendedores")
+    .select("id, nombre")
+    .or(`and(activo.eq.true,rol.neq.Consulta,mercado.in.(Ambos,${uno<{ codigo: string }>(ped.paises)?.codigo === "PE" ? "Peru" : "Chile"})),id.eq.${Number(ped.id_vendedor)}`)
+    .order("nombre");
 
   // Si un administrador autorizo generar solicitudes sin el pie completo: quien, cuando y por que.
   let sinPie: { por: string; en: string; motivo: string } | null = null;
@@ -338,7 +344,9 @@ export default async function Pagina({
         clienteTelefono={cli?.telefono ?? null}
         clienteCiudad={cli?.ciudad ?? null}
         vendedor={ven?.nombre ?? ""}
+        ejecutivos={(ejecs ?? []).map((e) => ({ id: Number(e.id), nombre: e.nombre as string }))}
         inicial={{
+          id_vendedor: ped.id_vendedor == null ? null : Number(ped.id_vendedor),
           fecha: (ped.fecha as string).slice(0, 10),
           estado: ped.estado as string,
           direccion_despacho: (ped.direccion_despacho as string) ?? "",

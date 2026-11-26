@@ -120,6 +120,7 @@ export default function EditorPedido({
   clienteCiudad,
   vendedor,
   inicial,
+  ejecutivos = [],
   lineas,
   necesidades,
   solicitudes,
@@ -164,6 +165,8 @@ export default function EditorPedido({
   clienteCiudad: string | null;
   vendedor: string;
   inicial: DatosPedido;
+  // Ejecutivos a quienes se puede asignar el pedido.
+  ejecutivos?: { id: number; nombre: string }[];
   lineas: LineaVista[];
   necesidades: NecesidadVista[];
   solicitudes: SolicitudVista[];
@@ -522,7 +525,22 @@ export default function EditorPedido({
               ))}
             </select>
           </label>
-          <Dato titulo="Ejecutivo" valor={vendedor} ancho="sm:col-span-2" />
+          <label className="text-xs sm:col-span-2">
+            <span className="block text-dorado-osc font-semibold mb-0.5">Ejecutivo</span>
+            <select
+              className={input}
+              disabled={soloLectura}
+              value={d.id_vendedor ?? ""}
+              onChange={(e) => setD({ ...d, id_vendedor: Number(e.target.value) || null })}
+            >
+              {!ejecutivos.some((x) => x.id === d.id_vendedor) && <option value={d.id_vendedor ?? ""}>{vendedor}</option>}
+              {ejecutivos.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
         </GrupoCabecera>
 
         <GrupoCabecera titulo="PAGO">
