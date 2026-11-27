@@ -4,7 +4,7 @@ import BarraNavegacion from "@/components/BarraNavegacion";
 import { conPais, contextoMercado, requerirVendedor } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { dinero, fecha, monedaDelPais } from "@/lib/formato";
-import { COLOR_ESTADO, ESTADOS_OC } from "@/lib/compras";
+import { COLOR_ESTADO, ETAPAS_OC } from "@/lib/compras";
 import { uno } from "@/lib/relaciones";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +12,11 @@ export const dynamic = "force-dynamic";
 export default async function Pagina({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string }>;
+  searchParams: Promise<{ estado?: string; etapa?: string }>;
 }) {
   const v = await requerirVendedor();
-  const { estado } = await searchParams;
+  const { estado, etapa } = await searchParams;
+  const estadosEtapa = ETAPAS_OC.find((e) => e.clave === etapa)?.estados;
   const supabase = await createClient();
   const { idPaisActivo } = await contextoMercado(v);
 
@@ -23,6 +24,7 @@ export default async function Pagina({
     .from("ordenes_compra")
     .select("id, num_oc, id_pais, estado, fecha, total, id_proyecto, proyectos(nombre), entidades!ordenes_compra_id_proveedor_fkey(razon_social)");
   if (estado) q = q.eq("estado", estado);
+  else if (estadosEtapa) q = q.in("estado", estadosEtapa);
   const { data } = await conPais(q, idPaisActivo).order("id", { ascending: false });
 
   const { data: clientesDb } = await supabase.rpc("oc_clientes", { p_ids: (data ?? []).map((o) => Number(o.id)) });
@@ -64,18 +66,20 @@ export default async function Pagina({
         <BarraNavegacion />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2 text-xs">
-            <Link href="/compras" className={`px-2 py-1 rounded ${!estado ? "bg-verde text-white" : "bg-gray-100"}`}>
+            <Link href="/compras" className={`px-2 py-1 rounded ${!estado && !etapa ? "bg-verde text-white" : "bg-gray-100"}`}>
               Todas
             </Link>
-            {ESTADOS_OC.map((e) => (
+            {ETAPAS_OC.map((e) => (
               <Link
-                key={e}
-                href={`/compras?estado=${encodeURIComponent(e)}`}
-                className={`px-2 py-1 rounded ${estado === e ? "bg-verde text-white" : "bg-gray-100"}`}
+                key={e.clave}
+                href={`/compras?etapa=${e.clave}`}
+                title={e.estados.join(", ")}
+                className={`px-2 py-1 rounded ${etapa === e.clave ? "bg-verde text-white" : "bg-gray-100"}`}
               >
-                {e}
+                {e.titulo}
               </Link>
             ))}
+            {estado && <span className="px-2 py-1 rounded bg-verde text-white">{estado}</span>}
           </div>
           <Link href="/compras/nueva" className="bg-verde text-white text-xs font-semibold px-2.5 py-1 rounded">
             Nueva orden de compra

@@ -417,8 +417,10 @@ export default function FichaNecesidad({
       )}
 
       {/* Solicitudes de cotizacion y cuadro comparativo */}
-      {vigentes.map((s) => (
-        <TarjetaSolicitud
+      {/* La solicitud ya no es el centro: se ve mientras hay algo que enviar o cotizar; adjudicada, queda plegada. */}
+      {vigentes.map((s) => {
+        const tarjeta = (
+          <TarjetaSolicitud
           key={s.id}
           s={s}
           destinoNm={{ fecha: nm.fecha_requerida, direccion: nm.direccion_destino }}
@@ -441,11 +443,24 @@ export default function FichaNecesidad({
           alAbrir={() => setAbriendo(s)}
           hayCotizaciones={cotizaron.length > 0}
         />
-      ))}
+        );
+        return s.estado === "Adjudicada" ? (
+          <details key={s.id} className="bg-white border border-gray-200 rounded">
+            <summary className="cursor-pointer px-3 py-2 text-xs text-gray-700">
+              <span className="font-semibold">{s.folio}</span> adjudicada
+              {s.id_participante ? ` a ${provPor.get(s.id_participante)?.nombre ?? "proveedor"}` : ""} · ver detalle de la solicitud
+            </summary>
+            {tarjeta}
+          </details>
+        ) : (
+          tarjeta
+        );
+      })}
 
       {historial.length > 0 && (
-        <section className="bg-white border border-gray-200 rounded p-3">
-          <h2 className="text-[11px] font-semibold uppercase text-gray-600 mb-1.5">Historial de solicitudes</h2>
+        <details className="bg-white border border-gray-200 rounded p-3">
+          <summary className="cursor-pointer text-[11px] font-semibold uppercase text-gray-600">Historial de solicitudes ({historial.length})</summary>
+          <div className="mt-1.5" />
           <ul className="space-y-0.5">
             {historial.map((s) => (
               <li key={s.id} className="text-gray-700">
@@ -471,7 +486,7 @@ export default function FichaNecesidad({
               </li>
             ))}
           </ul>
-        </section>
+        </details>
       )}
 
       {cotizando && (

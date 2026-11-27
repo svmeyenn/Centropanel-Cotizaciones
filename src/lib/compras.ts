@@ -18,6 +18,15 @@ export const ESTADOS_OC = [
   "Anulada",
 ];
 
+// Las diez situaciones de una orden, vistas como cuatro etapas: lo que alguien tiene que hacer despues. La lista y la
+// bandeja agrupan por aqui; el estado exacto sigue en la ficha de cada orden.
+export const ETAPAS_OC: { clave: string; titulo: string; estados: string[] }[] = [
+  { clave: "aprobar", titulo: "Por aprobar", estados: ["Borrador", "Pendiente aprobacion"] },
+  { clave: "recibir", titulo: "Por recibir", estados: ["Aprobada", "Enviada", "Recibida parcial"] },
+  { clave: "pagar", titulo: "Por pagar", estados: ["Recibida", "Facturada"] },
+  { clave: "cerradas", titulo: "Cerradas", estados: ["Pagada", "Rechazada", "Anulada"] },
+];
+
 export const COLOR_ESTADO: Record<string, string> = {
   Borrador: "bg-gray-100 text-gray-700",
   "Pendiente aprobacion": "bg-amber-100 text-amber-800",
