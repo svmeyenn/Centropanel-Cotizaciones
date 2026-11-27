@@ -25,6 +25,9 @@ export default async function Pagina({
   if (estado) q = q.eq("estado", estado);
   const { data } = await conPais(q, idPaisActivo).order("id", { ascending: false });
 
+  const { data: clientesDb } = await supabase.rpc("oc_clientes", { p_ids: (data ?? []).map((o) => Number(o.id)) });
+  const clienteDe = new Map(((clientesDb ?? []) as { id: number; cliente: string | null }[]).map((c) => [Number(c.id), c.cliente]));
+
   const porAprobar = (data ?? []).filter((o) => o.estado === "Pendiente aprobacion").length;
 
   // Anticipos ya pagados a proveedores cuya factura aun no llega: el riesgo de pagar por adelantado.
@@ -106,6 +109,7 @@ export default async function Pagina({
             <table className="w-full text-xs">
               <thead className="bg-verde text-white">
                 <tr>
+                  <th className="text-left px-3 py-2">Cliente</th>
                   <th className="text-left px-3 py-2">OC</th>
                   <th className="text-left px-3 py-2">Fecha</th>
                   <th className="text-left px-3 py-2">Proyecto</th>
@@ -118,6 +122,7 @@ export default async function Pagina({
               <tbody>
                 {(data ?? []).map((o) => (
                   <tr key={o.id} className="border-t border-gray-100 hover:bg-gray-50">
+                    <td className="px-3 py-2">{clienteDe.get(Number(o.id)) ?? <span className="text-gray-500">—</span>}</td>
                     <td className="px-3 py-2 font-semibold">
                       <Link href={`/compras/${o.id}`} className="text-verde hover:underline">
                         {o.num_oc}

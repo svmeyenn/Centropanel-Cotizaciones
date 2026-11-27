@@ -18,7 +18,7 @@ fila de la entrega que abre el hito; esa entrega sale como vHHH.001.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.059-20261127**
+Version vigente: **v008.060-20261127**
 
 ## Grandes hitos
 
@@ -31,10 +31,11 @@ Version vigente: **v008.059-20261127**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.059 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.060 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.060-20261127 | oc_clientes | 27-11-2026 | Ordenes de compra: columna Cliente como primera columna del listado (el del pedido de la necesidad, o el del proyecto). |
 | v008.059-20261127 | (sin migracion) | 27-11-2026 | Registrar cotizacion: los items fuera de la maestra del proveedor que se dejan en blanco ya no se envian (daba "items ya adjudicados" si pertenecian a otra solicitud adjudicada). |
 | v008.058-20261127 | nm_cotizacion_asocia_item_a_maestra | 27-11-2026 | Registrar la cotizacion de un proveedor: un item que no esta en su maestra se puede cotizar igual y entra a la maestra (activo) con el costo ingresado. |
 | v008.057-20261127 | nm_listado_con_cliente | 27-11-2026 | Necesidades de material: columna Cliente en el listado (el del pedido, o el de la obra); la busqueda tambien encuentra por cliente. |
