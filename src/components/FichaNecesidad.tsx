@@ -11,6 +11,7 @@ import { impuestoDelPais, porcentajeImpuesto, rotuloDescuento, subtotalLinea, to
 import {
   abrirSolicitud,
   adjudicarSolicitud,
+  adjudicarYGenerar,
   actualizarCabeceraSolicitud,
   actualizarCabeceraNecesidad,
   actualizarCostos,
@@ -402,6 +403,19 @@ export default function FichaNecesidad({
         )}
       </section>
 
+      {/* Cuadro comparativo: elegir proveedor por producto y generar las ordenes de una vez */}
+      {comprador && abierta && (
+        <CuadroComparativo
+          idNm={nm.id}
+          items={items.filter((i) => solicitudes.find((s) => s.id === i.id_sc)?.estado !== "Adjudicada")}
+          proveedores={cotizaron}
+          precio={precio}
+          moneda={moneda}
+          pendiente={pendiente}
+          ejecutar={ejecutar}
+        />
+      )}
+
       {/* Solicitudes de cotizacion y cuadro comparativo */}
       {vigentes.map((s) => (
         <TarjetaSolicitud
@@ -498,6 +512,122 @@ export default function FichaNecesidad({
 
 // Una solicitud con su cuadro comparativo: items en filas, proveedores en columnas, el mejor precio de cada item
 // destacado, y el total de cada proveedor si cotizo todo.
+function CuadroComparativo({
+  idNm,
+  items,
+  proveedores,
+  precio,
+  moneda,
+  pendiente,
+  ejecutar,
+}: {
+  idNm: number;
+  items: Item[];
+  proveedores: Prov[];
+  precio: Map<string, number>;
+  moneda: string;
+  pendiente: boolean;
+  ejecutar: (f: () => Promise<Resultado>, mensajeOk?: string, alTerminar?: () => void) => void;
+}) {
+  // El mas barato entre quienes cotizaron el item; el usuario puede cambiarlo o dejarlo para despues.
+  const masBarato = (idItem: number): number | null => {
+    let mejor: number | null = null;
+    let valor = Infinity;
+    for (const p of proveedores) {
+      const v = precio.get(`${p.id}:${idItem}`);
+      if (v != null && v < valor) { valor = v; mejor = p.id; }
+    }
+    return mejor;
+  };
+  const [elegido, setElegido] = useState<Record<number, number | null>>({});
+  const eleccion = (idItem: number): number | null => (idItem in elegido ? elegido[idItem] : masBarato(idItem));
+  const cotizados = items.filter((i) => proveedores.some((p) => precio.has(`${p.id}:${i.id}`)));
+  if (proveedores.length === 0 || cotizados.length === 0) return null;
+
+  const asignaciones = cotizados.flatMap((i) => {
+    const part = eleccion(i.id);
+    return part == null ? [] : [{ id_item: i.id, id_part: part }];
+  });
+  const totalDe = (idPart: number) =>
+    cotizados.reduce((t, i) => (eleccion(i.id) === idPart ? t + (precio.get(`${idPart}:${i.id}`) ?? 0) * Number(i.cantidad) : t), 0);
+  const ordenes = new Set(asignaciones.map((a) => a.id_part)).size;
+
+  return (
+    <section className="bg-white border border-gray-200 rounded">
+      <div className="px-3 py-2 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-[11px] font-semibold uppercase text-gray-600">Cuadro comparativo</h2>
+          <p className="text-gray-500">Elija el proveedor de cada producto. Va marcado el de menor precio.</p>
+        </div>
+        <button
+          type="button"
+          className={BTN_VERDE}
+          disabled={pendiente || asignaciones.length === 0}
+          onClick={() =>
+            confirm(`Se adjudican ${asignaciones.length} producto${asignaciones.length > 1 ? "s" : ""} y se generan ordenes de compra para ${ordenes} proveedor${ordenes > 1 ? "es" : ""}. Seguir?`) &&
+            ejecutar(() => adjudicarYGenerar(idNm, asignaciones), "Ordenes de compra generadas.")
+          }
+        >
+          Generar ordenes de compra
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50 text-[11px] uppercase text-gray-600">
+            <tr>
+              <th className="text-left px-3 py-1.5">Producto</th>
+              <th className="text-right px-3 py-1.5">Cant.</th>
+              {proveedores.map((p) => (
+                <th key={p.id} className="text-right px-3 py-1.5">{p.nombre}</th>
+              ))}
+              <th className="text-center px-3 py-1.5">Despues</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cotizados.map((i) => {
+              const sel = eleccion(i.id);
+              const mejor = masBarato(i.id);
+              return (
+                <tr key={i.id} className="border-t border-gray-100">
+                  <td className="px-3 py-1.5">{i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
+                  <td className="px-3 py-1.5 text-right tabular-nums">{Number(i.cantidad)}{i.unidad ? ` ${i.unidad}` : ""}</td>
+                  {proveedores.map((p) => {
+                    const v = precio.get(`${p.id}:${i.id}`);
+                    return (
+                      <td key={p.id} className={`px-3 py-1.5 text-right tabular-nums ${sel === p.id ? "bg-verde/10" : ""}`}>
+                        {v == null ? (
+                          <span className="text-gray-300">—</span>
+                        ) : (
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name={`item-${i.id}`} checked={sel === p.id} onChange={() => setElegido((e) => ({ ...e, [i.id]: p.id }))} aria-label={`${i.descripcion} con ${p.nombre}`} />
+                            <span className={mejor === p.id ? "font-semibold text-verde" : ""}>{dinero(v, moneda)}</span>
+                          </label>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="px-3 py-1.5 text-center">
+                    <input type="radio" name={`item-${i.id}`} checked={sel == null} onChange={() => setElegido((e) => ({ ...e, [i.id]: null }))} aria-label={`${i.descripcion}: decidir despues`} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot className="border-t border-gray-200 bg-gray-50 font-semibold">
+            <tr>
+              <td className="px-3 py-1.5" colSpan={2}>Total a comprar (neto)</td>
+              {proveedores.map((p) => (
+                <td key={p.id} className="px-3 py-1.5 text-right tabular-nums">{totalDe(p.id) > 0 ? dinero(totalDe(p.id), moneda) : <span className="text-gray-300">—</span>}</td>
+              ))}
+              <td />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function TarjetaSolicitud({
   s, destinoNm, items, proveedores: todosLosProveedores, precio, maestra, excluidos, total, moneda, ivaPct, impuesto, comprador, esAdmin, idPais, pendiente, ejecutar, idNm, adjudicada, alAbrir, hayCotizaciones,
 }: {

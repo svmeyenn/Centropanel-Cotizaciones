@@ -202,6 +202,13 @@ export async function generarOC(idNm: number, idSc: number) {
   return r;
 }
 
+// Adjudica por producto y genera las ordenes de compra en un solo paso.
+export async function adjudicarYGenerar(idNm: number, asignaciones: { id_item: number; id_part: number }[]) {
+  const r = await llamar((s) => s.rpc("nm_adjudicar_generar", { p_nm: idNm, p_asig: asignaciones }), idNm);
+  if (r.ok) revalidatePath("/compras");
+  return r;
+}
+
 export async function anularSolicitud(idNm: number, idSc: number) {
   return llamar((s) => s.rpc("sc_anular", { p_sc: idSc }), idNm);
 }
