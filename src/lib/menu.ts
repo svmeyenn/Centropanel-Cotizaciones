@@ -86,6 +86,8 @@ export const GRUPOS: Grupo[] = [
     area: "compras",
     nota: "Del requerimiento a la orden de compra",
     opciones: [
+      // Una sola lista de lo que espera un paso: cotizar, adjudicar, aprobar, recibir o pagar.
+      { texto: "Bandeja de compras", href: "/bandeja-compras" },
       // El paso previo a la orden de compra: lo que se necesita, cotizado y adjudicado por solicitud.
       { texto: "Necesidades de material", href: "/necesidades" },
       { texto: "Ordenes de compra", href: "/compras" },
