@@ -788,7 +788,7 @@ function VentanaCotizacion({
 
   function guardar() {
     setError(null);
-    const precios = items.filter((i) => asignado(i.id)).map((i) => {
+    const precios = items.map((i) => {
       const t = (valores[i.id] ?? "").trim().replace(",", ".");
       return { id_item: i.id, precio: t === "" ? null : Number(t) };
     });
@@ -929,14 +929,12 @@ function VentanaCotizacion({
                     <input
                       aria-label={`Precio de ${i.descripcion}`}
                       inputMode="decimal"
-                      className={`${CAMPO} text-right ${asignado(i.id) ? "" : "bg-gray-100"}`}
-                      disabled={!asignado(i.id)}
-                      placeholder={asignado(i.id) ? "" : "sin asignar"}
+                      className={`${CAMPO} text-right`}
                       value={valores[i.id] ?? ""}
                       onChange={(e) => setValores({ ...valores, [i.id]: e.target.value })}
                     />
                     <span className="block text-[11px] text-right text-gray-500 mt-0.5">
-                      {asignado(i.id) ? `Maestra: ${dinero(maestra.get(`${prov.id}:${i.id}`) ?? 0, cab.moneda)}` : "No lo tiene en su maestra"}
+                      {asignado(i.id) ? `Maestra: ${dinero(maestra.get(`${prov.id}:${i.id}`) ?? 0, cab.moneda)}` : "No esta en su maestra: entra con el costo que ingrese"}
                     </span>
                   </td>
                   <td className="px-3 py-1 text-right tabular-nums">{valorDe(i.id) != null ? dinero(subtotalLinea(Number(i.cantidad), valorDe(i.id)!, cab.moneda), cab.moneda) : ""}</td>
