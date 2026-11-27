@@ -623,6 +623,8 @@ export async function eliminarPedido(id: number) {
     en_uso?: boolean;
     facturas?: number;
     pagos?: number;
+    necesidades?: number;
+    ordenes?: number;
     num?: string;
   };
   if (r.en_uso) {
@@ -632,8 +634,11 @@ export async function eliminarPedido(id: number) {
         `tiene ${r.facturas} documento(s) tributario(s) registrado(s)`
       );
     if (Number(r.pagos)) partes.push(`tiene ${r.pagos} pago(s) registrados`);
+    if (Number(r.necesidades)) partes.push(`tiene ${r.necesidades} necesidad(es) de material sin anular`);
+    if (Number(r.ordenes)) partes.push(`tiene ${r.ordenes} orden(es) de compra`);
+    const cuentaCorriente = Number(r.facturas) || Number(r.pagos);
     return {
-      error: `No se puede eliminar: ${partes.join(" y ")}. Anule eso primero en la cuenta corriente del pedido.`,
+      error: `No se puede eliminar: ${partes.join(" y ")}. ${cuentaCorriente ? "Anule los pagos y documentos en la cuenta corriente del pedido" : "Anule primero la necesidad de material (con sus ordenes de compra)"}.`,
     };
   }
 
