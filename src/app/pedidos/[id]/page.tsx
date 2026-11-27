@@ -189,6 +189,24 @@ export default async function Pagina({
     costoPorLinea[Number(l.id)] = costo;
   }
 
+  // El flete se cotiza por kilometro --costo 1.500 el km-- pero al despachar se acuerda el valor del transportista, que queda
+  // en el pedido (flete_estimado, con IVA). Si la linea de flete trae el costo por km de la cotizacion, el costo teorico del
+  // pedido sale mil veces bajo: con transportista, el costo del flete es lo que cobra el transportista, sin IVA.
+  if (ped.flete_estimado != null && idsProducto.length) {
+    const [{ data: grupos }, { data: ivaDb }] = await Promise.all([
+      supabase.from("productos").select("id, grupo_descuento").in("id", idsProducto),
+      supabase.from("parametros").select("valor_num").eq("clave", "IVA").eq("id_pais", ped.id_pais).maybeSingle(),
+    ]);
+    const esFlete = new Set((grupos ?? []).filter((g) => g.grupo_descuento === "Flete").map((g) => Number(g.id)));
+    const lineasFlete = (lineas ?? []).filter((l) => l.id_producto != null && esFlete.has(Number(l.id_producto)));
+    const unidadesFlete = lineasFlete.reduce((n, l) => n + Number(l.unidades), 0);
+    if (unidadesFlete > 0) {
+      const neto = Number(ped.flete_estimado) / (1 + Number(ivaDb?.valor_num ?? 0));
+      for (const l of lineasFlete) costoPorLinea[Number(l.id)] = neto / unidadesFlete;
+      sinCosto = Math.max(0, sinCosto - lineasFlete.filter((l) => !costoPorLinea[Number(l.id)]).length);
+    }
+  }
+
   const cot = uno<{ id: number; num_cotizacion: string }>(ped.cotizaciones);
   const fp = uno<{ descripcion: string }>(ped.formas_pago);
   const mp = uno<{ nombre: string }>(ped.medios_pago);
