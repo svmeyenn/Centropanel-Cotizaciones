@@ -224,6 +224,11 @@ export default async function Pagina({
 
   // Las necesidades de material que ya salieron de este pedido.
   const { data: nmsDb } = await supabase.from("necesidades_material").select("id, folio, estado").eq("id_pedido", id).order("id");
+  // Las ordenes de compra del proyecto del pedido.
+  const { data: ocsDb } = ped.id_proyecto
+    ? await supabase.from("ordenes_compra").select("id, num_oc, estado, total, entidades!ordenes_compra_id_proveedor_fkey(razon_social)").eq("id_proyecto", ped.id_proyecto).neq("estado", "Anulada").order("id")
+    : { data: null };
+  const ordenesPedido = (ocsDb ?? []).map((o) => ({ id: Number(o.id), num_oc: o.num_oc as string, estado: o.estado as string, total: Number(o.total), proveedor: uno<{ razon_social: string }>(o.entidades)?.razon_social ?? "" }));
   // Medios de pago que llevan gasto financiero para la empresa, y la tasa con que se sugiere.
   const { data: mediosDb } = await supabase.from("medios_pago").select("nombre, con_gasto, costo_pct").eq("id_pais", ped.id_pais);
   const { data: mediosLista } = await supabase
@@ -467,6 +472,7 @@ export default async function Pagina({
         esAdmin={tienePerfilAdmin(v)}
         autorizacionSinPie={sinPie}
         necesidadesPedido={necesidadesPedido}
+        ordenesPedido={ordenesPedido}
         costoPorLinea={costoPorLinea}
         fichaCliente={cli ? (cli as unknown as FichaCliente) : null}
         prefijoTelefono={uno<{ prefijo_telefono: string }>(ped.paises)?.prefijo_telefono ?? "+56"}

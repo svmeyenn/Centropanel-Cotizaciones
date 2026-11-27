@@ -140,6 +140,7 @@ export default function EditorPedido({
   esAdmin,
   autorizacionSinPie = null,
   necesidadesPedido = [],
+  ordenesPedido = [],
   costoPorLinea,
   verMargen,
   margenReal,
@@ -193,6 +194,8 @@ export default function EditorPedido({
   autorizacionSinPie?: { por: string; en: string; motivo: string } | null;
   // Las necesidades de material que ya salieron de este pedido.
   necesidadesPedido?: { id: number; folio: string; estado: string }[];
+  // Las ordenes de compra del proyecto del pedido, con lo que se pago de cada una.
+  ordenesPedido?: { id: number; num_oc: string; estado: string; proveedor: string; total: number }[];
   // Costo unitario de cada linea, tomado de la cotizacion de origen: el
   // pedido no lo guarda. Solo llega a quien puede ver costos.
   costoPorLinea?: Record<number, number>;
@@ -913,6 +916,16 @@ export default function EditorPedido({
             <span>{importe(totalBruto, moneda)}</span>
           </div>
 
+          {margenReal && margenReal.con_costos && !margenReal.provisorio && (
+            <div className="mt-2 flex justify-between px-3 py-1.5 rounded bg-verde text-white font-bold">
+              <span>
+                MARGEN REAL {margenReal.margen_pct != null ? `${porcentaje(margenReal.margen_pct)} %` : ""}
+                <span className="ml-2 font-normal text-[11px]">con {margenReal.egresos} egreso{margenReal.egresos === 1 ? "" : "s"} aprobado{margenReal.egresos === 1 ? "" : "s"}</span>
+              </span>
+              <span>{importe(margenReal.margen, moneda)}</span>
+            </div>
+          )}
+
           {verMargen && (
             <div className="mt-2 border-t border-gray-200 pt-2 space-y-0.5">
               <FilaAbrible
@@ -944,7 +957,7 @@ export default function EditorPedido({
               </FilaAbrible>
               <div className="flex justify-between px-3 py-1.5 rounded bg-crema text-dorado-osc font-bold">
                 <span>
-                  MARGEN TEORICO {porcentaje(margenPct)} %
+                  MARGEN TEORICO {porcentaje(margenPct)} %{margenReal && margenReal.con_costos && !margenReal.provisorio ? " (referencia: el real es el de arriba)" : ""}
                   {lineasSinCosto > 0 && (
                     <span className="ml-2 font-normal text-[11px] text-amber-700">
                       ({lineasSinCosto} linea{lineasSinCosto > 1 ? "s" : ""} sin
@@ -1256,6 +1269,23 @@ export default function EditorPedido({
                     {n.folio}
                   </Link>{" "}
                   <span className="text-gray-500">({n.estado})</span>
+                </span>
+              ))}
+            </p>
+          )}
+
+          {ordenesPedido.length > 0 && (
+            <p className="text-xs text-gray-700">
+              Ordenes de compra de este pedido:{" "}
+              {ordenesPedido.map((o, k) => (
+                <span key={o.id}>
+                  {k > 0 && ", "}
+                  <Link href={`/compras/${o.id}`} className="text-verde font-semibold underline">
+                    {o.num_oc}
+                  </Link>{" "}
+                  <span className="text-gray-500">
+                    ({o.proveedor} · {importe(o.total, moneda)} · {o.estado})
+                  </span>
                 </span>
               ))}
             </p>
