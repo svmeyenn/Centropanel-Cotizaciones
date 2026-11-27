@@ -788,7 +788,7 @@ function VentanaCotizacion({
 
   function guardar() {
     setError(null);
-    const precios = items.map((i) => {
+    const precios = items.filter((i) => asignado(i.id) || valorDe(i.id) != null).map((i) => {
       const t = (valores[i.id] ?? "").trim().replace(",", ".");
       return { id_item: i.id, precio: t === "" ? null : Number(t) };
     });
