@@ -26,6 +26,7 @@ type Fila = {
   n_oc: number;
   creado: string;
   total: number;
+  cliente: string | null;
 };
 
 // El paso previo a la orden de compra: lo que una obra o un pedido necesita, cotizado a varios proveedores y
@@ -79,8 +80,8 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
                 name="q"
                 defaultValue={q ?? ""}
                 aria-label="Buscar necesidad"
-                placeholder="Folio, obra o pedido"
-                className="border border-gray-300 rounded px-2 py-1 text-xs w-48 bg-white"
+                placeholder="Folio, obra, pedido o cliente"
+                className="border border-gray-300 rounded px-2 py-1 text-xs w-56 bg-white"
               />
               <button className="border border-gray-300 bg-white text-xs font-semibold px-2 py-1 rounded">Buscar</button>
             </form>
@@ -97,6 +98,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
             <table className="w-full text-xs">
               <thead className="bg-verde text-white">
                 <tr>
+                  <th className="text-left px-3 py-2">Cliente</th>
                   <th className="text-left px-3 py-2">Necesidad</th>
                   <th className="text-left px-3 py-2">Para</th>
                   <th className="text-left px-3 py-2">Estado</th>
@@ -110,13 +112,14 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
               <tbody>
                 {filas.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="text-center text-gray-500 py-8">
+                    <td colSpan={9} className="text-center text-gray-500 py-8">
                       {estado || q ? "Ninguna necesidad coincide con el filtro." : "Todavia no hay necesidades de material."}
                     </td>
                   </tr>
                 )}
                 {filas.map((n) => (
                   <tr key={n.id} className="border-t border-gray-100 hover:bg-crema">
+                    <td className="px-3 py-2">{n.cliente ?? <span className="text-gray-500">—</span>}</td>
                     <td className="px-3 py-2 font-semibold">
                       <Link href={`/necesidades/${n.id}`} className="text-verde hover:underline">
                         {n.folio}
