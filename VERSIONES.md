@@ -18,7 +18,7 @@ fila de la entrega que abre el hito; esa entrega sale como vHHH.001.
 
 La columna "Antes" guarda el numero con la nomenclatura anterior (vNNNN).
 
-Version vigente: **v008.063-20261127**
+Version vigente: **v008.064-20261127**
 
 ## Grandes hitos
 
@@ -31,10 +31,11 @@ Version vigente: **v008.063-20261127**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.063 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.064 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.064-20261127 | borrar_solicitud | 27-11-2026 | Borrado manual de solicitudes de cotizacion, solo si no tienen documentos posteriores (orden de compra, solicitudes hijas o envios a proveedores); queda en bitacora. Botón Borrar en la solicitud y en el historial. |
 | v008.063-20261127 | compras_etapa3 | 27-11-2026 | Compras en cuatro etapas (por aprobar, por recibir, por pagar, cerradas) en la lista de ordenes. En la necesidad, la solicitud adjudicada queda plegada y el historial de solicitudes, oculto hasta abrirlo. Sin cambios en la base. |
 | v008.062-20261127 | bandeja_compras | 27-11-2026 | Bandeja de compras: una lista de lo que espera un paso (cotizar, adjudicar, aprobar, recibir, pagar), con cliente primero y siguiente paso. Todo pedido nace enlazado a su proyecto; todo pago de pedido entra a la cartola de ingresos como Pendiente y, si se borra, sale de ella. |
 | v008.061-20261127 | nm_adjudicar_generar | 27-11-2026 | Necesidad: cuadro comparativo para elegir proveedor por producto (va marcado el mas barato) y generar las ordenes de compra en un solo paso; reparte y abre las solicitudes solo, sin pasos intermedios. |

@@ -22,6 +22,7 @@ import {
   anularNecesidad,
   anularSolicitud,
   anularSolicitudCascada,
+  borrarSolicitud,
   buscarItemsCompra,
   crearSolicitud,
   declinarProveedor,
@@ -470,6 +471,16 @@ export default function FichaNecesidad({
                   <span className="text-gray-600"> · se abrio en {solicitudes.filter((h) => h.id_padre === s.id).map((h) => h.folio).join(", ")}</span>
                 )}
                 {s.folio_padre && <span className="text-gray-600"> · viene de {s.folio_padre}</span>}
+                {comprador && !solicitudes.some((h) => h.id_padre === s.id) && (
+                  <button
+                    type="button"
+                    className="ml-2 text-red-700 text-[11px] font-semibold underline disabled:opacity-40"
+                    disabled={pendiente}
+                    onClick={() => confirm(`Borrar ${s.folio}? Se elimina del sistema y no se puede deshacer.`) && ejecutar(() => borrarSolicitud(nm.id, s.id), "Solicitud borrada.")}
+                  >
+                    Borrar
+                  </button>
+                )}
                 {esAdmin && s.estado === "Abierta" && solicitudes.some((h) => h.id_padre === s.id && h.estado !== "Anulada") && (
                   <button
                     type="button"
@@ -765,6 +776,11 @@ function TarjetaSolicitud({
           {comprador && !s.id_oc && (
             <button type="button" className="bg-white text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40" disabled={pendiente} onClick={() => confirm(`Anular ${s.folio}? Sus items quedan sin solicitud.`) && ejecutar(() => anularSolicitud(idNm, s.id), "Solicitud anulada.")}>
               Anular
+            </button>
+          )}
+          {comprador && !s.id_oc && s.estado === "Borrador" && (
+            <button type="button" className="bg-white text-red-700 text-[11px] font-semibold px-2 py-0.5 rounded disabled:opacity-40" disabled={pendiente} onClick={() => confirm(`Borrar ${s.folio}? Se elimina del sistema y no se puede deshacer. Sus items quedan sin solicitud.`) && ejecutar(() => borrarSolicitud(idNm, s.id), "Solicitud borrada.")}>
+              Borrar
             </button>
           )}
           {esAdmin && s.id_oc && (

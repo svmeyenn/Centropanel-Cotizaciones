@@ -213,6 +213,14 @@ export async function anularSolicitud(idNm: number, idSc: number) {
   return llamar((s) => s.rpc("sc_anular", { p_sc: idSc }), idNm);
 }
 
+// Borra la solicitud del todo. Solo si no tiene documentos posteriores: orden de compra, solicitudes abiertas a partir de
+// ella o envios a proveedores. La base lo exige y deja el registro en la bitacora.
+export async function borrarSolicitud(idNm: number, idSc: number) {
+  const r = await llamar((s) => s.rpc("sc_borrar", { p_sc: idSc }), idNm);
+  if (r.ok) revalidatePath("/compras");
+  return r;
+}
+
 // Anula la solicitud con lo que salio de ella: su orden de compra y, si se abrio en varias, las hijas. Solo Administrador.
 export async function anularSolicitudCascada(idNm: number, idSc: number, motivo: string) {
   const r = await llamar((s) => s.rpc("sc_anular_cascada", { p_sc: idSc, p_motivo: motivo }), idNm);
