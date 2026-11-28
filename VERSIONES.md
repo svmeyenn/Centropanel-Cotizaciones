@@ -31,10 +31,11 @@ Version vigente: **v008.066-20261127**
 | 005 | Seguimiento comercial y pedido ampliado | v005.001 a v005.022 |
 | 006 | Leads y CRM: contactos, mensajes y oportunidades | v006.001 a v006.036 |
 | 007 | Proveedores, proyectos y compras | v007.001 a v007.061 |
-| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.066 |
+| 008 | Margen real, finanzas del pedido y conciliacion | v008.001 a v008.067 |
 
 | Version | Antes | Fecha | Cambio | Referencia |
 |---|---|---|---|---|
+| v008.067-20261127 | solicitud_por_cantidades | 27-11-2026 | Una solicitud de cotizacion se puede abrir repartiendo un mismo material por cantidades: por ejemplo 100 de 178 a un pedido y 78 a otro, al mismo proveedor o a distintos. Cada parte queda como producto aparte de la necesidad, con los precios ya cotizados; el total del material se conserva. |
 | v008.066-20261127 | costo_flete_teorico | 27-11-2026 | El costo teorico del flete de un pedido con transportista es lo que cobra el transportista sin IVA (flete_estimado), y no el costo por km de la cotizacion multiplicado por 1 unidad. Corrige el margen teorico de los pedidos con flete acordado. |
 | v008.065-20261127 | pedido_compras_margen | 27-11-2026 | En el pedido: lista de sus ordenes de compra y, cuando ya hay egresos aprobados, el margen real como cifra principal (el teorico queda de referencia). Se regularizaron las ordenes y la necesidad del pedido de Francisco Ochagavia. |
 | v008.064-20261127 | borrar_solicitud | 27-11-2026 | Borrado manual de solicitudes de cotizacion, solo si no tienen documentos posteriores (orden de compra, solicitudes hijas o envios a proveedores); queda en bitacora. Botón Borrar en la solicitud y en el historial. |

@@ -1142,31 +1142,64 @@ function VentanaCotizacion({
   );
 }
 
-// Abrir una solicitud en dos o mas: cada item se asigna a un grupo y cada grupo sera su propia solicitud.
+// Abrir una solicitud en dos o mas: cada item se asigna a un grupo y cada grupo sera su propia solicitud. Un mismo producto
+// puede repartirse por cantidades entre varios grupos --por ejemplo, pedir 100 de 178 a un proveedor y 78 a otro, o en dos
+// pedidos al mismo--; cada parte pasa a ser un producto aparte de la necesidad, con los mismos precios ya cotizados.
+export type ReparteSolicitud = (number | { item: number; cantidad: number })[][];
+
 function VentanaApertura({
   s, items, alCerrar, alAbrir, pendiente,
 }: {
   s: Sol;
   items: Item[];
   alCerrar: () => void;
-  alAbrir: (grupos: number[][]) => void;
+  alAbrir: (grupos: ReparteSolicitud) => void;
   pendiente: boolean;
 }) {
   const [n, setN] = useState(2);
-  const [grupo, setGrupo] = useState<Record<number, number>>(() => Object.fromEntries(items.map((i, k) => [i.id, k % 2])));
+  // Las partes de cada producto: por defecto una sola, con toda la cantidad.
+  const [partes, setPartes] = useState<Record<number, { cant: string; grupo: number }[]>>(() =>
+    Object.fromEntries(items.map((i, k) => [i.id, [{ cant: String(Number(i.cantidad)), grupo: k % 2 }]]))
+  );
   const [error, setError] = useState<string | null>(null);
   const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+  function cambiar(id: number, k: number, cambio: Partial<{ cant: string; grupo: number }>) {
+    setPartes({ ...partes, [id]: partes[id].map((p, j) => (j === k ? { ...p, ...cambio } : p)) });
+  }
+  function dividir(i: Item) {
+    const ps = partes[i.id];
+    const usados = new Set(ps.map((p) => Math.min(p.grupo, n - 1)));
+    const libre = Array.from({ length: n }, (_, g) => g).find((g) => !usados.has(g)) ?? 0;
+    setPartes({ ...partes, [i.id]: [...ps, { cant: "", grupo: libre }] });
+  }
+  function quitar(id: number, k: number) {
+    setPartes({ ...partes, [id]: partes[id].filter((_, j) => j !== k) });
+  }
+
   function abrir() {
-    const grupos: number[][] = Array.from({ length: n }, () => []);
-    for (const i of items) grupos[Math.min(grupo[i.id] ?? 0, n - 1)].push(i.id);
-    if (grupos.some((g) => g.length === 0)) return setError("Cada grupo necesita al menos un item.");
+    const grupos: ReparteSolicitud = Array.from({ length: n }, () => []);
+    for (const i of items) {
+      const ps = partes[i.id].map((p) => ({ cant: Number(p.cant.replace(",", ".")), grupo: Math.min(p.grupo, n - 1) }));
+      if (ps.length === 1) {
+        grupos[ps[0].grupo].push(i.id);
+        continue;
+      }
+      if (ps.some((p) => !(p.cant > 0))) return setError(`Indique la cantidad de cada parte de "${i.descripcion}".`);
+      if (new Set(ps.map((p) => p.grupo)).size < ps.length) return setError(`"${i.descripcion}": cada parte va a una solicitud distinta.`);
+      const suma = ps.reduce((t, p) => t + p.cant, 0);
+      if (Math.abs(suma - Number(i.cantidad)) > 1e-6) {
+        return setError(`"${i.descripcion}": las partes suman ${suma.toLocaleString("es-CL")} y el producto tiene ${Number(i.cantidad).toLocaleString("es-CL")}.`);
+      }
+      for (const p of ps) grupos[p.grupo].push({ item: i.id, cantidad: p.cant });
+    }
+    if (grupos.some((g) => g.length === 0)) return setError("Cada solicitud necesita al menos un item.");
     setError(null);
     alAbrir(grupos);
   }
 
   return (
-    <Ventana titulo={`Abrir ${s.folio}`} subtitulo="Reparta los items: cada grupo sera una solicitud que se adjudica por separado" onCerrar={alCerrar} ancho="max-w-3xl">
+    <Ventana titulo={`Abrir ${s.folio}`} subtitulo="Reparta los items, o parte de su cantidad: cada grupo sera una solicitud que se adjudica por separado" onCerrar={alCerrar} ancho="max-w-3xl">
       <div className="space-y-3 text-xs">
         <div className="flex items-center gap-2">
           <label htmlFor="ap-n" className={ROTULO + " mb-0"}>Abrir en</label>
@@ -1182,31 +1215,71 @@ function VentanaApertura({
             <tr>
               <th className="text-left px-3 py-1.5">Item</th>
               <th className="text-right px-3 py-1.5 w-24">Cantidad</th>
-              <th className="text-left px-3 py-1.5 w-40">Va a</th>
+              <th className="text-left px-3 py-1.5 w-52">Va a</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((i) => (
-              <tr key={i.id} className="border-t border-gray-100">
-                <td className="px-3 py-1">{i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}</td>
-                <td className="px-3 py-1 text-right tabular-nums">{Number(i.cantidad).toLocaleString("es-CL")}</td>
-                <td className="px-3 py-1">
-                  <select
-                    aria-label={`Solicitud de ${i.descripcion}`}
-                    className="border border-gray-300 rounded px-2 py-0.5 text-xs w-full bg-white"
-                    value={Math.min(grupo[i.id] ?? 0, n - 1)}
-                    onChange={(e) => setGrupo({ ...grupo, [i.id]: Number(e.target.value) })}
-                  >
-                    {Array.from({ length: n }, (_, k) => (
-                      <option key={k} value={k}>{`${s.folio}-${letras[k]}`}</option>
-                    ))}
-                  </select>
-                </td>
-              </tr>
-            ))}
+            {items.map((i) => {
+              const ps = partes[i.id];
+              return (
+                <tr key={i.id} className="border-t border-gray-100 align-top">
+                  <td className="px-3 py-1">
+                    {i.sku && <span className="font-mono text-[11px] text-gray-500 mr-1.5">{i.sku}</span>}{i.descripcion}
+                    <div>
+                      <button type="button" className="text-verde font-semibold underline text-[11px] disabled:opacity-40" onClick={() => dividir(i)} disabled={ps.length >= n}>
+                        Dividir cantidad
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-3 py-1 text-right tabular-nums">
+                    {ps.length === 1 ? (
+                      Number(i.cantidad).toLocaleString("es-CL")
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="text-gray-500">de {Number(i.cantidad).toLocaleString("es-CL")}</div>
+                        {ps.map((p, k) => (
+                          <input
+                            key={k}
+                            type="text"
+                            inputMode="decimal"
+                            aria-label={`Cantidad de la parte ${k + 1} de ${i.descripcion}`}
+                            className="border border-gray-300 rounded px-2 py-0.5 w-20 text-right"
+                            value={p.cant}
+                            onChange={(e) => cambiar(i.id, k, { cant: e.target.value })}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-3 py-1">
+                    <div className="space-y-1">
+                      {ps.map((p, k) => (
+                        <div key={k} className="flex items-center gap-1">
+                          <select
+                            aria-label={`Solicitud de ${ps.length > 1 ? `la parte ${k + 1} de ` : ""}${i.descripcion}`}
+                            className="border border-gray-300 rounded px-2 py-0.5 text-xs w-full bg-white"
+                            value={Math.min(p.grupo, n - 1)}
+                            onChange={(e) => cambiar(i.id, k, { grupo: Number(e.target.value) })}
+                          >
+                            {Array.from({ length: n }, (_, g) => (
+                              <option key={g} value={g}>{`${s.folio}-${letras[g]}`}</option>
+                            ))}
+                          </select>
+                          {ps.length > 1 && (
+                            <button type="button" className="text-red-700 font-semibold px-1" aria-label={`Quitar la parte ${k + 1} de ${i.descripcion}`} onClick={() => quitar(i.id, k)}>
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-        <p className="text-gray-600">Los precios que ya enviaron los proveedores se conservan: no hay que volver a pedirlos.</p>
+        <p className="text-gray-600">Los precios que ya enviaron los proveedores se conservan: no hay que volver a pedirlos. Un producto dividido queda como un producto por cada parte.</p>
         {error && <p className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2" role="alert">{error}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" className={BTN} onClick={alCerrar} disabled={pendiente}>Cancelar</button>
